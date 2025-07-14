@@ -36,14 +36,14 @@ export default function Navigation() {
       <div className="container-custom">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2 group">
+          <Link href="/" className="flex flex-col items-center group">
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-gold blur-lg opacity-0 group-hover:opacity-50 transition-opacity" />
-              <span className="relative font-display text-3xl md:text-4xl text-gradient-gold">
+              <span className="relative font-display text-3xl md:text-4xl text-gradient-gold text-center">
                 PARTY ON
               </span>
             </div>
-            <span className={`font-sans font-bold text-sm ${
+            <span className={`font-sans font-bold text-sm text-center ${
               isScrolled ? 'text-navy-500' : 'text-white'
             }`}>
               DELIVERY
@@ -51,7 +51,7 @@ export default function Navigation() {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-8">
+          <div className="hidden lg:flex items-center justify-center space-x-8">
             <a
               href="tel:7373719700"
               className={`font-sans font-bold transition-all duration-300 ${

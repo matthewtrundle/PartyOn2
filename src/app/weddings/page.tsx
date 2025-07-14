@@ -8,7 +8,7 @@ import Section from '@/components/Section'
 import AIConcierge from '@/components/AIConcierge'
 import ExperienceSelector from '@/components/ExperienceSelector'
 
-type WeddingMode = 'elegant' | 'luxury' | 'boho'
+type WeddingMode = 'elegant' | 'luxury' | 'wild'
 
 export default function WeddingsPage() {
   const [mode, setMode] = useState<WeddingMode>('elegant')
@@ -29,12 +29,12 @@ export default function WeddingsPage() {
       backgroundImage: "/images/services/weddings/hill-country-spirits-display.png",
       theme: "luxury"
     },
-    boho: {
-      title: "Bohemian Wedding Magic",
-      subtitle: "Free-Spirited Celebrations in Nature's Embrace",
-      description: "Embrace the wild beauty of Austin with our boho-chic wedding service. Organic, artistic, and wonderfully unconventional.",
+    wild: {
+      title: "Wild Wedding Celebration",
+      subtitle: "Unleash Your Wedding Party Spirit",
+      description: "Turn your wedding into the wildest celebration Austin has ever seen! Epic party vibes with professional execution.",
       backgroundImage: "/images/services/weddings/signature-cocktails-closeup.png",
-      theme: "boho"
+      theme: "wild"
     }
   }
 
@@ -205,18 +205,18 @@ export default function WeddingsPage() {
     <div className={`transition-all duration-500 ${isAnimating ? 'opacity-50' : 'opacity-100'}`}>
       {/* Experience Selector */}
       <ExperienceSelector
-        modes={['elegant', 'luxury', 'boho'] as const}
+        modes={['elegant', 'luxury', 'wild'] as const}
         currentMode={mode}
         onModeChange={handleModeChange}
         modeLabels={{
           elegant: 'Elegant',
           luxury: 'Luxury',
-          boho: 'Boho'
+          wild: 'Wild'
         }}
         modeColors={{
           elegant: 'bg-gradient-to-r from-gold-500 to-amber-500',
           luxury: 'bg-gradient-to-r from-amber-600 to-yellow-600',
-          boho: 'bg-gradient-to-r from-green-600 to-emerald-600'
+          wild: 'bg-gradient-to-r from-red-600 to-orange-600'
         }}
         label="WEDDING STYLE"
       />
@@ -225,7 +225,7 @@ export default function WeddingsPage() {
         title={currentConfig.title}
         subtitle={currentConfig.subtitle}
         description={currentConfig.description}
-        videoSrc={mode === 'luxury' ? "/videos/hero/wedding-sunset.mp4" : mode === 'boho' ? "/videos/backgrounds/cocktails-wedding.mp4" : "/videos/hero/wedding-venue-travis.mp4"}
+        videoSrc={mode === 'luxury' ? "/videos/hero/wedding-sunset.mp4" : mode === 'wild' ? "/biff01_Epic_Lake_Travis_boat_party_multiple_yachts_rafted_tog_7534248b-464e-4fba-bb54-1e91e525b64f_3.png" : "/videos/hero/wedding-venue-travis.mp4"}
         fallbackImage={currentConfig.backgroundImage}
         ctaText="Start Planning"
         ctaLink="/book-now"
