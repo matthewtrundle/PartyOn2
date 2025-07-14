@@ -131,7 +131,7 @@ export default function BookNowPage() {
 
                   <div className="mt-6 p-6 bg-gold-50 rounded-lg">
                     <p className="font-sans text-sm text-neutral-600 mb-4">
-                      <strong>Next Step:</strong> After confirming delivery details, you'll be redirected 
+                      <strong>Next Step:</strong> After confirming delivery details, you&apos;ll be redirected 
                       to browse our product catalog and complete your order.
                     </p>
                     <p className="font-sans text-xs text-neutral-500">

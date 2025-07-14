@@ -120,7 +120,7 @@ export default function AgeVerification() {
         {/* Austin Touch */}
         <div className="mt-6 text-center">
           <p className="text-xs text-neutral-400 italic">
-            "Keep Austin Weird... and Responsibly Served!"
+            &quot;Keep Austin Weird... and Responsibly Served!&quot;
           </p>
         </div>
       </div>

@@ -5,7 +5,7 @@ import { useState } from 'react'
 type PartyMode = 'normal' | 'bachelor' | 'bachelorette'
 
 export default function BachPartiesPage() {
-  const [mode, setMode] = useState<PartyMode>('normal')
+  const [mode] = useState<PartyMode>('normal')
 
   return (
     <div className="min-h-screen">

@@ -136,9 +136,9 @@ export default function FastDeliveryPage() {
                 Speed That Impresses
               </h2>
               <p className="font-sans text-xl text-neutral-600 leading-relaxed">
-                We've revolutionized alcohol delivery in Austin. Our strategic warehouse 
+                We&apos;ve revolutionized alcohol delivery in Austin. Our strategic warehouse 
                 locations and dedicated delivery fleet ensure your drinks arrive faster 
-                than you can say "cheers!"
+                than you can say &quot;cheers!&quot;
               </p>
               
               <div className="grid grid-cols-2 gap-6">
@@ -182,7 +182,7 @@ export default function FastDeliveryPage() {
             Delivery Options for Every Occasion
           </h2>
           <p className="font-sans text-lg text-neutral-600">
-            From a quick six-pack to a full party setup, we've got you covered
+            From a quick six-pack to a full party setup, we&apos;ve got you covered
           </p>
         </div>
 
@@ -232,7 +232,7 @@ export default function FastDeliveryPage() {
               We Deliver All Over Austin
             </h2>
             <p className="font-sans text-lg text-neutral-600">
-              From downtown lofts to lakeside homes, we've got Austin covered
+              From downtown lofts to lakeside homes, we&apos;ve got Austin covered
             </p>
           </div>
 
@@ -249,7 +249,7 @@ export default function FastDeliveryPage() {
 
           <div className="text-center mt-12">
             <p className="font-sans text-neutral-600 mb-4">
-              Don't see your neighborhood? Enter your address to check coverage.
+              Don&apos;t see your neighborhood? Enter your address to check coverage.
             </p>
             <button className="btn-secondary">
               Check My Address
@@ -328,8 +328,8 @@ export default function FastDeliveryPage() {
                 ))}
               </div>
               <p className="font-sans text-neutral-600 mb-4">
-                "Ordered at 7:15, delivered by 7:35. Faster than getting pizza! 
-                The driver even helped carry everything up to my apartment."
+                &quot;Ordered at 7:15, delivered by 7:35. Faster than getting pizza! 
+                The driver even helped carry everything up to my apartment.&quot;
               </p>
               <p className="font-sans font-semibold">Michael R.</p>
               <p className="font-sans text-sm text-neutral-500">Downtown Austin</p>
@@ -344,8 +344,8 @@ export default function FastDeliveryPage() {
                 ))}
               </div>
               <p className="font-sans text-neutral-600 mb-4">
-                "Game changer for hosting! Realized we were out of wine 20 minutes 
-                before guests arrived. Party On saved the day!"
+                &quot;Game changer for hosting! Realized we were out of wine 20 minutes 
+                before guests arrived. Party On saved the day!&quot;
               </p>
               <p className="font-sans font-semibold">Lauren P.</p>
               <p className="font-sans text-sm text-neutral-500">Westlake Hills</p>
@@ -360,8 +360,8 @@ export default function FastDeliveryPage() {
                 ))}
               </div>
               <p className="font-sans text-neutral-600 mb-4">
-                "Use them every weekend. The app is super easy and tracking is 
-                spot on. Best alcohol delivery in Austin, hands down."
+                &quot;Use them every weekend. The app is super easy and tracking is 
+                spot on. Best alcohol delivery in Austin, hands down.&quot;
               </p>
               <p className="font-sans font-semibold">David K.</p>
               <p className="font-sans text-sm text-neutral-500">South Congress</p>

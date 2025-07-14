@@ -47,8 +47,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Chat API error:', error)
-    const { mode = 'normal', messages = [] } = await request.json().catch(() => ({}))
-    const lastMessage = messages[messages.length - 1]?.content || ''
+    const { mode = 'normal' } = await request.json().catch(() => ({}))
     
     return NextResponse.json({
       content: getFallbackResponse(mode)

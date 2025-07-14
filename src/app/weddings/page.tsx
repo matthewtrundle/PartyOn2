@@ -422,7 +422,7 @@ export default function WeddingsPage() {
               <h3 className="font-serif text-2xl text-navy-500">Custom Menus</h3>
               <p className="font-sans text-neutral-600">
                 Work with our mixologists to create signature cocktails that tell your 
-                story. We'll design a menu that perfectly matches your wedding theme.
+                story. We&apos;ll design a menu that perfectly matches your wedding theme.
               </p>
             </div>
 
@@ -489,9 +489,9 @@ export default function WeddingsPage() {
             </div>
             <blockquote className="space-y-4">
               <p className="font-serif text-3xl text-navy-500 italic">
-                "Party On Delivery made our wedding absolutely perfect. From the initial consultation 
+                &quot;Party On Delivery made our wedding absolutely perfect. From the initial consultation 
                 to the last dance, their team was professional, attentive, and genuinely cared about 
-                making our day special. Our guests are still raving about the signature cocktails!"
+                making our day special. Our guests are still raving about the signature cocktails!&quot;
               </p>
               <footer className="space-y-1">
                 <p className="font-sans font-semibold text-lg">Emily & David Richardson</p>

@@ -48,7 +48,7 @@ export default function Footer() {
               </div>
             </Link>
             <p className="font-sans text-sm text-neutral-300 leading-relaxed">
-              Austin's premier alcohol delivery service. From boat parties on Lake Travis to 
+              Austin&apos;s premier alcohol delivery service. From boat parties on Lake Travis to 
               weddings in the Hill Country, we bring the party to you.
             </p>
             {/* Social Links */}

@@ -330,7 +330,7 @@ export default function Home() {
               Austin Loves Party On
             </h2>
             <p className="font-sans text-lg text-neutral-600">
-              Don't just take our word for it—hear from our happy customers
+              Don&apos;t just take our word for it—hear from our happy customers
             </p>
           </div>
 

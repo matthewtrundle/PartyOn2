@@ -40,61 +40,6 @@ export default function AIConcierge({ mode = 'normal' }: AIConciergeProps) {
     return () => clearTimeout(scrollTimeout)
   }, [messages])
 
-  // Dynamic styling based on mode
-  const getModeStyles = () => {
-    switch (mode) {
-      case 'party':
-        return {
-          button: 'bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 hover:from-purple-700 hover:via-pink-700 hover:to-orange-600 shadow-lg shadow-purple-500/25',
-          panel: 'bg-gradient-to-br from-purple-900/95 via-pink-900/95 to-orange-900/95',
-          header: 'bg-gradient-to-r from-purple-600 to-pink-600',
-          input: 'border-purple-400 focus:border-pink-500 focus:ring-pink-500/20',
-          userBubble: 'bg-gradient-to-r from-purple-500 to-pink-500',
-          assistantBubble: 'bg-gradient-to-r from-gray-700 to-gray-600',
-          pulse: 'animate-pulse shadow-lg shadow-purple-500/50'
-        }
-      case 'bachelor':
-        return {
-          button: 'bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 shadow-lg shadow-red-500/25',
-          panel: 'bg-gradient-to-br from-red-900/95 via-black/95 to-orange-900/95',
-          header: 'bg-gradient-to-r from-red-600 to-orange-600',
-          input: 'border-red-400 focus:border-orange-500 focus:ring-orange-500/20 bg-black/50 text-orange-200',
-          userBubble: 'bg-gradient-to-r from-red-500 to-orange-500',
-          assistantBubble: 'bg-gradient-to-r from-gray-800 to-red-800',
-          pulse: 'animate-pulse shadow-lg shadow-red-500/50'
-        }
-      case 'bachelorette':
-        return {
-          button: 'bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 shadow-lg shadow-pink-500/25',
-          panel: 'bg-gradient-to-br from-pink-100/98 via-purple-50/98 to-pink-100/98 border-2 border-pink-200',
-          header: 'bg-gradient-to-r from-pink-500 to-purple-500',
-          input: 'border-pink-300 focus:border-purple-400 focus:ring-purple-400/20',
-          userBubble: 'bg-gradient-to-r from-pink-400 to-purple-400',
-          assistantBubble: 'bg-gradient-to-r from-pink-50 to-purple-50 text-pink-800 border border-pink-200',
-          pulse: 'animate-bounce shadow-lg shadow-pink-400/30'
-        }
-      case 'elegant':
-        return {
-          button: 'bg-gradient-to-r from-gold-600 to-amber-600 hover:from-gold-700 hover:to-amber-700 shadow-lg shadow-gold-500/25',
-          panel: 'bg-gradient-to-br from-cream-50/98 via-gold-50/98 to-amber-50/98 border border-gold-200',
-          header: 'bg-gradient-to-r from-gold-600 to-amber-600',
-          input: 'border-gold-300 focus:border-amber-400 focus:ring-amber-400/20',
-          userBubble: 'bg-gradient-to-r from-gold-500 to-amber-500',
-          assistantBubble: 'bg-gradient-to-r from-gold-50 to-amber-50 text-gold-800 border border-gold-200',
-          pulse: 'animate-pulse shadow-lg shadow-gold-400/30'
-        }
-      default:
-        return {
-          button: 'bg-gradient-to-r from-gold-500 to-gold-400 hover:from-gold-600 hover:to-gold-500 shadow-lg shadow-gold-500/25',
-          panel: 'bg-white/95 backdrop-blur-xl border border-neutral-200',
-          header: 'bg-gradient-to-r from-gold-500 to-gold-400',
-          input: 'border-neutral-300 focus:border-gold-500 focus:ring-gold-500/20',
-          userBubble: 'bg-gradient-to-r from-gold-500 to-gold-400',
-          assistantBubble: 'bg-gradient-to-r from-neutral-100 to-neutral-50 text-neutral-800',
-          pulse: 'animate-pulse shadow-lg shadow-gold-400/30'
-        }
-    }
-  }
 
 
   const sendMessage = async () => {

@@ -607,9 +607,9 @@ export default function BoatPartiesPage() {
                     ))}
                   </div>
                   <p className="font-sans text-lg text-neutral-700 italic">
-                    "Party On Delivery has been our go-to for every boat day this summer. They deliver right to 
+                    &quot;Party On Delivery has been our go-to for every boat day this summer. They deliver right to 
                     our slip at Lakeway Marina, always on time with ice-cold drinks. The bartender service for 
-                    our 4th of July party was exceptional!"
+                    our 4th of July party was exceptional!&quot;
                   </p>
                   <div>
                     <p className="font-sans font-semibold text-navy-500">Captain Mark Williams</p>
