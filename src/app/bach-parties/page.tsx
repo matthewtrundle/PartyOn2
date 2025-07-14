@@ -182,7 +182,7 @@ export default function BachPartiesPage() {
     }
   }
 
-  const styles = getModeStyles()
+  const styles = getModeStyles() || {}
 
   return (
     <div className={`min-h-screen transition-all duration-500 ${isAnimating ? 'opacity-50' : 'opacity-100'}`}>
