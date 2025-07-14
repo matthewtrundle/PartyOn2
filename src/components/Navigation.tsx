@@ -27,9 +27,9 @@ export default function Navigation() {
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-50 transition-colors ${
         isScrolled
-          ? 'bg-white/95 backdrop-blur-md shadow-premium py-4'
+          ? 'bg-white/95 backdrop-blur-sm shadow-premium py-4'
           : 'bg-transparent py-6'
       }`}
     >
@@ -38,7 +38,7 @@ export default function Navigation() {
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2 group">
             <div className="relative">
-              <div className="absolute inset-0 bg-gradient-gold blur-lg opacity-0 group-hover:opacity-50 transition-opacity duration-300" />
+              <div className="absolute inset-0 bg-gradient-gold blur-lg opacity-0 group-hover:opacity-50 transition-opacity" />
               <span className="relative font-display text-3xl md:text-4xl text-gradient-gold">
                 PARTY ON
               </span>

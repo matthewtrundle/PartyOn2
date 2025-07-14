@@ -226,7 +226,7 @@ export default function BoatPartiesPage() {
         title={currentConfig.title}
         subtitle={currentConfig.subtitle}
         description={currentConfig.description}
-        videoSrc={mode === 'luxury' ? "/videos/hero/luxury-yacht.mp4" : mode === 'wild' ? "/videos/backgrounds/boat-cooler.mp4" : "/videos/hero/lake-travis-aerial.mp4"}
+        videoSrc={mode === 'luxury' ? "/videos/hero/yacht-sunset.mp4" : mode === 'wild' ? "/social_biff01_High-energy_party_scene_in_modern_Austin_rooftop_bar_o_75fb604d-07ac-4522-8ba1-f5fda51e7ed8_1.mp4" : "/videos/backgrounds/yacht-wake.mp4"}
         fallbackImage={currentConfig.backgroundImage}
         ctaText="Book Boat Service"
         ctaLink="/book-now"

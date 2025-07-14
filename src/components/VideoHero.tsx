@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 
 interface VideoHeroProps {
   title: string
@@ -28,6 +29,40 @@ export default function VideoHero({
 }: VideoHeroProps) {
   const [videoLoaded, setVideoLoaded] = useState(false)
   const [videoError, setVideoError] = useState(false)
+  const [isVisible, setIsVisible] = useState(false)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const sectionRef = useRef<HTMLDivElement>(null)
+  
+  // Intersection Observer for lazy loading and pausing
+  useEffect(() => {
+    const section = sectionRef.current
+    if (!section) return
+    
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          setIsVisible(entry.isIntersecting)
+          if (videoRef.current) {
+            if (entry.isIntersecting) {
+              videoRef.current.play().catch(() => {})
+            } else {
+              videoRef.current.pause()
+            }
+          }
+        })
+      },
+      { threshold: 0.1 }
+    )
+    
+    observer.observe(section)
+    
+    return () => {
+      observer.disconnect()
+      if (videoRef.current) {
+        videoRef.current.pause()
+      }
+    }
+  }, [])
 
   const heightClasses = {
     full: 'h-screen',
@@ -36,17 +71,18 @@ export default function VideoHero({
   }
 
   return (
-    <section className={`relative ${heightClasses[height]} min-h-[600px] flex items-center justify-center overflow-hidden`}>
+    <section ref={sectionRef} className={`relative ${heightClasses[height]} min-h-[600px] flex items-center justify-center overflow-hidden`}>
       {/* Video Background */}
-      {videoSrc && !videoError && (
+      {videoSrc && !videoError && isVisible && (
         <video
-          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
+          ref={videoRef}
+          className={`absolute inset-0 w-full h-full object-cover ${
             videoLoaded ? 'opacity-100' : 'opacity-0'
           }`}
-          autoPlay
           loop
           muted
           playsInline
+          preload="none"
           onLoadedData={() => setVideoLoaded(true)}
           onError={() => setVideoError(true)}
         >
@@ -55,11 +91,16 @@ export default function VideoHero({
       )}
 
       {/* Fallback Image */}
-      <div
-        className={`absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ${
-          videoLoaded && !videoError ? 'opacity-0' : 'opacity-100'
+      <Image
+        src={fallbackImage}
+        alt={title}
+        fill
+        className={`absolute inset-0 object-cover ${
+          videoLoaded && !videoError && isVisible ? 'opacity-0' : 'opacity-100'
         }`}
-        style={{ backgroundImage: `url(${fallbackImage})` }}
+        priority={height === 'full'}
+        loading={height === 'full' ? 'eager' : 'lazy'}
+        sizes="100vw"
       />
 
       {/* Overlay */}
@@ -69,7 +110,7 @@ export default function VideoHero({
       />
 
       {/* Content */}
-      <div className="relative z-10 text-center text-white px-6 max-w-5xl mx-auto animate-fade-up">
+      <div className="relative z-10 text-center text-white px-6 max-w-5xl mx-auto">
         <h1 className="font-serif text-5xl md:text-7xl mb-6 text-shadow-lg">
           {title}
         </h1>
@@ -89,15 +130,15 @@ export default function VideoHero({
         {ctaText && ctaLink && (
           <Link 
             href={ctaLink} 
-            className="btn-primary px-8 py-4 text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300"
+            className="btn-primary px-8 py-4 text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-transform"
           >
             {ctaText}
           </Link>
         )}
       </div>
 
-      {/* Scroll Indicator */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
+      {/* Scroll Indicator - Reduced animation */}
+      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
         <svg className="w-6 h-6 text-white opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
         </svg>

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Section from '@/components/Section'
+import VideoHero from '@/components/VideoHero'
 
 export default function BookNowPage() {
   const searchParams = useSearchParams()
@@ -46,19 +47,15 @@ export default function BookNowPage() {
 
   return (
     <>
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-navy-900 to-navy-700 pt-32 pb-16">
-        <div className="container-custom">
-          <div className="text-center text-white">
-            <h1 className="font-serif text-4xl md:text-5xl mb-4">
-              Book Your Party On Experience
-            </h1>
-            <p className="font-sans text-xl text-neutral-200">
-              Fast delivery or full-service events - we've got you covered
-            </p>
-          </div>
-        </div>
-      </section>
+      {/* Epic Video Hero */}
+      <VideoHero
+        title="Book Your Party On Experience"
+        subtitle="Let's Make It Legendary"
+        description="Fast delivery or full-service events - we've got you covered"
+        videoSrc="/videos/backgrounds/upscale-bachelorette.mp4"
+        fallbackImage="/images/hero/neon-nights-hero.jpg"
+        height="medium"
+      />
 
       {/* Booking Form */}
       <Section>

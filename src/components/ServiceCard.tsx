@@ -1,5 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
+import { memo } from 'react'
 
 interface ServiceCardProps {
   title: string
@@ -11,7 +12,7 @@ interface ServiceCardProps {
   featured?: boolean
 }
 
-export default function ServiceCard({
+function ServiceCard({
   title,
   description,
   image,
@@ -21,7 +22,7 @@ export default function ServiceCard({
   featured = false
 }: ServiceCardProps) {
   return (
-    <div className={`group relative overflow-hidden rounded-2xl transition-all duration-500 ${
+    <div className={`group relative overflow-hidden rounded-2xl transition-shadow ${
       featured ? 'ring-2 ring-gold-500 shadow-glow' : ''
     }`}>
       <div className={`card ${featured ? 'border-2 border-gold-500' : ''} h-full flex flex-col`}>
@@ -40,14 +41,16 @@ export default function ServiceCard({
             src={image}
             alt={title}
             fill
-            className="object-cover group-hover:scale-110 transition-transform duration-700"
+            className="object-cover group-hover:scale-110 transition-transform will-change-transform"
+            loading="lazy"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
         </div>
 
         {/* Content */}
         <div className="flex-grow space-y-4">
-          <h3 className="font-serif text-2xl md:text-3xl text-navy-500 group-hover:text-gold-500 transition-colors duration-300">
+          <h3 className="font-serif text-2xl md:text-3xl text-navy-500 group-hover:text-gold-500 transition-colors">
             {title}
           </h3>
           
@@ -87,15 +90,16 @@ export default function ServiceCard({
           
           <Link
             href={link}
-            className={`${price ? 'btn-outline' : 'btn-primary w-full justify-center'} group-hover:scale-105 transform transition-all duration-300`}
+            className={`${price ? 'btn-outline' : 'btn-primary w-full justify-center'} group-hover:scale-105 transform transition-transform`}
           >
             Learn More
           </Link>
         </div>
       </div>
 
-      {/* Hover glow effect */}
-      <div className="absolute inset-0 bg-gradient-to-r from-gold-500/20 to-austin-lake/20 opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-500 -z-10" />
+      {/* Hover glow effect - removed blur for performance */}
     </div>
   )
 }
+
+export default memo(ServiceCard)

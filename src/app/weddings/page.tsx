@@ -226,7 +226,7 @@ export default function WeddingsPage() {
         title={currentConfig.title}
         subtitle={currentConfig.subtitle}
         description={currentConfig.description}
-        videoSrc={mode === 'luxury' ? "/videos/hero/luxury-wedding.mp4" : mode === 'boho' ? "/videos/backgrounds/cocktails-wedding.mp4" : "/videos/hero/wedding-venue-travis.mp4"}
+        videoSrc={mode === 'luxury' ? "/videos/hero/wedding-sunset.mp4" : mode === 'boho' ? "/videos/backgrounds/cocktails-wedding.mp4" : "/videos/hero/wedding-venue-travis.mp4"}
         fallbackImage={currentConfig.backgroundImage}
         ctaText="Start Planning"
         ctaLink="/book-now"

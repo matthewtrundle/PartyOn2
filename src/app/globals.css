@@ -37,9 +37,9 @@
     @apply font-serif font-bold tracking-tight;
   }
 
-  /* Premium link styling */
+  /* Premium link styling - reduced transition duration */
   a {
-    @apply transition-colors duration-300;
+    @apply transition-colors;
   }
 
   /* Focus states for accessibility */
@@ -69,7 +69,7 @@
   /* Premium button base styles */
   .btn {
     @apply inline-flex items-center justify-center px-6 py-3 font-sans font-semibold 
-           transition-all duration-300 rounded-full focus:outline-none focus:ring-2 
+           transition-transform rounded-full focus:outline-none focus:ring-2 
            focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed;
   }
 
@@ -90,8 +90,8 @@
 
   /* Premium card styles */
   .card {
-    @apply bg-white rounded-2xl shadow-lg p-8 transition-all duration-300
-           hover:shadow-xl hover:-translate-y-1;
+    @apply bg-white rounded-2xl shadow-lg p-8 transition-shadow
+           hover:shadow-xl;
   }
 
   /* Hero overlay styles */
@@ -117,25 +117,26 @@
   /* Premium input styles */
   .input-premium {
     @apply w-full px-4 py-3 border-2 border-neutral-200 rounded-lg
-           focus:border-gold-500 focus:ring-0 transition-colors duration-200
+           focus:border-gold-500 focus:ring-0 transition-colors
            placeholder:text-neutral-400;
   }
 
-  /* Loading animation */
+  /* Loading animation - reduced for performance */
   .loading-dots {
     @apply inline-flex space-x-1;
   }
 
   .loading-dots span {
-    @apply w-2 h-2 bg-gold-500 rounded-full animate-bounce;
+    @apply w-2 h-2 bg-gold-500 rounded-full;
   }
-
-  .loading-dots span:nth-child(2) {
-    animation-delay: 0.1s;
-  }
-
-  .loading-dots span:nth-child(3) {
-    animation-delay: 0.2s;
+  
+  /* Prefers reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
 
@@ -149,14 +150,14 @@
     text-shadow: 0 4px 8px rgba(0, 0, 0, 0.7);
   }
 
-  /* Backdrop blur for glass effect */
+  /* Backdrop blur for glass effect - reduced blur */
   .glass {
-    @apply backdrop-blur-md bg-white/10 border border-white/20;
+    @apply backdrop-blur-sm bg-white/10 border border-white/20;
   }
 
-  /* Premium hover lift effect */
+  /* Premium hover lift effect - faster transition */
   .hover-lift {
-    @apply transition-transform duration-300 hover:-translate-y-2;
+    @apply transition-transform hover:-translate-y-2;
   }
 
   /* Smooth scroll behavior */

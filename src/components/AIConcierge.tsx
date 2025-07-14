@@ -32,7 +32,12 @@ export default function AIConcierge({ mode = 'normal' }: AIConciergeProps) {
   }
 
   useEffect(() => {
-    scrollToBottom()
+    // Debounce scroll to avoid excessive reflows
+    const scrollTimeout = setTimeout(() => {
+      scrollToBottom()
+    }, 100)
+    
+    return () => clearTimeout(scrollTimeout)
   }, [messages])
 
   // Dynamic styling based on mode
@@ -181,7 +186,7 @@ export default function AIConcierge({ mode = 'normal' }: AIConciergeProps) {
           <button
             onClick={() => setIsOpen(true)}
             className="bg-white rounded-full shadow-lg px-4 py-3 flex items-center gap-2 
-                     border border-neutral-200 hover:border-neutral-300 transition-all duration-200 
+                     border border-neutral-200 hover:border-neutral-300 transition-colors 
                      hover:shadow-xl group"
           >
             <div className="w-8 h-8 bg-neutral-100 rounded-full flex items-center justify-center">
@@ -195,7 +200,7 @@ export default function AIConcierge({ mode = 'normal' }: AIConciergeProps) {
           <button
             onClick={() => setIsOpen(false)}
             className="w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center
-                     border border-neutral-200 hover:bg-neutral-50 transition-all duration-200"
+                     border border-neutral-200 hover:bg-neutral-50 transition-colors"
           >
             <svg className="w-5 h-5 text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -207,8 +212,7 @@ export default function AIConcierge({ mode = 'normal' }: AIConciergeProps) {
       {/* Chat Panel - Subtle Help Box */}
       {isOpen && (
         <div className="fixed bottom-20 right-6 w-[360px] h-[480px] bg-white rounded-2xl shadow-xl z-50 
-                      transition-all duration-300 transform scale-100 border border-neutral-200
-                      animate-in slide-in-from-bottom-5 fade-in duration-300">
+                      transform scale-100 border border-neutral-200">
           {/* Header - Clean ElevenLabs Style */}
           <div className="p-6 border-b border-neutral-100">
             <div className="flex items-center justify-between">
@@ -269,9 +273,9 @@ export default function AIConcierge({ mode = 'normal' }: AIConciergeProps) {
               <div className="flex justify-start">
                 <div className="bg-neutral-100 px-4 py-3 rounded-2xl">
                   <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                    <div className="w-2 h-2 bg-neutral-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    <div className="w-2 h-2 bg-neutral-400 rounded-full"></div>
+                    <div className="w-2 h-2 bg-neutral-400 rounded-full"></div>
+                    <div className="w-2 h-2 bg-neutral-400 rounded-full"></div>
                   </div>
                 </div>
               </div>
@@ -294,14 +298,14 @@ export default function AIConcierge({ mode = 'normal' }: AIConciergeProps) {
                 }
                 className="flex-1 px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm 
                          placeholder:text-neutral-400 focus:outline-none focus:border-neutral-300 
-                         focus:bg-white transition-all"
+                         focus:bg-white transition-colors"
                 disabled={isLoading}
               />
               <button
                 onClick={sendMessage}
                 disabled={isLoading || !inputMessage.trim()}
                 className="px-4 py-3 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl 
-                         font-medium text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed
+                         font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed
                          flex items-center justify-center min-w-[80px]"
               >
                 {isLoading ? (

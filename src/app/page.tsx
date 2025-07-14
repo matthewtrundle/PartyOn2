@@ -152,7 +152,7 @@ export default function Home() {
         title={currentConfig.title}
         subtitle={currentConfig.subtitle}
         description={currentConfig.description}
-        videoSrc={mode === 'party' ? "/videos/backgrounds/austin-party-setup.mp4" : "/videos/hero/austin-skyline-timelapse.mp4"}
+        videoSrc={mode === 'party' ? "/social_biff01_A_cinematic_establishing_shot_of_Austins_vibrant_night_a572f3ef-7895-4d69-8bc7-96dfcaf7e6cb_3.mp4" : "/videos/hero/austin-skyline-timelapse.mp4"}
         fallbackImage={mode === 'party' ? "/biff01_Neon-lit_Austin_6th_Street_at_night_vibrant_party_atmo_3117185a-bdab-453c-9ca8-675cd5581dc5_0.png" : "/biff01_Austin_skyline_at_golden_hour_from_Mount_Bonnell_viewp_70e449d9-34ee-4d92-89c9-7db7800d8f1f_3.png"}
         ctaText="Book Your Delivery"
         ctaLink="/book-now"
@@ -163,11 +163,11 @@ export default function Home() {
         <div className="container-custom">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className={`font-serif text-4xl md:text-5xl mb-4 ${mode === 'party' ? 'text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400' : 'text-navy-500'}`}>
-              {mode === 'party' ? 'Why Austin Goes WILD for Party On' : 'Why Austin Chooses Party On'}
+              {mode === 'party' ? 'Austin\'s ULTIMATE Party Powerhouse' : 'Why Austin Chooses Party On'}
             </h2>
             <p className={`font-sans text-lg ${mode === 'party' ? 'text-orange-200' : 'text-neutral-600'}`}>
               {mode === 'party' 
-                ? "We don't just deliver drinks - we deliver LEGENDARY experiences that Austin talks about FOREVER!" 
+                ? "We don't just deliver booze - we deliver PURE CHAOS, EPIC VIBES, and memories so WILD they become Austin LEGENDS!" 
                 : "We're not just another delivery service. We're your premium party partners, bringing the celebration to you with style and sophistication."
               }
             </p>
@@ -181,11 +181,11 @@ export default function Home() {
                 </svg>
               </div>
               <h3 className={`font-serif text-xl ${mode === 'party' ? 'text-orange-400' : 'text-navy-500'}`}>
-                {mode === 'party' ? 'LIGHTNING SPEED' : '30-Minute Delivery'}
+                {mode === 'party' ? 'WARP SPEED DELIVERY' : '30-Minute Delivery'}
               </h3>
               <p className={`font-sans text-sm ${mode === 'party' ? 'text-orange-200' : 'text-neutral-600'}`}>
                 {mode === 'party' 
-                  ? 'Faster than you can say PARTY TIME!' 
+                  ? 'We move at LUDICROUS SPEED! Drinks arrive before the beat drops!' 
                   : 'Fast, reliable service across Austin and Lake Travis'
                 }
               </p>
@@ -198,11 +198,11 @@ export default function Home() {
                 </svg>
               </div>
               <h3 className={`font-serif text-xl ${mode === 'party' ? 'text-pink-400' : 'text-navy-500'}`}>
-                {mode === 'party' ? 'BULLETPROOF LEGAL' : 'Licensed & Insured'}
+                {mode === 'party' ? 'LEGAL AF PROTECTION' : 'Licensed & Insured'}
               </h3>
               <p className={`font-sans text-sm ${mode === 'party' ? 'text-pink-200' : 'text-neutral-600'}`}>
                 {mode === 'party' 
-                  ? 'TABC certified with EPIC liability coverage' 
+                  ? 'BULLETPROOF permits so you can party FEARLESSLY!' 
                   : 'TABC certified with full liability coverage'
                 }
               </p>
@@ -215,11 +215,11 @@ export default function Home() {
                 </svg>
               </div>
               <h3 className={`font-serif text-xl ${mode === 'party' ? 'text-blue-400' : 'text-navy-500'}`}>
-                {mode === 'party' ? 'LEGENDARY SELECTION' : 'Premium Selection'}
+                {mode === 'party' ? 'INSANE PARTY ARSENAL' : 'Premium Selection'}
               </h3>
               <p className={`font-sans text-sm ${mode === 'party' ? 'text-blue-200' : 'text-neutral-600'}`}>
                 {mode === 'party' 
-                  ? 'Curated for MAXIMUM party potential!' 
+                  ? 'WEAPONIZED alcohol selection for MAXIMUM CHAOS!' 
                   : 'Curated spirits, craft cocktails, and local favorites'
                 }
               </p>
@@ -232,11 +232,11 @@ export default function Home() {
                 </svg>
               </div>
               <h3 className={`font-serif text-xl ${mode === 'party' ? 'text-yellow-400' : 'text-navy-500'}`}>
-                {mode === 'party' ? 'PARTY LEGENDS' : 'Professional Staff'}
+                {mode === 'party' ? 'HYPE SQUAD LEGENDS' : 'Professional Staff'}
               </h3>
               <p className={`font-sans text-sm ${mode === 'party' ? 'text-yellow-200' : 'text-neutral-600'}`}>
                 {mode === 'party' 
-                  ? 'Bartenders who bring the ENERGY!' 
+                  ? 'Our crew doesn\'t just serve drinks - they AMPLIFY THE MADNESS!' 
                   : 'Experienced bartenders and courteous delivery team'
                 }
               </p>
@@ -250,11 +250,11 @@ export default function Home() {
         <div className="container-custom">
           <div className="text-center max-w-3xl mx-auto mb-16">
             <h2 className={`font-serif text-4xl md:text-5xl mb-4 ${mode === 'party' ? 'text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-yellow-400 to-purple-400' : 'text-navy-500'}`}>
-              {mode === 'party' ? 'UNLEASH THE CHAOS' : 'Elevate Your Austin Experience'}
+              {mode === 'party' ? 'DEPLOY THE PARTY WEAPONS' : 'Elevate Your Austin Experience'}
             </h2>
             <p className={`font-sans text-lg ${mode === 'party' ? 'text-orange-300' : 'text-neutral-600'}`}>
               {mode === 'party' 
-                ? 'From WILD celebrations to LEGENDARY nights, we deliver MORE than drinks—we deliver EPIC MEMORIES!' 
+                ? 'These aren\'t just party packages - they\'re REALITY-WARPING experiences that turn Austin into your personal CHAOS KINGDOM!' 
                 : 'From intimate gatherings to grand celebrations, we deliver more than drinks—we deliver memories.'
               }
             </p>

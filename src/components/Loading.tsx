@@ -23,15 +23,15 @@ export default function Loading({
 
   const LoadingDots = () => (
     <div className="loading-dots">
-      <span className={`${sizes[size]} ${colors[color]} rounded-full animate-bounce`} />
-      <span className={`${sizes[size]} ${colors[color]} rounded-full animate-bounce`} style={{ animationDelay: '0.1s' }} />
-      <span className={`${sizes[size]} ${colors[color]} rounded-full animate-bounce`} style={{ animationDelay: '0.2s' }} />
+      <span className={`${sizes[size]} ${colors[color]} rounded-full opacity-75`} />
+      <span className={`${sizes[size]} ${colors[color]} rounded-full`} />
+      <span className={`${sizes[size]} ${colors[color]} rounded-full opacity-75`} />
     </div>
   )
 
   if (fullScreen) {
     return (
-      <div className="fixed inset-0 bg-white/90 backdrop-blur-sm flex items-center justify-center z-50">
+      <div className="fixed inset-0 bg-white/95 flex items-center justify-center z-50">
         <div className="text-center space-y-4">
           <LoadingDots />
           <p className="font-sans text-navy-500 font-medium">Loading...</p>

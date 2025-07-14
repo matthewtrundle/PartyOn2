@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import Hero from '@/components/Hero'
+import VideoHero from '@/components/VideoHero'
 import Section from '@/components/Section'
 
 export default function ProductsPage() {
@@ -95,11 +95,12 @@ export default function ProductsPage() {
   return (
     <>
       {/* Hero Section */}
-      <Hero
+      <VideoHero
         title="Browse Our Selection"
         subtitle="Premium Spirits, Local Favorites, Party Essentials"
         description="Austin's largest selection of alcohol delivered in 30 minutes"
-        backgroundImage="/images/products/premium-spirits-boutique.png"
+        videoSrc="/videos/backgrounds/boat-cooler.mp4"
+        fallbackImage="/images/products/premium-spirits-boutique.png"
         ctaText="Start Shopping"
         ctaLink="#products"
         height="medium"

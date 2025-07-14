@@ -211,7 +211,7 @@ export default function BachPartiesPage() {
         title={currentConfig.title}
         subtitle={currentConfig.subtitle}
         description={currentConfig.description}
-        videoSrc={mode === 'bachelor' ? "/videos/backgrounds/bachelor-party.mp4" : mode === 'bachelorette' ? "/videos/backgrounds/upscale-bachelorette.mp4" : "/videos/backgrounds/austin-party-setup.mp4"}
+        videoSrc={mode === 'bachelor' ? "/videos/backgrounds/bachelor-party.mp4" : mode === 'bachelorette' ? "/videos/backgrounds/bachelorette-party.mp4" : "/videos/backgrounds/austin-party-setup.mp4"}
         fallbackImage={currentConfig.backgroundImage}
         ctaText="Plan Your Party"
         ctaLink="/book-now"
