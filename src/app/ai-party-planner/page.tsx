@@ -4,6 +4,7 @@ import { useState, useRef } from 'react'
 import VideoHero from '@/components/VideoHero'
 import CTA from '@/components/CTA'
 import ExperienceSelector from '@/components/ExperienceSelector'
+import Image from 'next/image'
 
 type AIMode = 'refined' | 'wild'
 
@@ -18,35 +19,35 @@ export default function AIPartyPlanner() {
 
   const modeConfigs = {
     refined: {
-      title: "AI Party Planner",
-      subtitle: "Intelligent event planning powered by AI",
-      description: "Tell me about your celebration and I'll create a custom package",
+      title: "Meet Biff - Your AI Bartender",
+      subtitle: "Austin's Most Sophisticated Party Planning Intelligence",
+      description: "Advanced AI-powered event curation with deep Austin expertise and professional service standards",
       videoSrc: "/videos/hero/luxury-wedding.mp4",
-      placeholder: "Describe your event (e.g., 'Elegant wedding for 150 guests at sunset')",
+      placeholder: "Describe your event vision (e.g., 'Sophisticated rooftop wedding for 200 guests with Hill Country views')",
       thoughts: [
-        "Analyzing event requirements...",
-        "Considering venue acoustics and flow...",
-        "Calculating optimal bar placement...",
-        "Matching wine pairings to season...",
-        "Designing signature cocktails...",
-        "Estimating consumption patterns...",
-        "Finalizing premium selections..."
+        "Analyzing Austin venue compatibility...",
+        "Cross-referencing seasonal cocktail trends...",
+        "Calculating optimal service ratios...",
+        "Evaluating premium supplier networks...",
+        "Designing bespoke beverage programs...",
+        "Optimizing logistics for seamless execution...",
+        "Finalizing expert-level recommendations..."
       ]
     },
     wild: {
-      title: "WILD AI PARTY ARCHITECT",
-      subtitle: "CHAOS ENGINEERING FOR YOUR CELEBRATION",
-      description: "UNLEASH YOUR WILDEST PARTY DREAMS",
+      title: "BIFF UNLEASHED - AI PARTY ARCHITECT", 
+      subtitle: "MAXIMUM CHAOS ENGINEERING PROTOCOL ACTIVATED",
+      description: "LEGENDARY PARTY INTELLIGENCE WITH ZERO LIMITS AND AUSTIN ATTITUDE",
       videoSrc: "/social_biff01_Austin_music_festival_crowd_going_wild_stage_lights_cr_073e551a-07a8-4bc6-a593-dfd47c0472d1_1.mp4",
-      placeholder: "DESCRIBE YOUR EPIC PARTY VISION",
+      placeholder: "UNLEASH YOUR WILDEST PARTY VISION",
       thoughts: [
-        "CALCULATING MAXIMUM PARTY POTENTIAL...",
-        "DEPLOYING CHAOS ALGORITHMS...",
-        "AMPLIFYING VIBE FREQUENCIES...",
-        "WEAPONIZING THE DANCE FLOOR...",
-        "OPTIMIZING FOR LEGENDARY STATUS...",
-        "BREAKING ALL CONVENTIONAL LIMITS...",
-        "INITIATING PARTY APOCALYPSE..."
+        "SCANNING AUSTIN FOR MAXIMUM PARTY POTENTIAL...",
+        "DEPLOYING LEGENDARY EVENT PROTOCOLS...",
+        "CALCULATING EPIC SCALE POSSIBILITIES...",
+        "ACTIVATING NETWORK OF PARTY SPECIALISTS...",
+        "ENGINEERING UNFORGETTABLE EXPERIENCES...",
+        "MAXIMIZING CELEBRATION IMPACT VECTORS...",
+        "INITIATING LEGENDARY STATUS CONFIRMATION..."
       ]
     }
   }
@@ -61,37 +62,55 @@ export default function AIPartyPlanner() {
 
     // Simulate AI processing with thoughts
     for (let i = 0; i < currentConfig.thoughts.length; i++) {
-      await new Promise(resolve => setTimeout(resolve, 600))
+      await new Promise(resolve => setTimeout(resolve, 800))
       setAiThoughts(prev => [...prev, currentConfig.thoughts[i]])
       
-      // Auto-scroll thoughts container
       if (thoughtsRef.current) {
         thoughtsRef.current.scrollTop = thoughtsRef.current.scrollHeight
       }
     }
 
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    await new Promise(resolve => setTimeout(resolve, 1200))
     
-    // Generate response based on mode
+    // Generate sophisticated response
     const mockResponse = mode === 'refined' 
-      ? `Based on your requirements, I've crafted a bespoke package including:
+      ? `BIFF'S EXPERT ANALYSIS & RECOMMENDATIONS:
 
-• Premium bar service with certified mixologists
-• Curated wine selection featuring local Texas vineyards  
-• Signature cocktail menu inspired by your theme
-• Crystal glassware and gold-accented bar setup
-• Dedicated service captain for seamless execution
+VENUE OPTIMIZATION:
+• Strategic positioning for 150+ guests with Austin skyline backdrop
+• Climate-controlled beverage stations with premium glassware
+• Coordinated lighting to complement golden hour timing
 
-Investment: Starting at $2,499`
-      : `YOUR LEGENDARY PARTY BLUEPRINT IS READY:
+BEVERAGE PROGRAM:
+• Signature cocktails featuring local TX distilleries (Tito's, Deep Eddy)
+• Wine selection: Hill Country vintages + California imports
+• Premium bar setup with certified mixology team
 
-• UNLEASHED BAR EXPERIENCE WITH CHAOS SPECIALISTS
-• MIND-BENDING COCKTAIL EXPERIMENTS  
-• NEON-INFUSED DRINK STATIONS
-• PARTY AMPLIFICATION EQUIPMENT
-• REALITY-WARPING REFRESHMENT ZONES
+SERVICE EXECUTION:
+• 4-hour premium service with setup/breakdown included
+• Dedicated event coordinator for seamless operation
+• Emergency contingency protocols activated
 
-TOTAL CHAOS PACKAGE: $1,999 (LIMITED TIME)`
+INVESTMENT: $3,299 (includes all service, setup, premium selections)`
+
+      : `BIFF'S LEGENDARY PARTY BLUEPRINT:
+
+MAXIMUM IMPACT STRATEGY:
+• EPIC scale coordination for legendary Austin celebration
+• AMPLIFIED experiences that break conventional limits
+• REALITY-WARPING entertainment integration protocols
+
+PARTY ARSENAL DEPLOYMENT:
+• WEAPONIZED cocktail stations with extreme flavor profiles
+• AMPLIFIED sound integration with professional DJ coordination
+• LEGENDARY photo/video documentation for maximum social impact
+
+EXECUTION PARAMETERS:
+• ELITE party squad deployment (6+ specialists)
+• MAXIMUM coverage protocols (8+ hours)
+• LEGENDARY status guarantee with backup contingencies
+
+TOTAL INVESTMENT: $4,999 (LEGENDARY TIER PACKAGE)`
 
     setResponse(mockResponse)
     setIsProcessing(false)
@@ -112,11 +131,11 @@ TOTAL CHAOS PACKAGE: $1,999 (LIMITED TIME)`
         currentMode={mode}
         onModeChange={setMode}
         modeLabels={{
-          refined: 'Refined AI',
-          wild: 'Wild AI'
+          refined: 'Refined Intelligence',
+          wild: 'Wild Protocol'
         }}
         modeColors={{
-          refined: 'bg-gradient-to-r from-blue-600 to-purple-600',
+          refined: 'bg-gradient-to-r from-slate-600 to-slate-800',
           wild: 'bg-gradient-to-r from-red-600 via-orange-600 to-yellow-500'
         }}
         label="AI MODE"
@@ -134,228 +153,276 @@ TOTAL CHAOS PACKAGE: $1,999 (LIMITED TIME)`
         }
       />
 
-      {/* AI Interface Section */}
-      <section className={`relative py-20 ${mode === 'wild' ? 'bg-black' : 'bg-gradient-to-b from-gray-50 to-white'}`}>
-        {/* Animated background particles */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {[...Array(20)].map((_, i) => (
-            <div
-              key={i}
-              className={`absolute w-1 h-1 rounded-full ${
-                mode === 'wild' ? 'bg-orange-500' : 'bg-blue-500'
-              } opacity-20 animate-float`}
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                animationDelay: `${Math.random() * 5}s`,
-                animationDuration: `${15 + Math.random() * 10}s`
-              }}
-            />
-          ))}
+      {/* Main AI Interface */}
+      <section className={`relative py-24 ${mode === 'wild' ? 'bg-black' : 'bg-gradient-to-b from-slate-50 to-white'}`}>
+        <div className="absolute inset-0">
+          {/* Sophisticated background pattern */}
+          <div className={`absolute inset-0 ${mode === 'wild' ? 'opacity-10' : 'opacity-5'}`}>
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-transparent via-current to-transparent" />
+          </div>
         </div>
 
         <div className="container-custom relative z-10">
-          <div className="max-w-4xl mx-auto">
-            {/* Input Form */}
-            <form onSubmit={handleSubmit} className="mb-12">
-              <div className={`relative rounded-2xl overflow-hidden ${
-                mode === 'wild' 
-                  ? 'bg-gradient-to-r from-red-900/50 to-orange-900/50 p-1' 
-                  : 'bg-gradient-to-r from-blue-100 to-purple-100 p-1'
-              }`}>
-                <div className={`relative ${mode === 'wild' ? 'bg-black' : 'bg-white'} rounded-xl p-8`}>
-                  <textarea
-                    value={userInput}
-                    onChange={(e) => setUserInput(e.target.value)}
-                    placeholder={currentConfig.placeholder}
-                    rows={4}
-                    className={`w-full px-6 py-4 rounded-lg border-2 transition-all resize-none ${
-                      mode === 'wild'
-                        ? 'bg-gray-900 border-orange-500 text-orange-100 placeholder:text-orange-500/50 focus:border-yellow-500 focus:shadow-[0_0_20px_rgba(251,191,36,0.3)]'
-                        : 'bg-gray-50 border-gray-200 text-gray-800 placeholder:text-gray-400 focus:border-blue-500 focus:shadow-[0_0_20px_rgba(59,130,246,0.1)]'
-                    } focus:outline-none`}
-                    disabled={isProcessing}
-                  />
-                  
-                  <button
-                    type="submit"
-                    disabled={isProcessing || !userInput.trim()}
-                    className={`mt-6 w-full py-4 rounded-lg font-semibold transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 ${
-                      mode === 'wild'
-                        ? 'bg-gradient-to-r from-red-600 via-orange-600 to-yellow-500 text-white hover:shadow-[0_0_30px_rgba(251,191,36,0.5)]'
-                        : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:shadow-lg'
-                    }`}
-                  >
-                    {isProcessing ? (
-                      <span className="flex items-center justify-center">
-                        <svg className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                        </svg>
-                        Processing...
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
+            
+            {/* Left Column - AI Bartender */}
+            <div className="space-y-8">
+              <div className={`relative rounded-3xl overflow-hidden ${mode === 'wild' ? 'shadow-[0_0_50px_rgba(251,191,36,0.3)]' : 'shadow-2xl'}`}>
+                <div className={`absolute inset-0 ${mode === 'wild' ? 'bg-gradient-to-br from-red-900/20 to-orange-900/20' : 'bg-gradient-to-br from-slate-100/50 to-white/50'} backdrop-blur-sm`} />
+                <Image
+                  src="/biff01_an_AI_bartender_wearing_a_comboy_hat_like_a_cowboy_who_9d615e7e-3a4c-405f-b2d7-c79648bd0534_3.png"
+                  alt="Biff - AI Bartender"
+                  width={600}
+                  height={600}
+                  className="relative z-10 w-full h-auto"
+                />
+                <div className={`absolute bottom-0 left-0 right-0 p-8 ${mode === 'wild' ? 'bg-gradient-to-t from-black via-black/80 to-transparent' : 'bg-gradient-to-t from-white via-white/90 to-transparent'}`}>
+                  <h3 className={`text-2xl font-bold mb-2 ${mode === 'wild' ? 'text-orange-400' : 'text-slate-800'}`}>
+                    Meet Biff
+                  </h3>
+                  <p className={`${mode === 'wild' ? 'text-orange-200' : 'text-slate-600'}`}>
+                    {mode === 'wild' 
+                      ? 'Austin\'s Most Legendary AI Party Architect' 
+                      : 'Your Expert AI Event Planning Specialist'
+                    }
+                  </p>
+                </div>
+              </div>
+
+              {/* AI Capabilities */}
+              <div className={`p-8 rounded-2xl ${mode === 'wild' ? 'bg-gradient-to-br from-red-900/30 to-orange-900/30 border border-orange-500/30' : 'bg-white shadow-lg border border-slate-200'}`}>
+                <h4 className={`text-xl font-bold mb-6 ${mode === 'wild' ? 'text-orange-400' : 'text-slate-800'}`}>
+                  {mode === 'wild' ? 'LEGENDARY CAPABILITIES' : 'Expert Capabilities'}
+                </h4>
+                <div className="space-y-4">
+                  {(mode === 'wild' ? [
+                    'MAXIMUM party impact analysis',
+                    'LEGENDARY venue coordination', 
+                    'EPIC scale event logistics',
+                    'REALITY-WARPING experience design'
+                  ] : [
+                    'Advanced event requirement analysis',
+                    'Premium vendor network integration',
+                    'Sophisticated logistics coordination',
+                    'Bespoke experience curation'
+                  ]).map((capability, index) => (
+                    <div key={index} className="flex items-center space-x-3">
+                      <div className={`w-2 h-2 rounded-full ${mode === 'wild' ? 'bg-orange-500' : 'bg-slate-400'}`} />
+                      <span className={`${mode === 'wild' ? 'text-orange-200' : 'text-slate-600'}`}>
+                        {capability}
                       </span>
-                    ) : (
-                      mode === 'wild' ? 'UNLEASH THE AI' : 'Plan My Event'
-                    )}
-                  </button>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </form>
+            </div>
 
-            {/* AI Thoughts Display */}
-            {showThoughts && (
-              <div className={`mb-8 rounded-2xl overflow-hidden ${
-                mode === 'wild' 
-                  ? 'bg-gradient-to-r from-red-900/30 to-orange-900/30 p-1' 
-                  : 'bg-gradient-to-r from-blue-50 to-purple-50 p-1'
-              }`}>
-                <div className={`${mode === 'wild' ? 'bg-gray-900' : 'bg-white'} rounded-xl p-6`}>
-                  <h3 className={`text-sm font-mono mb-4 ${
-                    mode === 'wild' ? 'text-orange-400' : 'text-blue-600'
-                  }`}>
-                    AI PROCESSING THOUGHTS:
-                  </h3>
-                  <div 
-                    ref={thoughtsRef}
-                    className="max-h-40 overflow-y-auto space-y-2 scrollbar-hide"
-                  >
-                    {aiThoughts.map((thought, index) => (
-                      <div
-                        key={index}
-                        className={`text-sm font-mono animate-fade-in ${
-                          mode === 'wild' ? 'text-orange-300' : 'text-gray-600'
-                        }`}
-                        style={{ animationDelay: `${index * 0.1}s` }}
-                      >
-                        {'> '}{thought}
-                      </div>
-                    ))}
-                    {isProcessing && (
-                      <div className={`text-sm font-mono ${
-                        mode === 'wild' ? 'text-orange-400' : 'text-blue-500'
-                      }`}>
-                        <span className="inline-block animate-pulse">_</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Response Display */}
-            {response && !isProcessing && (
-              <div className={`rounded-2xl overflow-hidden animate-fade-in ${
-                mode === 'wild' 
-                  ? 'bg-gradient-to-r from-red-900/50 to-orange-900/50 p-1' 
-                  : 'bg-gradient-to-r from-blue-100 to-purple-100 p-1'
-              }`}>
-                <div className={`${mode === 'wild' ? 'bg-black' : 'bg-white'} rounded-xl p-8`}>
-                  <h3 className={`text-2xl font-bold mb-6 ${
-                    mode === 'wild' 
-                      ? 'text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-orange-400 to-yellow-400' 
-                      : 'text-gray-800'
-                  }`}>
-                    Your Custom Package
-                  </h3>
-                  <div className={`whitespace-pre-line ${
-                    mode === 'wild' ? 'text-orange-100' : 'text-gray-700'
-                  }`}>
-                    {response}
-                  </div>
-                  <div className="mt-8 flex gap-4">
-                    <button className={`px-6 py-3 rounded-lg font-semibold transition-all ${
-                      mode === 'wild'
-                        ? 'bg-gradient-to-r from-red-600 to-orange-600 text-white hover:shadow-[0_0_20px_rgba(251,191,36,0.4)]'
-                        : 'bg-blue-600 text-white hover:bg-blue-700'
+            {/* Right Column - Interface */}
+            <div className="space-y-8">
+              {/* Input Interface */}
+              <form onSubmit={handleSubmit}>
+                <div className={`relative rounded-2xl overflow-hidden ${
+                  mode === 'wild' 
+                    ? 'bg-gradient-to-r from-red-900/50 to-orange-900/50 p-1' 
+                    : 'bg-gradient-to-r from-slate-200 to-slate-300 p-1'
+                }`}>
+                  <div className={`relative ${mode === 'wild' ? 'bg-black' : 'bg-white'} rounded-xl p-8`}>
+                    <label className={`block text-sm font-semibold mb-4 ${
+                      mode === 'wild' ? 'text-orange-400' : 'text-slate-700'
                     }`}>
-                      Book This Package
-                    </button>
-                    <button 
-                      onClick={() => {
-                        setUserInput('')
-                        setResponse('')
-                        setShowThoughts(false)
-                        setAiThoughts([])
-                      }}
-                      className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+                      DESCRIBE YOUR EVENT VISION
+                    </label>
+                    <textarea
+                      value={userInput}
+                      onChange={(e) => setUserInput(e.target.value)}
+                      placeholder={currentConfig.placeholder}
+                      rows={5}
+                      className={`w-full px-6 py-4 rounded-lg border-2 transition-all resize-none ${
                         mode === 'wild'
-                          ? 'border-2 border-orange-500 text-orange-400 hover:bg-orange-500/10'
-                          : 'border-2 border-gray-300 text-gray-600 hover:bg-gray-50'
+                          ? 'bg-gray-900 border-orange-500/50 text-orange-100 placeholder:text-orange-500/50 focus:border-orange-400 focus:shadow-[0_0_20px_rgba(251,191,36,0.3)]'
+                          : 'bg-slate-50 border-slate-300 text-slate-800 placeholder:text-slate-400 focus:border-slate-500 focus:shadow-lg'
+                      } focus:outline-none`}
+                      disabled={isProcessing}
+                    />
+                    
+                    <button
+                      type="submit"
+                      disabled={isProcessing || !userInput.trim()}
+                      className={`mt-6 w-full py-4 rounded-lg font-semibold transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 ${
+                        mode === 'wild'
+                          ? 'bg-gradient-to-r from-red-600 via-orange-600 to-yellow-500 text-white hover:shadow-[0_0_30px_rgba(251,191,36,0.5)]'
+                          : 'bg-gradient-to-r from-slate-700 to-slate-900 text-white hover:shadow-lg'
                       }`}
                     >
-                      Start Over
+                      {isProcessing ? (
+                        <span className="flex items-center justify-center">
+                          <div className="animate-spin h-5 w-5 mr-3 border-2 border-white border-t-transparent rounded-full" />
+                          Processing Analysis...
+                        </span>
+                      ) : (
+                        mode === 'wild' ? 'ACTIVATE LEGENDARY PROTOCOL' : 'Initiate Expert Analysis'
+                      )}
                     </button>
                   </div>
                 </div>
-              </div>
-            )}
+              </form>
+
+              {/* AI Processing Thoughts */}
+              {showThoughts && (
+                <div className={`rounded-2xl overflow-hidden ${
+                  mode === 'wild' 
+                    ? 'bg-gradient-to-r from-red-900/30 to-orange-900/30 p-1' 
+                    : 'bg-gradient-to-r from-slate-100 to-slate-200 p-1'
+                }`}>
+                  <div className={`${mode === 'wild' ? 'bg-gray-900' : 'bg-white'} rounded-xl p-6`}>
+                    <h3 className={`text-sm font-mono font-bold mb-4 ${
+                      mode === 'wild' ? 'text-orange-400' : 'text-slate-600'
+                    }`}>
+                      BIFF PROCESSING STATUS:
+                    </h3>
+                    <div 
+                      ref={thoughtsRef}
+                      className="max-h-48 overflow-y-auto space-y-3 scrollbar-hide"
+                    >
+                      {aiThoughts.map((thought, index) => (
+                        <div
+                          key={index}
+                          className={`text-sm font-mono flex items-center space-x-3 animate-fade-in ${
+                            mode === 'wild' ? 'text-orange-300' : 'text-slate-600'
+                          }`}
+                          style={{ animationDelay: `${index * 0.1}s` }}
+                        >
+                          <div className={`w-2 h-2 rounded-full ${mode === 'wild' ? 'bg-orange-500' : 'bg-slate-400'} animate-pulse`} />
+                          <span>{thought}</span>
+                        </div>
+                      ))}
+                      {isProcessing && (
+                        <div className={`text-sm font-mono flex items-center space-x-3 ${
+                          mode === 'wild' ? 'text-orange-400' : 'text-slate-500'
+                        }`}>
+                          <div className={`w-2 h-2 rounded-full ${mode === 'wild' ? 'bg-orange-500' : 'bg-slate-400'} animate-ping`} />
+                          <span>Processing...</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Analysis Results */}
+              {response && !isProcessing && (
+                <div className={`rounded-2xl overflow-hidden animate-fade-in ${
+                  mode === 'wild' 
+                    ? 'bg-gradient-to-r from-red-900/50 to-orange-900/50 p-1' 
+                    : 'bg-gradient-to-r from-slate-200 to-slate-300 p-1'
+                }`}>
+                  <div className={`${mode === 'wild' ? 'bg-black' : 'bg-white'} rounded-xl p-8`}>
+                    <h3 className={`text-2xl font-bold mb-6 ${
+                      mode === 'wild' 
+                        ? 'text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-orange-400 to-yellow-400' 
+                        : 'text-slate-800'
+                    }`}>
+                      Expert Analysis Complete
+                    </h3>
+                    <div className={`whitespace-pre-line font-mono text-sm leading-relaxed ${
+                      mode === 'wild' ? 'text-orange-100' : 'text-slate-700'
+                    }`}>
+                      {response}
+                    </div>
+                    <div className="mt-8 flex gap-4">
+                      <button className={`px-8 py-3 rounded-lg font-semibold transition-all ${
+                        mode === 'wild'
+                          ? 'bg-gradient-to-r from-red-600 to-orange-600 text-white hover:shadow-[0_0_20px_rgba(251,191,36,0.4)]'
+                          : 'bg-slate-800 text-white hover:bg-slate-700'
+                      }`}>
+                        Proceed with This Plan
+                      </button>
+                      <button 
+                        onClick={() => {
+                          setUserInput('')
+                          setResponse('')
+                          setShowThoughts(false)
+                          setAiThoughts([])
+                        }}
+                        className={`px-8 py-3 rounded-lg font-semibold transition-all ${
+                          mode === 'wild'
+                            ? 'border-2 border-orange-500 text-orange-400 hover:bg-orange-500/10'
+                            : 'border-2 border-slate-300 text-slate-600 hover:bg-slate-50'
+                        }`}
+                      >
+                        New Analysis
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className={`py-20 ${mode === 'wild' ? 'bg-gradient-to-b from-black to-gray-900' : 'bg-white'}`}>
+      {/* Technical Specifications */}
+      <section className={`py-20 ${mode === 'wild' ? 'bg-gradient-to-b from-black to-gray-900' : 'bg-slate-100'}`}>
         <div className="container-custom">
           <div className="text-center mb-16">
             <h2 className={`text-4xl font-bold mb-4 ${
               mode === 'wild' 
                 ? 'text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-orange-400 to-yellow-400' 
-                : 'text-gray-800'
+                : 'text-slate-800'
             }`}>
-              {mode === 'wild' ? 'AI CAPABILITIES UNLEASHED' : 'How Our AI Works'}
+              {mode === 'wild' ? 'LEGENDARY AI ARCHITECTURE' : 'Advanced AI Architecture'}
             </h2>
+            <p className={`text-lg max-w-3xl mx-auto ${mode === 'wild' ? 'text-orange-200' : 'text-slate-600'}`}>
+              {mode === 'wild' 
+                ? 'Powered by LEGENDARY algorithms and Austin expertise networks for MAXIMUM party impact'
+                : 'Powered by sophisticated machine learning and extensive Austin hospitality networks'
+              }
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {(mode === 'wild' ? [
               {
-                icon: '🔥',
-                title: 'CHAOS CALCULATION',
-                description: 'Our AI measures party potential in GIGAWATTS of pure energy'
+                title: 'LEGENDARY PROCESSING',
+                description: 'MAXIMUM computational power for EPIC event analysis and coordination'
               },
               {
-                icon: '⚡',
-                title: 'VIBE AMPLIFICATION',
-                description: 'Machine learning algorithms that turn good times into LEGENDARY times'
+                title: 'NETWORK AMPLIFICATION', 
+                description: 'LEGENDARY vendor relationships and REALITY-WARPING logistics coordination'
               },
               {
-                icon: '🎯',
-                title: 'PRECISION MAYHEM',
-                description: 'Perfectly orchestrated chaos delivered with military precision'
+                title: 'PRECISION EXECUTION',
+                description: 'FLAWLESS delivery protocols with LEGENDARY status guarantees'
               }
             ] : [
               {
-                icon: '🧠',
-                title: 'Smart Analysis',
-                description: 'Our AI analyzes your event details to create the perfect beverage program'
+                title: 'Deep Learning Analysis',
+                description: 'Advanced pattern recognition for optimal event planning and resource allocation'
               },
               {
-                icon: '📊',
-                title: 'Data-Driven',
-                description: 'Leverages thousands of successful events to optimize your package'
+                title: 'Network Integration',
+                description: 'Seamless coordination with Austin\'s premium vendor and venue networks'
               },
               {
-                icon: '✨',
-                title: 'Personalized',
-                description: 'Every recommendation is tailored to your specific celebration'
+                title: 'Precision Execution',
+                description: 'Real-time optimization and quality assurance for flawless event delivery'
               }
-            ]).map((feature, index) => (
+            ]).map((spec, index) => (
               <div 
                 key={index}
                 className={`p-8 rounded-2xl text-center transition-all hover:scale-105 ${
                   mode === 'wild'
                     ? 'bg-gradient-to-br from-red-900/30 to-orange-900/30 border border-orange-500/30'
-                    : 'bg-gray-50 hover:shadow-lg'
+                    : 'bg-white shadow-lg hover:shadow-xl border border-slate-200'
                 }`}
               >
-                <div className="text-5xl mb-4">{feature.icon}</div>
-                <h3 className={`text-xl font-bold mb-3 ${
-                  mode === 'wild' ? 'text-orange-400' : 'text-gray-800'
+                <h3 className={`text-xl font-bold mb-4 ${
+                  mode === 'wild' ? 'text-orange-400' : 'text-slate-800'
                 }`}>
-                  {feature.title}
+                  {spec.title}
                 </h3>
-                <p className={mode === 'wild' ? 'text-orange-200' : 'text-gray-600'}>
-                  {feature.description}
+                <p className={mode === 'wild' ? 'text-orange-200' : 'text-slate-600'}>
+                  {spec.description}
                 </p>
               </div>
             ))}
@@ -365,10 +432,10 @@ TOTAL CHAOS PACKAGE: $1,999 (LIMITED TIME)`
 
       {/* CTA Section */}
       <CTA
-        title={mode === 'wild' ? "READY TO PARTY LIKE AN AI?" : "Experience AI-Powered Planning"}
+        title={mode === 'wild' ? "READY FOR LEGENDARY AI PARTY PLANNING?" : "Experience AI-Powered Event Excellence"}
         description={mode === 'wild' 
-          ? "Join the future of EPIC celebrations. Let our AI architect your LEGENDARY event!"
-          : "Join thousands who've discovered the perfect party package with our intelligent planning system."
+          ? "Let Biff architect your most LEGENDARY celebration. EPIC results guaranteed with Austin attitude."
+          : "Discover the future of sophisticated event planning with Biff's expert AI analysis and Austin expertise."
         }
         primaryButtonText="Start Planning"
         primaryButtonLink="#"
@@ -377,18 +444,6 @@ TOTAL CHAOS PACKAGE: $1,999 (LIMITED TIME)`
       />
 
       <style jsx>{`
-        @keyframes float {
-          0%, 100% {
-            transform: translateY(0) translateX(0);
-          }
-          33% {
-            transform: translateY(-20px) translateX(10px);
-          }
-          66% {
-            transform: translateY(10px) translateX(-10px);
-          }
-        }
-
         @keyframes fade-in {
           from {
             opacity: 0;
@@ -398,10 +453,6 @@ TOTAL CHAOS PACKAGE: $1,999 (LIMITED TIME)`
             opacity: 1;
             transform: translateY(0);
           }
-        }
-
-        .animate-float {
-          animation: float linear infinite;
         }
 
         .animate-fade-in {

@@ -81,36 +81,36 @@ export default function WeddingsPage() {
           link: "/book-now?package=platinum"
         }
       ]
-    } else if (mode === 'boho') {
+    } else if (mode === 'wild') {
       return [
         {
-          title: "Garden Party Vibes",
-          description: "Whimsical outdoor celebration with craft cocktails and natural beauty. Perfect for free spirits!",
+          title: "WILD CELEBRATION",
+          description: "Turn your wedding into the most EPIC party Austin has ever seen! Unleash your wild side with professional execution.",
           image: "/images/services/weddings/outdoor-bar-setup.png",
           features: [
-            "Craft cocktail mixologists",
-            "Botanical garnish bar",
-            "Rustic wooden bar setup",
-            "Local brewery partnerships",
-            "6-hour garden service"
+            "EPIC party bartenders",
+            "Signature WILD cocktails",
+            "Party games & activities",
+            "Dance floor domination",
+            "8-hour WILD service"
           ],
-          price: "$1,899",
-          link: "/book-now?package=garden",
+          price: "$2,899",
+          link: "/book-now?package=wild-celebration",
           featured: true
         },
         {
-          title: "Wild & Free",
-          description: "Unconventional celebration with artisanal spirits and creative cocktail presentations.",
+          title: "LEGENDARY WEDDING",
+          description: "The ultimate wedding party experience that breaks all the rules and creates Austin LEGENDS!",
           image: "/images/services/weddings/signature-cocktails-closeup.png",
           features: [
-            "Artisan spirit selection",
-            "Foraged cocktail ingredients",
-            "Vintage glassware collection",
-            "Bohemian bar styling",
-            "5-hour artistic service"
+            "LEGENDARY entertainment team",
+            "REALITY-WARPING experiences",
+            "MAXIMUM celebration energy",
+            "Professional CHAOS coordination",
+            "10-hour LEGENDARY service"
           ],
-          price: "$2,699",
-          link: "/book-now?package=wild"
+          price: "$4,999",
+          link: "/book-now?package=legendary"
         }
       ]
     } else {
@@ -180,13 +180,13 @@ export default function WeddingsPage() {
         button: "bg-gradient-to-r from-amber-600 to-gold-600 hover:from-amber-700 hover:to-gold-700",
         card: "bg-gradient-to-br from-amber-50/80 to-gold-50/80 border-amber-200"
       }
-    } else if (mode === 'boho') {
+    } else if (mode === 'wild') {
       return {
-        container: "bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50",
-        text: "text-emerald-700",
-        accent: "text-green-600",
-        button: "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700",
-        card: "bg-gradient-to-br from-green-50/80 to-emerald-50/80 border-green-200"
+        container: "bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50",
+        text: "text-red-700",
+        accent: "text-orange-600",
+        button: "bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700",
+        card: "bg-gradient-to-br from-red-50/80 to-orange-50/80 border-red-200"
       }
     } else {
       return {
@@ -237,32 +237,32 @@ export default function WeddingsPage() {
         <div className="max-w-4xl mx-auto space-y-8">
           <h2 className={`font-serif text-5xl ${styles.text}`}>
             {mode === 'luxury' ? 'Luxury Beyond Compare' : 
-             mode === 'boho' ? 'Love, Naturally Beautiful' : 
+             mode === 'wild' ? 'WILD LOVE, LEGENDARY CELEBRATION' : 
              'Your Love Story Deserves the Perfect Toast'}
           </h2>
           <p className={`font-sans text-xl leading-relaxed ${
             mode === 'luxury' ? 'text-amber-600' : 
-            mode === 'boho' ? 'text-emerald-600' : 
+            mode === 'wild' ? 'text-red-600' : 
             'text-neutral-600'
           }`}>
             {mode === 'luxury' 
               ? 'Experience the ultimate in wedding luxury with our exclusive concierge-level service. Every detail curated to perfection for Austin\'s most distinguished celebrations.'
-              : mode === 'boho'
-              ? 'Celebrate your love story in harmony with nature. Our bohemian wedding service embraces the free-spirited beauty of Austin\'s natural landscapes.'
+              : mode === 'wild'
+              ? 'Why settle for ordinary when you can have LEGENDARY? Turn your wedding into the wildest, most unforgettable celebration Austin has ever witnessed!'
               : 'At Party On Delivery, we understand that your wedding day is one of life\'s most precious moments. Our expert team brings years of experience serving Austin\'s most discerning couples, ensuring every detail of your bar service is as perfect as your love story.'
             }
           </p>
           <div className="flex justify-center gap-8 pt-8">
             <div className="text-center">
               <p className={`font-display text-6xl ${styles.accent}`}>
-                {mode === 'luxury' ? '50+' : mode === 'boho' ? '200+' : '500+'}
+                {mode === 'luxury' ? '50+' : mode === 'wild' ? '100+' : '500+'}
               </p>
               <p className={`font-sans ${
                 mode === 'luxury' ? 'text-amber-600' : 
                 mode === 'boho' ? 'text-emerald-600' : 
                 'text-neutral-600'
               }`}>
-                {mode === 'luxury' ? 'Luxury Weddings' : mode === 'boho' ? 'Boho Celebrations' : 'Weddings Served'}
+                {mode === 'luxury' ? 'Luxury Weddings' : mode === 'wild' ? 'WILD Celebrations' : 'Weddings Served'}
               </p>
             </div>
             <div className="text-center">
@@ -329,29 +329,29 @@ export default function WeddingsPage() {
       </section>
 
       {/* Packages Section */}
-      <Section className={mode === 'luxury' ? 'bg-amber-50' : mode === 'boho' ? 'bg-green-50' : ''}>
+      <Section className={mode === 'luxury' ? 'bg-amber-50' : mode === 'wild' ? 'bg-red-50' : ''}>
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className={`font-serif text-4xl md:text-5xl mb-4 ${styles.text}`}>
             {mode === 'luxury' ? 'Ultra-Luxury Packages' : 
-             mode === 'boho' ? 'Bohemian Wedding Packages' : 
+             mode === 'wild' ? 'WILD Wedding Packages' : 
              'Wedding Bar Packages'}
           </h2>
           <p className={`font-sans text-lg ${
             mode === 'luxury' ? 'text-amber-600' : 
-            mode === 'boho' ? 'text-emerald-600' : 
+            mode === 'wild' ? 'text-red-600' : 
             'text-neutral-600'
           }`}>
             {mode === 'luxury' 
               ? 'Exclusive luxury experiences for the most discerning couples'
-              : mode === 'boho'
-              ? 'Free-spirited packages celebrating natural beauty and artisanal craft'
+              : mode === 'wild'
+              ? 'LEGENDARY wedding experiences that break all the rules and create Austin history!'
               : 'Thoughtfully crafted packages to match your vision and guest count'
             }
           </p>
         </div>
 
         <div className={`grid gap-8 ${
-          mode === 'luxury' || mode === 'boho' ? 'grid-cols-1 lg:grid-cols-2 max-w-4xl mx-auto' : 'grid-cols-1 lg:grid-cols-3'
+          mode === 'luxury' || mode === 'wild' ? 'grid-cols-1 lg:grid-cols-2 max-w-4xl mx-auto' : 'grid-cols-1 lg:grid-cols-3'
         }`}>
           {getWeddingPackages().map((pkg, index) => (
             <div key={pkg.title} className="animate-fade-up" style={{ animationDelay: `${index * 0.1}s` }}>
@@ -512,16 +512,16 @@ export default function WeddingsPage() {
       {/* CTA Section */}
       <CTA
         title={mode === 'luxury' ? 'Ready for Ultimate Luxury?' : 
-               mode === 'boho' ? 'Ready to Embrace Your Wild Side?' : 
+               mode === 'wild' ? 'Ready to Embrace Your Wild Side?' : 
                'Ready to Start Planning?'}
         description={mode === 'luxury' 
           ? 'Experience the pinnacle of wedding luxury. Schedule a private consultation with our luxury wedding specialists.'
-          : mode === 'boho'
-          ? 'Let\'s create a beautifully unconventional celebration that reflects your free spirit and love story.'
+          : mode === 'wild'
+          ? 'Let\'s create the most LEGENDARY wedding celebration Austin has ever seen! Book your WILD wedding experience today.'
           : 'Let\'s create the perfect bar experience for your wedding day. Schedule a consultation with our wedding specialists today.'
         }
         primaryButtonText={mode === 'luxury' ? 'Book Luxury Consultation' : 
-                          mode === 'boho' ? 'Plan My Boho Wedding' : 
+                          mode === 'wild' ? 'Plan My WILD Wedding' : 
                           'Schedule Consultation'}
         primaryButtonLink="/book-now?service=wedding"
         secondaryButtonText="Download Wedding Guide"
