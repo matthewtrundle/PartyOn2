@@ -345,7 +345,7 @@ export default function BachPartiesPage() {
                     href={pkg.link}
                     className={`${styles.button} text-white px-6 py-3 rounded-full font-semibold transition-all hover:scale-105`}
                   >
-                    {mode === 'bachelor' ? &apos;LET&apos;S GO!&apos; : mode === 'bachelorette' ? &apos;Book Royal Treatment&apos; : &apos;Book Now&apos;}
+                    {mode === 'bachelor' ? "LET'S GO!" : mode === 'bachelorette' ? 'Book Royal Treatment' : 'Book Now'}
                   </a>
                 </div>
               </div>

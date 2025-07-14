@@ -324,11 +324,11 @@ export default function BookNowPage() {
                 type="submit"
                 className="btn-primary px-12 py-4 text-lg"
               >
-                {activeTab === 'delivery' ? &apos;Continue to Products&apos; : &apos;Request Quote&apos;}
+                {activeTab === 'delivery' ? 'Continue to Products' : 'Request Quote'}
               </button>
               <p className="mt-4 text-sm text-neutral-600">
                 {activeTab === 'delivery' 
-                  ? &apos;You&apos;ll be able to browse and add products on the next page&apos;
+                  ? "You'll be able to browse and add products on the next page"
                   : 'We\'ll contact you within 2 hours with a custom quote'
                 }
               </p>
