@@ -176,7 +176,7 @@ export default function BachPartiesPage() {
   }
 
   return (
-    <div className={`min-h-screen transition-all duration-500 ${isAnimating ? 'opacity-50' : 'opacity-100'}`}>
+    <div className="min-h-screen transition-all duration-500">
       {/* Experience Selector */}
       <ExperienceSelector
         modes={['normal', 'bachelor', 'bachelorette'] as const}
