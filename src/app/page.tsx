@@ -14,7 +14,7 @@ export default function Home() {
 
   const modeConfigs = {
     normal: {
-      title: "Austin&apos;s Premier Party Delivery",
+      title: "Austin's Premier Party Delivery",
       subtitle: "From Lake Travis to Downtown",
       description: "ORDER 72 HOURS IN ADVANCE • Premium alcohol delivery • Licensed & insured • Ready to make your event unforgettable",
       backgroundImage: "/images/hero/austin-skyline-hero.png",
