@@ -30,6 +30,16 @@ export default function VideoHero({
   const [videoLoaded, setVideoLoaded] = useState(false)
   const [videoError, setVideoError] = useState(false)
   const [isVisible, setIsVisible] = useState(false)
+  
+  // Debug logging
+  useEffect(() => {
+    console.log('VideoHero Debug:', {
+      videoSrc,
+      videoLoaded,
+      videoError,
+      isVisible
+    })
+  }, [videoSrc, videoLoaded, videoError, isVisible])
   const videoRef = useRef<HTMLVideoElement>(null)
   const sectionRef = useRef<HTMLDivElement>(null)
   
@@ -79,10 +89,11 @@ export default function VideoHero({
           className={`absolute inset-0 w-full h-full object-cover ${
             videoLoaded ? 'opacity-100' : 'opacity-0'
           }`}
+          autoPlay
           loop
           muted
           playsInline
-          preload="none"
+          preload="auto"
           onLoadedData={() => setVideoLoaded(true)}
           onError={() => setVideoError(true)}
         >
