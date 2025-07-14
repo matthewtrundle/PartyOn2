@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     if (!OPENROUTER_API_KEY) {
       console.warn('OpenRouter API key not found, using fallback response')
       return NextResponse.json({
-        content: getFallbackResponse(mode, messages[messages.length - 1]?.content || '')
+        content: getFallbackResponse(mode)
       })
     }
 
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     const lastMessage = messages[messages.length - 1]?.content || ''
     
     return NextResponse.json({
-      content: getFallbackResponse(mode, lastMessage)
+      content: getFallbackResponse(mode)
     })
   }
 }
@@ -103,7 +103,7 @@ ELEGANT MODE: Sophisticated and refined tone. Focus on premium experiences, luxu
   }
 }
 
-function getFallbackResponse(mode: string, userMessage: string): string {
+function getFallbackResponse(mode: string): string {
   const responses = {
     bachelor: [
       "LEGEND! I'd love to help you plan an EPIC bachelor party! Our packages start at $499 for the ultimate Austin experience. Call (512) 555-0123 to book your legendary night!",

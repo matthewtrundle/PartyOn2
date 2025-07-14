@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import Hero from '@/components/Hero'
 import VideoHero from '@/components/VideoHero'
 import ServiceCard from '@/components/ServiceCard'
 import CTA from '@/components/CTA'
@@ -18,7 +17,7 @@ export default function WeddingsPage() {
   const modeConfigs = {
     elegant: {
       title: "Elevate Your Wedding Day",
-      subtitle: "Premium Bar Service for Austin's Most Beautiful Celebrations",
+      subtitle: "Premium Bar Service for Austin&apos;s Most Beautiful Celebrations",
       description: "From intimate Hill Country ceremonies to grand Lake Travis receptions, we bring sophistication and style to your special day.",
       backgroundImage: "/images/services/weddings/outdoor-bar-setup.png",
       theme: "elegant"
@@ -460,7 +459,7 @@ export default function WeddingsPage() {
       <Section>
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="font-serif text-4xl md:text-5xl text-navy-500 mb-4">
-            Preferred at Austin's Finest Venues
+            Preferred at Austin&apos;s Finest Venues
           </h2>
           <p className="font-sans text-lg text-neutral-600">
             Trusted by the most prestigious wedding venues in the Austin area

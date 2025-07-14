@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, memo } from 'react'
+import { memo } from 'react'
 
 interface ExperienceSelectorProps<T extends string> {
   modes: T[]

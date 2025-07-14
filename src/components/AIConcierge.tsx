@@ -19,7 +19,7 @@ export default function AIConcierge({ mode = 'normal' }: AIConciergeProps) {
     {
       id: '1',
       role: 'assistant',
-      content: "Hey there! I'm your Party On AI Concierge! I can help you plan the perfect Austin party, recommend packages, or answer any questions about our services. What kind of celebration are you planning?",
+      content: "Hey there! I&apos;m your Party On AI Concierge! I can help you plan the perfect Austin party, recommend packages, or answer any questions about our services. What kind of celebration are you planning?",
       timestamp: new Date()
     }
   ])
@@ -96,7 +96,6 @@ export default function AIConcierge({ mode = 'normal' }: AIConciergeProps) {
     }
   }
 
-  const styles = getModeStyles()
 
   const sendMessage = async () => {
     if (!inputMessage.trim() || isLoading) return
@@ -142,12 +141,12 @@ export default function AIConcierge({ mode = 'normal' }: AIConciergeProps) {
       }
 
       setMessages(prev => [...prev, assistantMessage])
-    } catch (error) {
+    } catch {
       // Fallback response for now
       const fallbackMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: "I'm having trouble connecting right now, but I'd love to help you plan your Austin party! Feel free to call us at (512) 555-0123 or book directly through our website. What kind of celebration are you planning?",
+        content: "I&apos;m having trouble connecting right now, but I&apos;d love to help you plan your Austin party! Feel free to call us at (512) 555-0123 or book directly through our website. What kind of celebration are you planning?",
         timestamp: new Date()
       }
       setMessages(prev => [...prev, fallbackMessage])
@@ -163,20 +162,6 @@ export default function AIConcierge({ mode = 'normal' }: AIConciergeProps) {
     }
   }
 
-  const getModeGreeting = () => {
-    switch (mode) {
-      case 'bachelor':
-        return "LEGEND! Ready to plan the most EPIC bachelor party Austin has ever seen? Let's GO!"
-      case 'bachelorette':
-        return "Hey Queen! Ready to plan the most FABULOUS bachelorette party? Let's make you feel like royalty!"
-      case 'party':
-        return "PARTY TIME! Let's turn your celebration up to 11! What's the vibe you're going for?"
-      case 'elegant':
-        return "Welcome! I'm here to help you create an elegant, sophisticated celebration. How may I assist you today?"
-      default:
-        return "Hey there! I'm your Party On AI Concierge! Ready to plan something amazing?"
-    }
-  }
 
   return (
     <>
@@ -292,8 +277,8 @@ export default function AIConcierge({ mode = 'normal' }: AIConciergeProps) {
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder={
-                  mode === 'bachelor' ? "What's the plan, legend?" :
-                  mode === 'bachelorette' ? "What's the dream, queen?" :
+                  mode === 'bachelor' ? "What&apos;s the plan, legend?" :
+                  mode === 'bachelorette' ? "What&apos;s the dream, queen?" :
                   "Ask me anything about your party..."
                 }
                 className="flex-1 px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm 

@@ -1,9 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import Hero from '@/components/Hero'
+import { useState } from 'react'
 import VideoHero from '@/components/VideoHero'
-import ServiceCard from '@/components/ServiceCard'
 import CTA from '@/components/CTA'
 import Section from '@/components/Section'
 import AIConcierge from '@/components/AIConcierge'
@@ -18,7 +16,7 @@ export default function BachPartiesPage() {
   const modeConfigs = {
     normal: {
       title: "Bach Party Planning Made Easy",
-      subtitle: "Premium Parties for Austin's Best Celebrations",
+      subtitle: "Premium Parties for Austin&apos;s Best Celebrations",
       description: "Professional service for unforgettable bachelor and bachelorette parties across Austin.",
       backgroundImage: "/images/hero/neon-nights-hero.jpg",
       primaryColor: "gold",
@@ -61,7 +59,7 @@ export default function BachPartiesPage() {
       return [
         {
           title: "BOYS NIGHT OUT",
-          description: "Epic night package for the crew. Austin's wildest spots await!",
+          description: "Epic night package for the crew. Austin&apos;s wildest spots await!",
           image: "/images/backgrounds/chic-austin-airbnb.png",
           features: [
             "Pre-game supplies delivered",
@@ -93,7 +91,7 @@ export default function BachPartiesPage() {
       return [
         {
           title: "BRIDE TRIBE VIBES",
-          description: "Champagne dreams and Austin scenes for the perfect girls' weekend!",
+          description: "Champagne dreams and Austin scenes for the perfect girls&apos; weekend!",
           image: "/images/gallery/sunset-champagne-pontoon.png",
           features: [
             "Champagne & prosecco bar",
@@ -228,7 +226,7 @@ export default function BachPartiesPage() {
               </h2>
               <p className="font-sans text-2xl text-orange-400 leading-relaxed">
                 Time to make some BAD DECISIONS and GOOD MEMORIES! 
-                Austin's wildest bachelor party experience awaits the crew.
+                Austin&apos;s wildest bachelor party experience awaits the crew.
               </p>
               <div className="flex flex-wrap justify-center gap-4 pt-8">
                 <div className="bg-red-900/50 px-8 py-4 rounded-full shadow-md border border-red-500">
@@ -251,7 +249,7 @@ export default function BachPartiesPage() {
               </h2>
               <p className="font-sans text-2xl text-pink-600 leading-relaxed">
                 Sparkle, sip, and celebrate like the QUEENS you are! 
-                Austin's most fabulous bachelorette experience awaits your royal court.
+                Austin&apos;s most fabulous bachelorette experience awaits your royal court.
               </p>
               <div className="flex flex-wrap justify-center gap-4 pt-8">
                 <div className="bg-pink-100 px-8 py-4 rounded-full shadow-md border-2 border-pink-300">
@@ -270,7 +268,7 @@ export default function BachPartiesPage() {
           {mode === 'normal' && (
             <>
               <h2 className="font-display text-6xl text-navy-500">
-                LET'S GET THIS PARTY STARTED
+                LET&apos;S GET THIS PARTY STARTED
               </h2>
               <p className="font-sans text-xl text-neutral-600 leading-relaxed">
                 Your last hurrah deserves the best. Party On Delivery brings premium bar service 
@@ -282,7 +280,7 @@ export default function BachPartiesPage() {
                   <p className="font-display text-2xl text-navy-500">BRIDE TRIBE</p>
                 </div>
                 <div className="bg-white px-6 py-3 rounded-full shadow-md border border-gold-200">
-                  <p className="font-display text-2xl text-navy-500">GROOM'S CREW</p>
+                  <p className="font-display text-2xl text-navy-500">GROOM&apos;S CREW</p>
                 </div>
                 <div className="bg-white px-6 py-3 rounded-full shadow-md border border-gold-200">
                   <p className="font-display text-2xl text-navy-500">PARTY PROS</p>
@@ -302,7 +300,7 @@ export default function BachPartiesPage() {
           <p className={`font-sans text-lg ${mode === 'bachelor' ? 'text-orange-300' : mode === 'bachelorette' ? 'text-pink-600' : 'text-neutral-600'}`}>
             {mode === 'bachelor' ? 'From wild to absolutely legendary' : 
              mode === 'bachelorette' ? 'From fabulous to absolutely royal' : 
-             'From chill to wild, we\'ve got your celebration covered'}
+             &apos;From chill to wild, we&apos;ve got your celebration covered&apos;}
           </p>
         </div>
 
@@ -347,7 +345,7 @@ export default function BachPartiesPage() {
                     href={pkg.link}
                     className={`${styles.button} text-white px-6 py-3 rounded-full font-semibold transition-all hover:scale-105`}
                   >
-                    {mode === 'bachelor' ? 'LET\'S GO!' : mode === 'bachelorette' ? 'Book Royal Treatment' : 'Book Now'}
+                    {mode === 'bachelor' ? &apos;LET&apos;S GO!&apos; : mode === 'bachelorette' ? &apos;Book Royal Treatment&apos; : &apos;Book Now&apos;}
                   </a>
                 </div>
               </div>
@@ -363,7 +361,7 @@ export default function BachPartiesPage() {
                "Ready to Party?"}
         description={mode === 'bachelor' ? "Book the most epic bachelor party Austin has ever seen. Your crew will thank you forever!" :
                     mode === 'bachelorette' ? "Book the most fabulous bachelorette party fit for Austin royalty!" :
-                    "Let's make your bach party legendary. Book Austin's favorite party delivery service!"}
+                    "Let&apos;s make your bach party legendary. Book Austin&apos;s favorite party delivery service!"}
         primaryButtonText={mode === 'bachelor' ? "BOOK EPIC PARTY" : 
                           mode === 'bachelorette' ? "Book Royal Treatment" : 
                           "Start Planning"}

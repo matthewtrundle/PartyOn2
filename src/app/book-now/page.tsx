@@ -50,8 +50,8 @@ export default function BookNowPage() {
       {/* Epic Video Hero */}
       <VideoHero
         title="Book Your Party On Experience"
-        subtitle="Let's Make It Legendary"
-        description="Fast delivery or full-service events - we've got you covered"
+        subtitle="Let&apos;s Make It Legendary"
+        description="Fast delivery or full-service events - we&apos;ve got you covered"
         videoSrc="/videos/backgrounds/upscale-bachelorette.mp4"
         fallbackImage="/images/hero/neon-nights-hero.jpg"
         height="medium"
@@ -324,11 +324,11 @@ export default function BookNowPage() {
                 type="submit"
                 className="btn-primary px-12 py-4 text-lg"
               >
-                {activeTab === 'delivery' ? 'Continue to Products' : 'Request Quote'}
+                {activeTab === 'delivery' ? &apos;Continue to Products&apos; : &apos;Request Quote&apos;}
               </button>
               <p className="mt-4 text-sm text-neutral-600">
                 {activeTab === 'delivery' 
-                  ? 'You\'ll be able to browse and add products on the next page'
+                  ? &apos;You&apos;ll be able to browse and add products on the next page&apos;
                   : 'We\'ll contact you within 2 hours with a custom quote'
                 }
               </p>

@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import Hero from '@/components/Hero'
 import VideoHero from '@/components/VideoHero'
 import ServiceCard from '@/components/ServiceCard'
 import CTA from '@/components/CTA'
@@ -15,7 +14,7 @@ export default function Home() {
 
   const modeConfigs = {
     normal: {
-      title: "Austin's Premier Party Delivery",
+      title: "Austin&apos;s Premier Party Delivery",
       subtitle: "From Lake Travis to Downtown",
       description: "ORDER 72 HOURS IN ADVANCE • Premium alcohol delivery • Licensed & insured • Ready to make your event unforgettable",
       backgroundImage: "/images/hero/austin-skyline-hero.png",
@@ -110,7 +109,7 @@ export default function Home() {
         },
         {
           title: "Corporate Events",
-          description: "Impress clients and celebrate success with our corporate event packages. Professional service for Austin's business elite.",
+          description: "Impress clients and celebrate success with our corporate event packages. Professional service for Austin&apos;s business elite.",
           image: "/images/services/corporate/penthouse-suite-setup.png",
           features: [
             "Executive bar service",
@@ -167,8 +166,8 @@ export default function Home() {
             </h2>
             <p className={`font-sans text-lg ${mode === 'party' ? 'text-orange-200' : 'text-neutral-600'}`}>
               {mode === 'party' 
-                ? "We don't just deliver booze - we deliver PURE CHAOS, EPIC VIBES, and memories so WILD they become Austin LEGENDS!" 
-                : "We're not just another delivery service. We're your premium party partners, bringing the celebration to you with style and sophistication."
+                ? "We don&apos;t just deliver booze - we deliver PURE CHAOS, EPIC VIBES, and memories so WILD they become Austin LEGENDS!" 
+                : "We&apos;re not just another delivery service. We&apos;re your premium party partners, bringing the celebration to you with style and sophistication."
               }
             </p>
           </div>
@@ -276,7 +275,7 @@ export default function Home() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-6">
               <h2 className="font-serif text-4xl md:text-5xl text-navy-500">
-                Proudly Serving Austin's Best Neighborhoods
+                Proudly Serving Austin&apos;s Best Neighborhoods
               </h2>
               <p className="font-sans text-lg text-neutral-600 leading-relaxed">
                 From the vibrant streets of South Congress to the serene shores of Lake Travis, 
@@ -345,8 +344,8 @@ export default function Home() {
                 ))}
               </div>
               <p className="font-sans text-neutral-600 mb-4 italic">
-                "Party On saved our wedding! When our original bar service cancelled last minute, 
-                they stepped in with premium service that our guests are still talking about."
+                &quot;Party On saved our wedding! When our original bar service cancelled last minute, 
+                they stepped in with premium service that our guests are still talking about.&quot;
               </p>
               <p className="font-sans font-semibold text-navy-500">Sarah & Mike</p>
               <p className="font-sans text-sm text-neutral-500">Westlake Wedding</p>
@@ -361,8 +360,8 @@ export default function Home() {
                 ))}
               </div>
               <p className="font-sans text-neutral-600 mb-4 italic">
-                "Best boat party ever! They delivered right to our dock with ice-cold drinks 
-                and even helped us load the coolers. True Austin hospitality!"
+                &quot;Best boat party ever! They delivered right to our dock with ice-cold drinks 
+                and even helped us load the coolers. True Austin hospitality!&quot;
               </p>
               <p className="font-sans font-semibold text-navy-500">Jake Thompson</p>
               <p className="font-sans text-sm text-neutral-500">Lake Travis Party</p>
@@ -377,8 +376,8 @@ export default function Home() {
                 ))}
               </div>
               <p className="font-sans text-neutral-600 mb-4 italic">
-                "Professional, punctual, and perfect! Used them for our SXSW corporate event. 
-                The custom cocktail menu was a huge hit with our clients."
+                &quot;Professional, punctual, and perfect! Used them for our SXSW corporate event. 
+                The custom cocktail menu was a huge hit with our clients.&quot;
               </p>
               <p className="font-sans font-semibold text-navy-500">Amanda Chen</p>
               <p className="font-sans text-sm text-neutral-500">Tech Company Event</p>
@@ -392,7 +391,7 @@ export default function Home() {
         title={mode === 'party' ? "READY TO GO ABSOLUTELY WILD?" : "Ready to Party On?"}
         description={mode === 'party' 
           ? "Join thousands of Austin LEGENDS who trust us with their EPIC celebrations. Book your LEGENDARY delivery today!"
-          : "Join thousands of satisfied Austinites who trust us with their celebrations. Book your premium delivery today and let's make memories!"
+          : "Join thousands of satisfied Austinites who trust us with their celebrations. Book your premium delivery today and let&apos;s make memories!"
         }
         primaryButtonText="Book Your Delivery"
         primaryButtonLink="/book-now"

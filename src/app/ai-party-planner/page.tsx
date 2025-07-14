@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useRef } from 'react'
 import VideoHero from '@/components/VideoHero'
 import CTA from '@/components/CTA'
 import ExperienceSelector from '@/components/ExperienceSelector'

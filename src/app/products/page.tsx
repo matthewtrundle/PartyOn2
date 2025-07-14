@@ -98,7 +98,7 @@ export default function ProductsPage() {
       <VideoHero
         title="Browse Our Selection"
         subtitle="Premium Spirits, Local Favorites, Party Essentials"
-        description="Austin's largest selection of alcohol delivered in 30 minutes"
+        description="Austin&apos;s largest selection of alcohol delivered in 30 minutes"
         videoSrc="/videos/backgrounds/boat-cooler.mp4"
         fallbackImage="/images/products/premium-spirits-boutique.png"
         ctaText="Start Shopping"
@@ -184,7 +184,7 @@ export default function ProductsPage() {
             Full Catalog Coming Soon
           </h3>
           <p className="font-sans text-neutral-600 max-w-2xl mx-auto">
-            We're integrating with Shopify to bring you real-time inventory, pricing, and checkout. 
+            We&apos;re integrating with Shopify to bring you real-time inventory, pricing, and checkout. 
             In the meantime, call us at (512) 555-0123 to place your order!
           </p>
         </div>

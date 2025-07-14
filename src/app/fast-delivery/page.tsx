@@ -1,4 +1,3 @@
-import Hero from '@/components/Hero'
 import VideoHero from '@/components/VideoHero'
 import ServiceCard from '@/components/ServiceCard'
 import CTA from '@/components/CTA'
@@ -73,7 +72,7 @@ export default function FastDeliveryPage() {
     <>
       {/* Hero Section */}
       <VideoHero
-        title="Austin's Fastest Alcohol Delivery"
+        title="Austin&apos;s Fastest Alcohol Delivery"
         subtitle="Cold Drinks, Hot Speed"
         description="Premium spirits, craft beer, and fine wine delivered to your door in 30 minutes or less. Track your order in real-time."
         videoSrc="/social_biff01_Austin_music_festival_crowd_going_wild_stage_lights_cr_073e551a-07a8-4bc6-a593-dfd47c0472d1_1.mp4"
@@ -200,7 +199,7 @@ export default function FastDeliveryPage() {
       <Section>
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="font-serif text-4xl md:text-5xl text-navy-500 mb-4">
-            Austin's Favorites
+            Austin&apos;s Favorites
           </h2>
           <p className="font-sans text-lg text-neutral-600">
             Most ordered items ready for quick delivery
@@ -373,7 +372,7 @@ export default function FastDeliveryPage() {
 
       {/* CTA Section */}
       <CTA
-        title="Thirsty? We're Already On Our Way"
+        title="Thirsty? We&apos;re Already On Our Way"
         description="Join thousands of Austinites who rely on Party On for fast, reliable alcohol delivery. Your first delivery fee is on us!"
         primaryButtonText="Order Now - First Delivery Free"
         primaryButtonLink="/order-now"
