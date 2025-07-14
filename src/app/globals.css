@@ -1,26 +1,176 @@
-@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;700;900&family=Bebas+Neue&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #ffffff;
+    --foreground: #171717;
+    
+    /* Premium color variables */
+    --color-gold: #F5B800;
+    --color-gold-light: #FFCC33;
+    --color-navy: #002147;
+    --color-navy-light: #334E87;
+    --color-austin-sunset: #FF6B35;
+    --color-austin-lake: #18C0D6;
+    
+    /* Spacing rhythm */
+    --spacing-unit: 8px;
+  }
+
+  * {
+    @apply border-neutral-200;
+  }
+  
+  body {
+    @apply bg-white text-neutral-900;
+    font-feature-settings: "kern" 1;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Typography defaults */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif font-bold tracking-tight;
+  }
+
+  /* Premium link styling */
+  a {
+    @apply transition-colors duration-300;
+  }
+
+  /* Focus states for accessibility */
+  *:focus {
+    @apply outline-none ring-2 ring-gold-500 ring-offset-2;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 12px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-neutral-100;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gold-500 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gold-600;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  /* Premium button base styles */
+  .btn {
+    @apply inline-flex items-center justify-center px-6 py-3 font-sans font-semibold 
+           transition-all duration-300 rounded-full focus:outline-none focus:ring-2 
+           focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply btn bg-gradient-to-r from-gold-500 to-gold-400 text-white hover:shadow-lg 
+           focus:ring-gold-500 active:scale-95;
+  }
+
+  .btn-secondary {
+    @apply btn bg-gradient-to-r from-navy-500 to-navy-400 text-white hover:shadow-lg 
+           focus:ring-navy-500 active:scale-95;
+  }
+
+  .btn-outline {
+    @apply btn border-2 border-gold-500 text-gold-500 hover:bg-gold-500 
+           hover:text-white focus:ring-gold-500;
+  }
+
+  /* Premium card styles */
+  .card {
+    @apply bg-white rounded-2xl shadow-lg p-8 transition-all duration-300
+           hover:shadow-xl hover:-translate-y-1;
+  }
+
+  /* Hero overlay styles */
+  .hero-overlay {
+    @apply absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-transparent;
+  }
+
+  /* Section padding rhythm */
+  .section-padding {
+    @apply py-20 md:py-28 lg:py-32;
+  }
+
+  /* Container with max width */
+  .container-custom {
+    @apply container mx-auto px-6 md:px-8 lg:px-12 max-w-7xl;
+  }
+
+  /* Text gradient effect */
+  .text-gradient-gold {
+    @apply bg-gradient-to-r from-gold-500 to-gold-400 bg-clip-text text-transparent;
+  }
+
+  /* Premium input styles */
+  .input-premium {
+    @apply w-full px-4 py-3 border-2 border-neutral-200 rounded-lg
+           focus:border-gold-500 focus:ring-0 transition-colors duration-200
+           placeholder:text-neutral-400;
+  }
+
+  /* Loading animation */
+  .loading-dots {
+    @apply inline-flex space-x-1;
+  }
+
+  .loading-dots span {
+    @apply w-2 h-2 bg-gold-500 rounded-full animate-bounce;
+  }
+
+  .loading-dots span:nth-child(2) {
+    animation-delay: 0.1s;
+  }
+
+  .loading-dots span:nth-child(3) {
+    animation-delay: 0.2s;
+  }
+}
+
+@layer utilities {
+  /* Text shadow for overlays */
+  .text-shadow {
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  }
+
+  .text-shadow-lg {
+    text-shadow: 0 4px 8px rgba(0, 0, 0, 0.7);
+  }
+
+  /* Backdrop blur for glass effect */
+  .glass {
+    @apply backdrop-blur-md bg-white/10 border border-white/20;
+  }
+
+  /* Premium hover lift effect */
+  .hover-lift {
+    @apply transition-transform duration-300 hover:-translate-y-2;
+  }
+
+  /* Smooth scroll behavior */
+  .scroll-smooth {
+    scroll-behavior: smooth;
+  }
+
+  /* Hide scrollbar but maintain functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }
