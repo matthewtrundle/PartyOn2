@@ -151,7 +151,7 @@ export default function Home() {
         title={currentConfig.title}
         subtitle={currentConfig.subtitle}
         description={currentConfig.description}
-        videoSrc={mode === 'party' ? "/videos/hero/austin-nightlife-cinematic.mp4" : "/videos/hero/austin-skyline-timelapse.mp4"}
+        videoSrc={mode === 'party' ? "/videos/hero/austin-music-festival.mp4" : "/videos/hero/austin-skyline-timelapse.mp4"}
         fallbackImage={mode === 'party' ? "/images/hero/austin-6th-street-neon.png" : "/images/hero/austin-skyline-golden-hour.png"}
         ctaText="Book Your Delivery"
         ctaLink="/book-now"

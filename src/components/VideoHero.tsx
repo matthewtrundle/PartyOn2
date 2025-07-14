@@ -40,6 +40,15 @@ export default function VideoHero({
       isVisible
     })
   }, [videoSrc, videoLoaded, videoError, isVisible])
+
+  // Reset video state when source changes
+  useEffect(() => {
+    setVideoLoaded(false)
+    setVideoError(false)
+    if (videoRef.current) {
+      videoRef.current.load()
+    }
+  }, [videoSrc])
   const videoRef = useRef<HTMLVideoElement>(null)
   const sectionRef = useRef<HTMLDivElement>(null)
   
@@ -85,10 +94,11 @@ export default function VideoHero({
       {/* Video Background */}
       {videoSrc && !videoError && isVisible && (
         <video
+          key={videoSrc}
           ref={videoRef}
           className={`absolute inset-0 w-full h-full object-cover ${
             videoLoaded ? 'opacity-100' : 'opacity-0'
-          }`}
+          } transition-opacity duration-500`}
           autoPlay
           loop
           muted
@@ -103,12 +113,13 @@ export default function VideoHero({
 
       {/* Fallback Image */}
       <Image
+        key={fallbackImage}
         src={fallbackImage}
         alt={title}
         fill
         className={`absolute inset-0 object-cover ${
           videoLoaded && !videoError && isVisible ? 'opacity-0' : 'opacity-100'
-        }`}
+        } transition-opacity duration-500`}
         priority={height === 'full'}
         loading={height === 'full' ? 'eager' : 'lazy'}
         sizes="100vw"
