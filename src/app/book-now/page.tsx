@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Section from '@/components/Section'
 import VideoHero from '@/components/VideoHero'
 
-export default function BookNowPage() {
+function BookNowContent() {
   const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState('delivery')
   const [formData, setFormData] = useState({
@@ -386,5 +386,13 @@ export default function BookNowPage() {
         </div>
       </section>
     </>
+  )
+}
+
+export default function BookNowPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <BookNowContent />
+    </Suspense>
   )
 }
