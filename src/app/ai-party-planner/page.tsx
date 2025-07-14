@@ -22,7 +22,7 @@ export default function AIPartyPlanner() {
       title: "Meet Biff - Your AI Bartender",
       subtitle: "Austin's Most Sophisticated Party Planning Intelligence",
       description: "Advanced AI-powered event curation with deep Austin expertise and professional service standards",
-      videoSrc: "/videos/hero/luxury-wedding.mp4",
+      videoSrc: "/videos/ai-assistant/robot-cowboy-horse.mp4",
       placeholder: "Describe your event vision (e.g., 'Sophisticated rooftop wedding for 200 guests with Hill Country views')",
       thoughts: [
         "Analyzing Austin venue compatibility...",
@@ -38,7 +38,7 @@ export default function AIPartyPlanner() {
       title: "BIFF UNLEASHED - AI PARTY ARCHITECT", 
       subtitle: "MAXIMUM CHAOS ENGINEERING PROTOCOL ACTIVATED",
       description: "LEGENDARY PARTY INTELLIGENCE WITH ZERO LIMITS AND AUSTIN ATTITUDE",
-      videoSrc: "/videos/hero/austin-music-festival.mp4",
+      videoSrc: "/videos/ai-assistant/robot-cowboy-horse.mp4",
       placeholder: "UNLEASH YOUR WILDEST PARTY VISION",
       thoughts: [
         "SCANNING AUSTIN FOR MAXIMUM PARTY POTENTIAL...",

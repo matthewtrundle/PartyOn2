@@ -225,7 +225,7 @@ export default function WeddingsPage() {
         title={currentConfig.title}
         subtitle={currentConfig.subtitle}
         description={currentConfig.description}
-        videoSrc={mode === 'luxury' ? "/videos/hero/wedding-sunset.mp4" : mode === 'wild' ? "/biff01_Epic_Lake_Travis_boat_party_multiple_yachts_rafted_tog_7534248b-464e-4fba-bb54-1e91e525b64f_3.png" : "/videos/hero/wedding-venue-travis.mp4"}
+        videoSrc={mode === 'luxury' ? "/videos/hero/wedding-sunset.mp4" : mode === 'wild' ? "/videos/backgrounds/rooftop-party-austin.mp4" : "/videos/hero/wedding-venue-travis.mp4"}
         fallbackImage={currentConfig.backgroundImage}
         ctaText="Start Planning"
         ctaLink="/book-now"
