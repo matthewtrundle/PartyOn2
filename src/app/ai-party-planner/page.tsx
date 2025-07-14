@@ -1,269 +1,422 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
-import Image from 'next/image'
+import { useState, useEffect, useRef } from 'react'
+import VideoHero from '@/components/VideoHero'
+import CTA from '@/components/CTA'
+import ExperienceSelector from '@/components/ExperienceSelector'
 
-interface Message {
-  text: string
-  isUser: boolean
-  timestamp: Date
-}
+type AIMode = 'refined' | 'wild'
 
-export default function AIPartyPlannerPage() {
-  const [messages, setMessages] = useState<Message[]>([
-    { 
-      text: "Hi! I'm your AI party planning assistant. Tell me about your event and I'll help create the perfect celebration.", 
-      isUser: false, 
-      timestamp: new Date() 
-    }
-  ])
-  const [inputText, setInputText] = useState('')
-  const [isTyping, setIsTyping] = useState(false)
-  const [mode, setMode] = useState<'refined' | 'wild'>('refined')
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
+export default function AIPartyPlanner() {
+  const [mode, setMode] = useState<AIMode>('refined')
+  const [userInput, setUserInput] = useState('')
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [showThoughts, setShowThoughts] = useState(false)
+  const [aiThoughts, setAiThoughts] = useState<string[]>([])
+  const [response, setResponse] = useState('')
+  const thoughtsRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    inputRef.current?.focus()
-  }, [])
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
-
-  const generateAIResponse = (input: string): string => {
-    const lowerInput = input.toLowerCase()
-    
-    if (mode === 'wild') {
-      if (lowerInput.includes('wedding')) {
-        return "WEDDING PARTY TIME! Let's turn your reception into Austin's most legendary celebration. We're talking champagne fountains, signature shots, and a bar setup that'll have guests talking for years. Budget range $3k-10k for absolute mayhem. How wild are we going?"
-      }
-      if (lowerInput.includes('boat') || lowerInput.includes('lake')) {
-        return "LAKE TRAVIS TAKEOVER! Picture this: floating bars, waterproof speakers cranked to 11, and enough party supplies to turn your boat into a floating festival. Full chaos packages from $1,500. What's your vessel situation?"
-      }
-      if (lowerInput.includes('bachelor') || lowerInput.includes('bachelorette')) {
-        return "THE ULTIMATE SEND-OFF! We're building you a legendary night with VIP everything - party bus bars, downtown domination, and recovery brunch that'll save lives. $2k-5k gets you hall-of-fame status. How many party warriors we talking?"
-      }
-      return "LET'S GET WILD! Tell me about your party vision and I'll craft something EPIC. What kind of chaos are we creating?"
-    } else {
-      if (lowerInput.includes('wedding')) {
-        return "A wedding celebration! I'd recommend our premium bar service starting at $2,500. This includes professional bartenders, custom cocktail menu, and full setup/breakdown. How many guests are you expecting?"
-      }
-      if (lowerInput.includes('boat') || lowerInput.includes('lake')) {
-        return "Lake Travis boat parties are our specialty. We offer cooler delivery ($400-800) or full bartender service ($1,200-2,000). The package depends on boat size and guest count. What type of vessel will you be on?"
-      }
-      if (lowerInput.includes('bachelor') || lowerInput.includes('bachelorette')) {
-        return "Bachelor/bachelorette parties require special attention. Our packages range from $1,500-3,500 and include party bus bar service, VIP venue access, and recovery brunch delivery. What's your group size?"
-      }
-      if (lowerInput.includes('corporate') || lowerInput.includes('company')) {
-        return "For corporate events, we provide professional service with invoicing available. Packages start at $2,000 and include premium spirits, professional staff, and custom branding options. What type of corporate event?"
-      }
-      return "I'd be happy to help plan your event. Could you tell me more about: the type of celebration, number of guests, and your preferred date? This will help me create the perfect package for you."
+  const modeConfigs = {
+    refined: {
+      title: "AI Party Planner",
+      subtitle: "Intelligent event planning powered by AI",
+      description: "Tell me about your celebration and I'll create a custom package",
+      videoSrc: "/videos/hero/luxury-wedding.mp4",
+      placeholder: "Describe your event (e.g., 'Elegant wedding for 150 guests at sunset')",
+      thoughts: [
+        "Analyzing event requirements...",
+        "Considering venue acoustics and flow...",
+        "Calculating optimal bar placement...",
+        "Matching wine pairings to season...",
+        "Designing signature cocktails...",
+        "Estimating consumption patterns...",
+        "Finalizing premium selections..."
+      ]
+    },
+    wild: {
+      title: "WILD AI PARTY ARCHITECT",
+      subtitle: "CHAOS ENGINEERING FOR YOUR CELEBRATION",
+      description: "UNLEASH YOUR WILDEST PARTY DREAMS",
+      videoSrc: "/social_biff01_Austin_music_festival_crowd_going_wild_stage_lights_cr_073e551a-07a8-4bc6-a593-dfd47c0472d1_1.mp4",
+      placeholder: "DESCRIBE YOUR EPIC PARTY VISION",
+      thoughts: [
+        "CALCULATING MAXIMUM PARTY POTENTIAL...",
+        "DEPLOYING CHAOS ALGORITHMS...",
+        "AMPLIFYING VIBE FREQUENCIES...",
+        "WEAPONIZING THE DANCE FLOOR...",
+        "OPTIMIZING FOR LEGENDARY STATUS...",
+        "BREAKING ALL CONVENTIONAL LIMITS...",
+        "INITIATING PARTY APOCALYPSE..."
+      ]
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!inputText.trim() || isTyping) return
+  const currentConfig = modeConfigs[mode]
 
-    // Add user message
-    const userMessage: Message = {
-      text: inputText,
-      isUser: true,
-      timestamp: new Date()
-    }
-    setMessages(prev => [...prev, userMessage])
-    setInputText('')
-    setIsTyping(true)
+  const simulateAIThinking = async () => {
+    setIsProcessing(true)
+    setShowThoughts(true)
+    setAiThoughts([])
+    setResponse('')
 
-    // Simulate AI response
-    setTimeout(() => {
-      const aiResponse: Message = {
-        text: generateAIResponse(inputText),
-        isUser: false,
-        timestamp: new Date()
+    // Simulate AI processing with thoughts
+    for (let i = 0; i < currentConfig.thoughts.length; i++) {
+      await new Promise(resolve => setTimeout(resolve, 600))
+      setAiThoughts(prev => [...prev, currentConfig.thoughts[i]])
+      
+      // Auto-scroll thoughts container
+      if (thoughtsRef.current) {
+        thoughtsRef.current.scrollTop = thoughtsRef.current.scrollHeight
       }
-      setMessages(prev => [...prev, aiResponse])
-      setIsTyping(false)
-    }, 1000 + Math.random() * 1000)
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    
+    // Generate response based on mode
+    const mockResponse = mode === 'refined' 
+      ? `Based on your requirements, I've crafted a bespoke package including:
+
+• Premium bar service with certified mixologists
+• Curated wine selection featuring local Texas vineyards  
+• Signature cocktail menu inspired by your theme
+• Crystal glassware and gold-accented bar setup
+• Dedicated service captain for seamless execution
+
+Investment: Starting at $2,499`
+      : `YOUR LEGENDARY PARTY BLUEPRINT IS READY:
+
+• UNLEASHED BAR EXPERIENCE WITH CHAOS SPECIALISTS
+• MIND-BENDING COCKTAIL EXPERIMENTS  
+• NEON-INFUSED DRINK STATIONS
+• PARTY AMPLIFICATION EQUIPMENT
+• REALITY-WARPING REFRESHMENT ZONES
+
+TOTAL CHAOS PACKAGE: $1,999 (LIMITED TIME)`
+
+    setResponse(mockResponse)
+    setIsProcessing(false)
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (userInput.trim()) {
+      simulateAIThinking()
+    }
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50">
-      {/* Spacer for fixed navigation */}
-      <div className="h-20 md:h-24" />
-      {/* Clean Header with Mode Selector */}
-      <div className="border-b border-neutral-200 bg-white/95 backdrop-blur-sm sticky top-20 md:top-24 z-40">
-        <div className="max-w-5xl mx-auto px-6 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-semibold text-neutral-900">AI Party Planner</h1>
-              <p className="text-sm text-neutral-500 mt-1">Intelligent event planning powered by AI</p>
-            </div>
-            <div className="flex items-center gap-6">
-              {/* Mode Selector */}
-              <div className="flex items-center gap-2 bg-neutral-100 rounded-lg p-1">
-                <button
-                  onClick={() => setMode('refined')}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                    mode === 'refined' 
-                      ? 'bg-white text-neutral-900 shadow-sm' 
-                      : 'text-neutral-600 hover:text-neutral-900'
-                  }`}
-                >
-                  Refined
-                </button>
-                <button
-                  onClick={() => setMode('wild')}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                    mode === 'wild' 
-                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-sm' 
-                      : 'text-neutral-600 hover:text-neutral-900'
-                  }`}
-                >
-                  Wild
-                </button>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-neutral-500">Active</span>
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+    <>
+      {/* Experience Selector */}
+      <ExperienceSelector
+        modes={['refined', 'wild'] as const}
+        currentMode={mode}
+        onModeChange={setMode}
+        modeLabels={{
+          refined: 'Refined AI',
+          wild: 'Wild AI'
+        }}
+        modeColors={{
+          refined: 'bg-gradient-to-r from-blue-600 to-purple-600',
+          wild: 'bg-gradient-to-r from-red-600 via-orange-600 to-yellow-500'
+        }}
+        label="AI MODE"
+      />
 
-      {/* Main Content with Background */}
-      <div className="relative">
-        {/* Background Image */}
-        <div className="absolute inset-0 z-0">
-          <Image
-            src={mode === 'wild' ? "/images/hero/neon-nights-hero.jpg" : "/images/hero/austin-skyline-hero.png"}
-            alt="Background"
-            fill
-            className="object-cover opacity-5"
-          />
-          <div className="absolute inset-0 bg-gradient-to-b from-neutral-50/50 to-neutral-50" />
-        </div>
-        
-        <div className="relative z-10 max-w-3xl mx-auto px-6 py-8">
-          {/* Minimal intro */}
-          <div className="text-center mb-12">
-            <h2 className={`text-4xl font-light mb-4 transition-all ${
-              mode === 'wild' 
-                ? 'text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600' 
-                : 'text-neutral-900'
-            }`}>
-              {mode === 'wild' ? 'Create something legendary' : 'Plan your perfect event'}
-            </h2>
-            <p className="text-lg text-neutral-600">
-              {mode === 'wild' 
-                ? "Let's turn your party vision into Austin's next epic story" 
-                : "Tell me about your celebration and I'll create a custom package"}
-            </p>
-          </div>
+      {/* Hero Section */}
+      <VideoHero
+        title={currentConfig.title}
+        subtitle={currentConfig.subtitle}
+        description={currentConfig.description}
+        videoSrc={currentConfig.videoSrc}
+        fallbackImage={mode === 'wild' 
+          ? "/biff01_Neon-lit_Austin_6th_Street_at_night_vibrant_party_atmo_3117185a-bdab-453c-9ca8-675cd5581dc5_0.png"
+          : "/biff01_Elegant_rooftop_wedding_reception_in_downtown_Austin_wi_5fc4bb9f-4e50-4e09-a0e0-3a0d8bb93b76_1.png"
+        }
+      />
 
-          {/* Chat Container */}
-          <div className={`bg-white rounded-2xl border shadow-lg transition-all ${
-            mode === 'wild' 
-              ? 'border-purple-200 shadow-purple-100/50' 
-              : 'border-neutral-200'
-          }`}>
-          {/* Messages */}
-          <div className="h-[500px] overflow-y-auto p-6">
-            {messages.map((message, index) => (
-              <div key={index} className={`mb-6 ${message.isUser ? 'text-right' : 'text-left'}`}>
-                <div className={`inline-block max-w-[80%] ${message.isUser ? 'text-left' : ''}`}>
-                  <div className="text-xs text-neutral-500 mb-1">
-                    {message.isUser ? 'You' : 'AI Assistant'}
-                  </div>
-                  <div className={`rounded-2xl px-4 py-3 transition-all ${message.isUser 
-                    ? mode === 'wild' 
-                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' 
-                      : 'bg-neutral-900 text-white'
-                    : 'bg-neutral-100 text-neutral-900'
-                  }`}>
-                    <p className="text-sm leading-relaxed">{message.text}</p>
-                  </div>
-                  <div className="text-xs text-neutral-400 mt-1">
-                    {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </div>
+      {/* AI Interface Section */}
+      <section className={`relative py-20 ${mode === 'wild' ? 'bg-black' : 'bg-gradient-to-b from-gray-50 to-white'}`}>
+        {/* Animated background particles */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {[...Array(20)].map((_, i) => (
+            <div
+              key={i}
+              className={`absolute w-1 h-1 rounded-full ${
+                mode === 'wild' ? 'bg-orange-500' : 'bg-blue-500'
+              } opacity-20 animate-float`}
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                animationDelay: `${Math.random() * 5}s`,
+                animationDuration: `${15 + Math.random() * 10}s`
+              }}
+            />
+          ))}
+        </div>
+
+        <div className="container-custom relative z-10">
+          <div className="max-w-4xl mx-auto">
+            {/* Input Form */}
+            <form onSubmit={handleSubmit} className="mb-12">
+              <div className={`relative rounded-2xl overflow-hidden ${
+                mode === 'wild' 
+                  ? 'bg-gradient-to-r from-red-900/50 to-orange-900/50 p-1' 
+                  : 'bg-gradient-to-r from-blue-100 to-purple-100 p-1'
+              }`}>
+                <div className={`relative ${mode === 'wild' ? 'bg-black' : 'bg-white'} rounded-xl p-8`}>
+                  <textarea
+                    value={userInput}
+                    onChange={(e) => setUserInput(e.target.value)}
+                    placeholder={currentConfig.placeholder}
+                    rows={4}
+                    className={`w-full px-6 py-4 rounded-lg border-2 transition-all resize-none ${
+                      mode === 'wild'
+                        ? 'bg-gray-900 border-orange-500 text-orange-100 placeholder:text-orange-500/50 focus:border-yellow-500 focus:shadow-[0_0_20px_rgba(251,191,36,0.3)]'
+                        : 'bg-gray-50 border-gray-200 text-gray-800 placeholder:text-gray-400 focus:border-blue-500 focus:shadow-[0_0_20px_rgba(59,130,246,0.1)]'
+                    } focus:outline-none`}
+                    disabled={isProcessing}
+                  />
+                  
+                  <button
+                    type="submit"
+                    disabled={isProcessing || !userInput.trim()}
+                    className={`mt-6 w-full py-4 rounded-lg font-semibold transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 ${
+                      mode === 'wild'
+                        ? 'bg-gradient-to-r from-red-600 via-orange-600 to-yellow-500 text-white hover:shadow-[0_0_30px_rgba(251,191,36,0.5)]'
+                        : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:shadow-lg'
+                    }`}
+                  >
+                    {isProcessing ? (
+                      <span className="flex items-center justify-center">
+                        <svg className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        Processing...
+                      </span>
+                    ) : (
+                      mode === 'wild' ? 'UNLEASH THE AI' : 'Plan My Event'
+                    )}
+                  </button>
                 </div>
               </div>
-            ))}
-            {isTyping && (
-              <div className="mb-6">
-                <div className="inline-block">
-                  <div className="text-xs text-neutral-500 mb-1">AI Assistant</div>
-                  <div className="bg-neutral-100 rounded-2xl px-4 py-3">
-                    <div className="flex gap-1">
-                      <span className="w-2 h-2 bg-neutral-400 rounded-full animate-pulse"></span>
-                      <span className="w-2 h-2 bg-neutral-400 rounded-full animate-pulse" style={{ animationDelay: '0.1s' }}></span>
-                      <span className="w-2 h-2 bg-neutral-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></span>
-                    </div>
+            </form>
+
+            {/* AI Thoughts Display */}
+            {showThoughts && (
+              <div className={`mb-8 rounded-2xl overflow-hidden ${
+                mode === 'wild' 
+                  ? 'bg-gradient-to-r from-red-900/30 to-orange-900/30 p-1' 
+                  : 'bg-gradient-to-r from-blue-50 to-purple-50 p-1'
+              }`}>
+                <div className={`${mode === 'wild' ? 'bg-gray-900' : 'bg-white'} rounded-xl p-6`}>
+                  <h3 className={`text-sm font-mono mb-4 ${
+                    mode === 'wild' ? 'text-orange-400' : 'text-blue-600'
+                  }`}>
+                    AI PROCESSING THOUGHTS:
+                  </h3>
+                  <div 
+                    ref={thoughtsRef}
+                    className="max-h-40 overflow-y-auto space-y-2 scrollbar-hide"
+                  >
+                    {aiThoughts.map((thought, index) => (
+                      <div
+                        key={index}
+                        className={`text-sm font-mono animate-fade-in ${
+                          mode === 'wild' ? 'text-orange-300' : 'text-gray-600'
+                        }`}
+                        style={{ animationDelay: `${index * 0.1}s` }}
+                      >
+                        {'> '}{thought}
+                      </div>
+                    ))}
+                    {isProcessing && (
+                      <div className={`text-sm font-mono ${
+                        mode === 'wild' ? 'text-orange-400' : 'text-blue-500'
+                      }`}>
+                        <span className="inline-block animate-pulse">_</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
             )}
-            <div ref={messagesEndRef} />
+
+            {/* Response Display */}
+            {response && !isProcessing && (
+              <div className={`rounded-2xl overflow-hidden animate-fade-in ${
+                mode === 'wild' 
+                  ? 'bg-gradient-to-r from-red-900/50 to-orange-900/50 p-1' 
+                  : 'bg-gradient-to-r from-blue-100 to-purple-100 p-1'
+              }`}>
+                <div className={`${mode === 'wild' ? 'bg-black' : 'bg-white'} rounded-xl p-8`}>
+                  <h3 className={`text-2xl font-bold mb-6 ${
+                    mode === 'wild' 
+                      ? 'text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-orange-400 to-yellow-400' 
+                      : 'text-gray-800'
+                  }`}>
+                    Your Custom Package
+                  </h3>
+                  <div className={`whitespace-pre-line ${
+                    mode === 'wild' ? 'text-orange-100' : 'text-gray-700'
+                  }`}>
+                    {response}
+                  </div>
+                  <div className="mt-8 flex gap-4">
+                    <button className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+                      mode === 'wild'
+                        ? 'bg-gradient-to-r from-red-600 to-orange-600 text-white hover:shadow-[0_0_20px_rgba(251,191,36,0.4)]'
+                        : 'bg-blue-600 text-white hover:bg-blue-700'
+                    }`}>
+                      Book This Package
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setUserInput('')
+                        setResponse('')
+                        setShowThoughts(false)
+                        setAiThoughts([])
+                      }}
+                      className={`px-6 py-3 rounded-lg font-semibold transition-all ${
+                        mode === 'wild'
+                          ? 'border-2 border-orange-500 text-orange-400 hover:bg-orange-500/10'
+                          : 'border-2 border-gray-300 text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      Start Over
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className={`py-20 ${mode === 'wild' ? 'bg-gradient-to-b from-black to-gray-900' : 'bg-white'}`}>
+        <div className="container-custom">
+          <div className="text-center mb-16">
+            <h2 className={`text-4xl font-bold mb-4 ${
+              mode === 'wild' 
+                ? 'text-transparent bg-clip-text bg-gradient-to-r from-red-400 via-orange-400 to-yellow-400' 
+                : 'text-gray-800'
+            }`}>
+              {mode === 'wild' ? 'AI CAPABILITIES UNLEASHED' : 'How Our AI Works'}
+            </h2>
           </div>
 
-          {/* Input Form */}
-          <div className="border-t border-neutral-200 p-6">
-            <form onSubmit={handleSubmit} className="flex gap-3">
-              <input
-                ref={inputRef}
-                type="text"
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                placeholder="Describe your event..."
-                className="flex-1 px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm placeholder:text-neutral-400 focus:outline-none focus:border-neutral-300 focus:bg-white transition-colors"
-                disabled={isTyping}
-              />
-              <button
-                type="submit"
-                disabled={!inputText.trim() || isTyping}
-                className={`px-6 py-3 rounded-xl font-medium text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {(mode === 'wild' ? [
+              {
+                icon: '🔥',
+                title: 'CHAOS CALCULATION',
+                description: 'Our AI measures party potential in GIGAWATTS of pure energy'
+              },
+              {
+                icon: '⚡',
+                title: 'VIBE AMPLIFICATION',
+                description: 'Machine learning algorithms that turn good times into LEGENDARY times'
+              },
+              {
+                icon: '🎯',
+                title: 'PRECISION MAYHEM',
+                description: 'Perfectly orchestrated chaos delivered with military precision'
+              }
+            ] : [
+              {
+                icon: '🧠',
+                title: 'Smart Analysis',
+                description: 'Our AI analyzes your event details to create the perfect beverage program'
+              },
+              {
+                icon: '📊',
+                title: 'Data-Driven',
+                description: 'Leverages thousands of successful events to optimize your package'
+              },
+              {
+                icon: '✨',
+                title: 'Personalized',
+                description: 'Every recommendation is tailored to your specific celebration'
+              }
+            ]).map((feature, index) => (
+              <div 
+                key={index}
+                className={`p-8 rounded-2xl text-center transition-all hover:scale-105 ${
                   mode === 'wild'
-                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700'
-                    : 'bg-neutral-900 text-white hover:bg-neutral-800'
+                    ? 'bg-gradient-to-br from-red-900/30 to-orange-900/30 border border-orange-500/30'
+                    : 'bg-gray-50 hover:shadow-lg'
                 }`}
               >
-                Send
-              </button>
-            </form>
+                <div className="text-5xl mb-4">{feature.icon}</div>
+                <h3 className={`text-xl font-bold mb-3 ${
+                  mode === 'wild' ? 'text-orange-400' : 'text-gray-800'
+                }`}>
+                  {feature.title}
+                </h3>
+                <p className={mode === 'wild' ? 'text-orange-200' : 'text-gray-600'}>
+                  {feature.description}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
+      </section>
 
-          {/* Quick suggestions */}
-          <div className="mt-8 text-center">
-            <p className="text-sm text-neutral-500 mb-4">Popular requests:</p>
-            <div className="flex flex-wrap justify-center gap-2">
-              {[
-                'Wedding for 150 guests',
-                'Bachelor party downtown',
-                'Lake Travis boat party',
-                'Corporate happy hour'
-              ].map((suggestion) => (
-                <button
-                  key={suggestion}
-                  onClick={() => setInputText(suggestion)}
-                  className={`px-4 py-2 text-sm bg-white border rounded-lg transition-all ${
-                    mode === 'wild'
-                      ? 'border-purple-200 hover:bg-purple-50 hover:border-purple-300'
-                      : 'border-neutral-200 hover:bg-neutral-50'
-                  }`}
-                >
-                  {suggestion}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      {/* Bottom padding */}
-      <div className="h-20" />
-    </div>
+      {/* CTA Section */}
+      <CTA
+        title={mode === 'wild' ? "READY TO PARTY LIKE AN AI?" : "Experience AI-Powered Planning"}
+        description={mode === 'wild' 
+          ? "Join the future of EPIC celebrations. Let our AI architect your LEGENDARY event!"
+          : "Join thousands who've discovered the perfect party package with our intelligent planning system."
+        }
+        primaryButtonText="Start Planning"
+        primaryButtonLink="#"
+        secondaryButtonText="Learn More"
+        secondaryButtonLink="/how-it-works"
+      />
+
+      <style jsx>{`
+        @keyframes float {
+          0%, 100% {
+            transform: translateY(0) translateX(0);
+          }
+          33% {
+            transform: translateY(-20px) translateX(10px);
+          }
+          66% {
+            transform: translateY(10px) translateX(-10px);
+          }
+        }
+
+        @keyframes fade-in {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .animate-float {
+          animation: float linear infinite;
+        }
+
+        .animate-fade-in {
+          animation: fade-in 0.5s ease-out forwards;
+        }
+
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
+    </>
   )
 }

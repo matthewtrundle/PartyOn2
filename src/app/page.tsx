@@ -17,14 +17,14 @@ export default function Home() {
     normal: {
       title: "Austin's Premier Party Delivery",
       subtitle: "From Lake Travis to Downtown",
-      description: "Premium alcohol delivery in 30 minutes. Licensed, insured, and ready to make your event unforgettable.",
+      description: "ORDER 72 HOURS IN ADVANCE • Premium alcohol delivery • Licensed & insured • Ready to make your event unforgettable",
       backgroundImage: "/images/hero/austin-skyline-hero.png",
       theme: "elegant"
     },
     party: {
       title: "AUSTIN'S PARTY HEADQUARTERS",
       subtitle: "WHERE LEGENDS ARE MADE",
-      description: "EPIC parties, WILD nights, UNFORGETTABLE memories! We turn Austin celebrations UP TO 11!",
+      description: "ORDER 72 HOURS IN ADVANCE • EPIC parties • WILD nights • UNFORGETTABLE memories • We turn Austin celebrations UP TO 11!",
       backgroundImage: "/images/hero/neon-nights-hero.jpg",
       theme: "explosive"
     }

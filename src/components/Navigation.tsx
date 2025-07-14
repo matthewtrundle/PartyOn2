@@ -52,6 +52,16 @@ export default function Navigation() {
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center space-x-8">
+            <a
+              href="tel:7373719700"
+              className={`font-sans font-bold transition-all duration-300 ${
+                isScrolled
+                  ? 'text-gold-500 hover:text-gold-600'
+                  : 'text-gold-400 hover:text-gold-300'
+              }`}
+            >
+              (737) 371-9700
+            </a>
             {navLinks.map((link) => (
               <Link
                 key={link.href}
@@ -107,6 +117,13 @@ export default function Navigation() {
           }`}
         >
           <div className="p-6 space-y-4">
+            <a
+              href="tel:7373719700"
+              className="block py-3 text-lg font-sans font-bold text-gold-500 hover:text-gold-600 transition-colors duration-300"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              (737) 371-9700
+            </a>
             {navLinks.map((link) => (
               <Link
                 key={link.href}
