@@ -154,35 +154,26 @@ export default function BachPartiesPage() {
     }
   }
 
-  const getModeStyles = () => {
-    if (mode === 'bachelor') {
-      return {
-        container: "bg-gradient-to-br from-red-900 via-black to-orange-900",
-        text: "text-orange-400",
-        accent: "text-red-500",
-        button: "bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700",
-        card: "bg-gradient-to-br from-red-900/20 to-orange-900/20 border-red-500/30"
-      }
-    } else if (mode === 'bachelorette') {
-      return {
-        container: "bg-gradient-to-br from-pink-100 via-purple-50 to-pink-100",
-        text: "text-pink-600",
-        accent: "text-purple-600",
-        button: "bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600",
-        card: "bg-gradient-to-br from-pink-100/80 to-purple-100/80 border-pink-300"
-      }
-    } else {
-      return {
-        container: "bg-gradient-to-br from-navy-50 to-gold-50",
-        text: "text-navy-500",
-        accent: "text-gold-500",
-        button: "bg-gradient-to-r from-gold-500 to-gold-400 hover:from-gold-600 hover:to-gold-500",
-        card: "bg-white border-gold-200"
-      }
-    }
+  // Dynamic styles based on mode
+  const styles = mode === 'bachelor' ? {
+    container: "bg-gradient-to-br from-red-900 via-black to-orange-900",
+    text: "text-orange-400",
+    accent: "text-red-500",
+    button: "bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700",
+    card: "bg-gradient-to-br from-red-900/20 to-orange-900/20 border-red-500/30"
+  } : mode === 'bachelorette' ? {
+    container: "bg-gradient-to-br from-pink-100 via-purple-50 to-pink-100",
+    text: "text-pink-600",
+    accent: "text-purple-600",
+    button: "bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600",
+    card: "bg-gradient-to-br from-pink-100/80 to-purple-100/80 border-pink-300"
+  } : {
+    container: "bg-gradient-to-br from-navy-50 to-gold-50",
+    text: "text-navy-500",
+    accent: "text-gold-500",
+    button: "bg-gradient-to-r from-gold-500 to-gold-400 hover:from-gold-600 hover:to-gold-500",
+    card: "bg-white border-gold-200"
   }
-
-  const styles = getModeStyles() || {}
 
   return (
     <div className={`min-h-screen transition-all duration-500 ${isAnimating ? 'opacity-50' : 'opacity-100'}`}>
