@@ -151,8 +151,8 @@ export default function Home() {
         title={currentConfig.title}
         subtitle={currentConfig.subtitle}
         description={currentConfig.description}
-        videoSrc={mode === 'party' ? "/social_biff01_A_cinematic_establishing_shot_of_Austins_vibrant_night_a572f3ef-7895-4d69-8bc7-96dfcaf7e6cb_3.mp4" : "/videos/hero/austin-skyline-timelapse.mp4"}
-        fallbackImage={mode === 'party' ? "/biff01_Neon-lit_Austin_6th_Street_at_night_vibrant_party_atmo_3117185a-bdab-453c-9ca8-675cd5581dc5_0.png" : "/biff01_Austin_skyline_at_golden_hour_from_Mount_Bonnell_viewp_70e449d9-34ee-4d92-89c9-7db7800d8f1f_3.png"}
+        videoSrc={mode === 'party' ? "/videos/hero/austin-nightlife-cinematic.mp4" : "/videos/hero/austin-skyline-timelapse.mp4"}
+        fallbackImage={mode === 'party' ? "/images/hero/austin-6th-street-neon.png" : "/images/hero/austin-skyline-golden-hour.png"}
         ctaText="Book Your Delivery"
         ctaLink="/book-now"
       />

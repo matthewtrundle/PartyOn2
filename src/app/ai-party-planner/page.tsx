@@ -38,7 +38,7 @@ export default function AIPartyPlanner() {
       title: "BIFF UNLEASHED - AI PARTY ARCHITECT", 
       subtitle: "MAXIMUM CHAOS ENGINEERING PROTOCOL ACTIVATED",
       description: "LEGENDARY PARTY INTELLIGENCE WITH ZERO LIMITS AND AUSTIN ATTITUDE",
-      videoSrc: "/social_biff01_Austin_music_festival_crowd_going_wild_stage_lights_cr_073e551a-07a8-4bc6-a593-dfd47c0472d1_1.mp4",
+      videoSrc: "/videos/hero/austin-music-festival.mp4",
       placeholder: "UNLEASH YOUR WILDEST PARTY VISION",
       thoughts: [
         "SCANNING AUSTIN FOR MAXIMUM PARTY POTENTIAL...",
@@ -148,8 +148,8 @@ TOTAL INVESTMENT: $4,999 (LEGENDARY TIER PACKAGE)`
         description={currentConfig.description}
         videoSrc={currentConfig.videoSrc}
         fallbackImage={mode === 'wild' 
-          ? "/biff01_Neon-lit_Austin_6th_Street_at_night_vibrant_party_atmo_3117185a-bdab-453c-9ca8-675cd5581dc5_0.png"
-          : "/biff01_Elegant_rooftop_wedding_reception_in_downtown_Austin_wi_5fc4bb9f-4e50-4e09-a0e0-3a0d8bb93b76_1.png"
+          ? "/images/hero/austin-6th-street-neon.png"
+          : "/images/backgrounds/rooftop-terrace-elegant-1.png"
         }
       />
 
@@ -170,7 +170,7 @@ TOTAL INVESTMENT: $4,999 (LEGENDARY TIER PACKAGE)`
               <div className={`relative rounded-3xl overflow-hidden ${mode === 'wild' ? 'shadow-[0_0_50px_rgba(251,191,36,0.3)]' : 'shadow-2xl'}`}>
                 <div className={`absolute inset-0 ${mode === 'wild' ? 'bg-gradient-to-br from-red-900/20 to-orange-900/20' : 'bg-gradient-to-br from-slate-100/50 to-white/50'} backdrop-blur-sm`} />
                 <Image
-                  src="/biff01_an_AI_bartender_wearing_a_comboy_hat_like_a_cowboy_who_9d615e7e-3a4c-405f-b2d7-c79648bd0534_3.png"
+                  src="/images/ai-assistant/biff-bartender-cowboy.png"
                   alt="Biff - AI Bartender"
                   width={600}
                   height={600}

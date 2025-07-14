@@ -73,7 +73,7 @@ export default function BachPartiesPage() {
         title={currentConfig.title}
         subtitle={currentConfig.subtitle}
         description={currentConfig.description}
-        videoSrc={mode === 'bachelor' ? "/social_biff01_High-energy_party_scene_in_modern_Austin_rooftop_bar_o_75fb604d-07ac-4522-8ba1-f5fda51e7ed8_1.mp4" : mode === 'bachelorette' ? "/social_biff01_Glamorous_bachelorette_party_scene_in_upscale_Austin_r_bd869622-8524-400b-8569-77825b6f8a2a_0.mp4" : "/videos/hero/luxury-wedding.mp4"}
+        videoSrc={mode === 'bachelor' ? "/videos/backgrounds/bachelor-party-6th-street.mp4" : mode === 'bachelorette' ? "/videos/backgrounds/bachelorette-party-glamorous.mp4" : "/videos/hero/luxury-wedding.mp4"}
         fallbackImage={currentConfig.backgroundImage}
         ctaText="Book Your Party"
         ctaLink="/book-now"
