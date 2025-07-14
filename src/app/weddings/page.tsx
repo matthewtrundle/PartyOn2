@@ -259,7 +259,7 @@ export default function WeddingsPage() {
               </p>
               <p className={`font-sans ${
                 mode === 'luxury' ? 'text-amber-600' : 
-                mode === 'boho' ? 'text-emerald-600' : 
+                mode === 'wild' ? 'text-red-600' : 
                 'text-neutral-600'
               }`}>
                 {mode === 'luxury' ? 'Luxury Weddings' : mode === 'wild' ? 'WILD Celebrations' : 'Weddings Served'}
@@ -269,7 +269,7 @@ export default function WeddingsPage() {
               <p className={`font-display text-6xl ${styles.accent}`}>5.0</p>
               <p className={`font-sans ${
                 mode === 'luxury' ? 'text-amber-600' : 
-                mode === 'boho' ? 'text-emerald-600' : 
+                mode === 'wild' ? 'text-red-600' : 
                 'text-neutral-600'
               }`}>Star Rating</p>
             </div>
@@ -277,7 +277,7 @@ export default function WeddingsPage() {
               <p className={`font-display text-6xl ${styles.accent}`}>100%</p>
               <p className={`font-sans ${
                 mode === 'luxury' ? 'text-amber-600' : 
-                mode === 'boho' ? 'text-emerald-600' : 
+                mode === 'wild' ? 'text-red-600' : 
                 'text-neutral-600'
               }`}>Licensed & Insured</p>
             </div>
