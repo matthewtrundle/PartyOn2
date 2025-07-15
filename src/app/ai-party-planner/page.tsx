@@ -38,11 +38,11 @@ export default function AIPartyPlannerPage() {
   }
 
   useEffect(() => {
-    // Only scroll to bottom when new messages are added, not on form submit
-    if (messages.length > 0) {
+    // Only scroll to bottom for assistant responses, not user input
+    if (messages.length > 0 && messages[messages.length - 1].role === 'assistant') {
       setTimeout(() => scrollToBottom(), 100)
     }
-  }, [messages.length])
+  }, [messages])
 
   // Update Biff's greeting when mode changes
   useEffect(() => {
