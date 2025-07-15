@@ -183,11 +183,11 @@ export default function ContactPage() {
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-dark/70">Email Inquiries</span>
-                    <span className="font-semibold text-primary-500">< 24 hours</span>
+                    <span className="font-semibold text-primary-500">&lt; 24 hours</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="text-dark/70">Event Quotes</span>
-                    <span className="font-semibold text-primary-500">< 2 hours</span>
+                    <span className="font-semibold text-primary-500">&lt; 2 hours</span>
                   </div>
                 </div>
               </div>

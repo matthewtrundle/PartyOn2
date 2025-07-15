@@ -19,9 +19,6 @@ const nextConfig: NextConfig = {
   
   // Enable build-time compression
   compress: true,
-  
-  // Enable SWC minification
-  swcMinify: true,
 };
 
 export default nextConfig;
