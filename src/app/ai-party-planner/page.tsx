@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from 'react'
 import VideoHero from '@/components/VideoHero'
 import ExperienceSelector from '@/components/ExperienceSelector'
-import Image from 'next/image'
 
 type AIMode = 'refined' | 'wild'
 
