@@ -72,7 +72,7 @@ export default function FastDeliveryPage() {
     <>
       {/* Hero Section */}
       <VideoHero
-        title="Austin&apos;s Fastest Alcohol Delivery"
+        title="Austin's Fastest Alcohol Delivery"
         subtitle="Cold Drinks, Hot Speed"
         description="Premium spirits, craft beer, and fine wine delivered to your door in 30 minutes or less. Track your order in real-time."
         videoSrc="/social_biff01_Austin_music_festival_crowd_going_wild_stage_lights_cr_073e551a-07a8-4bc6-a593-dfd47c0472d1_1.mp4"

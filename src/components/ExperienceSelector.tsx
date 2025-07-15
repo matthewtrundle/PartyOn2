@@ -54,7 +54,7 @@ function ExperienceSelector<T extends string>({
       {isOpen && (
         <div className="absolute left-0 mt-2 w-48 bg-white/95 backdrop-blur-md border border-white/20 rounded-lg shadow-xl overflow-hidden z-50">
           <div className="px-3 py-2 bg-black/5 border-b border-black/10">
-            <p className="text-xs font-medium text-gray-700">What&apos;s your vibe?</p>
+            <p className="text-xs font-medium text-gray-700">What's your vibe?</p>
           </div>
           <div className="p-1">
             {modes.map((mode) => (

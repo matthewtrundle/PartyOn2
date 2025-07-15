@@ -16,7 +16,7 @@ export default function Home() {
 
   const modeConfigs = {
     normal: {
-      title: "Austin&apos;s Premier Party Delivery",
+      title: "Austin's Premier Party Delivery",
       subtitle: "From Lake Travis to Downtown",
       description: "ORDER 72 HOURS IN ADVANCE • Premium alcohol delivery • Licensed & insured • Ready to make your event unforgettable",
       backgroundImage: "/images/hero/austin-skyline-hero.webp",
@@ -111,7 +111,7 @@ export default function Home() {
         },
         {
           title: "Corporate Events",
-          description: "Impress clients and celebrate success with our corporate event packages. Professional service for Austin&apos;s business elite.",
+          description: "Impress clients and celebrate success with our corporate event packages. Professional service for Austin's business elite.",
           image: "/images/services/corporate/penthouse-suite-setup.webp",
           features: [
             "Executive bar service",
@@ -310,7 +310,7 @@ export default function Home() {
         title={mode === 'party' ? "READY TO GO ABSOLUTELY WILD?" : "Ready to Party On?"}
         description={mode === 'party' 
           ? "Join thousands of Austin LEGENDS who trust us with their EPIC celebrations. Book your LEGENDARY delivery today!"
-          : "Join thousands of satisfied Austinites who trust us with their celebrations. Book your premium delivery today and let&apos;s make memories!"
+          : "Join thousands of satisfied Austinites who trust us with their celebrations. Book your premium delivery today and let's make memories!"
         }
         primaryButtonText="Book Your Delivery"
         primaryButtonLink="/book-now"

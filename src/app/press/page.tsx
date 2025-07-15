@@ -5,7 +5,7 @@ import Link from 'next/link'
 const pressReleases = [
   {
     date: "November 15, 2024",
-    title: "Party On Delivery Introduces Biff: World&apos;s First AI Party Planning Assistant",
+    title: "Party On Delivery Introduces Biff: World's First AI Party Planning Assistant",
     excerpt: "Austin-based alcohol delivery service revolutionizes event planning with post-apocalyptic cowboy robot AI.",
     outlet: "TechCrunch Austin",
     link: "#"
@@ -33,7 +33,7 @@ const pressReleases = [
   },
   {
     date: "March 10, 2024",
-    title: "Austin&apos;s Bachelor Party Scene Gets a Premium Upgrade",
+    title: "Austin's Bachelor Party Scene Gets a Premium Upgrade",
     excerpt: "New services cater to growing demand for upscale bachelor and bachelorette celebrations.",
     outlet: "Texas Monthly",
     link: "#"

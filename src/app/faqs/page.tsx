@@ -22,7 +22,7 @@ const faqCategories = [
       },
       {
         question: "Do you deliver to boats on Lake Travis?",
-        answer: "Absolutely! We're Lake Travis&apos;s premier boat delivery service. We deliver to all major marinas and can coordinate with your boat rental company."
+        answer: "Absolutely! We're Lake Travis's premier boat delivery service. We deliver to all major marinas and can coordinate with your boat rental company."
       }
     ]
   },
@@ -39,7 +39,7 @@ const faqCategories = [
       },
       {
         question: "Do you provide bartenders?",
-        answer: "Yes! All our bartenders are TABC certified professionals with extensive experience at Austin&apos;s finest venues. They're included in our full-service packages."
+        answer: "Yes! All our bartenders are TABC certified professionals with extensive experience at Austin's finest venues. They're included in our full-service packages."
       },
       {
         question: "Can you create custom cocktail menus?",
@@ -52,7 +52,7 @@ const faqCategories = [
     faqs: [
       {
         question: "Are you licensed and insured?",
-        answer: "Yes, we&apos;re fully licensed by TABC (Texas Alcoholic Beverage Commission) and carry comprehensive liability insurance for all services."
+        answer: "Yes, we're fully licensed by TABC (Texas Alcoholic Beverage Commission) and carry comprehensive liability insurance for all services."
       },
       {
         question: "Do you check IDs?",
@@ -60,7 +60,7 @@ const faqCategories = [
       },
       {
         question: "What's your policy on intoxicated guests?",
-        answer: "Safety first. Our team is trained in responsible service. We reserve the right to refuse service to intoxicated individuals and will work with hosts to ensure everyone&apos;s safety."
+        answer: "Safety first. Our team is trained in responsible service. We reserve the right to refuse service to intoxicated individuals and will work with hosts to ensure everyone's safety."
       }
     ]
   },

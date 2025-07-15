@@ -8,7 +8,7 @@ export default function AboutPage() {
       <Hero
         title="Our Story"
         subtitle="Bringing the Party to Austin Since 2020"
-        description="From a simple idea to Austin&apos;s premier alcohol delivery service"
+        description="From a simple idea to Austin's premier alcohol delivery service"
         backgroundImage="/images/hero/austin-skyline-hero.webp"
         height="medium"
       />

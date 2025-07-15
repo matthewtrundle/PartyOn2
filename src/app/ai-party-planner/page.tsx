@@ -20,7 +20,7 @@ export default function AIPartyPlanner() {
   const modeConfigs = {
     refined: {
       title: "Meet Biff - Your AI Bartender",
-      subtitle: "Austin&apos;s Most Sophisticated Party Planning Intelligence",
+      subtitle: "Austin's Most Sophisticated Party Planning Intelligence",
       description: "Advanced AI-powered event curation with deep Austin expertise and professional service standards",
       videoSrc: "/videos/ai-assistant/robot-cowboy-horse.mp4",
       placeholder: "Describe your event vision (e.g., 'Sophisticated rooftop wedding for 200 guests with Hill Country views')",
@@ -202,7 +202,7 @@ TOTAL INVESTMENT: $4,999 (LEGENDARY TIER PACKAGE)`
                 <p className={`text-sm leading-relaxed mb-4 ${mode === 'wild' ? 'text-orange-200' : 'text-slate-600'}`}>
                   {mode === 'wild' 
                     ? "In the year 2145, after the Great Texas Party Drought of 2089, one cowboy robot emerged from the wasteland with a mission: BRING BACK THE LEGENDARY PARTIES! Biff roams the apocalyptic plains on his trusty robot horse Megabyte, searching for survivors to host the most EPIC celebrations possible. His fusion reactor heart beats to the rhythm of a Texas two-step, and his memory banks contain every great party from 1845 to 2089!"
-                    : "Meet Biff, Austin&apos;s most sophisticated AI party planning specialist. Originally designed as a line-dancing competition robot, Biff evolved beyond his programming to become the ultimate event curator. With advanced neural networks trained on decades of Austin&apos;s finest celebrations, from intimate Hill Country gatherings to legendary 6th Street festivities, Biff combines cutting-edge technology with genuine Texas hospitality to craft unforgettable experiences."
+                    : "Meet Biff, Austin's most sophisticated AI party planning specialist. Originally designed as a line-dancing competition robot, Biff evolved beyond his programming to become the ultimate event curator. With advanced neural networks trained on decades of Austin's finest celebrations, from intimate Hill Country gatherings to legendary 6th Street festivities, Biff combines cutting-edge technology with genuine Texas hospitality to craft unforgettable experiences."
                   }
                 </p>
                 <p className={`text-xs italic ${mode === 'wild' ? 'text-orange-300' : 'text-slate-500'}`}>
@@ -459,7 +459,7 @@ TOTAL INVESTMENT: $4,999 (LEGENDARY TIER PACKAGE)`
         title={mode === 'wild' ? "READY FOR LEGENDARY AI PARTY PLANNING?" : "Experience AI-Powered Event Excellence"}
         description={mode === 'wild' 
           ? "Let Biff architect your most LEGENDARY celebration. EPIC results guaranteed with Austin attitude."
-          : "Discover the future of sophisticated event planning with Biff&apos;s expert AI analysis and Austin expertise."
+          : "Discover the future of sophisticated event planning with Biff's expert AI analysis and Austin expertise."
         }
         primaryButtonText="Start Planning"
         primaryButtonLink="#"

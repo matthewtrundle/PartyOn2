@@ -51,7 +51,7 @@ function BookNowContent() {
       <VideoHero
         title="Book Your Party On Experience"
         subtitle="Let's Make It Legendary"
-        description="Fast delivery or full-service events - we&apos;ve got you covered"
+        description="Fast delivery or full-service events - we've got you covered"
         videoSrc="/videos/backgrounds/upscale-bachelorette.mp4"
         fallbackImage="/images/hero/neon-nights-hero.webp"
         height="medium"

@@ -8,7 +8,7 @@ export default function EastAustinPage() {
       <Hero
         title="East Austin Delivery"
         subtitle="Where Art Meets Party"
-        description="Serving Austin&apos;s creative epicenter"
+        description="Serving Austin's creative epicenter"
         backgroundImage="/images/hero/austin-skyline-hero.webp"
         height="medium"
       />

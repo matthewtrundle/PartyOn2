@@ -98,7 +98,7 @@ export default function ProductsPage() {
       <VideoHero
         title="Browse Our Selection"
         subtitle="Premium Spirits, Local Favorites, Party Essentials"
-        description="Austin&apos;s largest selection of alcohol delivered in 30 minutes"
+        description="Austin's largest selection of alcohol delivered in 30 minutes"
         videoSrc="/videos/backgrounds/boat-cooler.mp4"
         fallbackImage="/images/products/premium-spirits-boutique.webp"
         ctaText="Start Shopping"

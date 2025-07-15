@@ -53,7 +53,7 @@ export default function BoatPartiesPage() {
       return [
         {
           title: "COVE CHAOS",
-          description: "Turn Devil&apos;s Cove into your personal MAYHEM zone! Wild floating bar service for the CRAZIEST boat parties!",
+          description: "Turn Devil's Cove into your personal MAYHEM zone! Wild floating bar service for the CRAZIEST boat parties!",
           image: "/images/services/boat-parties/luxury-yacht-deck.webp",
           features: [
             "WILD floating bar setup",
@@ -463,7 +463,7 @@ export default function BoatPartiesPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                   <div>
-                    <p className="font-sans font-semibold">Devil&apos;s Cove</p>
+                    <p className="font-sans font-semibold">Devil's Cove</p>
                     <p className="font-sans text-sm text-neutral-600">The ultimate party destination</p>
                   </div>
                 </li>

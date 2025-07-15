@@ -8,7 +8,7 @@ export default function DowntownAustinPage() {
       <Hero
         title="Downtown Austin Delivery"
         subtitle="From 6th Street to Rainey Street"
-        description="Fast delivery to Austin&apos;s entertainment heart"
+        description="Fast delivery to Austin's entertainment heart"
         backgroundImage="/images/hero/austin-skyline-hero.webp"
         height="medium"
       />

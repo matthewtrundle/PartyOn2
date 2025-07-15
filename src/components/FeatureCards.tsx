@@ -18,7 +18,7 @@ const features: Feature[] = [
   {
     title: "Lightning Fast Delivery",
     titleParty: "WARP SPEED CHAOS",
-    description: "Average 27-minute delivery across Austin. From 6th Street to Lake Travis, we&apos;re there before you know it.",
+    description: "Average 27-minute delivery across Austin. From 6th Street to Lake Travis, we're there before you know it.",
     descriptionParty: "We teleport booze at LIGHT SPEED! Your party starts NOW!",
     image: "/images/services/fast-delivery/motion-blur-delivery.webp",
     color: "primary",
@@ -46,7 +46,7 @@ const features: Feature[] = [
   {
     title: "Premium Bar Selection",
     titleParty: "WEAPONIZED BOOZE ARSENAL",
-    description: "Top-shelf spirits, craft cocktails, and Austin&apos;s favorite local brews. Curated for unforgettable celebrations.",
+    description: "Top-shelf spirits, craft cocktails, and Austin's favorite local brews. Curated for unforgettable celebrations.",
     descriptionParty: "MILITARY-GRADE alcohol selection for MAXIMUM DEVASTATION!",
     image: "/images/services/weddings/signature-cocktails-closeup.webp",
     color: "accent",
@@ -60,7 +60,7 @@ const features: Feature[] = [
   {
     title: "Expert Party Team",
     titleParty: "LEGENDARY HYPE SQUAD",
-    description: "Austin&apos;s most experienced bartenders and party professionals. We don&apos;t just deliver - we elevate.",
+    description: "Austin's most experienced bartenders and party professionals. We don't just deliver - we elevate.",
     descriptionParty: "Elite party commandos who AMPLIFY every celebration to 11!",
     image: "/images/services/bach-parties/bachelorette-champagne-tower.webp",
     color: "dark",

@@ -8,7 +8,7 @@ export default function SouthCongressPage() {
       <Hero
         title="South Congress (SoCo) Delivery"
         subtitle="Keep Austin Weird, Keep Austin Partying"
-        description="Fast delivery to Austin&apos;s most iconic neighborhood"
+        description="Fast delivery to Austin's most iconic neighborhood"
         backgroundImage="/images/hero/austin-skyline-golden-hour.webp"
         height="medium"
       />

@@ -13,21 +13,21 @@ const teamMembers = [
   {
     name: "Sarah Chen",
     role: "Chief Operations Officer",
-    bio: "Former Amazon logistics manager who brings world-class delivery expertise to Austin&apos;s party scene.",
+    bio: "Former Amazon logistics manager who brings world-class delivery expertise to Austin's party scene.",
     image: "/images/team/sarah.webp",
     funFact: "Holds the Lake Travis wakeboarding record"
   },
   {
     name: "Marcus Thompson",
     role: "Head of Bartending Services",
-    bio: "20+ years crafting cocktails at Austin&apos;s finest establishments. TABC certified instructor.",
+    bio: "20+ years crafting cocktails at Austin's finest establishments. TABC certified instructor.",
     image: "/images/team/marcus.webp",
     funFact: "Invented the 'Austin Sunrise' cocktail"
   },
   {
     name: "Biff",
     role: "AI Party Planning Specialist",
-    bio: "Post-apocalyptic cowboy robot from 2145. Survived the Great Texas Party Drought of 2089. Now helps Austin party like there&apos;s no tomorrow.",
+    bio: "Post-apocalyptic cowboy robot from 2145. Survived the Great Texas Party Drought of 2089. Now helps Austin party like there's no tomorrow.",
     image: "/images/ai-assistant/biff-bartender-cowboy.webp",
     funFact: "Powered by pure party energy"
   },

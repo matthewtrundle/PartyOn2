@@ -16,7 +16,7 @@ export default function BachPartiesPage() {
   const modeConfigs = {
     normal: {
       title: "Bachelor & Bachelorette Parties",
-      subtitle: "Premium Party Services for Austin&apos;s Best Celebrations",
+      subtitle: "Premium Party Services for Austin's Best Celebrations",
       description: "Professional service for unforgettable bachelor and bachelorette parties across Austin.",
       backgroundImage: "/images/hero/neon-nights-hero.webp",
       theme: "elegant"
@@ -182,7 +182,7 @@ export default function BachPartiesPage() {
       {/* CTA Section */}
       <CTA
         title={mode === 'bachelor' ? "READY TO BECOME A LEGEND?" : mode === 'bachelorette' ? "READY TO PARTY LIKE ROYALTY?" : "Ready to Party?"}
-        description={mode === 'bachelor' ? "Book the most epic bachelor party Austin has ever seen. Your crew will thank you forever!" : mode === 'bachelorette' ? "Create magical memories with Austin&apos;s most glamorous bachelorette experience!" : "Let's make your bach party legendary. Book Austin&apos;s favorite party delivery service!"}
+        description={mode === 'bachelor' ? "Book the most epic bachelor party Austin has ever seen. Your crew will thank you forever!" : mode === 'bachelorette' ? "Create magical memories with Austin's most glamorous bachelorette experience!" : "Let's make your bach party legendary. Book Austin's favorite party delivery service!"}
         primaryButtonText={mode === 'bachelor' ? "BOOK EPIC PARTY" : mode === 'bachelorette' ? "BOOK ROYAL TREATMENT" : "Start Planning"}
         primaryButtonLink="/book-now"
         secondaryButtonText="View All Packages"

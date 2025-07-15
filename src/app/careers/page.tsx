@@ -21,7 +21,7 @@ const openPositions = [
     department: "Events",
     type: "Part-time",
     location: "Austin & Lake Travis",
-    description: "Craft cocktails and create memories at Austin&apos;s most exclusive events. TABC certification required.",
+    description: "Craft cocktails and create memories at Austin's most exclusive events. TABC certification required.",
     requirements: [
       "TABC certified",
       "2+ years bartending experience",
@@ -49,7 +49,7 @@ const openPositions = [
     department: "Marketing",
     type: "Full-time",
     location: "Austin, TX (Hybrid)",
-    description: "Capture and share Austin&apos;s best party moments. Must understand the local scene and have a creative eye.",
+    description: "Capture and share Austin's best party moments. Must understand the local scene and have a creative eye.",
     requirements: [
       "3+ years social media experience",
       "Photography/videography skills",
@@ -99,7 +99,7 @@ export default function CareersPage() {
       <Hero
         title="Join the Party"
         subtitle="Careers at Party On Delivery"
-        description="Help us make Austin&apos;s celebrations legendary"
+        description="Help us make Austin's celebrations legendary"
         backgroundImage="/images/hero/festival-hero.webp"
         height="medium"
       />

@@ -19,7 +19,7 @@ export default function AIConcierge({ mode = 'normal' }: AIConciergeProps) {
     {
       id: '1',
       role: 'assistant',
-      content: "Hey there! I&apos;m your Party On AI Concierge! I can help you plan the perfect Austin party, recommend packages, or answer any questions about our services. What kind of celebration are you planning?",
+      content: "Hey there! I'm your Party On AI Concierge! I can help you plan the perfect Austin party, recommend packages, or answer any questions about our services. What kind of celebration are you planning?",
       timestamp: new Date()
     }
   ])
@@ -91,7 +91,7 @@ export default function AIConcierge({ mode = 'normal' }: AIConciergeProps) {
       const fallbackMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: "I&apos;m having trouble connecting right now, but I&apos;d love to help you plan your Austin party! Feel free to call us at (512) 555-0123 or book directly through our website. What kind of celebration are you planning?",
+        content: "I'm having trouble connecting right now, but I'd love to help you plan your Austin party! Feel free to call us at (512) 555-0123 or book directly through our website. What kind of celebration are you planning?",
         timestamp: new Date()
       }
       setMessages(prev => [...prev, fallbackMessage])

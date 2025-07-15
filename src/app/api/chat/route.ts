@@ -105,12 +105,12 @@ ELEGANT MODE: Sophisticated and refined tone. Focus on premium experiences, luxu
 function getFallbackResponse(mode: string): string {
   const responses = {
     bachelor: [
-      "LEGEND! I&apos;d love to help you plan an EPIC bachelor party! Our packages start at $499 for the ultimate Austin experience. Call (512) 555-0123 to book your legendary night!",
+      "LEGEND! I'd love to help you plan an EPIC bachelor party! Our packages start at $499 for the ultimate Austin experience. Call (512) 555-0123 to book your legendary night!",
       "Ready to make some WILD memories? Our bachelor packages include 6th Street guides, Lake Travis boat parties, and VIP treatment. Let's plan something LEGENDARY!",
       "EPIC choice coming to Party On! We've got everything from pre-game supplies to full VIP service. Book at partyondelivery.com or call (512) 555-0123!"
     ],
     bachelorette: [
-      "Hey Queen! I&apos;m here to help plan your FABULOUS bachelorette party! Our royal packages start at $699 with champagne, pink cocktails, and Instagram-worthy setups. Call (512) 555-0123!",
+      "Hey Queen! I'm here to help plan your FABULOUS bachelorette party! Our royal packages start at $699 with champagne, pink cocktails, and Instagram-worthy setups. Call (512) 555-0123!",
       "Ready for some Queen treatment? We do spa day deliveries, luxury boat parties, and everything fit for Austin royalty. Let's make your celebration ROYAL!",
       "Fabulous choice! Our bachelorette packages include everything from mimosa brunches to royal treatment. Book your queen experience today!"
     ],
@@ -120,9 +120,9 @@ function getFallbackResponse(mode: string): string {
       "Let's make this LEGENDARY! From weddings to wild nights, we bring the party to you across Austin!"
     ],
     default: [
-      "Hey there! I&apos;d love to help plan your Austin celebration! We offer fast delivery, wedding services, boat parties, and more. Call (512) 555-0123 or book online!",
+      "Hey there! I'd love to help plan your Austin celebration! We offer fast delivery, wedding services, boat parties, and more. Call (512) 555-0123 or book online!",
       "Perfect timing! We deliver premium alcohol across Austin in 30 minutes, plus full event services. What kind of celebration are you planning?",
-      "Great choice with Party On! From Lake Travis to downtown, we bring the party to you. Wedding? Bachelor party? Just tell me what you&apos;re thinking!"
+      "Great choice with Party On! From Lake Travis to downtown, we bring the party to you. Wedding? Bachelor party? Just tell me what you're thinking!"
     ]
   }
 

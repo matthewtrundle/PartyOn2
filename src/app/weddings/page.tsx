@@ -17,7 +17,7 @@ export default function WeddingsPage() {
   const modeConfigs = {
     elegant: {
       title: "Elevate Your Wedding Day",
-      subtitle: "Premium Bar Service for Austin&apos;s Most Beautiful Celebrations",
+      subtitle: "Premium Bar Service for Austin's Most Beautiful Celebrations",
       description: "From intimate Hill Country ceremonies to grand Lake Travis receptions, we bring sophistication and style to your special day.",
       backgroundImage: "/images/services/weddings/outdoor-bar-setup.webp",
       theme: "elegant"
