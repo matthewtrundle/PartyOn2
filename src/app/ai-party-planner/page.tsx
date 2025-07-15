@@ -56,7 +56,7 @@ export default function AIPartyPlannerPage() {
       title: "MEET BIFF: REFINED AI PARTY ARCHITECT",
       subtitle: "SOPHISTICATED PARTY INTELLIGENCE FOR DISCERNING AUSTINITES",
       description: "PREMIUM EVENT CURATION WITH ADVANCED NEURAL NETWORKS",
-      videoSrc: "/videos/ai-assistant/rooftop-terrace-1.mp4",
+      videoSrc: "/videos/ai-assistant/robot-cowboy-horse.mp4",
       thoughtPrefixes: [
         "Consulting my extensive database of Austin venues...",
         "Cross-referencing with seasonal trends...",
