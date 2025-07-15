@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import VideoHero from '@/components/VideoHero'
 import ExperienceSelector from '@/components/ExperienceSelector'
+import Image from 'next/image'
 
 type AIMode = 'refined' | 'wild'
 
@@ -261,11 +262,15 @@ export default function AIPartyPlannerPage() {
               }`}>
                 <div className={`${mode === 'wild' ? 'bg-gray-900' : 'bg-white'} rounded-xl p-6 text-center`}>
                   <div className="relative w-32 h-32 mx-auto mb-4">
-                    <div className={`w-full h-full rounded-full flex items-center justify-center text-4xl ${
-                      mode === 'wild' ? 'bg-orange-500' : 'bg-slate-500'
-                    }`}>
-                      🤖
-                    </div>
+                    <Image
+                      src={mode === 'wild' 
+                        ? "/images/ai-assistant/biff-bartender-cowboy.webp"
+                        : "/images/ai-assistant/robot-cowboy-horse-sunset.webp"
+                      }
+                      alt="Biff"
+                      fill
+                      className="object-cover rounded-full"
+                    />
                     <div className={`absolute -bottom-2 -right-2 w-8 h-8 rounded-full flex items-center justify-center ${
                       mode === 'wild' ? 'bg-orange-500' : 'bg-green-500'
                     } ${isProcessing ? 'animate-pulse' : ''}`}>
@@ -334,11 +339,16 @@ export default function AIPartyPlannerPage() {
                           {message.role === 'assistant' && (
                             <div className="flex items-center gap-2 mb-2">
                               <div className="w-8 h-8 rounded-full overflow-hidden">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${
-                                  mode === 'wild' ? 'bg-orange-500' : 'bg-slate-500'
-                                }`}>
-                                  🤖
-                                </div>
+                                <Image
+                                  src={mode === 'wild' 
+                                    ? "/images/ai-assistant/biff-bartender-cowboy.webp"
+                                    : "/images/ai-assistant/robot-cowboy-horse-sunset.webp"
+                                  }
+                                  alt="Biff"
+                                  width={32}
+                                  height={32}
+                                  className="object-cover rounded-full"
+                                />
                               </div>
                               <span className={`text-xs font-semibold ${
                                 mode === 'wild' ? 'text-orange-400' : 'text-slate-600'
@@ -416,11 +426,16 @@ export default function AIPartyPlannerPage() {
                         <div className="max-w-[80%]">
                           <div className="flex items-center gap-2 mb-2">
                             <div className="w-8 h-8 rounded-full overflow-hidden animate-pulse">
-                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${
-                                mode === 'wild' ? 'bg-orange-500' : 'bg-slate-500'
-                              }`}>
-                                🤖
-                              </div>
+                              <Image
+                                src={mode === 'wild' 
+                                  ? "/images/ai-assistant/biff-bartender-cowboy.webp"
+                                  : "/images/ai-assistant/robot-cowboy-horse-sunset.webp"
+                                }
+                                alt="Biff"
+                                width={32}
+                                height={32}
+                                className="object-cover rounded-full"
+                              />
                             </div>
                             <span className={`text-xs font-semibold ${
                               mode === 'wild' ? 'text-orange-400' : 'text-slate-600'
