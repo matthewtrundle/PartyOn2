@@ -18,21 +18,21 @@ export default function BachPartiesPage() {
       title: "Bachelor & Bachelorette Parties",
       subtitle: "Premium Party Services for Austin&apos;s Best Celebrations",
       description: "Professional service for unforgettable bachelor and bachelorette parties across Austin.",
-      backgroundImage: "/images/hero/neon-nights-hero.jpg",
+      backgroundImage: "/images/hero/neon-nights-hero.webp",
       theme: "elegant"
     },
     bachelor: {
       title: "LEGENDARY BACHELOR PARTY",
       subtitle: "WHERE LEGENDS ARE MADE",
       description: "Epic bachelor parties that Austin will never forget. No rules, no limits, just legendary nights!",
-      backgroundImage: "/images/services/bach-parties/late-night-party-supplies.png",
+      backgroundImage: "/images/services/bach-parties/late-night-party-supplies.webp",
       theme: "extreme"
     },
     bachelorette: {
       title: "GLAM BACHELORETTE EXPERIENCE",
       subtitle: "Sparkle, Shine & Celebrate Like Queens",
       description: "Fabulous bachelorette parties fit for Austin royalty. Champagne bubbles, glam vibes, and unforgettable memories!",
-      backgroundImage: "/images/services/bach-parties/brunch-mimosa-bar.png",
+      backgroundImage: "/images/services/bach-parties/brunch-mimosa-bar.webp",
       theme: "glamorous"
     }
   }
@@ -65,7 +65,7 @@ export default function BachPartiesPage() {
           bachelor: 'bg-gradient-to-r from-red-600 to-orange-600',
           bachelorette: 'bg-gradient-to-r from-pink-500 to-purple-500'
         }}
-        label="PARTY STYLE"
+        label="PARTY VIBE"
       />
 
       {/* Hero Section */}

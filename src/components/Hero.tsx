@@ -22,9 +22,9 @@ export default function Hero({
   height = 'full'
 }: HeroProps) {
   const heightClasses = {
-    full: 'min-h-screen',
-    large: 'min-h-[80vh]',
-    medium: 'min-h-[60vh]'
+    full: 'h-[85vh]',
+    large: 'h-[70vh]',
+    medium: 'h-[50vh]'
   }
 
   return (
@@ -42,36 +42,36 @@ export default function Hero({
         {overlay && <div className="hero-overlay" />}
       </div>
 
-      {/* Animated background elements */}
-      <div className="absolute inset-0 z-10">
-        <div className="absolute top-20 left-10 w-72 h-72 bg-gold-500/10 rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-austin-lake/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '1.5s' }} />
+      {/* Subtle animated accents */}
+      <div className="absolute inset-0 z-10 opacity-50">
+        <div className="absolute top-1/4 -left-10 w-64 h-64 bg-primary-500/20 rounded-full blur-[100px]" />
+        <div className="absolute bottom-1/4 -right-10 w-64 h-64 bg-secondary-500/20 rounded-full blur-[100px]" />
       </div>
 
-      {/* Content */}
+      {/* Content - More compact */}
       <div className="container-custom relative z-20 text-center text-white">
-        <div className="max-w-4xl mx-auto space-y-6 animate-fade-up">
+        <div className="max-w-3xl mx-auto space-y-4 animate-fade-up">
           {subtitle && (
-            <p className="font-sans font-semibold text-gold-400 uppercase tracking-wider text-sm md:text-base">
+            <p className="font-sans font-medium text-accent-500 uppercase tracking-widest text-xs md:text-sm">
               {subtitle}
             </p>
           )}
           
-          <h1 className="font-serif font-bold text-5xl md:text-6xl lg:text-7xl xl:text-8xl leading-tight text-shadow-lg">
+          <h1 className="font-display font-bold text-4xl md:text-5xl lg:text-6xl leading-tight text-shadow">
             {title}
           </h1>
           
           {description && (
-            <p className="font-sans text-lg md:text-xl lg:text-2xl text-neutral-100 max-w-2xl mx-auto leading-relaxed text-shadow">
+            <p className="font-sans text-base md:text-lg lg:text-xl text-white/90 max-w-xl mx-auto leading-relaxed">
               {description}
             </p>
           )}
           
           {ctaText && ctaLink && (
-            <div className="pt-8">
+            <div className="pt-6">
               <a
                 href={ctaLink}
-                className="btn-primary text-lg px-8 py-4 hover:scale-105 transform transition-all duration-300"
+                className="btn-primary text-base md:text-lg"
               >
                 {ctaText}
               </a>
@@ -79,21 +79,11 @@ export default function Hero({
           )}
         </div>
 
-        {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-          <svg
-            className="w-6 h-6 text-white/70"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 14l-7 7m0 0l-7-7m7 7V3"
-            />
-          </svg>
+        {/* Subtle scroll hint */}
+        <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 animate-pulse">
+          <div className="w-6 h-10 rounded-full border-2 border-white/30 p-1">
+            <div className="w-1 h-2 bg-white/50 rounded-full mx-auto animate-bounce" />
+          </div>
         </div>
       </div>
     </section>

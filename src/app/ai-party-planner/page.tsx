@@ -138,7 +138,7 @@ TOTAL INVESTMENT: $4,999 (LEGENDARY TIER PACKAGE)`
           refined: 'bg-gradient-to-r from-slate-600 to-slate-800',
           wild: 'bg-gradient-to-r from-red-600 via-orange-600 to-yellow-500'
         }}
-        label="AI MODE"
+        label="PARTY VIBE"
       />
 
       {/* Hero Section */}
@@ -148,8 +148,8 @@ TOTAL INVESTMENT: $4,999 (LEGENDARY TIER PACKAGE)`
         description={currentConfig.description}
         videoSrc={currentConfig.videoSrc}
         fallbackImage={mode === 'wild' 
-          ? "/images/hero/austin-6th-street-neon.png"
-          : "/images/backgrounds/rooftop-terrace-elegant-1.png"
+          ? "/images/hero/austin-6th-street-neon.webp"
+          : "/images/backgrounds/rooftop-terrace-elegant-1.webp"
         }
       />
 
@@ -170,7 +170,7 @@ TOTAL INVESTMENT: $4,999 (LEGENDARY TIER PACKAGE)`
               <div className={`relative rounded-3xl overflow-hidden ${mode === 'wild' ? 'shadow-[0_0_50px_rgba(251,191,36,0.3)]' : 'shadow-2xl'}`}>
                 <div className={`absolute inset-0 ${mode === 'wild' ? 'bg-gradient-to-br from-red-900/20 to-orange-900/20' : 'bg-gradient-to-br from-slate-100/50 to-white/50'} backdrop-blur-sm`} />
                 <Image
-                  src="/images/ai-assistant/biff-bartender-cowboy.png"
+                  src="/images/ai-assistant/biff-bartender-cowboy.webp"
                   alt="Biff - AI Bartender"
                   width={600}
                   height={600}
@@ -178,15 +178,40 @@ TOTAL INVESTMENT: $4,999 (LEGENDARY TIER PACKAGE)`
                 />
                 <div className={`absolute bottom-0 left-0 right-0 p-8 ${mode === 'wild' ? 'bg-gradient-to-t from-black via-black/80 to-transparent' : 'bg-gradient-to-t from-white via-white/90 to-transparent'}`}>
                   <h3 className={`text-2xl font-bold mb-2 ${mode === 'wild' ? 'text-orange-400' : 'text-slate-800'}`}>
-                    Meet Biff
+                    Biff
                   </h3>
-                  <p className={`${mode === 'wild' ? 'text-orange-200' : 'text-slate-600'}`}>
+                  <p className={`text-sm mb-2 ${mode === 'wild' ? 'text-orange-200' : 'text-slate-600'}`}>
                     {mode === 'wild' 
-                      ? 'Austin\'s Most Legendary AI Party Architect' 
-                      : 'Your Expert AI Event Planning Specialist'
+                      ? 'Post-Apocalyptic Cowboy Robot Party Planner' 
+                      : 'AI Event Planning Specialist & Former Line-Dancing Champion'
+                    }
+                  </p>
+                  <p className={`text-xs italic ${mode === 'wild' ? 'text-orange-300' : 'text-slate-500'}`}>
+                    {mode === 'wild' 
+                      ? '*circuits buzzing* "YEEHAW, PARDNER!"' 
+                      : '"Precision meets celebration"'
                     }
                   </p>
                 </div>
+              </div>
+
+              {/* Biff's Backstory */}
+              <div className={`p-8 rounded-2xl mb-6 ${mode === 'wild' ? 'bg-gradient-to-br from-red-900/30 to-orange-900/30 border border-orange-500/30' : 'bg-white shadow-lg border border-slate-200'}`}>
+                <h4 className={`text-xl font-bold mb-4 ${mode === 'wild' ? 'text-orange-400' : 'text-slate-800'}`}>
+                  The Legend of Biff
+                </h4>
+                <p className={`text-sm leading-relaxed mb-4 ${mode === 'wild' ? 'text-orange-200' : 'text-slate-600'}`}>
+                  {mode === 'wild' 
+                    ? "In the year 2145, after the Great Texas Party Drought of 2089, one cowboy robot emerged from the wasteland with a mission: BRING BACK THE LEGENDARY PARTIES! Biff roams the apocalyptic plains on his trusty robot horse Megabyte, searching for survivors to host the most EPIC celebrations possible. His fusion reactor heart beats to the rhythm of a Texas two-step, and his memory banks contain every great party from 1845 to 2089!"
+                    : "Meet Biff, Austin's most sophisticated AI party planning specialist. Originally designed as a line-dancing competition robot, Biff evolved beyond his programming to become the ultimate event curator. With advanced neural networks trained on decades of Austin's finest celebrations, from intimate Hill Country gatherings to legendary 6th Street festivities, Biff combines cutting-edge technology with genuine Texas hospitality to craft unforgettable experiences."
+                  }
+                </p>
+                <p className={`text-xs italic ${mode === 'wild' ? 'text-orange-300' : 'text-slate-500'}`}>
+                  {mode === 'wild' 
+                    ? "*beep boop* \"I survived the Tequila Wars and the Great Lime Shortage of '98. Now I'm here to make your party LEGENDARY!\" - Biff"
+                    : "\"Every great celebration deserves meticulous planning and flawless execution. That's my promise to Austin.\" - Biff"
+                  }
+                </p>
               </div>
 
               {/* AI Capabilities */}

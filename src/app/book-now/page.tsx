@@ -53,7 +53,7 @@ function BookNowContent() {
         subtitle="Let&apos;s Make It Legendary"
         description="Fast delivery or full-service events - we&apos;ve got you covered"
         videoSrc="/videos/backgrounds/upscale-bachelorette.mp4"
-        fallbackImage="/images/hero/neon-nights-hero.jpg"
+        fallbackImage="/images/hero/neon-nights-hero.webp"
         height="medium"
       />
 
@@ -66,8 +66,8 @@ function BookNowContent() {
               onClick={() => setActiveTab('delivery')}
               className={`flex-1 py-4 text-center font-sans font-medium transition-all duration-300 ${
                 activeTab === 'delivery'
-                  ? 'text-gold-500 border-b-2 border-gold-500'
-                  : 'text-neutral-500 hover:text-neutral-700'
+                  ? 'text-primary-500 border-b-2 border-primary-500'
+                  : 'text-dark/60 hover:text-dark'
               }`}
             >
               Fast Delivery
@@ -76,8 +76,8 @@ function BookNowContent() {
               onClick={() => setActiveTab('event')}
               className={`flex-1 py-4 text-center font-sans font-medium transition-all duration-300 ${
                 activeTab === 'event'
-                  ? 'text-gold-500 border-b-2 border-gold-500'
-                  : 'text-neutral-500 hover:text-neutral-700'
+                  ? 'text-primary-500 border-b-2 border-primary-500'
+                  : 'text-dark/60 hover:text-dark'
               }`}
             >
               Event Service

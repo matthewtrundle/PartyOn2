@@ -8,38 +8,85 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        // Premium gold palette
+        // Premium Party Color System
+        primary: {
+          50: '#FFF1ED',
+          100: '#FFE3DB',
+          200: '#FFC7B7',
+          300: '#FFAB93',
+          400: '#FF8B5C',
+          500: '#FF6B35', // Sunset Orange - Main brand
+          600: '#E74C3C',
+          700: '#C13E32',
+          800: '#9A3228',
+          900: '#7A281F',
+        },
+        secondary: {
+          50: '#E8FAF9',
+          100: '#D1F5F3',
+          200: '#A3EBE7',
+          300: '#75E1DB',
+          400: '#6DD9D1',
+          500: '#4ECDC4', // Fresh Teal
+          600: '#3DB5AC',
+          700: '#329590',
+          800: '#267574',
+          900: '#1B5558',
+        },
+        accent: {
+          50: '#FFFDF5',
+          100: '#FFFBEB',
+          200: '#FFF7D6',
+          300: '#FFF3A3',
+          400: '#FFEF85',
+          500: '#FFE66D', // Champagne Yellow
+          600: '#F5D640',
+          700: '#E0C030',
+          800: '#B89D26',
+          900: '#8F7A1D',
+        },
+        dark: {
+          50: '#F8F9FA',
+          100: '#E9ECEF',
+          200: '#DEE2E6',
+          300: '#CED4DA',
+          400: '#ADB5BD',
+          500: '#6C757D',
+          600: '#495057',
+          700: '#2D3436', // Soft Charcoal
+          800: '#212529',
+          900: '#191C1F',
+        },
+        // Legacy colors for backward compatibility
         gold: {
-          50: '#FFF9E6',
-          100: '#FFF2CC',
-          200: '#FFE699',
-          300: '#FFD966',
-          400: '#FFCC33',
-          500: '#F5B800', // Main gold
-          600: '#CC9A00',
-          700: '#997300',
-          800: '#664D00',
-          900: '#332600',
+          50: '#FFFDF5',
+          100: '#FFFBEB',
+          200: '#FFF7D6',
+          300: '#FFF3A3',
+          400: '#FFEF85',
+          500: '#FFE66D',
+          600: '#F5D640',
+          700: '#E0C030',
+          800: '#B89D26',
+          900: '#8F7A1D',
         },
-        // Deep navy palette
         navy: {
-          50: '#E6E9F0',
-          100: '#CCD3E1',
-          200: '#99A7C3',
-          300: '#667AA5',
-          400: '#334E87',
-          500: '#002147', // Main navy
-          600: '#001B39',
-          700: '#00142B',
-          800: '#000E1D',
-          900: '#00070F',
+          50: '#F8F9FA',
+          100: '#E9ECEF',
+          200: '#DEE2E6',
+          300: '#CED4DA',
+          400: '#ADB5BD',
+          500: '#2D3436',
+          600: '#495057',
+          700: '#343A40',
+          800: '#212529',
+          900: '#191C1F',
         },
-        // Austin-inspired accent colors
         austin: {
-          sunset: '#FF6B35', // Warm orange sunset
-          lake: '#18C0D6', // Lake Travis blue
-          hills: '#4A7C59', // Hill Country green
-          live: '#E74C3C', // Live music red
+          sunset: '#FF6B35',
+          lake: '#4ECDC4',
+          hills: '#4A7C59',
+          live: '#E74C3C',
         },
         // Neutral palette
         neutral: {
@@ -57,16 +104,19 @@ module.exports = {
         },
       },
       fontFamily: {
-        sans: ['Montserrat', 'system-ui', 'sans-serif'],
-        serif: ['Playfair Display', 'Georgia', 'serif'],
-        display: ['Bebas Neue', 'Impact', 'sans-serif'],
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+        display: ['Playfair Display', 'Georgia', 'serif'],
       },
       animation: {
         'fade-in': 'fadeIn 0.3s ease-in-out',
         'fade-up': 'fadeUp 0.4s ease-out',
         'slide-in': 'slideIn 0.3s ease-out',
         'scale-in': 'scaleIn 0.2s ease-out',
-        'float': 'float 2s ease-in-out',
+        'float': 'float 3s ease-in-out infinite',
+        'bounce-slow': 'bounce 2s ease-in-out infinite',
+        'wiggle': 'wiggle 0.5s ease-in-out',
+        'pulse-slow': 'pulse 3s ease-in-out infinite',
+        'party': 'party 1s ease-in-out',
       },
       keyframes: {
         fadeIn: {
@@ -87,19 +137,33 @@ module.exports = {
         },
         float: {
           '0%, 100%': { transform: 'translateY(0)' },
-          '50%': { transform: 'translateY(-5px)' },
+          '50%': { transform: 'translateY(-10px)' },
+        },
+        wiggle: {
+          '0%, 100%': { transform: 'rotate(0deg)' },
+          '25%': { transform: 'rotate(-3deg)' },
+          '75%': { transform: 'rotate(3deg)' },
+        },
+        party: {
+          '0%': { transform: 'scale(1) rotate(0deg)' },
+          '25%': { transform: 'scale(1.1) rotate(5deg)' },
+          '50%': { transform: 'scale(1) rotate(-5deg)' },
+          '75%': { transform: 'scale(1.1) rotate(5deg)' },
+          '100%': { transform: 'scale(1) rotate(0deg)' },
         },
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'gradient-premium': 'linear-gradient(135deg, var(--tw-gradient-stops))',
-        'gradient-gold': 'linear-gradient(135deg, #F5B800 0%, #FFCC33 100%)',
-        'gradient-navy': 'linear-gradient(135deg, #002147 0%, #334E87 100%)',
+        'gradient-primary': 'linear-gradient(135deg, #FF6B35 0%, #E74C3C 100%)',
+        'gradient-fun': 'linear-gradient(135deg, #FF6B35 0%, #4ECDC4 50%, #FFE66D 100%)',
+        'gradient-party': 'linear-gradient(45deg, #FF6B35, #FFE66D, #4ECDC4, #FF6B35)',
       },
       boxShadow: {
-        'premium': '0 5px 20px rgba(0, 0, 0, 0.08)',
-        'premium-hover': '0 10px 30px rgba(0, 0, 0, 0.12)',
-        'glow': '0 0 15px rgba(245, 184, 0, 0.3)',
+        'premium': '0 4px 20px rgba(0, 0, 0, 0.08)',
+        'premium-hover': '0 8px 30px rgba(0, 0, 0, 0.15)',
+        'glow': '0 0 20px rgba(255, 107, 53, 0.3)',
+        'party': '0 0 30px rgba(255, 107, 53, 0.4), 0 0 60px rgba(78, 205, 196, 0.2)',
       },
     },
   },

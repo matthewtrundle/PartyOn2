@@ -30,6 +30,7 @@ export default function VideoHero({
   const [videoLoaded, setVideoLoaded] = useState(false)
   const [videoError, setVideoError] = useState(false)
   const [isVisible, setIsVisible] = useState(false)
+  const [parallaxOffset, setParallaxOffset] = useState(0)
   
   // Debug logging
   useEffect(() => {
@@ -83,15 +84,27 @@ export default function VideoHero({
     }
   }, [])
 
+  // Parallax effect
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrolled = window.pageYOffset
+      const speed = 0.5
+      setParallaxOffset(scrolled * speed)
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
   const heightClasses = {
-    full: 'h-screen',
-    tall: 'h-[80vh]',
-    medium: 'h-[60vh]'
+    full: 'h-[85vh]',
+    tall: 'h-[70vh]',
+    medium: 'h-[50vh]'
   }
 
   return (
-    <section ref={sectionRef} className={`relative ${heightClasses[height]} min-h-[600px] flex items-center justify-center overflow-hidden`}>
-      {/* Video Background */}
+    <section ref={sectionRef} className={`relative ${heightClasses[height]} min-h-[500px] flex items-center justify-center overflow-hidden`}>
+      {/* Video Background with Parallax */}
       {videoSrc && !videoError && isVisible && (
         <video
           key={videoSrc}
@@ -99,11 +112,13 @@ export default function VideoHero({
           className={`absolute inset-0 w-full h-full object-cover ${
             videoLoaded ? 'opacity-100' : 'opacity-0'
           } transition-opacity duration-500`}
+          style={{ transform: `translateY(${parallaxOffset}px)` }}
           autoPlay
           loop
           muted
           playsInline
-          preload="auto"
+          preload="none"
+          poster={fallbackImage}
           onLoadedData={() => setVideoLoaded(true)}
           onError={() => setVideoError(true)}
         >
@@ -111,19 +126,24 @@ export default function VideoHero({
         </video>
       )}
 
-      {/* Fallback Image */}
-      <Image
-        key={fallbackImage}
-        src={fallbackImage}
-        alt={title}
-        fill
-        className={`absolute inset-0 object-cover ${
-          videoLoaded && !videoError && isVisible ? 'opacity-0' : 'opacity-100'
-        } transition-opacity duration-500`}
+      {/* Fallback Image with Parallax */}
+      <div 
+        className="absolute inset-0"
+        style={{ transform: `translateY(${parallaxOffset}px)` }}
+      >
+        <Image
+          key={fallbackImage}
+          src={fallbackImage}
+          alt={title}
+          fill
+          className={`object-cover ${
+            videoLoaded && !videoError && isVisible ? 'opacity-0' : 'opacity-100'
+          } transition-opacity duration-500`}
         priority={height === 'full'}
         loading={height === 'full' ? 'eager' : 'lazy'}
         sizes="100vw"
-      />
+        />
+      </div>
 
       {/* Overlay */}
       <div 
@@ -131,20 +151,20 @@ export default function VideoHero({
         style={{ opacity: overlayOpacity }}
       />
 
-      {/* Content */}
-      <div className="relative z-10 text-center text-white px-6 max-w-5xl mx-auto">
-        <h1 className="font-serif text-5xl md:text-7xl mb-6 text-shadow-lg">
+      {/* Content - Compact & Clean */}
+      <div className="relative z-10 text-center text-white px-6 max-w-4xl mx-auto">
+        <h1 className="font-display font-bold text-4xl md:text-5xl lg:text-6xl mb-4 text-shadow">
           {title}
         </h1>
         
         {subtitle && (
-          <h2 className="font-display text-2xl md:text-3xl mb-6 text-shadow">
+          <p className="font-sans font-medium text-accent-500 uppercase tracking-widest text-xs md:text-sm mb-4">
             {subtitle}
-          </h2>
+          </p>
         )}
         
         {description && (
-          <p className="font-sans text-lg md:text-xl mb-8 text-neutral-100 max-w-3xl mx-auto text-shadow">
+          <p className="font-sans text-base md:text-lg lg:text-xl mb-6 text-white/90 max-w-2xl mx-auto leading-relaxed">
             {description}
           </p>
         )}
@@ -152,18 +172,18 @@ export default function VideoHero({
         {ctaText && ctaLink && (
           <Link 
             href={ctaLink} 
-            className="btn-primary px-8 py-4 text-lg shadow-xl hover:shadow-2xl transform hover:scale-105 transition-transform"
+            className="btn-primary text-base md:text-lg"
           >
             {ctaText}
           </Link>
         )}
       </div>
 
-      {/* Scroll Indicator - Reduced animation */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
-        <svg className="w-6 h-6 text-white opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-        </svg>
+      {/* Subtle scroll hint */}
+      <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 animate-pulse">
+        <div className="w-6 h-10 rounded-full border-2 border-white/30 p-1">
+          <div className="w-1 h-2 bg-white/50 rounded-full mx-auto animate-bounce" />
+        </div>
       </div>
     </section>
   )

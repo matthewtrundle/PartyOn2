@@ -19,21 +19,21 @@ export default function BoatPartiesPage() {
       title: "Lake Travis Luxury Delivered",
       subtitle: "Premium Bar Service for Your Nautical Adventure",
       description: "From sunset cruises to all-day regattas, we bring the party to your boat with style and sophistication.",
-      backgroundImage: "/images/hero/lake-life-hero.jpg",
+      backgroundImage: "/images/hero/lake-life-hero.webp",
       theme: "chill"
     },
     wild: {
       title: "LAKE TRAVIS MAYHEM",
       subtitle: "WHERE BOAT PARTIES GET ABSOLUTELY WILD",
       description: "Ready to turn Lake Travis upside down? We bring the CHAOS to your floating party palace!",
-      backgroundImage: "/images/hero/lake-travis-sunset.jpg",
+      backgroundImage: "/images/hero/lake-travis-sunset.webp",
       theme: "wild"
     },
     luxury: {
       title: "Ultra-Luxury Yacht Experience",
       subtitle: "Where Elegance Meets the Open Water",
       description: "Experience the pinnacle of nautical luxury with our exclusive yacht service. Every detail crafted for discerning captains.",
-      backgroundImage: "/images/services/boat-parties/luxury-yacht-deck.png",
+      backgroundImage: "/images/services/boat-parties/luxury-yacht-deck.webp",
       theme: "luxury"
     }
   }
@@ -54,7 +54,7 @@ export default function BoatPartiesPage() {
         {
           title: "COVE CHAOS",
           description: "Turn Devil&apos;s Cove into your personal MAYHEM zone! Wild floating bar service for the CRAZIEST boat parties!",
-          image: "/images/services/boat-parties/luxury-yacht-deck.png",
+          image: "/images/services/boat-parties/luxury-yacht-deck.webp",
           features: [
             "WILD floating bar setup",
             "Party shots & beer bongs",
@@ -69,7 +69,7 @@ export default function BoatPartiesPage() {
         {
           title: "REGATTA RAMPAGE",
           description: "Multi-boat MAYHEM! Coordinate the wildest fleet party Lake Travis has ever seen!",
-          image: "/images/gallery/sunset-champagne-pontoon.png",
+          image: "/images/gallery/sunset-champagne-pontoon.webp",
           features: [
             "Fleet-wide party coordination",
             "Multiple floating bars",
@@ -86,7 +86,7 @@ export default function BoatPartiesPage() {
         {
           title: "Yacht Concierge",
           description: "Ultimate luxury yacht experience with personal concierge service and premium everything.",
-          image: "/images/services/boat-parties/luxury-yacht-deck.png",
+          image: "/images/services/boat-parties/luxury-yacht-deck.webp",
           features: [
             "Personal yacht concierge",
             "Dom Pérignon & rare spirits",
@@ -101,7 +101,7 @@ export default function BoatPartiesPage() {
         {
           title: "Elite Marina Service",
           description: "Exclusive marina-to-yacht service with premium amenities and professional crew.",
-          image: "/images/services/boat-parties/captains-cooler.png",
+          image: "/images/services/boat-parties/captains-cooler.webp",
           features: [
             "Master sommelier service",
             "Premium marina coordination",
@@ -118,7 +118,7 @@ export default function BoatPartiesPage() {
     {
       title: "Sunset Cruise",
       description: "Perfect for intimate gatherings. Premium coolers delivered dockside with craft cocktails and local favorites.",
-      image: "/images/hero/lake-life-hero.jpg",
+      image: "/images/hero/lake-life-hero.webp",
       features: [
         "2-4 hour cruise package",
         "Premium cooler setup",
@@ -147,7 +147,7 @@ export default function BoatPartiesPage() {
     {
       title: "Regatta Ready",
       description: "For multi-boat parties and lake events. Coordinated delivery to multiple vessels with VIP service.",
-      image: "/images/services/boat-parties/multiple-boats-party.png", // TODO: Add image
+      image: "/images/services/boat-parties/multiple-boats-party.webp", // TODO: Add image
       features: [
         "Multi-boat coordination",
         "Floating bar service",
@@ -218,7 +218,7 @@ export default function BoatPartiesPage() {
           wild: 'bg-gradient-to-r from-blue-600 to-cyan-600',
           luxury: 'bg-gradient-to-r from-slate-600 to-gray-700'
         }}
-        label="BOAT VIBE"
+        label="PARTY VIBE"
       />
       {/* Hero Section */}
       <VideoHero
@@ -370,7 +370,7 @@ export default function BoatPartiesPage() {
           </div>
           <div className="relative">
             <img
-              src="/images/services/boat-parties/captains-cooler.png"
+              src="/images/services/boat-parties/captains-cooler.webp"
               alt="Onboard bar service"
               className="rounded-lg shadow-premium"
             />
@@ -388,19 +388,19 @@ export default function BoatPartiesPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="md:col-span-2">
               <img
-                src="/images/gallery/sunset-champagne-pontoon.png"
+                src="/images/gallery/sunset-champagne-pontoon.webp"
                 alt="Sunset boat party"
                 className="w-full h-full object-cover rounded-lg"
               />
             </div>
             <div className="space-y-4">
               <img
-                src="/images/services/boat-parties/captains-cooler.png"
+                src="/images/services/boat-parties/captains-cooler.webp"
                 alt="Dock delivery"
                 className="w-full h-48 object-cover rounded-lg"
               />
               <img
-                src="/images/gallery/sunset-champagne-pontoon.png"
+                src="/images/gallery/sunset-champagne-pontoon.webp"
                 alt="Friends toasting"
                 className="w-full h-48 object-cover rounded-lg"
               />
@@ -594,7 +594,7 @@ export default function BoatPartiesPage() {
             <div className="bg-white p-8 md:p-12 rounded-2xl shadow-premium">
               <div className="flex items-start gap-6">
                 <img
-                  src="/images/services/boat-parties/luxury-yacht-deck.png"
+                  src="/images/services/boat-parties/luxury-yacht-deck.webp"
                   alt="Happy boat party"
                   className="w-24 h-24 rounded-full object-cover"
                 />
@@ -639,7 +639,7 @@ export default function BoatPartiesPage() {
         primaryButtonLink="/book-now?service=boat"
         secondaryButtonText="View Lake Map"
         secondaryButtonLink="/lake-travis-map"
-        backgroundImage="/images/hero/lake-life-hero.jpg"
+        backgroundImage="/images/hero/lake-life-hero.webp"
       />
 
       {/* AI Concierge */}

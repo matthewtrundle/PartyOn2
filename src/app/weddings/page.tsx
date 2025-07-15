@@ -19,21 +19,21 @@ export default function WeddingsPage() {
       title: "Elevate Your Wedding Day",
       subtitle: "Premium Bar Service for Austin&apos;s Most Beautiful Celebrations",
       description: "From intimate Hill Country ceremonies to grand Lake Travis receptions, we bring sophistication and style to your special day.",
-      backgroundImage: "/images/services/weddings/outdoor-bar-setup.png",
+      backgroundImage: "/images/services/weddings/outdoor-bar-setup.webp",
       theme: "elegant"
     },
     luxury: {
       title: "Ultra-Luxury Wedding Experience",
       subtitle: "Where Dreams Meet Unparalleled Excellence",
       description: "Experience the pinnacle of luxury with our exclusive concierge-level wedding service. Every detail curated to perfection.",
-      backgroundImage: "/images/services/weddings/hill-country-spirits-display.png",
+      backgroundImage: "/images/services/weddings/hill-country-spirits-display.webp",
       theme: "luxury"
     },
     wild: {
       title: "Wild Wedding Celebration",
       subtitle: "Unleash Your Wedding Party Spirit",
       description: "Turn your wedding into the wildest celebration Austin has ever seen! Epic party vibes with professional execution.",
-      backgroundImage: "/images/services/weddings/signature-cocktails-closeup.png",
+      backgroundImage: "/images/services/weddings/signature-cocktails-closeup.webp",
       theme: "wild"
     }
   }
@@ -54,7 +54,7 @@ export default function WeddingsPage() {
         {
           title: "Diamond Elegance",
           description: "Ultra-exclusive service for the most discerning couples. Premium everything with white-glove treatment.",
-          image: "/images/services/weddings/signature-cocktails-closeup.png",
+          image: "/images/services/weddings/signature-cocktails-closeup.webp",
           features: [
             "Personal wedding concierge",
             "Dom Pérignon & Cristal service",
@@ -69,7 +69,7 @@ export default function WeddingsPage() {
         {
           title: "Platinum Prestige",
           description: "Elevated luxury experience with premium spirits and impeccable service standards.",
-          image: "/images/services/weddings/hill-country-spirits-display.png",
+          image: "/images/services/weddings/hill-country-spirits-display.webp",
           features: [
             "8 Elite master bartenders",
             "Top-shelf exclusive spirits",
@@ -86,7 +86,7 @@ export default function WeddingsPage() {
         {
           title: "WILD CELEBRATION",
           description: "Turn your wedding into the most EPIC party Austin has ever seen! Unleash your wild side with professional execution.",
-          image: "/images/services/weddings/outdoor-bar-setup.png",
+          image: "/images/services/weddings/outdoor-bar-setup.webp",
           features: [
             "EPIC party bartenders",
             "Signature WILD cocktails",
@@ -101,7 +101,7 @@ export default function WeddingsPage() {
         {
           title: "LEGENDARY WEDDING",
           description: "The ultimate wedding party experience that breaks all the rules and creates Austin LEGENDS!",
-          image: "/images/services/weddings/signature-cocktails-closeup.png",
+          image: "/images/services/weddings/signature-cocktails-closeup.webp",
           features: [
             "LEGENDARY entertainment team",
             "REALITY-WARPING experiences",
@@ -118,7 +118,7 @@ export default function WeddingsPage() {
     {
       title: "Intimate Ceremony",
       description: "Perfect for elopements and small gatherings up to 50 guests. Includes premium bar setup and dedicated bartender.",
-      image: "/images/services/weddings/intimate-garden-wedding.png", // TODO: Add image
+      image: "/images/services/weddings/intimate-garden-wedding.webp", // TODO: Add image
       features: [
         "2 Premium bartenders",
         "Curated wine & champagne selection",
@@ -147,7 +147,7 @@ export default function WeddingsPage() {
     {
       title: "Grand Celebration",
       description: "For the wedding of your dreams. Unlimited premium service for 150+ guests with multiple bar stations.",
-      image: "/images/services/weddings/grand-estate-wedding.png", // TODO: Add image
+      image: "/images/services/weddings/grand-estate-wedding.webp", // TODO: Add image
       features: [
         "6+ Elite bartenders",
         "Multiple bar stations",
@@ -218,7 +218,7 @@ export default function WeddingsPage() {
           luxury: 'bg-gradient-to-r from-amber-600 to-yellow-600',
           wild: 'bg-gradient-to-r from-red-600 to-orange-600'
         }}
-        label="WEDDING STYLE"
+        label="PARTY VIBE"
       />
       {/* Hero Section */}
       <VideoHero
@@ -291,35 +291,35 @@ export default function WeddingsPage() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="col-span-2 row-span-2">
               <img
-                src="/images/services/weddings/outdoor-bar-setup.png"
+                src="/images/services/weddings/outdoor-bar-setup.webp"
                 alt="Elegant wedding bar setup"
                 className="w-full h-full object-cover rounded-lg"
               />
             </div>
             <div>
               <img
-                src="/images/services/weddings/signature-cocktails-closeup.png"
+                src="/images/services/weddings/signature-cocktails-closeup.webp"
                 alt="Signature cocktails"
                 className="w-full h-full object-cover rounded-lg"
               />
             </div>
             <div>
               <img
-                src="/images/services/weddings/hill-country-spirits-display.png"
+                src="/images/services/weddings/hill-country-spirits-display.webp"
                 alt="Champagne tower"
                 className="w-full h-full object-cover rounded-lg"
               />
             </div>
             <div>
               <img
-                src="/images/services/weddings/signature-cocktails-closeup.png"
+                src="/images/services/weddings/signature-cocktails-closeup.webp"
                 alt="Cocktail hour setup"
                 className="w-full h-full object-cover rounded-lg"
               />
             </div>
             <div>
               <img
-                src="/images/services/weddings/outdoor-bar-setup.png"
+                src="/images/services/weddings/outdoor-bar-setup.webp"
                 alt="Professional bartenders"
                 className="w-full h-full object-cover rounded-lg"
               />
@@ -482,7 +482,7 @@ export default function WeddingsPage() {
           <div className="max-w-4xl mx-auto text-center">
             <div className="mb-8">
               <img
-                src="/images/services/weddings/signature-cocktails-closeup.png"
+                src="/images/services/weddings/signature-cocktails-closeup.webp"
                 alt="Happy couple"
                 className="w-32 h-32 rounded-full mx-auto object-cover"
               />

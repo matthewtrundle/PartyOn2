@@ -6,6 +6,7 @@ import ServiceCard from '@/components/ServiceCard'
 import CTA from '@/components/CTA'
 import AIConcierge from '@/components/AIConcierge'
 import ExperienceSelector from '@/components/ExperienceSelector'
+import FeatureCards from '@/components/FeatureCards'
 
 type HomeMode = 'normal' | 'party'
 
@@ -17,14 +18,14 @@ export default function Home() {
       title: "Austin's Premier Party Delivery",
       subtitle: "From Lake Travis to Downtown",
       description: "ORDER 72 HOURS IN ADVANCE • Premium alcohol delivery • Licensed & insured • Ready to make your event unforgettable",
-      backgroundImage: "/images/hero/austin-skyline-hero.png",
+      backgroundImage: "/images/hero/austin-skyline-hero.webp",
       theme: "elegant"
     },
     party: {
       title: "AUSTIN'S PARTY HEADQUARTERS",
       subtitle: "WHERE LEGENDS ARE MADE",
       description: "ORDER 72 HOURS IN ADVANCE • EPIC parties • WILD nights • UNFORGETTABLE memories • We turn Austin celebrations UP TO 11!",
-      backgroundImage: "/images/hero/neon-nights-hero.jpg",
+      backgroundImage: "/images/hero/neon-nights-hero.webp",
       theme: "explosive"
     }
   }
@@ -35,7 +36,7 @@ export default function Home() {
         {
           title: "WEDDING MAYHEM",
           description: "Turn your wedding into the WILDEST party Austin has ever seen! Premium chaos with professional precision.",
-          image: "/images/services/weddings/outdoor-bar-setup.png",
+          image: "/images/services/weddings/outdoor-bar-setup.webp",
           features: [
             "EPIC bartender entertainment",
             "Signature WILD cocktails",
@@ -50,7 +51,7 @@ export default function Home() {
         {
           title: "LAKE TRAVIS CHAOS",
           description: "Boat parties that make WAVES! Turn Lake Travis into your personal party paradise!",
-          image: "/images/services/boat-parties/luxury-yacht-deck.png",
+          image: "/images/services/boat-parties/luxury-yacht-deck.webp",
           features: [
             "Floating bar MADNESS",
             "Coolers packed with FUN",
@@ -64,7 +65,7 @@ export default function Home() {
         {
           title: "CORPORATE TAKEOVER",
           description: "Business parties that break ALL the rules! Turn boring events into LEGENDARY celebrations!",
-          image: "/images/services/corporate/penthouse-suite-setup.png",
+          image: "/images/services/corporate/penthouse-suite-setup.webp",
           features: [
             "Executive party mode",
             "Brand-crushing cocktails",
@@ -81,7 +82,7 @@ export default function Home() {
         {
           title: "Wedding Bar Service",
           description: "Elevate your special day with our premium bar service. From intimate Hill Country ceremonies to grand Lake Travis receptions.",
-          image: "/images/services/weddings/outdoor-bar-setup.png",
+          image: "/images/services/weddings/outdoor-bar-setup.webp",
           features: [
             "Licensed bartenders & servers",
             "Premium spirits selection",
@@ -96,7 +97,7 @@ export default function Home() {
         {
           title: "Boat Party Packages",
           description: "Make waves on Lake Travis with our exclusive boat party packages. Cold drinks delivered directly to your vessel.",
-          image: "/images/services/boat-parties/luxury-yacht-deck.png",
+          image: "/images/services/boat-parties/luxury-yacht-deck.webp",
           features: [
             "Dock or water delivery",
             "Coolers & ice included",
@@ -110,7 +111,7 @@ export default function Home() {
         {
           title: "Corporate Events",
           description: "Impress clients and celebrate success with our corporate event packages. Professional service for Austin&apos;s business elite.",
-          image: "/images/services/corporate/penthouse-suite-setup.png",
+          image: "/images/services/corporate/penthouse-suite-setup.webp",
           features: [
             "Executive bar service",
             "Brand customization",
@@ -140,10 +141,10 @@ export default function Home() {
           party: 'Party Mode'
         }}
         modeColors={{
-          normal: 'bg-gradient-to-r from-gold-500 to-amber-500',
-          party: 'bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500'
+          normal: 'bg-primary-500',
+          party: 'bg-gradient-party'
         }}
-        label="EXPERIENCE"
+        label="PARTY VIBE"
       />
 
       {/* Hero Section */}
@@ -152,97 +153,13 @@ export default function Home() {
         subtitle={currentConfig.subtitle}
         description={currentConfig.description}
         videoSrc={mode === 'party' ? "/videos/hero/austin-music-festival.mp4" : "/videos/hero/austin-skyline-timelapse.mp4"}
-        fallbackImage={mode === 'party' ? "/images/hero/austin-6th-street-neon.png" : "/images/hero/austin-skyline-golden-hour.png"}
+        fallbackImage={mode === 'party' ? "/images/hero/austin-6th-street-neon.webp" : "/images/hero/austin-skyline-golden-hour.webp"}
         ctaText="Book Your Delivery"
         ctaLink="/book-now"
       />
 
-      {/* Features Section */}
-      <section className={`section-padding ${mode === 'party' ? 'bg-gradient-to-br from-purple-900 via-pink-900 to-orange-900' : 'bg-neutral-50'}`}>
-        <div className="container-custom">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className={`font-serif text-4xl md:text-5xl mb-4 ${mode === 'party' ? 'text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-pink-400 to-purple-400' : 'text-navy-500'}`}>
-              {mode === 'party' ? 'Austin\'s ULTIMATE Party Powerhouse' : 'Why Austin Chooses Party On'}
-            </h2>
-            <p className={`font-sans text-lg ${mode === 'party' ? 'text-orange-200' : 'text-neutral-600'}`}>
-              {mode === 'party' 
-                ? "We don&apos;t just deliver booze - we deliver PURE CHAOS, EPIC VIBES, and memories so WILD they become Austin LEGENDS!" 
-                : "We&apos;re not just another delivery service. We&apos;re your premium party partners, bringing the celebration to you with style and sophistication."
-              }
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="text-center space-y-4 animate-fade-up">
-              <div className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center ${mode === 'party' ? 'bg-gradient-to-r from-red-600 to-orange-600' : 'bg-gradient-gold'}`}>
-                <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <h3 className={`font-serif text-xl ${mode === 'party' ? 'text-orange-400' : 'text-navy-500'}`}>
-                {mode === 'party' ? 'WARP SPEED DELIVERY' : '30-Minute Delivery'}
-              </h3>
-              <p className={`font-sans text-sm ${mode === 'party' ? 'text-orange-200' : 'text-neutral-600'}`}>
-                {mode === 'party' 
-                  ? 'We move at LUDICROUS SPEED! Drinks arrive before the beat drops!' 
-                  : 'Fast, reliable service across Austin and Lake Travis'
-                }
-              </p>
-            </div>
-
-            <div className="text-center space-y-4 animate-fade-up" style={{ animationDelay: '0.1s' }}>
-              <div className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center ${mode === 'party' ? 'bg-gradient-to-r from-purple-600 to-pink-600' : 'bg-gradient-gold'}`}>
-                <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
-              </div>
-              <h3 className={`font-serif text-xl ${mode === 'party' ? 'text-pink-400' : 'text-navy-500'}`}>
-                {mode === 'party' ? 'LEGAL AF PROTECTION' : 'Licensed & Insured'}
-              </h3>
-              <p className={`font-sans text-sm ${mode === 'party' ? 'text-pink-200' : 'text-neutral-600'}`}>
-                {mode === 'party' 
-                  ? 'BULLETPROOF permits so you can party FEARLESSLY!' 
-                  : 'TABC certified with full liability coverage'
-                }
-              </p>
-            </div>
-
-            <div className="text-center space-y-4 animate-fade-up" style={{ animationDelay: '0.2s' }}>
-              <div className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center ${mode === 'party' ? 'bg-gradient-to-r from-green-600 to-blue-600' : 'bg-gradient-gold'}`}>
-                <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                </svg>
-              </div>
-              <h3 className={`font-serif text-xl ${mode === 'party' ? 'text-blue-400' : 'text-navy-500'}`}>
-                {mode === 'party' ? 'INSANE PARTY ARSENAL' : 'Premium Selection'}
-              </h3>
-              <p className={`font-sans text-sm ${mode === 'party' ? 'text-blue-200' : 'text-neutral-600'}`}>
-                {mode === 'party' 
-                  ? 'WEAPONIZED alcohol selection for MAXIMUM CHAOS!' 
-                  : 'Curated spirits, craft cocktails, and local favorites'
-                }
-              </p>
-            </div>
-
-            <div className="text-center space-y-4 animate-fade-up" style={{ animationDelay: '0.3s' }}>
-              <div className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center ${mode === 'party' ? 'bg-gradient-to-r from-yellow-600 to-red-600' : 'bg-gradient-gold'}`}>
-                <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-              </div>
-              <h3 className={`font-serif text-xl ${mode === 'party' ? 'text-yellow-400' : 'text-navy-500'}`}>
-                {mode === 'party' ? 'HYPE SQUAD LEGENDS' : 'Professional Staff'}
-              </h3>
-              <p className={`font-sans text-sm ${mode === 'party' ? 'text-yellow-200' : 'text-neutral-600'}`}>
-                {mode === 'party' 
-                  ? 'Our crew doesn\'t just serve drinks - they AMPLIFY THE MADNESS!' 
-                  : 'Experienced bartenders and courteous delivery team'
-                }
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Features Section with New Cards */}
+      <FeatureCards mode={mode} />
 
       {/* Services Section */}
       <section className={`section-padding ${mode === 'party' ? 'bg-black' : ''}`}>
@@ -308,7 +225,7 @@ export default function Home() {
             </div>
             <div className="relative h-96 lg:h-[500px] rounded-2xl overflow-hidden shadow-premium">
               <img
-                src="/images/hero/lake-travis-sunset.jpg"
+                src="/images/hero/lake-travis-yacht-sunset.webp"
                 alt="Lake Travis at sunset"
                 className="w-full h-full object-cover"
               />

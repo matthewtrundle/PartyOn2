@@ -15,7 +15,7 @@ export default function ProductsPage() {
       name: "Tito's Handmade Vodka",
       category: 'spirits',
       price: '$24.99',
-      image: '/placeholder-titos.jpg',
+      image: '/placeholder-titos.webp',
       popular: true
     },
     {
@@ -23,7 +23,7 @@ export default function ProductsPage() {
       name: 'High Noon Variety Pack',
       category: 'seltzers',
       price: '$19.99',
-      image: '/placeholder-highnoon.jpg',
+      image: '/placeholder-highnoon.webp',
       popular: true
     },
     {
@@ -31,21 +31,21 @@ export default function ProductsPage() {
       name: 'Casamigos Blanco Tequila',
       category: 'spirits',
       price: '$44.99',
-      image: '/placeholder-casamigos.jpg'
+      image: '/placeholder-casamigos.webp'
     },
     {
       id: 4,
       name: 'White Claw Variety Pack',
       category: 'seltzers',
       price: '$17.99',
-      image: '/placeholder-whiteclaw.jpg'
+      image: '/placeholder-whiteclaw.webp'
     },
     {
       id: 5,
       name: 'Modelo Especial 12-Pack',
       category: 'beer',
       price: '$16.99',
-      image: '/placeholder-modelo.jpg',
+      image: '/placeholder-modelo.webp',
       popular: true
     },
     {
@@ -53,21 +53,21 @@ export default function ProductsPage() {
       name: 'Josh Cellars Cabernet',
       category: 'wine',
       price: '$13.99',
-      image: '/placeholder-josh.jpg'
+      image: '/placeholder-josh.webp'
     },
     {
       id: 7,
       name: 'Grey Goose Vodka',
       category: 'spirits',
       price: '$39.99',
-      image: '/placeholder-greygoose.jpg'
+      image: '/placeholder-greygoose.webp'
     },
     {
       id: 8,
       name: 'Austin Beerworks IPA',
       category: 'beer',
       price: '$9.99',
-      image: '/placeholder-austinbeer.jpg',
+      image: '/placeholder-austinbeer.webp',
       local: true
     }
   ]
@@ -100,7 +100,7 @@ export default function ProductsPage() {
         subtitle="Premium Spirits, Local Favorites, Party Essentials"
         description="Austin&apos;s largest selection of alcohol delivered in 30 minutes"
         videoSrc="/videos/backgrounds/boat-cooler.mp4"
-        fallbackImage="/images/products/premium-spirits-boutique.png"
+        fallbackImage="/images/products/premium-spirits-boutique.webp"
         ctaText="Start Shopping"
         ctaLink="#products"
         height="medium"

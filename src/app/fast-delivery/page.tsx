@@ -8,7 +8,7 @@ export default function FastDeliveryPage() {
     {
       title: "Express Essentials",
       description: "Quick delivery of party favorites. Perfect for spontaneous gatherings and last-minute needs.",
-      image: "/images/services/fast-delivery/motion-blur-delivery.png",
+      image: "/images/services/fast-delivery/motion-blur-delivery.webp",
       features: [
         "30-minute delivery",
         "Popular spirits & beer",
@@ -23,7 +23,7 @@ export default function FastDeliveryPage() {
     {
       title: "Premium Rush",
       description: "Curated selection of premium spirits and craft cocktails delivered in record time.",
-      image: "/images/products/delivery-bag-contents.png",
+      image: "/images/products/delivery-bag-contents.webp",
       features: [
         "20-minute priority delivery",
         "Premium spirit selection",
@@ -39,7 +39,7 @@ export default function FastDeliveryPage() {
     {
       title: "Party Pack ASAP",
       description: "Everything you need for an instant party. Full bar setup delivered and ready to serve.",
-      image: "/images/services/fast-delivery/speed-focused-delivery.png",
+      image: "/images/services/fast-delivery/speed-focused-delivery.webp",
       features: [
         "45-minute setup",
         "Complete bar package",
@@ -76,7 +76,7 @@ export default function FastDeliveryPage() {
         subtitle="Cold Drinks, Hot Speed"
         description="Premium spirits, craft beer, and fine wine delivered to your door in 30 minutes or less. Track your order in real-time."
         videoSrc="/social_biff01_Austin_music_festival_crowd_going_wild_stage_lights_cr_073e551a-07a8-4bc6-a593-dfd47c0472d1_1.mp4"
-        fallbackImage="/images/services/fast-delivery/motion-blur-delivery.png"
+        fallbackImage="/images/services/fast-delivery/motion-blur-delivery.webp"
         ctaText="Order Now"
         ctaLink="/order-now"
         height="medium"
@@ -163,7 +163,7 @@ export default function FastDeliveryPage() {
             
             <div className="relative">
               <img
-                src="/images/services/fast-delivery/speed-focused-delivery.png"
+                src="/images/services/fast-delivery/speed-focused-delivery.webp"
                 alt="Delivery tracking map"
                 className="rounded-2xl shadow-premium"
               />
@@ -297,7 +297,7 @@ export default function FastDeliveryPage() {
             </div>
             <div className="relative">
               <img
-                src="/images/services/fast-delivery/motion-blur-delivery.png"
+                src="/images/services/fast-delivery/motion-blur-delivery.webp"
                 alt="Party On Delivery app"
                 className="rounded-lg shadow-premium"
               />
