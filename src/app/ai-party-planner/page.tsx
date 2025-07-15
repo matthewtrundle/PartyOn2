@@ -38,8 +38,11 @@ export default function AIPartyPlannerPage() {
   }
 
   useEffect(() => {
-    scrollToBottom()
-  }, [messages])
+    // Only scroll to bottom when new messages are added, not on form submit
+    if (messages.length > 0) {
+      setTimeout(() => scrollToBottom(), 100)
+    }
+  }, [messages.length])
 
   // Update Biff's greeting when mode changes
   useEffect(() => {
@@ -160,7 +163,7 @@ export default function AIPartyPlannerPage() {
     const userMessage = userInput
     setUserInput('')
     
-    // Add user message
+    // Add user message without triggering scroll
     setMessages(prev => [...prev, { role: 'user', content: userMessage }])
     
     setIsProcessing(true)
