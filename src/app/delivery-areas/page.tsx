@@ -135,7 +135,7 @@ export default function DeliveryAreasPage() {
             <div className="bg-white rounded-lg shadow-md p-6">
               <h3 className="font-display text-xl text-dark mb-4">Boat Delivery</h3>
               <p className="text-dark/70 mb-4">
-                We're Lake Travis's premier boat delivery service. We deliver to all major marinas 
+                We&apos;re Lake Travis&apos;s premier boat delivery service. We deliver to all major marinas 
                 and can coordinate with your captain for on-water delivery.
               </p>
               <ul className="space-y-2">
@@ -161,7 +161,7 @@ export default function DeliveryAreasPage() {
             <div className="bg-white rounded-lg shadow-md p-6">
               <h3 className="font-display text-xl text-dark mb-4">Event Venue Delivery</h3>
               <p className="text-dark/70 mb-4">
-                We partner with Austin's top venues to provide seamless bar service for weddings, 
+                We partner with Austin&apos;s top venues to provide seamless bar service for weddings, 
                 corporate events, and private parties.
               </p>
               <ul className="space-y-2">

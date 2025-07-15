@@ -13,21 +13,21 @@ const teamMembers = [
   {
     name: "Sarah Chen",
     role: "Chief Operations Officer",
-    bio: "Former Amazon logistics manager who brings world-class delivery expertise to Austin's party scene.",
+    bio: "Former Amazon logistics manager who brings world-class delivery expertise to Austin&apos;s party scene.",
     image: "/images/team/sarah.webp",
     funFact: "Holds the Lake Travis wakeboarding record"
   },
   {
     name: "Marcus Thompson",
     role: "Head of Bartending Services",
-    bio: "20+ years crafting cocktails at Austin's finest establishments. TABC certified instructor.",
+    bio: "20+ years crafting cocktails at Austin&apos;s finest establishments. TABC certified instructor.",
     image: "/images/team/marcus.webp",
     funFact: "Invented the 'Austin Sunrise' cocktail"
   },
   {
     name: "Biff",
     role: "AI Party Planning Specialist",
-    bio: "Post-apocalyptic cowboy robot from 2145. Survived the Great Texas Party Drought of 2089. Now helps Austin party like there's no tomorrow.",
+    bio: "Post-apocalyptic cowboy robot from 2145. Survived the Great Texas Party Drought of 2089. Now helps Austin party like there&apos;s no tomorrow.",
     image: "/images/ai-assistant/biff-bartender-cowboy.webp",
     funFact: "Powered by pure party energy"
   },
@@ -65,7 +65,7 @@ export default function TeamPage() {
               Powered by Austin Spirit
             </h2>
             <p className="text-lg text-dark/70 max-w-2xl mx-auto">
-              We're not just a team – we're Austin party enthusiasts on a mission to make every 
+              We&apos;re not just a team – we&apos;re Austin party enthusiasts on a mission to make every 
               celebration unforgettable.
             </p>
           </div>
@@ -88,7 +88,7 @@ export default function TeamPage() {
                         <div className="text-center">
                           <div className="w-32 h-32 bg-primary-500 rounded-full mx-auto mb-4 flex items-center justify-center">
                             <span className="text-4xl font-bold text-white">
-                              {member.name.split(' ').map(n => n[0]).join('')}
+                              {member.name.split(' ').map(n => n[0]).join(&apos;')}
                             </span>
                           </div>
                         </div>
@@ -125,7 +125,7 @@ export default function TeamPage() {
                 <div className="text-4xl mb-4">🤝</div>
                 <h4 className="font-semibold text-dark mb-2">Austin Family</h4>
                 <p className="text-sm text-dark/70">
-                  More than coworkers – we're a tight-knit crew that celebrates each other's wins.
+                  More than coworkers – we&apos;re a tight-knit crew that celebrates each other's wins.
                 </p>
               </div>
               
@@ -133,7 +133,7 @@ export default function TeamPage() {
                 <div className="text-4xl mb-4">🚀</div>
                 <h4 className="font-semibold text-dark mb-2">Always Innovating</h4>
                 <p className="text-sm text-dark/70">
-                  From AI party planning to drone delivery (coming soon), we're always pushing boundaries.
+                  From AI party planning to drone delivery (coming soon), we&apos;re always pushing boundaries.
                 </p>
               </div>
             </div>
@@ -142,7 +142,7 @@ export default function TeamPage() {
           {/* Join the Team CTA */}
           <div className="text-center mt-12">
             <h3 className="font-display text-2xl text-dark mb-4">Want to Join the Party?</h3>
-            <p className="text-dark/70 mb-6">We're always looking for talented Austin locals who share our passion.</p>
+            <p className="text-dark/70 mb-6">We&apos;re always looking for talented Austin locals who share our passion.</p>
             <a href="/careers" className="btn-primary">
               View Open Positions
             </a>

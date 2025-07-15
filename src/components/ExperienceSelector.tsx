@@ -8,7 +8,6 @@ interface ExperienceSelectorProps<T extends string> {
   onModeChange: (mode: T) => void
   modeLabels: Record<T, string>
   modeColors: Record<T, string>
-  label: string
   isNavScrolled?: boolean
 }
 
@@ -18,7 +17,6 @@ function ExperienceSelector<T extends string>({
   onModeChange,
   modeLabels,
   modeColors,
-  label,
   isNavScrolled = false
 }: ExperienceSelectorProps<T>) {
   const [isOpen, setIsOpen] = useState(false)
@@ -31,8 +29,8 @@ function ExperienceSelector<T extends string>({
       }
     }
     
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+    document.addEventListener(&apos;mousedown', handleClickOutside)
+    return () => document.removeEventListener(&apos;mousedown', handleClickOutside)
   }, [])
   
   return (
@@ -56,7 +54,7 @@ function ExperienceSelector<T extends string>({
       {isOpen && (
         <div className="absolute left-0 mt-2 w-48 bg-white/95 backdrop-blur-md border border-white/20 rounded-lg shadow-xl overflow-hidden z-50">
           <div className="px-3 py-2 bg-black/5 border-b border-black/10">
-            <p className="text-xs font-medium text-gray-700">What's your vibe?</p>
+            <p className="text-xs font-medium text-gray-700">What&apos;s your vibe?</p>
           </div>
           <div className="p-1">
             {modes.map((mode) => (

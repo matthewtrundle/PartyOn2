@@ -224,10 +224,12 @@ export default function Home() {
               </a>
             </div>
             <div className="relative h-96 lg:h-[500px] rounded-2xl overflow-hidden shadow-premium">
-              <img
+              <Image
                 src="/images/hero/lake-travis-yacht-sunset.webp"
                 alt="Lake Travis at sunset"
-                className="w-full h-full object-cover"
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 50vw"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
               <div className="absolute bottom-6 left-6 text-white">

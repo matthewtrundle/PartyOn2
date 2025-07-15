@@ -78,8 +78,9 @@ export default function VideoHero({
     
     return () => {
       observer.disconnect()
-      if (videoRef.current) {
-        videoRef.current.pause()
+      const video = videoRef.current
+      if (video) {
+        video.pause()
       }
     }
   }, [])

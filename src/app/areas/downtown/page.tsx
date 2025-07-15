@@ -8,7 +8,7 @@ export default function DowntownAustinPage() {
       <Hero
         title="Downtown Austin Delivery"
         subtitle="From 6th Street to Rainey Street"
-        description="Fast delivery to Austin's entertainment heart"
+        description="Fast delivery to Austin&apos;s entertainment heart"
         backgroundImage="/images/hero/austin-skyline-hero.webp"
         height="medium"
       />
@@ -21,7 +21,7 @@ export default function DowntownAustinPage() {
                 The Heartbeat of Austin Nightlife
               </h2>
               <p className="text-dark/70 mb-6">
-                Whether you're bar hopping on 6th Street, enjoying rooftop cocktails, or hosting a 
+                Whether you&apos;re bar hopping on 6th Street, enjoying rooftop cocktails, or hosting a 
                 corporate event downtown, we deliver premium spirits in 20-30 minutes.
               </p>
               

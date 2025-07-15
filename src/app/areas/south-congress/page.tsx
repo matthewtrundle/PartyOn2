@@ -8,7 +8,7 @@ export default function SouthCongressPage() {
       <Hero
         title="South Congress (SoCo) Delivery"
         subtitle="Keep Austin Weird, Keep Austin Partying"
-        description="Fast delivery to Austin's most iconic neighborhood"
+        description="Fast delivery to Austin&apos;s most iconic neighborhood"
         backgroundImage="/images/hero/austin-skyline-golden-hour.webp"
         height="medium"
       />
@@ -64,7 +64,7 @@ export default function SouthCongressPage() {
                 <div>
                   <h4 className="font-semibold text-dark mb-2">Landmarks</h4>
                   <ul className="space-y-1 text-sm text-dark/70">
-                    <li>• "I Love You So Much" Wall</li>
+                    <li>• &quot;I Love You So Much&quot; Wall</li>
                     <li>• Continental Club</li>
                     <li>• South Congress Hotel</li>
                     <li>• Zilker Park</li>
@@ -159,7 +159,7 @@ export default function SouthCongressPage() {
           <div className="bg-gradient-to-r from-primary-500 to-secondary-500 text-white rounded-lg p-8 text-center">
             <h3 className="font-display text-2xl mb-4">Keep SoCo Weird</h3>
             <p className="text-white/90 mb-6 max-w-2xl mx-auto">
-              We're proud to serve the neighborhood that defines Austin's creative spirit. From food 
+              We&apos;re proud to serve the neighborhood that defines Austin&apos;s creative spirit. From food 
               trailers to boutique hotels, we deliver the party supplies that keep SoCo celebrations 
               authentically Austin.
             </p>

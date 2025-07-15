@@ -22,7 +22,7 @@ const faqCategories = [
       },
       {
         question: "Do you deliver to boats on Lake Travis?",
-        answer: "Absolutely! We're Lake Travis's premier boat delivery service. We deliver to all major marinas and can coordinate with your boat rental company."
+        answer: "Absolutely! We&apos;re Lake Travis&apos;s premier boat delivery service. We deliver to all major marinas and can coordinate with your boat rental company."
       }
     ]
   },
@@ -30,7 +30,7 @@ const faqCategories = [
     category: "Events & Packages",
     faqs: [
       {
-        question: "What's included in event packages?",
+        question: "What&apos;s included in event packages?",
         answer: "Our event packages include premium spirits, mixers, garnishes, bar tools, ice, cups, and napkins. Full-service packages add professional bartenders and custom bar setup."
       },
       {
@@ -39,7 +39,7 @@ const faqCategories = [
       },
       {
         question: "Do you provide bartenders?",
-        answer: "Yes! All our bartenders are TABC certified professionals with extensive experience at Austin's finest venues. They're included in our full-service packages."
+        answer: "Yes! All our bartenders are TABC certified professionals with extensive experience at Austin&apos;s finest venues. They&apos;re included in our full-service packages."
       },
       {
         question: "Can you create custom cocktail menus?",
@@ -52,14 +52,14 @@ const faqCategories = [
     faqs: [
       {
         question: "Are you licensed and insured?",
-        answer: "Yes, we're fully licensed by TABC (Texas Alcoholic Beverage Commission) and carry comprehensive liability insurance for all services."
+        answer: "Yes, we&apos;re fully licensed by TABC (Texas Alcoholic Beverage Commission) and carry comprehensive liability insurance for all services."
       },
       {
         question: "Do you check IDs?",
         answer: "Always. We verify age for every delivery and event. All guests must be 21+ with valid ID. No exceptions."
       },
       {
-        question: "What's your policy on intoxicated guests?",
+        question: "What&apos;s your policy on intoxicated guests?",
         answer: "Safety first. Our team is trained in responsible service. We reserve the right to refuse service to intoxicated individuals and will work with hosts to ensure everyone's safety."
       }
     ]
@@ -108,7 +108,7 @@ export default function FAQsPage() {
               How Can We Help?
             </h2>
             <p className="text-lg text-dark/70">
-              Can't find what you're looking for? Call us at (737) 371-9700
+              Can't find what you&apos;re looking for? Call us at (737) 371-9700
             </p>
           </div>
 

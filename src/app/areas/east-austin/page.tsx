@@ -8,7 +8,7 @@ export default function EastAustinPage() {
       <Hero
         title="East Austin Delivery"
         subtitle="Where Art Meets Party"
-        description="Serving Austin's creative epicenter"
+        description="Serving Austin&apos;s creative epicenter"
         backgroundImage="/images/hero/austin-skyline-hero.webp"
         height="medium"
       />
@@ -18,7 +18,7 @@ export default function EastAustinPage() {
           <div className="grid lg:grid-cols-2 gap-12 mb-12">
             <div>
               <h2 className="font-display text-3xl text-dark mb-4">
-                Austin's Cultural Revolution
+                Austin&apos;s Cultural Revolution
               </h2>
               <p className="text-dark/70 mb-6">
                 East Austin pulses with creativity - from converted warehouse venues to intimate 
@@ -128,7 +128,7 @@ export default function EastAustinPage() {
                 <div className="text-3xl mb-4 text-center">🎉</div>
                 <h4 className="font-semibold text-dark mb-2">Block Parties</h4>
                 <p className="text-sm text-dark/70 mb-4">
-                  Community celebration packages for East Austin's famous block parties
+                  Community celebration packages for East Austin&apos;s famous block parties
                 </p>
                 <ul className="text-xs text-dark/60 space-y-1">
                   <li>✓ Kegs & cases</li>
@@ -144,7 +144,7 @@ export default function EastAustinPage() {
             <div className="max-w-3xl mx-auto text-center">
               <h3 className="font-display text-2xl mb-4">Supporting East Austin Culture</h3>
               <p className="text-white/80 mb-6">
-                We're proud to serve the artists, musicians, chefs, and creators who make East Austin 
+                We&apos;re proud to serve the artists, musicians, chefs, and creators who make East Austin 
                 special. We partner with local businesses and support community events that keep the 
                 East Side authentic.
               </p>
@@ -169,7 +169,7 @@ export default function EastAustinPage() {
           <div className="bg-gradient-to-r from-primary-500 to-secondary-500 text-white rounded-lg p-8 text-center">
             <h3 className="font-display text-2xl mb-4">Ready to Party East Side Style?</h3>
             <p className="text-white/90 mb-6">
-              From dive bar runs to gallery galas, we've got your East Austin celebration covered.
+              From dive bar runs to gallery galas, we&apos;ve got your East Austin celebration covered.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/book-now" className="btn-primary bg-white text-dark hover:bg-gray-100">

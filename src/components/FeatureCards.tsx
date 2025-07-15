@@ -18,7 +18,7 @@ const features: Feature[] = [
   {
     title: "Lightning Fast Delivery",
     titleParty: "WARP SPEED CHAOS",
-    description: "Average 27-minute delivery across Austin. From 6th Street to Lake Travis, we're there before you know it.",
+    description: "Average 27-minute delivery across Austin. From 6th Street to Lake Travis, we&apos;re there before you know it.",
     descriptionParty: "We teleport booze at LIGHT SPEED! Your party starts NOW!",
     image: "/images/services/fast-delivery/motion-blur-delivery.webp",
     color: "primary",
@@ -46,7 +46,7 @@ const features: Feature[] = [
   {
     title: "Premium Bar Selection",
     titleParty: "WEAPONIZED BOOZE ARSENAL",
-    description: "Top-shelf spirits, craft cocktails, and Austin's favorite local brews. Curated for unforgettable celebrations.",
+    description: "Top-shelf spirits, craft cocktails, and Austin&apos;s favorite local brews. Curated for unforgettable celebrations.",
     descriptionParty: "MILITARY-GRADE alcohol selection for MAXIMUM DEVASTATION!",
     image: "/images/services/weddings/signature-cocktails-closeup.webp",
     color: "accent",
@@ -60,7 +60,7 @@ const features: Feature[] = [
   {
     title: "Expert Party Team",
     titleParty: "LEGENDARY HYPE SQUAD",
-    description: "Austin's most experienced bartenders and party professionals. We don't just deliver - we elevate.",
+    description: "Austin&apos;s most experienced bartenders and party professionals. We don&apos;t just deliver - we elevate.",
     descriptionParty: "Elite party commandos who AMPLIFY every celebration to 11!",
     image: "/images/services/bach-parties/bachelorette-champagne-tower.webp",
     color: "dark",
@@ -74,7 +74,7 @@ const features: Feature[] = [
 ]
 
 interface FeatureCardsProps {
-  mode?: 'normal' | 'party'
+  mode?: &apos;normal' | 'party'
 }
 
 export default function FeatureCards({ mode = 'normal' }: FeatureCardsProps) {
@@ -91,7 +91,7 @@ export default function FeatureCards({ mode = 'normal' }: FeatureCardsProps) {
       { threshold: 0.1 }
     )
 
-    const element = document.getElementById('feature-cards')
+    const element = document.getElementById(&apos;feature-cards')
     if (element) observer.observe(element)
 
     return () => {
@@ -113,14 +113,14 @@ export default function FeatureCards({ mode = 'normal' }: FeatureCardsProps) {
           <h2 className={`font-display text-3xl md:text-4xl lg:text-5xl mb-4 ${
             mode === 'party' ? 'text-gradient-fun' : 'text-dark'
           }`}>
-            {mode === 'party' ? 'Why Austin Goes ABSOLUTELY INSANE For Us' : 'Why Austin Chooses Party On'}
+            {mode === &apos;party' ? 'Why Austin Goes ABSOLUTELY INSANE For Us' : 'Why Austin Chooses Party On'}
           </h2>
           <p className={`font-sans text-base md:text-lg ${
             mode === 'party' ? 'text-primary-200' : 'text-dark/70'
           }`}>
-            {mode === 'party' 
-              ? "We're not just delivery - we're PARTY WARFARE specialists armed with premium booze and legendary service!" 
-              : "From stressed party planner to relaxed host in minutes. Here's how we transform your celebrations."
+            {mode === &apos;party' 
+              ? "We&apos;re not just delivery - we&apos;re PARTY WARFARE specialists armed with premium booze and legendary service!" 
+              : "From stressed party planner to relaxed host in minutes. Here&apos;s how we transform your celebrations."
             }
           </p>
           
@@ -141,7 +141,7 @@ export default function FeatureCards({ mode = 'normal' }: FeatureCardsProps) {
             <div className="flex items-center space-x-2">
               <span className="text-2xl">🏆</span>
               <span className={`font-semibold ${mode === 'party' ? 'text-primary-300' : 'text-dark'}`}>
-                Austin's #1 Choice
+                Austin&apos;s #1 Choice
               </span>
             </div>
           </div>
@@ -205,12 +205,12 @@ export default function FeatureCards({ mode = 'normal' }: FeatureCardsProps) {
                   <h3 className={`font-display text-xl font-bold text-white transition-all duration-300
                     ${hoveredIndex === index ? 'translate-x-2' : ''}
                   `}>
-                    {mode === 'party' ? feature.titleParty : feature.title}
+                    {mode === &apos;party' ? feature.titleParty : feature.title}
                   </h3>
                   <p className={`text-sm text-white/90 leading-relaxed transition-all duration-300
                     ${hoveredIndex === index ? 'translate-x-1' : ''}
                   `}>
-                    {mode === 'party' ? feature.descriptionParty : feature.description}
+                    {mode === &apos;party' ? feature.descriptionParty : feature.description}
                   </p>
                   
                   {/* Hover CTA */}

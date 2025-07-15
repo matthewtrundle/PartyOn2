@@ -8,7 +8,7 @@ export default function AboutPage() {
       <Hero
         title="Our Story"
         subtitle="Bringing the Party to Austin Since 2020"
-        description="From a simple idea to Austin's premier alcohol delivery service"
+        description="From a simple idea to Austin&apos;s premier alcohol delivery service"
         backgroundImage="/images/hero/austin-skyline-hero.webp"
         height="medium"
       />
@@ -18,10 +18,10 @@ export default function AboutPage() {
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="font-display text-3xl md:text-4xl lg:text-5xl text-dark mb-4">
-              Redefining Austin's Party Scene
+              Redefining Austin&apos;s Party Scene
             </h2>
             <p className="text-lg text-dark/70 max-w-2xl mx-auto">
-              We believe every celebration deserves premium service, whether it's a boat party on Lake Travis 
+              We believe every celebration deserves premium service, whether it&apos;s a boat party on Lake Travis 
               or a wedding in the Hill Country.
             </p>
           </div>
@@ -30,8 +30,8 @@ export default function AboutPage() {
             <div>
               <h3 className="font-display text-2xl text-dark mb-4">Our Mission</h3>
               <p className="text-dark/70 mb-6">
-                To deliver exceptional experiences that elevate Austin celebrations. We're not just bringing 
-                alcohol – we're bringing the expertise, reliability, and local knowledge that turns good 
+                To deliver exceptional experiences that elevate Austin celebrations. We&apos;re not just bringing 
+                alcohol – we&apos;re bringing the expertise, reliability, and local knowledge that turns good 
                 parties into legendary ones.
               </p>
               <div className="space-y-4">
@@ -45,7 +45,7 @@ export default function AboutPage() {
                 </div>
                 <div className="flex items-start space-x-3">
                   <div className="w-2 h-2 bg-primary-500 rounded-full mt-2"></div>
-                  <p className="text-dark/70">Supporting Austin's vibrant culture</p>
+                  <p className="text-dark/70">Supporting Austin&apos;s vibrant culture</p>
                 </div>
               </div>
             </div>
@@ -125,7 +125,7 @@ export default function AboutPage() {
                 </div>
                 <div className="w-4 h-4 bg-accent-500 rounded-full flex-shrink-0 mt-1"></div>
                 <div className="flex-grow">
-                  <h4 className="font-semibold text-dark mb-2">Austin's #1 Choice</h4>
+                  <h4 className="font-semibold text-dark mb-2">Austin&apos;s #1 Choice</h4>
                   <p className="text-dark/70">
                     Serving 2,000+ events annually, from intimate gatherings to massive celebrations. 
                     The trusted name in Austin party delivery.
@@ -147,7 +147,7 @@ export default function AboutPage() {
                 </div>
                 <h4 className="font-semibold text-dark mb-2">Keep Austin Weird</h4>
                 <p className="text-sm text-dark/70">
-                  We celebrate Austin's unique culture and support local businesses in everything we do.
+                  We celebrate Austin&apos;s unique culture and support local businesses in everything we do.
                 </p>
               </div>
               

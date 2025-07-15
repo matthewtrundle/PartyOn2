@@ -5,7 +5,7 @@
 
 import { 
   BIFF_SYSTEM_PROMPT, 
-  BIFF_GUARDRAILS,
+  // BIFF_GUARDRAILS,
   BIFF_RESPONSE_TEMPLATES,
   BIFF_INVENTORY_MODIFIERS,
   validateBiffResponse,
@@ -86,7 +86,7 @@ export class BiffAIService {
       // Validate and process response
       if (!validateBiffResponse(aiResponse)) {
         // If validation fails, return a fallback response
-        return this.getFallbackResponse(userMessage);
+        return this.getFallbackResponse();
       }
 
       // Parse and enhance response
@@ -94,14 +94,14 @@ export class BiffAIService {
       
     } catch (error) {
       console.error('Biff AI Service Error:', error);
-      return this.getFallbackResponse(userMessage);
+      return this.getFallbackResponse();
     }
   }
 
   /**
    * Enhance user message with context
    */
-  private enhanceUserMessage(message: string, context?: any): string {
+  private enhanceUserMessage(message: string, context?: Record<string, unknown>): string {
     let enhanced = message;
     
     if (context?.partySize) {
@@ -125,7 +125,7 @@ export class BiffAIService {
     const suggestedItems = this.extractSuggestedItems(rawResponse);
     
     // Generate party metrics based on the conversation
-    const partyMetrics = this.generatePartyMetrics(userMessage, rawResponse);
+    const partyMetrics = this.generatePartyMetrics(userMessage);
     
     // Add random special effect occasionally
     const specialEffect = Math.random() > 0.7 ? this.getRandomSpecialEffect() : undefined;
@@ -172,7 +172,7 @@ export class BiffAIService {
   /**
    * Generate fun party metrics
    */
-  private generatePartyMetrics(userMessage: string, response: string): BiffResponse['partyMetrics'] {
+  private generatePartyMetrics(userMessage: string): BiffResponse['partyMetrics'] {
     // Base metrics
     let funLevel = 7;
     let yeehawFactor = 6;
@@ -221,7 +221,7 @@ export class BiffAIService {
   /**
    * Fallback response when API fails
    */
-  private getFallbackResponse(userMessage: string): BiffResponse {
+  private getFallbackResponse(): BiffResponse {
     const greeting = BIFF_RESPONSE_TEMPLATES.greetings[
       Math.floor(Math.random() * BIFF_RESPONSE_TEMPLATES.greetings.length)
     ];

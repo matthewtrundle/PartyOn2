@@ -18,10 +18,10 @@ export default function LakeTravisPage() {
           <div className="grid lg:grid-cols-2 gap-12 mb-12">
             <div>
               <h2 className="font-display text-3xl text-dark mb-4">
-                Austin's Ultimate Party Destination
+                Austin&apos;s Ultimate Party Destination
               </h2>
               <p className="text-dark/70 mb-6">
-                From bachelor parties at Devil's Cove to sunset cruises at The Oasis, we're Lake Travis's 
+                From bachelor parties at Devil's Cove to sunset cruises at The Oasis, we&apos;re Lake Travis&apos;s 
                 premier alcohol delivery service. We know every marina, every cove, and every party spot.
               </p>
               
@@ -51,7 +51,7 @@ export default function LakeTravisPage() {
                 <h4 className="font-semibold text-dark mb-3">🌟 Lake Travis Pro Tip</h4>
                 <p className="text-sm text-dark/70">
                   Order before you launch! We can meet you at the marina or deliver to your boat 
-                  once you're anchored. Popular coves get busy - order early on weekends.
+                  once you&apos;re anchored. Popular coves get busy - order early on weekends.
                 </p>
               </div>
             </div>
@@ -89,7 +89,7 @@ export default function LakeTravisPage() {
                     <span className="text-primary-500 mt-1">🌊</span>
                     <div>
                       <span className="font-semibold text-dark">Hippie Hollow</span>
-                      <p className="text-xs text-dark/60">Austin's famous clothing-optional park</p>
+                      <p className="text-xs text-dark/60">Austin&apos;s famous clothing-optional park</p>
                     </div>
                   </li>
                   <li className="flex items-start space-x-2">

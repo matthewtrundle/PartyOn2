@@ -21,7 +21,7 @@ const openPositions = [
     department: "Events",
     type: "Part-time",
     location: "Austin & Lake Travis",
-    description: "Craft cocktails and create memories at Austin's most exclusive events. TABC certification required.",
+    description: "Craft cocktails and create memories at Austin&apos;s most exclusive events. TABC certification required.",
     requirements: [
       "TABC certified",
       "2+ years bartending experience",
@@ -49,7 +49,7 @@ const openPositions = [
     department: "Marketing",
     type: "Full-time",
     location: "Austin, TX (Hybrid)",
-    description: "Capture and share Austin's best party moments. Must understand the local scene and have a creative eye.",
+    description: "Capture and share Austin&apos;s best party moments. Must understand the local scene and have a creative eye.",
     requirements: [
       "3+ years social media experience",
       "Photography/videography skills",
@@ -99,7 +99,7 @@ export default function CareersPage() {
       <Hero
         title="Join the Party"
         subtitle="Careers at Party On Delivery"
-        description="Help us make Austin's celebrations legendary"
+        description="Help us make Austin&apos;s celebrations legendary"
         backgroundImage="/images/hero/festival-hero.webp"
         height="medium"
       />
@@ -111,7 +111,7 @@ export default function CareersPage() {
               Work Hard, Party Smart
             </h2>
             <p className="text-lg text-dark/70 max-w-2xl mx-auto">
-              We're building something special in Austin. If you love this city, understand hospitality, 
+              We&apos;re building something special in Austin. If you love this city, understand hospitality, 
               and want to be part of the party revolution, we want to meet you.
             </p>
           </div>
@@ -174,7 +174,7 @@ export default function CareersPage() {
           <div className="bg-gradient-to-r from-primary-50 to-secondary-50 rounded-2xl p-8 md:p-12 text-center">
             <h3 className="font-display text-2xl text-dark mb-4">Our Culture</h3>
             <p className="text-dark/70 max-w-2xl mx-auto mb-8">
-              We're not your typical corporate environment. We're a startup with soul, built by Austin 
+              We&apos;re not your typical corporate environment. We&apos;re a startup with soul, built by Austin 
               locals who believe work should be fulfilling, fun, and meaningful. We celebrate wins, 
               learn from losses, and always keep the party going.
             </p>
@@ -202,7 +202,7 @@ export default function CareersPage() {
           <div className="text-center mt-12">
             <h3 className="font-display text-2xl text-dark mb-4">Don't See Your Role?</h3>
             <p className="text-dark/70 mb-6">
-              We're always looking for talented people who share our vision. Send us your resume!
+              We&apos;re always looking for talented people who share our vision. Send us your resume!
             </p>
             <a href="mailto:careers@partyondelivery.com" className="btn-outline">
               Send General Application
