@@ -65,7 +65,6 @@ export default function BachPartiesPage() {
           bachelor: 'bg-gradient-to-r from-red-600 to-orange-600',
           bachelorette: 'bg-gradient-to-r from-pink-500 to-purple-500'
         }}
-        label="PARTY VIBE"
       />
 
       {/* Hero Section */}
@@ -105,9 +104,9 @@ export default function BachPartiesPage() {
               </h3>
               <p className="text-neutral-600 mb-6">
                 {mode === 'bachelor' 
-                  ? 'Epic night package for the crew. Austin&apos;s wildest spots await!'
+                  ? "Epic night package for the crew. Austin&apos;s wildest spots await!"
                   : mode === 'bachelorette'
-                  ? 'Champagne dreams and Austin glamour for the perfect girls&apos; weekend!'
+                  ? "Champagne dreams and Austin glamour for the perfect girls' weekend!"
                   : 'Everything you need for an amazing bachelor or bachelorette celebration'
                 }
               </p>
@@ -183,7 +182,7 @@ export default function BachPartiesPage() {
       {/* CTA Section */}
       <CTA
         title={mode === 'bachelor' ? "READY TO BECOME A LEGEND?" : mode === 'bachelorette' ? "READY TO PARTY LIKE ROYALTY?" : "Ready to Party?"}
-        description={mode === 'bachelor' ? "Book the most epic bachelor party Austin has ever seen. Your crew will thank you forever!" : mode === 'bachelorette' ? "Create magical memories with Austin&apos;s most glamorous bachelorette experience!" : "Let&apos;s make your bach party legendary. Book Austin&apos;s favorite party delivery service!"}
+        description={mode === 'bachelor' ? "Book the most epic bachelor party Austin has ever seen. Your crew will thank you forever!" : mode === 'bachelorette' ? "Create magical memories with Austin&apos;s most glamorous bachelorette experience!" : "Let's make your bach party legendary. Book Austin&apos;s favorite party delivery service!"}
         primaryButtonText={mode === 'bachelor' ? "BOOK EPIC PARTY" : mode === 'bachelorette' ? "BOOK ROYAL TREATMENT" : "Start Planning"}
         primaryButtonLink="/book-now"
         secondaryButtonText="View All Packages"

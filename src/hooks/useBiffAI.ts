@@ -7,7 +7,7 @@ import { createBiffAI, type BiffAIService } from '@/lib/ai/biff-ai-service';
 import type { BiffResponse } from '@/lib/ai/biff-character';
 
 interface UseBiffAIOptions {
-  apiKey: string;
+  apiKey?: string;
   maxHistoryLength?: number;
   onError?: (error: Error) => void;
 }
@@ -23,15 +23,20 @@ export function useBiffAI({
   apiKey, 
   maxHistoryLength = 10,
   onError 
-}: UseBiffAIOptions) {
+}: UseBiffAIOptions = {}) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   
   // Initialize Biff AI service
   const biffRef = useRef<BiffAIService | null>(null);
-  if (!biffRef.current && apiKey) {
-    biffRef.current = createBiffAI(apiKey);
+  if (!biffRef.current) {
+    try {
+      biffRef.current = createBiffAI(apiKey);
+    } catch {
+      // Will be initialized when API key is available
+      console.log('Biff AI will be initialized when OPENROUTER_API_KEY is available');
+    }
   }
 
   /**
@@ -73,13 +78,13 @@ export function useBiffAI({
           content: msg.content
         }));
 
-      // Get Biff's response
+      // Get Biff&apos;s response
       const response = await biffRef.current.chat(message, {
         ...context,
         previousMessages
       });
 
-      // Add Biff's response to history
+      // Add Biff&apos;s response to history
       const biffMessage: ChatMessage = {
         role: 'assistant',
         content: response.message,
@@ -118,7 +123,7 @@ export function useBiffAI({
    * Get a greeting from Biff
    */
   const getGreeting = useCallback(async () => {
-    return sendMessage("Howdy Biff! I'm planning a party!");
+    return sendMessage("Howdy Biff! I&apos;m planning a party!");
   }, [sendMessage]);
 
   /**
@@ -134,7 +139,7 @@ export function useBiffAI({
 
     suggestTheme: useCallback(async (partyType: string) => {
       return sendMessage(
-        `I'm planning a ${partyType}. What apocalyptic theme would you suggest?`,
+        `I&apos;m planning a ${partyType}. What apocalyptic theme would you suggest?`,
         { partyType }
       );
     }, [sendMessage]),
@@ -142,7 +147,7 @@ export function useBiffAI({
     partyPackage: useCallback(async (size: 'small' | 'medium' | 'large' | 'epic') => {
       const sizeMap = { small: 10, medium: 25, large: 50, epic: 100 };
       return sendMessage(
-        `What's your best party package for ${sizeMap[size]} survivors?`,
+        `What&apos;s your best party package for ${sizeMap[size]} survivors?`,
         { partySize: sizeMap[size] }
       );
     }, [sendMessage])

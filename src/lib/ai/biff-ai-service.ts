@@ -118,7 +118,7 @@ export class BiffAIService {
   }
 
   /**
-   * Process and structure Biff's response
+   * Process and structure Biff&apos;s response
    */
   private processBiffResponse(rawResponse: string, userMessage: string): BiffResponse {
     // Extract suggested items if any
@@ -230,7 +230,7 @@ export class BiffAIService {
       Math.floor(Math.random() * BIFF_RESPONSE_TEMPLATES.signoffs.length)
     ];
     
-    const message = `${greeting} My circuits are a bit dusty from the wasteland winds, but I reckon I can help you throw one heck of a shindig! *beep boop* Whether you need supplies for 10 pardners or 100, I've got bunker-fresh party supplies ready to deploy. What kind of celebration are we planning today? ${signoff}`;
+    const message = `${greeting} My circuits are a bit dusty from the wasteland winds, but I reckon I can help you throw one heck of a shindig! *beep boop* Whether you need supplies for 10 pardners or 100, I&apos;ve got bunker-fresh party supplies ready to deploy. What kind of celebration are we planning today? ${signoff}`;
     
     return {
       message,
@@ -244,4 +244,10 @@ export class BiffAIService {
 }
 
 // Export singleton instance creator
-export const createBiffAI = (apiKey: string) => new BiffAIService(apiKey);
+export const createBiffAI = (apiKey?: string) => {
+  const key = apiKey || process.env.OPENROUTER_API_KEY;
+  if (!key) {
+    throw new Error('OPENROUTER_API_KEY environment variable is required');
+  }
+  return new BiffAIService(key);
+};

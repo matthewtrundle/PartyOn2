@@ -29,8 +29,8 @@ function ExperienceSelector<T extends string>({
       }
     }
     
-    document.addEventListener(&apos;mousedown', handleClickOutside)
-    return () => document.removeEventListener(&apos;mousedown', handleClickOutside)
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
   
   return (

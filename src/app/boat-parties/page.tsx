@@ -218,7 +218,6 @@ export default function BoatPartiesPage() {
           wild: 'bg-gradient-to-r from-blue-600 to-cyan-600',
           luxury: 'bg-gradient-to-r from-slate-600 to-gray-700'
         }}
-        label="PARTY VIBE"
       />
       {/* Hero Section */}
       <VideoHero

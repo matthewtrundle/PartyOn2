@@ -50,7 +50,7 @@ function BookNowContent() {
       {/* Epic Video Hero */}
       <VideoHero
         title="Book Your Party On Experience"
-        subtitle="Let&apos;s Make It Legendary"
+        subtitle="Let's Make It Legendary"
         description="Fast delivery or full-service events - we&apos;ve got you covered"
         videoSrc="/videos/backgrounds/upscale-bachelorette.mp4"
         fallbackImage="/images/hero/neon-nights-hero.webp"

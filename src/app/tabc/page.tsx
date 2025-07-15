@@ -88,7 +88,7 @@ export default function TABCPage() {
                 </li>
                 <li className="flex items-start space-x-3">
                   <span className="text-secondary-500 mt-1">★</span>
-                  <span className="text-dark/70">Food Handler's License</span>
+                  <span className="text-dark/70">Food Handler&apos;s License</span>
                 </li>
                 <li className="flex items-start space-x-3">
                   <span className="text-secondary-500 mt-1">★</span>
@@ -100,7 +100,7 @@ export default function TABCPage() {
                 </li>
                 <li className="flex items-start space-x-3">
                   <span className="text-secondary-500 mt-1">★</span>
-                  <span className="text-dark/70">Workers' Compensation Coverage</span>
+                  <span className="text-dark/70">Workers&apos; Compensation Coverage</span>
                 </li>
               </ul>
             </div>

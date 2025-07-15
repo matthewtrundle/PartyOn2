@@ -21,7 +21,7 @@ export default function LakeTravisPage() {
                 Austin&apos;s Ultimate Party Destination
               </h2>
               <p className="text-dark/70 mb-6">
-                From bachelor parties at Devil's Cove to sunset cruises at The Oasis, we&apos;re Lake Travis&apos;s 
+                From bachelor parties at Devil&apos;s Cove to sunset cruises at The Oasis, we&apos;re Lake Travis&apos;s 
                 premier alcohol delivery service. We know every marina, every cove, and every party spot.
               </p>
               
@@ -81,7 +81,7 @@ export default function LakeTravisPage() {
                   <li className="flex items-start space-x-2">
                     <span className="text-primary-500 mt-1">🌊</span>
                     <div>
-                      <span className="font-semibold text-dark">Devil's Cove</span>
+                      <span className="font-semibold text-dark">Devil&apos;s Cove</span>
                       <p className="text-xs text-dark/60">The legendary party spot</p>
                     </div>
                   </li>

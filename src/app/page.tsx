@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import VideoHero from '@/components/VideoHero'
 import ServiceCard from '@/components/ServiceCard'
 import CTA from '@/components/CTA'
@@ -15,7 +16,7 @@ export default function Home() {
 
   const modeConfigs = {
     normal: {
-      title: "Austin's Premier Party Delivery",
+      title: "Austin&apos;s Premier Party Delivery",
       subtitle: "From Lake Travis to Downtown",
       description: "ORDER 72 HOURS IN ADVANCE • Premium alcohol delivery • Licensed & insured • Ready to make your event unforgettable",
       backgroundImage: "/images/hero/austin-skyline-hero.webp",
@@ -144,7 +145,6 @@ export default function Home() {
           normal: 'bg-primary-500',
           party: 'bg-gradient-party'
         }}
-        label="PARTY VIBE"
       />
 
       {/* Hero Section */}

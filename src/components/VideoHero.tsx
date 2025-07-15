@@ -56,6 +56,7 @@ export default function VideoHero({
   // Intersection Observer for lazy loading and pausing
   useEffect(() => {
     const section = sectionRef.current
+    const video = videoRef.current
     if (!section) return
     
     const observer = new IntersectionObserver(
@@ -78,7 +79,6 @@ export default function VideoHero({
     
     return () => {
       observer.disconnect()
-      const video = videoRef.current
       if (video) {
         video.pause()
       }

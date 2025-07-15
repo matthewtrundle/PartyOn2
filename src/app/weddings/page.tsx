@@ -218,7 +218,6 @@ export default function WeddingsPage() {
           luxury: 'bg-gradient-to-r from-amber-600 to-yellow-600',
           wild: 'bg-gradient-to-r from-red-600 to-orange-600'
         }}
-        label="PARTY VIBE"
       />
       {/* Hero Section */}
       <VideoHero

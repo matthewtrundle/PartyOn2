@@ -222,8 +222,8 @@ export default function AIConcierge({ mode = 'normal' }: AIConciergeProps) {
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder={
-                  mode === 'bachelor' ? "What&apos;s the plan, legend?" :
-                  mode === 'bachelorette' ? "What&apos;s the dream, queen?" :
+                  mode === 'bachelor' ? "What's the plan, legend?" :
+                  mode === 'bachelorette' ? "What's the dream, queen?" :
                   "Ask me anything about your party..."
                 }
                 className="flex-1 px-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl text-sm 

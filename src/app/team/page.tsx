@@ -88,7 +88,7 @@ export default function TeamPage() {
                         <div className="text-center">
                           <div className="w-32 h-32 bg-primary-500 rounded-full mx-auto mb-4 flex items-center justify-center">
                             <span className="text-4xl font-bold text-white">
-                              {member.name.split(' ').map(n => n[0]).join(&apos;')}
+                              {member.name.split(' ').map(n => n[0]).join('')}
                             </span>
                           </div>
                         </div>
@@ -125,7 +125,7 @@ export default function TeamPage() {
                 <div className="text-4xl mb-4">🤝</div>
                 <h4 className="font-semibold text-dark mb-2">Austin Family</h4>
                 <p className="text-sm text-dark/70">
-                  More than coworkers – we&apos;re a tight-knit crew that celebrates each other's wins.
+                  More than coworkers – we&apos;re a tight-knit crew that celebrates each other&apos;s wins.
                 </p>
               </div>
               

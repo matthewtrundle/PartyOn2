@@ -372,7 +372,7 @@ export default function FastDeliveryPage() {
 
       {/* CTA Section */}
       <CTA
-        title="Thirsty? We&apos;re Already On Our Way"
+        title="Thirsty? We're Already On Our Way"
         description="Join thousands of Austinites who rely on Party On for fast, reliable alcohol delivery. Your first delivery fee is on us!"
         primaryButtonText="Order Now - First Delivery Free"
         primaryButtonLink="/order-now"

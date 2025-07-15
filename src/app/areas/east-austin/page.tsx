@@ -57,7 +57,7 @@ export default function EastAustinPage() {
                     <li className="font-semibold">Bars & Venues</li>
                     <li>• White Horse</li>
                     <li>• The Liberty</li>
-                    <li>• Whisler's</li>
+                    <li>• Whisler&apos;s</li>
                     <li>• Lazarus Brewing</li>
                   </ul>
                   <ul className="space-y-2 text-sm text-dark/70">

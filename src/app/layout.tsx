@@ -5,11 +5,11 @@ import Footer from "@/components/Footer";
 import AgeVerification from "@/components/AgeVerification";
 
 export const metadata: Metadata = {
-  title: "Party On Delivery - Austin's Premier Alcohol Delivery Service",
+  title: "Party On Delivery - Austin&apos;s Premier Alcohol Delivery Service",
   description: "Premium alcohol delivery for weddings, boat parties, and events in Austin. From Lake Travis to downtown, we bring the party to you. Licensed, insured, and ready in 30 minutes.",
   keywords: "alcohol delivery austin, wedding bar service, lake travis boat party, austin party delivery, premium spirits delivery",
   openGraph: {
-    title: "Party On Delivery - Austin's Premier Alcohol Delivery Service",
+    title: "Party On Delivery - Austin&apos;s Premier Alcohol Delivery Service",
     description: "Premium alcohol delivery for weddings, boat parties, and events in Austin. Licensed, insured, and ready in 30 minutes.",
     url: "https://partyondelivery.com",
     siteName: "Party On Delivery",
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Party On Delivery - Austin's Premier Alcohol Delivery Service",
+    title: "Party On Delivery - Austin&apos;s Premier Alcohol Delivery Service",
     description: "Premium alcohol delivery for weddings, boat parties, and events in Austin.",
     images: ["/images/hero/lake-travis-sunset.webp"],
   },

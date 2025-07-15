@@ -200,7 +200,7 @@ export default function CareersPage() {
 
           {/* Application CTA */}
           <div className="text-center mt-12">
-            <h3 className="font-display text-2xl text-dark mb-4">Don't See Your Role?</h3>
+            <h3 className="font-display text-2xl text-dark mb-4">Don&apos;t See Your Role?</h3>
             <p className="text-dark/70 mb-6">
               We&apos;re always looking for talented people who share our vision. Send us your resume!
             </p>
