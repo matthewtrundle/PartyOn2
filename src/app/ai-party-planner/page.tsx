@@ -72,47 +72,40 @@ export default function AIPartyPlanner() {
 
     await new Promise(resolve => setTimeout(resolve, 1200))
     
-    // Generate sophisticated response
-    const mockResponse = mode === 'refined' 
-      ? `BIFF'S EXPERT ANALYSIS & RECOMMENDATIONS:
+    try {
+      // Call the actual API
+      const apiResponse = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: [
+            {
+              role: 'user',
+              content: userInput
+            }
+          ],
+          mode: mode === 'wild' ? 'party' : 'elegant'
+        }),
+      })
 
-VENUE OPTIMIZATION:
-• Strategic positioning for 150+ guests with Austin skyline backdrop
-• Climate-controlled beverage stations with premium glassware
-• Coordinated lighting to complement golden hour timing
+      const data = await apiResponse.json()
+      setResponse(data.content || 'Sorry, I had trouble processing that. Please try again!')
+    } catch (error) {
+      console.error('Error calling AI API:', error)
+      // Fallback response
+      const fallbackResponse = mode === 'refined' 
+        ? `BIFF'S EXPERT ANALYSIS & RECOMMENDATIONS:
 
-BEVERAGE PROGRAM:
-• Signature cocktails featuring local TX distilleries (Tito's, Deep Eddy)
-• Wine selection: Hill Country vintages + California imports
-• Premium bar setup with certified mixology team
+Based on your requirements, I recommend our premium party package starting at $1,299. Call (512) 555-0123 to discuss your specific needs!`
+        : `BIFF'S LEGENDARY PARTY BLUEPRINT:
 
-SERVICE EXECUTION:
-• 4-hour premium service with setup/breakdown included
-• Dedicated event coordinator for seamless operation
-• Emergency contingency protocols activated
-
-INVESTMENT: $3,299 (includes all service, setup, premium selections)`
-
-      : `BIFF'S LEGENDARY PARTY BLUEPRINT:
-
-MAXIMUM IMPACT STRATEGY:
-• EPIC scale coordination for legendary Austin celebration
-• AMPLIFIED experiences that break conventional limits
-• REALITY-WARPING entertainment integration protocols
-
-PARTY ARSENAL DEPLOYMENT:
-• WEAPONIZED cocktail stations with extreme flavor profiles
-• AMPLIFIED sound integration with professional DJ coordination
-• LEGENDARY photo/video documentation for maximum social impact
-
-EXECUTION PARAMETERS:
-• ELITE party squad deployment (6+ specialists)
-• MAXIMUM coverage protocols (8+ hours)
-• LEGENDARY status guarantee with backup contingencies
-
-TOTAL INVESTMENT: $4,999 (LEGENDARY TIER PACKAGE)`
-
-    setResponse(mockResponse)
+This sounds EPIC! Let's turn this into a LEGENDARY celebration! Our party packages start at $499. Call (512) 555-0123 to make it happen!`
+      
+      setResponse(fallbackResponse)
+    }
+    
     setIsProcessing(false)
   }
 

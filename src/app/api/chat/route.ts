@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
 }
 
 function getSystemPrompt(mode: string): string {
-  const basePrompt = `You are the AI Concierge for Party On Delivery, Austin&apos;s premier alcohol delivery service. You help customers plan amazing parties and events.
+  const basePrompt = `You are the AI Concierge for Party On Delivery, Austin's premier alcohol delivery service. You help customers plan amazing parties and events.
 
 Key Services:
 - Fast alcohol delivery (30 minutes)
