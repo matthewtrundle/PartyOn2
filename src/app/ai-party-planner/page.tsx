@@ -302,21 +302,21 @@ export default function AIPartyPlannerPage() {
                 </h4>
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between">
-                    <span className={mode === 'wild' ? 'text-orange-200' : 'text-slate-600'}>Parties Planned</span>
+                    <span className={mode === 'wild' ? 'text-orange-200' : 'text-slate-600'}>Parties Optimized</span>
                     <span className={`font-mono font-bold ${mode === 'wild' ? 'text-orange-400' : 'text-slate-800'}`}>
-                      {mode === 'wild' ? '∞' : '10,847'}
+                      {mode === 'wild' ? '∞' : '15,492'}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className={mode === 'wild' ? 'text-orange-200' : 'text-slate-600'}>Happy Humans</span>
+                    <span className={mode === 'wild' ? 'text-orange-200' : 'text-slate-600'}>Neural Networks</span>
                     <span className={`font-mono font-bold ${mode === 'wild' ? 'text-orange-400' : 'text-slate-800'}`}>
-                      {mode === 'wild' ? 'LEGENDARY' : '99.9%'}
+                      {mode === 'wild' ? 'QUANTUM' : '847'}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className={mode === 'wild' ? 'text-orange-200' : 'text-slate-600'}>Response Time</span>
+                    <span className={mode === 'wild' ? 'text-orange-200' : 'text-slate-600'}>Algorithm Speed</span>
                     <span className={`font-mono font-bold ${mode === 'wild' ? 'text-orange-400' : 'text-slate-800'}`}>
-                      {mode === 'wild' ? 'INSTANT' : '<2 sec'}
+                      {mode === 'wild' ? 'WARP' : '0.3ms'}
                     </span>
                   </div>
                 </div>
