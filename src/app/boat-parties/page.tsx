@@ -463,7 +463,7 @@ export default function BoatPartiesPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                   <div>
-                    <p className="font-sans font-semibold">Devil's Cove</p>
+                    <p className="font-sans font-semibold">Devil&apos;s Cove</p>
                     <p className="font-sans text-sm text-neutral-600">The ultimate party destination</p>
                   </div>
                 </li>
