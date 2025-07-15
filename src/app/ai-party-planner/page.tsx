@@ -31,7 +31,6 @@ export default function AIPartyPlannerPage() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [currentThoughts, setCurrentThoughts] = useState<string[]>([])
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const thoughtsRef = useRef<HTMLDivElement>(null)
 
   // Scroll to bottom of messages
   const scrollToBottom = () => {
@@ -115,7 +114,7 @@ export default function AIPartyPlannerPage() {
     return thoughts
   }
 
-  const generateRecommendations = (userMessage: string) => {
+  const generateRecommendations = () => {
     const packages = mode === 'wild' 
       ? [
           "LEGENDARY LAKESIDE CHAOS PACKAGE ($1,299)",
@@ -191,7 +190,7 @@ export default function AIPartyPlannerPage() {
       })
 
       const data = await response.json()
-      const recommendations = generateRecommendations(userMessage)
+      const recommendations = generateRecommendations()
       const header = currentConfig.responseHeaders[Math.floor(Math.random() * currentConfig.responseHeaders.length)]
       
       setMessages(prev => [...prev, {
@@ -295,7 +294,7 @@ export default function AIPartyPlannerPage() {
                   : 'bg-white shadow-lg'
               }`}>
                 <h4 className={`font-bold mb-4 ${mode === 'wild' ? 'text-orange-400' : 'text-slate-800'}`}>
-                  Biff's Credentials
+                  Biff&apos;s Credentials
                 </h4>
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between">
