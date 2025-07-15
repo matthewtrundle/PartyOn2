@@ -189,6 +189,10 @@ export default function AIPartyPlannerPage() {
         }),
       })
 
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
       const data = await response.json()
       const recommendations = generateRecommendations()
       const header = currentConfig.responseHeaders[Math.floor(Math.random() * currentConfig.responseHeaders.length)]
@@ -258,15 +262,11 @@ export default function AIPartyPlannerPage() {
               }`}>
                 <div className={`${mode === 'wild' ? 'bg-gray-900' : 'bg-white'} rounded-xl p-6 text-center`}>
                   <div className="relative w-32 h-32 mx-auto mb-4">
-                    <Image
-                      src={mode === 'wild' 
-                        ? "/images/ai-assistant/biff-bartender-cowboy.webp"
-                        : "/images/ai-assistant/robot-butler-elegant.webp"
-                      }
-                      alt="Biff"
-                      fill
-                      className="object-cover rounded-full"
-                    />
+                    <div className={`w-full h-full rounded-full flex items-center justify-center text-4xl ${
+                      mode === 'wild' ? 'bg-orange-500' : 'bg-slate-500'
+                    }`}>
+                      🤖
+                    </div>
                     <div className={`absolute -bottom-2 -right-2 w-8 h-8 rounded-full flex items-center justify-center ${
                       mode === 'wild' ? 'bg-orange-500' : 'bg-green-500'
                     } ${isProcessing ? 'animate-pulse' : ''}`}>
@@ -276,7 +276,7 @@ export default function AIPartyPlannerPage() {
                   <h3 className={`font-bold text-lg mb-2 ${
                     mode === 'wild' ? 'text-orange-400' : 'text-slate-800'
                   }`}>
-                    {mode === 'wild' ? 'BIFF THE LEGENDARY' : 'Biff, AI Architect'}
+                    Biff, AI Party Architect
                   </h3>
                   <p className={`text-xs ${mode === 'wild' ? 'text-orange-300' : 'text-slate-600'}`}>
                     {mode === 'wild' 
@@ -335,16 +335,11 @@ export default function AIPartyPlannerPage() {
                           {message.role === 'assistant' && (
                             <div className="flex items-center gap-2 mb-2">
                               <div className="w-8 h-8 rounded-full overflow-hidden">
-                                <Image
-                                  src={mode === 'wild' 
-                                    ? "/images/ai-assistant/biff-bartender-cowboy.webp"
-                                    : "/images/ai-assistant/robot-butler-elegant.webp"
-                                  }
-                                  alt="Biff"
-                                  width={32}
-                                  height={32}
-                                  className="object-cover"
-                                />
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${
+                                  mode === 'wild' ? 'bg-orange-500' : 'bg-slate-500'
+                                }`}>
+                                  🤖
+                                </div>
                               </div>
                               <span className={`text-xs font-semibold ${
                                 mode === 'wild' ? 'text-orange-400' : 'text-slate-600'
@@ -422,16 +417,11 @@ export default function AIPartyPlannerPage() {
                         <div className="max-w-[80%]">
                           <div className="flex items-center gap-2 mb-2">
                             <div className="w-8 h-8 rounded-full overflow-hidden animate-pulse">
-                              <Image
-                                src={mode === 'wild' 
-                                  ? "/images/ai-assistant/biff-bartender-cowboy.webp"
-                                  : "/images/ai-assistant/robot-butler-elegant.webp"
-                                }
-                                alt="Biff"
-                                width={32}
-                                height={32}
-                                className="object-cover"
-                              />
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${
+                                mode === 'wild' ? 'bg-orange-500' : 'bg-slate-500'
+                              }`}>
+                                🤖
+                              </div>
                             </div>
                             <span className={`text-xs font-semibold ${
                               mode === 'wild' ? 'text-orange-400' : 'text-slate-600'
@@ -498,39 +488,6 @@ export default function AIPartyPlannerPage() {
                 </div>
               </div>
 
-              {/* Quick Actions */}
-              <div className="mt-6 flex flex-wrap gap-3">
-                <button
-                  onClick={() => setUserInput("I'm planning a wedding for 150 people")}
-                  className={`px-4 py-2 rounded-full text-sm transition-all ${
-                    mode === 'wild'
-                      ? 'bg-gray-800 text-orange-300 border border-orange-500/30 hover:bg-gray-700'
-                      : 'bg-white text-slate-600 border border-slate-300 hover:bg-slate-50'
-                  }`}
-                >
-                  💒 Wedding Planning
-                </button>
-                <button
-                  onClick={() => setUserInput("I need a boat party package for Lake Travis")}
-                  className={`px-4 py-2 rounded-full text-sm transition-all ${
-                    mode === 'wild'
-                      ? 'bg-gray-800 text-orange-300 border border-orange-500/30 hover:bg-gray-700'
-                      : 'bg-white text-slate-600 border border-slate-300 hover:bg-slate-50'
-                  }`}
-                >
-                  ⛵ Boat Party
-                </button>
-                <button
-                  onClick={() => setUserInput("Planning a bachelor party downtown")}
-                  className={`px-4 py-2 rounded-full text-sm transition-all ${
-                    mode === 'wild'
-                      ? 'bg-gray-800 text-orange-300 border border-orange-500/30 hover:bg-gray-700'
-                      : 'bg-white text-slate-600 border border-slate-300 hover:bg-slate-50'
-                  }`}
-                >
-                  🎉 Bachelor Party
-                </button>
-              </div>
             </div>
           </div>
         </div>
