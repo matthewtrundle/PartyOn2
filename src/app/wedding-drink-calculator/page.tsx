@@ -110,16 +110,101 @@ export default function WeddingDrinkCalculatorPage(): ReactElement {
               Wedding Drink Calculator
             </h1>
             <p className="mt-4 text-base md:text-lg text-gray-700 text-center max-w-3xl mx-auto">
-              How much alcohol for your Austin wedding? Enter guest count and reception
-              hours below — we’ll size beer, wine, spirits, and seltzers for you.
-              Built by Austin’s wedding alcohol delivery team.
+              Enter guest count and reception hours. Get exact bottle counts in 10
+              seconds — built by Austin&apos;s TABC-licensed wedding delivery team.
             </p>
+
+            {/* Trust strip — above-fold social proof */}
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-sm text-gray-700">
+              <span className="inline-flex items-center gap-2">
+                <svg className="w-4 h-4 text-brand-yellow" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+                <span><strong className="text-gray-900">500+</strong> Austin weddings since 2022</span>
+              </span>
+              <span className="inline-flex items-center gap-2">
+                <svg className="w-4 h-4 text-brand-blue" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <span>TABC-licensed · $1M insured</span>
+              </span>
+              <span className="inline-flex items-center gap-2">
+                <svg className="w-4 h-4 text-brand-blue" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <span>Free delivery quote with every result</span>
+              </span>
+            </div>
           </div>
         </section>
 
         <section className="bg-white py-8">
           <div className="container-custom max-w-5xl">
             <CalculatorClient />
+          </div>
+        </section>
+
+        {/* Comparison row — Party On vs. self-haul vs. open-bar markup */}
+        <section className="bg-white section-padding border-t border-gray-200">
+          <div className="container-custom max-w-5xl">
+            <div className="text-center mb-10">
+              <p className="text-sm font-heading uppercase tracking-[0.08em] text-brand-blue mb-2">
+                Why Order Through Party On
+              </p>
+              <h2 className="font-heading text-3xl md:text-4xl tracking-[0.05em] text-gray-900">
+                Three ways to stock your wedding bar
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="card flex flex-col">
+                <p className="text-sm font-heading uppercase tracking-[0.08em] text-brand-blue mb-2">
+                  Party On Delivery
+                </p>
+                <p className="text-2xl font-heading tracking-[0.05em] text-gray-900 mb-3">
+                  Free venue delivery
+                </p>
+                <ul className="space-y-2 text-sm text-gray-700 flex-1">
+                  <li>✓ Bottles delivered to your venue, iced</li>
+                  <li>✓ Cooler, ice, cups, glassware included</li>
+                  <li>✓ TABC-licensed, $1M insured</li>
+                  <li>✓ Brand swaps + substitutions reviewed with you</li>
+                  <li>✓ Returns on unopened bottles after the event</li>
+                </ul>
+              </div>
+              <div className="card flex flex-col bg-gray-50">
+                <p className="text-sm font-heading uppercase tracking-[0.08em] text-gray-500 mb-2">
+                  Spec&apos;s / Total Wine self-haul
+                </p>
+                <p className="text-2xl font-heading tracking-[0.05em] text-gray-900 mb-3">
+                  ~$45-60 hidden cost
+                </p>
+                <ul className="space-y-2 text-sm text-gray-700 flex-1">
+                  <li>· You drive, load, and haul</li>
+                  <li>· Ice, cups, cooler bought separately</li>
+                  <li>· Gas + 3-4 hours of wedding-week time</li>
+                  <li>· Returns rarely accepted</li>
+                  <li>· No event-day backup if a bottle breaks</li>
+                </ul>
+              </div>
+              <div className="card flex flex-col bg-gray-50">
+                <p className="text-sm font-heading uppercase tracking-[0.08em] text-gray-500 mb-2">
+                  Venue open-bar package
+                </p>
+                <p className="text-2xl font-heading tracking-[0.05em] text-gray-900 mb-3">
+                  $18-28 per guest
+                </p>
+                <ul className="space-y-2 text-sm text-gray-700 flex-1">
+                  <li>· Per-head pricing, regardless of drinkers</li>
+                  <li>· Venue picks the brands</li>
+                  <li>· No leftover bottles for you</li>
+                  <li>· Service tip + tax stacked on top</li>
+                  <li>· Common quote: $2,000-$3,000 for 100 guests</li>
+                </ul>
+              </div>
+            </div>
+            <p className="mt-8 text-center text-sm text-gray-600 max-w-2xl mx-auto">
+              The calculator above sizes the list. Below covers the math + how to read it.
+            </p>
           </div>
         </section>
 
@@ -207,17 +292,22 @@ export default function WeddingDrinkCalculatorPage(): ReactElement {
               Ready to order your wedding bar?
             </h2>
             <p className="text-base md:text-lg text-gray-700 mb-8 max-w-2xl mx-auto">
-              Take the result above and place a wedding-tagged order. We’ll review
-              the list with you before delivery.
+              Take the result above and place a wedding-tagged order. We&apos;ll review
+              the list with you before delivery — brand swaps, quantity tweaks,
+              substitutions if anything&apos;s out of stock.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-6">
               <Link href="/order?type=wedding" className="btn-primary inline-flex items-center justify-center">
                 Start Wedding Order
               </Link>
-              <Link href="/weddings" className="btn-secondary inline-flex items-center justify-center">
-                Wedding Services
+              <Link href="/contact" className="btn-secondary inline-flex items-center justify-center">
+                Not sure? Free 15-min planning call
               </Link>
             </div>
+            <p className="text-sm text-gray-600">
+              Returns on unopened bottles after the event · No-substitute guarantee ·
+              Free delivery to Austin-area venues
+            </p>
           </div>
         </section>
       </main>
