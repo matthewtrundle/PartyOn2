@@ -575,6 +575,17 @@ export default function WeddingsPage() {
           <ScrollRevealCSS duration={800} y={20}>
             <WeddingDrinkCalculator />
           </ScrollRevealCSS>
+          <ScrollRevealCSS duration={800} y={20} className="mt-12 text-center">
+            <p className="text-base md:text-lg text-gray-700 mb-4">
+              Want the detailed shopping list? Try our free public tool.
+            </p>
+            <Link
+              href="/wedding-drink-calculator"
+              className="btn-primary inline-flex items-center justify-center"
+            >
+              Wedding Drink Calculator
+            </Link>
+          </ScrollRevealCSS>
         </div>
       </section>
 

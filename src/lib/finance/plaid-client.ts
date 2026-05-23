@@ -207,6 +207,62 @@ export async function exchangePublicToken(
   };
 }
 
+// ---------------------------------------------------------------------------
+// /transactions/sync (Phase 2C)
+// ---------------------------------------------------------------------------
+
+interface PlaidTransactionApi {
+  transaction_id: string;
+  account_id: string;
+  date: string; // YYYY-MM-DD
+  authorized_date?: string | null;
+  amount: number; // positive = outflow per Plaid convention
+  iso_currency_code?: string | null;
+  name: string;
+  merchant_name?: string | null;
+  pending: boolean;
+  payment_channel?: string | null;
+  category?: string[] | null;
+  personal_finance_category?: {
+    primary?: string | null;
+    detailed?: string | null;
+  } | null;
+}
+
+export interface SyncTransactionsResult {
+  added: PlaidTransactionApi[];
+  modified: PlaidTransactionApi[];
+  removed: Array<{ transaction_id: string }>;
+  nextCursor: string;
+  hasMore: boolean;
+}
+
+/**
+ * Call Plaid /transactions/sync with the stored cursor and return the
+ * paginated delta. Caller persists nextCursor and re-calls while hasMore.
+ *
+ * Pass `cursor=undefined` on first sync to receive a full backfill from
+ * Plaid (Plaid handles "initial sync" implicitly when cursor is omitted).
+ */
+export async function syncTransactions(
+  accessToken: string,
+  cursor: string | undefined
+): Promise<SyncTransactionsResult> {
+  const client = createClient();
+  const response = await client.transactionsSync({
+    access_token: accessToken,
+    cursor,
+    options: { include_personal_finance_category: true },
+  });
+  return {
+    added: response.data.added as unknown as PlaidTransactionApi[],
+    modified: response.data.modified as unknown as PlaidTransactionApi[],
+    removed: response.data.removed as unknown as Array<{ transaction_id: string }>,
+    nextCursor: response.data.next_cursor,
+    hasMore: response.data.has_more,
+  };
+}
+
 /**
  * List linked items with their accounts for the health endpoint.
  */

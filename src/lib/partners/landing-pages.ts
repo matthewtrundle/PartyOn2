@@ -107,10 +107,84 @@ export const premierPartyCruises: PartnerLandingPage = {
 };
 
 /**
+ * Austin Wedding DJ — partner referral landing page (WS3 of the wedding cluster build).
+ *
+ * Targets `wedding dj austin` (390 vol, KD 8) and `austin wedding djs` (170 vol, KD 28).
+ * Partner is a friend of POD who wants more wedding bookings; he becomes an affiliate.
+ *
+ * Placeholders (TODO operator action):
+ * - [DJ_NAME], [DJ_PHOTO], [DJ_BIO], [DJ_SAMPLE_VIDEO] live in the page + this entry.
+ *   Find with: rg "\[DJ_(NAME|PHOTO|BIO|SAMPLE_VIDEO)\]" src/
+ * - Affiliate referral code is `WEDDING_DJ` placeholder — replace with the real
+ *   affiliate code generated from /admin/affiliates/new once the DJ is onboarded.
+ */
+export const austinWeddingDj: PartnerLandingPage = {
+  slug: 'austin-wedding-dj',
+  name: '[DJ_NAME] — Austin Wedding DJ',
+  tagline: 'Austin Wedding DJ + Bar Service',
+  description:
+    "Austin wedding DJ paired with TABC-licensed alcohol delivery. Book [DJ_NAME] for your ceremony, cocktail hour, and reception — and let Party On stock the bar.",
+  // TODO(dj-assets): replace heroVideoUrl with the DJ's sample mix / wedding reel
+  heroVideoUrl: '[DJ_SAMPLE_VIDEO]',
+  heroVideoId: '',
+  // TODO(dj-assets): replace with a real DJ photo at /public/images/partners/austin-wedding-dj-hero.webp
+  heroImageUrl: '/images/partners/austin-wedding-dj-hero.webp',
+  bulletPoints: [
+    { text: 'Austin wedding DJ — ceremony, cocktail hour, reception', icon: 'group' },
+    { text: 'Bundle with TABC-licensed bar delivery from Party On', icon: 'delivery' },
+    { text: 'One coordinated weekend — DJ + drinks + setup', icon: 'perks' },
+  ],
+  priceIndicator: '$$',
+  websiteUrl: '',
+  orderTypes: [
+    {
+      id: 'wedding',
+      label: 'Book [DJ_NAME] + Bar Service',
+      description: 'Inquire about the DJ + add Party On alcohol delivery for the reception',
+      icon: 'group',
+    },
+  ],
+  faqs: [
+    {
+      question: 'Who is [DJ_NAME]?',
+      answer:
+        '[DJ_BIO] — Austin-based wedding DJ specializing in ceremony music, cocktail hour, and full reception sets. Replace this copy when assets land.',
+    },
+    {
+      question: 'How does the DJ + bar bundle work?',
+      answer:
+        "Inquire here for [DJ_NAME]'s booking, then add Party On for the bar. We coordinate timing so the bar is set up before doors open and the DJ has a smooth handoff between ceremony, cocktail hour, and reception.",
+    },
+    {
+      question: 'What does Party On bring to the wedding?',
+      answer:
+        "TABC-licensed alcohol delivery, ice, cups, glassware, and optional bartender. We pair with the DJ's schedule so service starts when guests need it.",
+    },
+    {
+      question: 'Pricing?',
+      answer:
+        "DJ pricing set by [DJ_NAME] directly — quote on inquiry. Party On bar packages start around $400 for a small wedding; full bar with bartender for 100 guests typically runs $1,500-$2,500 depending on the menu.",
+    },
+    {
+      question: "What if our venue doesn't allow outside DJs or alcohol?",
+      answer:
+        "Most Austin venues allow both with proper licensing and insurance. We're TABC-licensed and $1M insured; [DJ_NAME] carries the standard DJ liability coverage venues require. We'll confirm with your venue when you inquire.",
+    },
+  ],
+  // TODO(dj-assets): replace with a real DJ logo at /public/images/partners/austin-wedding-dj-logo.webp
+  logoUrl: '/images/partners/austin-wedding-dj-logo.webp',
+  serviceArea: 'Austin TX, Hill Country, Lake Travis',
+  isActive: true,
+};
+
+/**
  * All partner landing pages
  * Add new partners to this array
  */
-export const partnerLandingPages: PartnerLandingPage[] = [premierPartyCruises];
+export const partnerLandingPages: PartnerLandingPage[] = [
+  premierPartyCruises,
+  austinWeddingDj,
+];
 
 /**
  * Get partner landing page by slug

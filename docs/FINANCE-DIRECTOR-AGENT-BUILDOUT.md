@@ -89,7 +89,7 @@ Anything beyond "the next phase in sequence" is out of scope at any given moment
 | Accounting software | **QuickBooks Online** | Use Intuit Developer API. OAuth2 connection, sandbox first, then production. Can read AND write to QB. |
 | Bank feed | **Plaid (real-time API)** | Plaid Link in admin UI; subscribe to transaction webhooks; auto-match deposits → Stripe payouts and outflows → distributor invoice payments. |
 | Payroll | **Only contractor 1099s** | No W-2 payroll integration needed. Track contractor payouts (via Stripe Connect / ACH / outflow categorization) for year-end 1099-NEC prep. Threshold: $600/year per contractor per IRS rules. |
-| Autonomy ceiling | **Auto-categorize, recommend everything else** | Director can apply expense categories to bank transactions in QuickBooks without asking. Everything else (post journal entries, send payments, file taxes, mark distributor invoices paid) requires operator click. Mirrors the pattern of Marketing recommending + Ops giving inline action buttons. |
+| Autonomy ceiling | **Auto-categorize + auto-post sales journals; recommend everything else** | Director can (a) apply expense categories to Plaid transactions in QuickBooks and (b) post daily sales journals to QuickBooks without asking. Every autonomous write has a reverse-button safety net + a global kill switch. **Updated 2026-05-21** — original decision required operator-click on journals; operator rejected the daily-click friction and authorised the auto-post. Send-payments / file-taxes / mark-distributor-paid still require operator click. See saved memory `finance_autonomous_qb_sales_journals.md`. |
 
 ---
 
@@ -140,7 +140,7 @@ This list is exhaustive — these are the financial data sources Finance can pul
 | Stripe fees per charge | Can't compute true net revenue | Phase 1A |
 | Stripe payouts → bank | Can't reconcile bank deposits | Phase 1A |
 | Stripe disputes / chargebacks | Subscribed to webhook but no handler | Phase 1A |
-| AP on `ReceivingInvoice` (total, due date, paid status) | Can't tell which distributor invoices are unpaid | Phase 1B |
+| ~~AP on `ReceivingInvoice`~~ | **REMOVED** — distributor invoices live in QuickBooks; AP visibility comes from Phase 2A (QB read), not PartyOn-side modelling. | ~~Phase 1B~~ (cancelled) |
 | Operating expenses (rent, software, fuel, contractor pay) | Lives 100% in QB / Allan's head today | Phase 2 (QB sync) |
 | Tax remittance log | Can compute liability, can't prove what's been paid | Phase 4 |
 | Contractor 1099-NEC tracking | Need annual rollup ≥$600/contractor for IRS | Phase 3 |
@@ -244,11 +244,13 @@ This is genuinely multi-quarter work. Each phase is one or more PRs.
 
 **Why first:** Until Stripe net amounts are reconciliable, nothing else is trustworthy.
 
-### Phase 1B — AP on ReceivingInvoice (1 PR)
+### Phase 1B — AP on ReceivingInvoice **(CANCELLED 2026-05-20)**
 
-- `ALTER TABLE receiving_invoices ADD COLUMN invoice_total_cents BIGINT, due_date DATE, paid_at TIMESTAMP, paid_via TEXT`
-- Receiving UI gets fields for invoice total + due date at invoice-apply time
-- New "Outstanding AP" surface in `/admin/finance/ap` showing unpaid distributor invoices with aging
+Originally scoped: add `invoice_total_cents` / `due_date` / `paid_at` / `paid_via` to `receiving_invoices` + an `/admin/finance/ap` outstanding-AP dashboard.
+
+**Cancelled** by operator. Distributor invoices arrive electronically and live in QuickBooks already — PartyOn does not duplicate AP tracking. PR #83 was closed without merging. See saved memory `finance_no_internal_ap_tracking.md`. The Director gets AP visibility through Phase 2A (QB read), not PartyOn-side modelling.
+
+**New phase sequence:** 0 → 1A → **1C** → 2A → 2B → 2C → 3 → 4 → 5 → 6 (1B removed; total of 10 phases now, not 11).
 
 ### Phase 1C — Internal P&L (1 PR)
 
@@ -265,11 +267,15 @@ This is genuinely multi-quarter work. Each phase is one or more PRs.
 - Surface in `/admin/finance` dashboard as "OpEx by category"
 - Internal P&L becomes: revenue − COGS − OpEx (from QB) = net income
 
-### Phase 2B — QuickBooks: write sales journals (1 PR)
+### Phase 2B — QuickBooks: write sales journals (1 PR) — **autonomous**
 
-- Daily cron posts yesterday's sales summary to QB as a sales journal entry
-- Operator approval required per entry (autonomy decision #4)
-- Audit trail: every QB write logged with the source query + the resulting QB transaction ID
+- Daily cron drafts + POSTs yesterday's sales summary to QB as a journal entry in one step. **No operator approval click required** per updated decision 2026-05-21.
+- Operator one-time setup: map PartyOn concepts → QB account IDs at `/admin/finance/journals/settings`, toggle `enabled` on.
+- Safety nets:
+  - Global `enabled` kill switch on the config row — flip off and the cron silently skips.
+  - Per-entry "Reverse" action on POSTED entries — writes a balanced reverse JournalEntry to QB.
+  - `FAILED` rows on QB errors with the QB response stored verbatim; Phase 5 surfaces "QB sync error" recs.
+- Audit trail: every state transition appended to `action_log` JSON on the entry.
 
 ### Phase 2C — Plaid: auto-match + auto-categorize (1 PR)
 
@@ -316,8 +322,8 @@ Heuristics the Finance Director surfaces as recommendations. These are starting 
 | # | Signal | Detection | Severity | Inline action |
 |---|---|---|---|---|
 | 1 | **Stripe payout failed to match a bank deposit** | StripePayout marked `paid` but no corresponding PlaidTransaction within 4 banking days | high | "Investigate" → opens Stripe payout + Plaid transaction comparison view |
-| 2 | **Distributor invoice past due** | `ReceivingInvoice.dueDate < today AND paidAt IS NULL` | high → urgent at >7d past due | "Mark paid" → opens AP page with invoice highlighted |
-| 3 | **Cash runway < 30 days** | (Bank balance + outstanding AR - committed AP) / avg daily burn < 30 | urgent | "Open cash dashboard" |
+| 2 | ~~Distributor invoice past due~~ | **REMOVED** — Phase 1B cancelled. AP lives in QuickBooks; if QB exposes a "past due AP" signal in Phase 2A, re-evaluate then. | — | — |
+| 3 | **Cash runway < 30 days** | (Bank balance from Plaid + outstanding AR from `DraftOrder`) / avg daily burn < 30. **No PartyOn-side AP component** — pull committed AP from QB once Phase 2A lands if needed. | urgent | "Open cash dashboard" |
 | 4 | **Gross margin trending down** | 30-day rolling gross margin % drops > 5pp from prior 30 days | high | "Open margin analysis" |
 | 5 | **Sales tax accrual exceeds remittance pace** | Cumulative taxAmount collected − cumulative tax remitted > one quarter's expected liability | high | "Open sales-tax dashboard" |
 | 6 | **Contractor approaching 1099 threshold** | Single contractor cumulative YTD payouts > $500 (early warning before $600 IRS threshold) | normal | "Review contractor totals" |

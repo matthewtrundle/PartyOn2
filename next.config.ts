@@ -269,6 +269,84 @@ const nextConfig: NextConfig = {
         destination: '/blog',
         permanent: true,
       },
+
+      // Blog corpus de-duplication (WS4, 2026-05). Source list lives in
+      // docs/seo/blog-audit-2026-05.md. Regenerate via scripts/seo/audit-blog-corpus.mjs.
+      {
+        source: '/blog/all-inclusive-austin-wedding-venues-with-packages',
+        destination: '/blog/all-inclusive-austin-wedding-venues',
+        permanent: true,
+      },
+      {
+        source: '/blog/austin-elopement-ideas-for-minimalist-couples',
+        destination: '/blog/austin-elopement-ideas-minimalist',
+        permanent: true,
+      },
+      {
+        source: '/blog/best-party-barge-rentals-in-austin-for-large-groups',
+        destination: '/blog/best-party-barge-rentals-austin',
+        permanent: true,
+      },
+      {
+        source: '/blog/best-small-wedding-venues-near-austin',
+        destination: '/blog/best-small-wedding-venues-austin',
+        permanent: true,
+      },
+      {
+        source: '/blog/corporate-events-austin-guide',
+        destination: '/blog/ultimate-guide-austin-corporate-events',
+        permanent: true,
+      },
+      {
+        source: '/blog/essential-checklist-for-your-lake-travis-party-boat-day',
+        destination: '/blog/lake-travis-party-boat-checklist',
+        permanent: true,
+      },
+      {
+        source: '/blog/how-to-build-a-stress-free-wedding-vendor-checklist',
+        destination: '/blog/stress-free-wedding-vendor-checklist',
+        permanent: true,
+      },
+      {
+        source: '/blog/how-to-plan-a-friday-or-sunday-wedding-to-save-money',
+        destination: '/blog/friday-sunday-wedding-save-money',
+        permanent: true,
+      },
+      {
+        source: '/blog/how-to-plan-a-hill-country-wedding-in-under-six-months',
+        destination: '/blog/plan-hill-country-wedding-six-months',
+        permanent: true,
+      },
+      {
+        source: '/blog/how-to-plan-a-rehearsal-dinner-at-austin-restaurants',
+        destination: '/blog/rehearsal-dinner-austin-restaurants',
+        permanent: true,
+      },
+      {
+        source: '/blog/local-austin-florists-and-caterers-for-texas-style-weddings',
+        destination: '/blog/austin-florists-caterers-texas-weddings',
+        permanent: true,
+      },
+      {
+        source: '/blog/signature-wedding-cocktails-perfect-for-texas-heat',
+        destination: '/blog/signature-wedding-cocktails-texas-heat',
+        permanent: true,
+      },
+      {
+        source: '/blog/ultimate-guide-austin-boat-parties-lake-travis',
+        destination: '/blog/ultimate-guide-lake-travis-boat-parties',
+        permanent: true,
+      },
+      {
+        source: '/blog/ultimate-guide-to-austin-boat-parties-on-lake-travis',
+        destination: '/blog/ultimate-guide-lake-travis-boat-parties',
+        permanent: true,
+      },
+      {
+        source: '/blog/wedding-photography-locations-around-austin-s-lakes-and-hills',
+        destination: '/blog/wedding-photography-austin-lakes-hills',
+        permanent: true,
+      },
     ];
   },
 

@@ -260,3 +260,146 @@ export async function getCompanyInfo(): Promise<CompanyInfo> {
     realmId: tokens.realmId,
   };
 }
+
+// ---------------------------------------------------------------------------
+// QB Online query helpers (Phase 2A onward)
+// ---------------------------------------------------------------------------
+
+interface QbApiResponseJson {
+  QueryResponse?: {
+    Account?: unknown[];
+    Purchase?: unknown[];
+    Bill?: unknown[];
+    JournalEntry?: unknown[];
+    startPosition?: number;
+    maxResults?: number;
+    totalCount?: number;
+  };
+}
+
+/**
+ * Run a raw QB SQL-like query (the "QBO Query Language") and return the
+ * parsed QueryResponse. Pages by passing STARTPOSITION; callers paginate.
+ *
+ * Example:
+ *   await qboQuery("SELECT * FROM Account WHERE AccountType = 'Expense'")
+ *
+ * Handles token refresh automatically.
+ */
+export async function qboQuery(
+  query: string
+): Promise<QbApiResponseJson['QueryResponse']> {
+  const { accessToken, realmId } = await getValidAccessToken();
+  const tokens = await loadStoredTokens();
+  const client = new OAuthClient({
+    ...requireCreds(),
+    environment: getEnv(),
+    redirectUri: getRedirectUri(),
+    token: {
+      access_token: accessToken,
+      refresh_token: tokens.refreshToken,
+      realmId,
+      token_type: 'bearer',
+      expires_in: 3600,
+      x_refresh_token_expires_in: 8726400,
+    },
+  });
+  const baseUrl = client.getQBOEnvironmentURI();
+  const url = `${baseUrl}v3/company/${realmId}/query?minorversion=70&query=${encodeURIComponent(query)}`;
+  const response = await client.makeApiCall({
+    url,
+    method: 'GET',
+    headers: { Accept: 'application/json' },
+  });
+  const json = response.json as QbApiResponseJson;
+  return json?.QueryResponse ?? {};
+}
+
+// ---------------------------------------------------------------------------
+// QB write helpers (Phase 2B onward — all operator-approved)
+// ---------------------------------------------------------------------------
+
+export interface QboJournalLine {
+  /** Stable line identifier for re-postings/edits. */
+  lineId?: string;
+  amountCents: number;
+  description?: string;
+  /** 'Debit' | 'Credit' */
+  postingType: 'Debit' | 'Credit';
+  /** QB Account ID. */
+  accountId: string;
+}
+
+export interface QboJournalEntryPayload {
+  /** YYYY-MM-DD. */
+  txnDate: string;
+  /** Free-text note attached to the entry. */
+  privateNote?: string;
+  lines: QboJournalLine[];
+}
+
+export interface QboJournalEntryResponse {
+  /** QB-assigned transaction ID. */
+  qbTransactionId: string;
+  raw: unknown;
+}
+
+/**
+ * POST a JournalEntry to QuickBooks Online. Phase 2B uses this from the
+ * operator-approval flow. Throws on QB error so the caller can surface
+ * the failure via the entry's failureReason.
+ */
+export async function postJournalEntryToQb(
+  payload: QboJournalEntryPayload
+): Promise<QboJournalEntryResponse> {
+  const { accessToken, realmId } = await getValidAccessToken();
+  const tokens = await loadStoredTokens();
+  const client = new OAuthClient({
+    ...requireCreds(),
+    environment: getEnv(),
+    redirectUri: getRedirectUri(),
+    token: {
+      access_token: accessToken,
+      refresh_token: tokens.refreshToken,
+      realmId,
+      token_type: 'bearer',
+      expires_in: 3600,
+      x_refresh_token_expires_in: 8726400,
+    },
+  });
+
+  const body = {
+    TxnDate: payload.txnDate,
+    PrivateNote: payload.privateNote,
+    Line: payload.lines.map((l) => ({
+      Id: l.lineId,
+      DetailType: 'JournalEntryLineDetail',
+      Amount: l.amountCents / 100,
+      Description: l.description,
+      JournalEntryLineDetail: {
+        PostingType: l.postingType,
+        AccountRef: { value: l.accountId },
+      },
+    })),
+  };
+
+  const baseUrl = client.getQBOEnvironmentURI();
+  const url = `${baseUrl}v3/company/${realmId}/journalentry?minorversion=70`;
+  const response = await client.makeApiCall({
+    url,
+    method: 'POST',
+    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+    body,
+  });
+
+  const result = response.json as { JournalEntry?: { Id?: string } };
+  const id = result?.JournalEntry?.Id;
+  if (!id) {
+    throw new Error(
+      `QB JournalEntry POST returned no Id (status ${response.status}): ${JSON.stringify(result).slice(0, 500)}`
+    );
+  }
+  return { qbTransactionId: id, raw: result };
+}
+
+

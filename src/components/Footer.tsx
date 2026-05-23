@@ -7,6 +7,8 @@ export default function Footer() {
     services: [
       { label: 'Fast Delivery', href: '/fast-delivery' },
       { label: 'Wedding Bar Service', href: '/weddings' },
+      { label: 'Wedding Drink Calculator', href: '/wedding-drink-calculator' },
+      { label: 'Wedding Venue Boats', href: '/austin-wedding-venue-boats' },
       { label: 'Boat Party Packages', href: '/boat-parties' },
       { label: 'Bachelor/ette Parties', href: '/bach-parties' },
       { label: 'Keg Delivery', href: '/kegs' },

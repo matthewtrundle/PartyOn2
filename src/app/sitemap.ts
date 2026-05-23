@@ -68,6 +68,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/order',
     '/blog',
     '/weddings',
+    '/wedding-drink-calculator',
+    '/austin-wedding-venue-boats',
     '/boat-parties',
     '/austin-bachelor-party-delivery',
     '/austin-bachelorette-party-delivery',
@@ -76,7 +78,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/terms',
     '/privacy',
     '/faqs',
-    '/partners'
+    '/partners',
+    '/partners/austin-wedding-dj',
+    '/austin-partners'
   ].map(route => ({
     url: `${baseUrl}${route}`,
     lastModified: new Date('2026-03-27'),

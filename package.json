@@ -9,6 +9,8 @@
     "lint:tokens": "node scripts/lint-design-tokens.js",
     "sync:marketing": "node scripts/marketing/sync-obsidian.mjs",
     "sync:marketing:watch": "node scripts/marketing/sync-obsidian.mjs --watch",
+    "sync:seo": "node scripts/operations/sync-seo.mjs",
+    "sync:seo:watch": "node scripts/operations/sync-seo.mjs --watch",
     "sync:operations": "node scripts/operations/sync-obsidian.mjs",
     "sync:operations:watch": "node scripts/operations/sync-obsidian.mjs --watch",
     "test": "vitest",

@@ -3,15 +3,20 @@ import { prisma, isDatabaseConfigured } from '@/lib/database/client';
 import { z } from 'zod';
 
 /**
- * Zod schema for drink calculator lead validation
+ * Zod schema for drink calculator lead validation.
+ *
+ * Wedding scale (5-300 guests, 2-12 hours) was added 2026-05 for the
+ * public /wedding-drink-calculator page. The existing bachelor/bachelorette
+ * paths still validate against the tighter 5-50 / 2-6 range — we range-check
+ * by partyType after the base parse.
  */
 const drinkCalculatorLeadSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   email: z.string().email('Valid email is required'),
-  guestCount: z.number().int().min(5).max(50),
-  hours: z.number().int().min(2).max(6),
+  guestCount: z.number().int().min(5).max(300),
+  hours: z.number().int().min(2).max(12),
   drinkingLevel: z.enum(['light', 'average', 'heavy']),
-  partyType: z.enum(['bachelor', 'bachelorette']),
+  partyType: z.enum(['bachelor', 'bachelorette', 'wedding']),
   drinkPreference: z.enum([
     'mostly_beer',
     'mostly_seltzers',
@@ -22,6 +27,24 @@ const drinkCalculatorLeadSchema = z.object({
   addChampagne: z.boolean().default(false),
   addCocktailKits: z.boolean().default(false),
   totalDrinks: z.number().int().min(0),
+}).superRefine((data, ctx) => {
+  // Bachelor / bachelorette retain the original tighter range.
+  if (data.partyType === 'bachelor' || data.partyType === 'bachelorette') {
+    if (data.guestCount > 50) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['guestCount'],
+        message: 'Bachelor/bachelorette guestCount must be 5-50',
+      });
+    }
+    if (data.hours > 6) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['hours'],
+        message: 'Bachelor/bachelorette hours must be 2-6',
+      });
+    }
+  }
 });
 
 export type DrinkCalculatorLeadInput = z.infer<typeof drinkCalculatorLeadSchema>;

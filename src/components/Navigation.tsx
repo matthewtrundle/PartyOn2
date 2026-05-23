@@ -132,7 +132,9 @@ export default function Navigation({
   }
 
   const services = [
-    { href: '/austin-wedding-weekend-delivery', label: 'WEDDINGS' },
+    { href: '/weddings', label: 'WEDDINGS' },
+    { href: '/wedding-drink-calculator', label: 'WEDDING CALCULATOR' },
+    { href: '/austin-wedding-venue-boats', label: 'WEDDING VENUE BOATS' },
     { href: '/austin-bachelor-party-delivery', label: 'BACHELOR PARTIES' },
     { href: '/austin-bachelorette-party-delivery', label: 'BACHELORETTE PARTIES' },
     { href: '/boat-parties', label: 'BOAT PARTIES' },

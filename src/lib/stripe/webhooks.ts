@@ -24,6 +24,12 @@ import {
 import { linkOrderToAffiliate, voidCommissionForOrder } from '@/lib/affiliates/commission-engine';
 import { getAffiliateByCode } from '@/lib/affiliates/affiliate-service';
 import { createOrderCalendarEvent } from '@/lib/calendar/google-calendar';
+import {
+  snapshotOrderStripeFees,
+  snapshotStripeBalance,
+  upsertDispute,
+  upsertPayout,
+} from '@/lib/finance/stripe-extended';
 
 /**
  * Verify webhook signature and construct event
@@ -549,10 +555,71 @@ export async function processWebhookEvent(event: Stripe.Event): Promise<void> {
       await handleChargeRefunded(event.data.object as Stripe.Charge);
       break;
 
+    // ---- Finance Director Phase 1A ---------------------------------------
+    case 'payout.created':
+    case 'payout.paid':
+    case 'payout.failed':
+    case 'payout.canceled':
+    case 'payout.updated':
+      await handleFinancePayoutEvent(event.data.object as Stripe.Payout);
+      break;
+
+    case 'balance.available':
+      await handleFinanceBalanceAvailable();
+      break;
+
+    case 'charge.dispute.created':
+    case 'charge.dispute.updated':
+    case 'charge.dispute.funds_withdrawn':
+    case 'charge.dispute.funds_reinstated':
+    case 'charge.dispute.closed':
+      await handleFinanceDisputeEvent(event.data.object as Stripe.Dispute);
+      break;
+
     default:
       console.log('[Stripe Webhook] Unhandled event type:', event.type);
   }
 }
+
+/**
+ * Phase 1A — persist payout to StripePayout. Also kicks off fee-snapshot
+ * backfill for any recent orders that haven't been snapshotted yet (the
+ * payout signal means the underlying charges have settled and have
+ * BalanceTransactions available).
+ */
+async function handleFinancePayoutEvent(payout: Stripe.Payout): Promise<void> {
+  try {
+    await upsertPayout(payout);
+  } catch (err) {
+    console.error('[Stripe Webhook] upsertPayout failed:', err);
+    throw err;
+  }
+}
+
+async function handleFinanceBalanceAvailable(): Promise<void> {
+  try {
+    await snapshotStripeBalance();
+  } catch (err) {
+    console.error('[Stripe Webhook] snapshotStripeBalance failed:', err);
+    throw err;
+  }
+}
+
+async function handleFinanceDisputeEvent(dispute: Stripe.Dispute): Promise<void> {
+  try {
+    await upsertDispute(dispute);
+  } catch (err) {
+    console.error('[Stripe Webhook] upsertDispute failed:', err);
+    throw err;
+  }
+}
+
+/**
+ * Phase 1A — exported so the order-creation path can snapshot fees opportunistically.
+ * Re-export of snapshotOrderStripeFees so callers don't need to import from
+ * @/lib/finance/* directly.
+ */
+export { snapshotOrderStripeFees };
 
 /**
  * Handle amendment invoice payment.
