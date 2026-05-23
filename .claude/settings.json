@@ -11,6 +11,28 @@
             "timeout": 30
           }
         ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "input=$(cat); file=$(echo \"$input\" | jq -r '.tool_input.file_path // \"\"'); case \"$file\" in *prisma/schema.prisma) if [ -f \"$CLAUDE_PROJECT_DIR/.claude/.allow-schema-edit\" ]; then rm \"$CLAUDE_PROJECT_DIR/.claude/.allow-schema-edit\"; echo '[BYPASS] one-shot schema edit allowed (sentinel consumed)' >&2; exit 0; fi; echo '[BLOCK] prisma/schema.prisma is protected (memory: prisma_schema_drift.md — deleted cost columns still hold prod data; use raw SQL CREATE TABLE IF NOT EXISTS instead). To allow one edit: touch .claude/.allow-schema-edit' >&2; exit 2 ;; *.env.local|*.env.production|*.env|*.env.*) if [ -f \"$CLAUDE_PROJECT_DIR/.claude/.allow-env-edit\" ]; then rm \"$CLAUDE_PROJECT_DIR/.claude/.allow-env-edit\"; echo '[BYPASS] one-shot env edit allowed (sentinel consumed)' >&2; exit 0; fi; echo '[BLOCK] env files contain live secrets (Stripe, QB, Plaid, Resend). To allow one edit: touch .claude/.allow-env-edit' >&2; exit 2 ;; esac",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "input=$(cat); file=$(echo \"$input\" | jq -r '.tool_input.file_path // \"\"'); case \"$file\" in ''|*$'\\n'*|*$'\\r'*|*\\;*|*\\&*|*\\|*|*\\`*|*\\$*|*\\(*|*\\)*|*\\<*|*\\>*|*' '*) exit 0 ;; esac; case \"$file\" in *.ts|*.tsx|*.js|*.jsx|*.mjs|*.cjs) cd \"$CLAUDE_PROJECT_DIR\" && npx eslint --no-error-on-unmatched-pattern -- \"$file\" 2>&1 | tail -30 ;; esac",
+            "timeout": 30
+          }
+        ]
       }
     ]
   }
