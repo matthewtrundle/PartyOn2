@@ -1,0 +1,195 @@
+#!/usr/bin/env node
+/**
+ * Blog → landing-page internal-link audit.
+ *
+ * For each blog post (MDX in content/blog/posts/ and JSON in
+ * src/data/blog-posts/posts.json), categorize by topic, pick a
+ * recommended landing page, and scan the body for existing
+ * internal links to any of the candidate destinations.
+ *
+ * Writes a markdown report to docs/seo/blog-internal-link-audit.md.
+ * Run from the repo root: `node scripts/seo/audit-blog-internal-links.mjs`
+ */
+import fs from 'node:fs';
+import path from 'node:path';
+import url from 'node:url';
+import matter from 'gray-matter';
+
+const REPO_ROOT = path.resolve(path.dirname(url.fileURLToPath(import.meta.url)), '..', '..');
+const MDX_DIR = path.join(REPO_ROOT, 'content', 'blog', 'posts');
+const JSON_PATH = path.join(REPO_ROOT, 'src', 'data', 'blog-posts', 'posts.json');
+const OUT_DIR = path.join(REPO_ROOT, 'docs', 'seo');
+const OUT_PATH = path.join(OUT_DIR, 'blog-internal-link-audit.md');
+
+// Landing-page destinations.
+const LANDING = {
+  BACHELOR: '/austin-bachelor-party-delivery',
+  BACHELORETTE: '/austin-bachelorette-party-delivery',
+  WEDDING: '/austin-wedding-weekend-delivery',
+  CORPORATE: '/austin-corporate-event-delivery',
+  BOAT: '/boat-parties', // No new landing page exists; keep existing service page
+  GENERIC: '/',
+};
+
+// Every internal URL we want to detect a link to.
+const ALL_INTERNAL_TARGETS = [
+  '/austin-bachelor-party-delivery',
+  '/austin-bachelorette-party-delivery',
+  '/austin-wedding-weekend-delivery',
+  '/austin-corporate-event-delivery',
+  '/bach-parties',
+  '/weddings',
+  '/corporate',
+  '/boat-parties',
+  '/order',
+];
+
+function categorizeByMdxCategory(category) {
+  const c = (category || '').toLowerCase();
+  if (c.includes('bachelorette')) return 'BACHELORETTE';
+  if (c.includes('bachelor')) return 'BACHELOR';
+  if (c.includes('wedding') || c.includes('engagement')) return 'WEDDING';
+  if (c.includes('corporate')) return 'CORPORATE';
+  if (c.includes('boat')) return 'BOAT';
+  return 'GENERIC';
+}
+
+function categorizeBySlugAndTitle(slug, title) {
+  const text = `${slug} ${title}`.toLowerCase();
+  // Bachelorette before bachelor (substring trap).
+  if (/bachelorette|\bhen[ -]/.test(text)) return 'BACHELORETTE';
+  if (/\bbachelor\b/.test(text)) return 'BACHELOR';
+  if (/wedding|elopement|bride|groom|engagement/.test(text)) return 'WEDDING';
+  if (/corporate|business event|team building|office party|company party/.test(text)) return 'CORPORATE';
+  if (/boat|lake travis|marina|yacht/.test(text)) return 'BOAT';
+  return 'GENERIC';
+}
+
+function extractLinks(body, targets) {
+  // Match Markdown links [text](url) and HTML <a href="url">.
+  const found = new Set();
+  const mdRe = /\]\(([^)]+)\)/g;
+  const htmlRe = /href=["']([^"']+)["']/g;
+  for (const re of [mdRe, htmlRe]) {
+    let m;
+    while ((m = re.exec(body)) !== null) {
+      const href = m[1];
+      for (const t of targets) {
+        // Match path exactly or with a query/fragment, on both relative and absolute URLs.
+        const pathOnly = href.replace(/^https?:\/\/[^/]+/, '');
+        if (pathOnly === t || pathOnly.startsWith(`${t}?`) || pathOnly.startsWith(`${t}#`) || pathOnly === `${t}/`) {
+          found.add(t);
+        }
+      }
+    }
+  }
+  return [...found];
+}
+
+function processMdx() {
+  const files = fs.readdirSync(MDX_DIR).filter((f) => f.endsWith('.mdx'));
+  return files.map((f) => {
+    const raw = fs.readFileSync(path.join(MDX_DIR, f), 'utf8');
+    const { data, content } = matter(raw);
+    const slug = f.replace(/\.mdx$/, '');
+    const topic = categorizeByMdxCategory(data.category);
+    return {
+      source: 'mdx',
+      slug,
+      title: data.title || slug,
+      category: data.category || '',
+      topic,
+      recommendedLanding: LANDING[topic],
+      existingLinks: extractLinks(content, ALL_INTERNAL_TARGETS),
+    };
+  });
+}
+
+function processJson() {
+  const arr = JSON.parse(fs.readFileSync(JSON_PATH, 'utf8'));
+  return arr.map((p) => {
+    const topic = categorizeBySlugAndTitle(p.slug, p.title || '');
+    return {
+      source: 'json',
+      slug: p.slug,
+      title: p.title || p.slug,
+      category: (p.tags && p.tags.join(', ')) || '',
+      topic,
+      recommendedLanding: LANDING[topic],
+      existingLinks: extractLinks(p.content || '', ALL_INTERNAL_TARGETS),
+    };
+  });
+}
+
+function bool(b) { return b ? '✓' : '—'; }
+
+function buildReport(rows) {
+  const total = rows.length;
+  const byTopic = rows.reduce((acc, r) => {
+    acc[r.topic] = (acc[r.topic] || 0) + 1;
+    return acc;
+  }, {});
+  const linksToRecommended = rows.filter((r) => r.existingLinks.includes(r.recommendedLanding)).length;
+  const linksToAnyLanding = rows.filter((r) => r.existingLinks.some((l) => Object.values(LANDING).includes(l))).length;
+  const noInternalLinksAtAll = rows.filter((r) => r.existingLinks.length === 0).length;
+
+  const lines = [];
+  lines.push('# Blog → landing-page internal-link audit');
+  lines.push('');
+  lines.push(`_Generated by \`scripts/seo/audit-blog-internal-links.mjs\` on ${new Date().toISOString().slice(0, 10)}._`);
+  lines.push('');
+  lines.push('## Summary');
+  lines.push('');
+  lines.push(`- **Total posts audited:** ${total} (${rows.filter((r) => r.source === 'mdx').length} MDX + ${rows.filter((r) => r.source === 'json').length} JSON)`);
+  lines.push(`- **Posts that already link to their recommended landing page:** ${linksToRecommended} / ${total}`);
+  lines.push(`- **Posts that link to ANY of the 5 destinations:** ${linksToAnyLanding} / ${total}`);
+  lines.push(`- **Posts with zero internal links to any landing/service page:** ${noInternalLinksAtAll} / ${total}`);
+  lines.push('');
+  lines.push('## Topic distribution');
+  lines.push('');
+  lines.push('| Topic | Count | Recommended landing |');
+  lines.push('|------:|------:|---------------------|');
+  for (const topic of ['BACHELOR', 'BACHELORETTE', 'WEDDING', 'CORPORATE', 'BOAT', 'GENERIC']) {
+    lines.push(`| ${topic} | ${byTopic[topic] || 0} | \`${LANDING[topic]}\` |`);
+  }
+  lines.push('');
+  lines.push('## Destination notes');
+  lines.push('');
+  lines.push('- The 4 `/austin-*-delivery` pages are the new landing pages we are routing traffic to.');
+  lines.push('- `BOAT` topic routes to `/boat-parties` because no `/austin-boat-party-delivery` landing page exists yet.');
+  lines.push('- `GENERIC` topic routes to `/` (homepage). Includes Tailgating, Gender Reveals, Birthday Parties, Quinceañeras, Gift Guides, and cocktail-recipe posts.');
+  lines.push('- Cannibalization watch: the new landing pages overlap intent with existing service pages (`/bach-parties`, `/weddings`, `/corporate`, `/boat-parties`). Audit lists existing links to BOTH so we can see where we already point at the old service pages and may need to repoint.');
+  lines.push('');
+
+  // Per-topic tables.
+  for (const topic of ['BACHELOR', 'BACHELORETTE', 'WEDDING', 'CORPORATE', 'BOAT', 'GENERIC']) {
+    const subset = rows.filter((r) => r.topic === topic).sort((a, b) => a.slug.localeCompare(b.slug));
+    if (subset.length === 0) continue;
+    lines.push(`## ${topic} → \`${LANDING[topic]}\``);
+    lines.push('');
+    lines.push(`${subset.length} posts. \`Links to rec\` = already links to the recommended landing. \`Other links\` = other internal targets the post already links to.`);
+    lines.push('');
+    lines.push('| Slug | Source | Links to rec | Other internal links |');
+    lines.push('|------|:------:|:------------:|----------------------|');
+    for (const r of subset) {
+      const linksToRec = r.existingLinks.includes(r.recommendedLanding);
+      const otherLinks = r.existingLinks.filter((l) => l !== r.recommendedLanding);
+      lines.push(`| \`${r.slug}\` | ${r.source} | ${bool(linksToRec)} | ${otherLinks.length ? otherLinks.map((l) => `\`${l}\``).join(' ') : '—'} |`);
+    }
+    lines.push('');
+  }
+
+  return lines.join('\n');
+}
+
+function main() {
+  fs.mkdirSync(OUT_DIR, { recursive: true });
+  const rows = [...processMdx(), ...processJson()];
+  const md = buildReport(rows);
+  fs.writeFileSync(OUT_PATH, md);
+  // Also drop a JSON sidecar for follow-up automation.
+  fs.writeFileSync(OUT_PATH.replace(/\.md$/, '.json'), JSON.stringify(rows, null, 2));
+  console.log(`Wrote ${OUT_PATH} (${rows.length} posts)`);
+}
+
+main();

@@ -167,9 +167,13 @@ export async function detectNegativeAvailable(): Promise<OperationsRecommendatio
   return rows.map((r) => {
     const deficit = r.committed_quantity - r.inventory_quantity;
     const display = `${r.product_title}${r.title && r.title !== 'Default' ? ` (${r.title})` : ''}`;
+    // Tier by shortfall magnitude — a 1-unit short is picker noise, a 6+ short
+    // means we likely can't fulfill without intervention.
+    const severity: 'urgent' | 'high' | 'normal' =
+      deficit >= 6 ? 'urgent' : deficit >= 2 ? 'high' : 'normal';
     return {
       signalKind: 'negative-available' as const,
-      severity: 'urgent' as const,
+      severity,
       title: `${display}: ${deficit} units committed but not on hand (in-stock ${r.inventory_quantity}, committed ${r.committed_quantity})`,
       evidence: [
         { metricName: 'in_stock', metricValue: r.inventory_quantity },

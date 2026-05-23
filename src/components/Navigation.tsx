@@ -135,9 +135,10 @@ export default function Navigation({
     { href: '/weddings', label: 'WEDDINGS' },
     { href: '/wedding-drink-calculator', label: 'WEDDING CALCULATOR' },
     { href: '/austin-wedding-venue-boats', label: 'WEDDING VENUE BOATS' },
+    { href: '/austin-bachelor-party-delivery', label: 'BACHELOR PARTIES' },
+    { href: '/austin-bachelorette-party-delivery', label: 'BACHELORETTE PARTIES' },
     { href: '/boat-parties', label: 'BOAT PARTIES' },
-    { href: '/bach-parties', label: 'CELEBRATIONS' },
-    { href: '/corporate', label: 'CORPORATE' },
+    { href: '/austin-corporate-event-delivery', label: 'CORPORATE' },
     { href: '/kegs', label: 'KEG DELIVERY' },
     { href: '/cocktail-kits', label: 'COCKTAIL KITS' },
   ];
@@ -188,7 +189,7 @@ export default function Navigation({
 
                 {/* Dropdown Menu */}
                 <div
-                  className={`absolute top-full left-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 transition-all duration-200 ${
+                  className={`absolute top-full left-0 mt-2 w-60 bg-white rounded-lg shadow-lg border border-gray-200 transition-all duration-200 ${
                     isServicesOpen ? 'opacity-100 translate-y-0 visible' : 'opacity-0 -translate-y-2 invisible'
                   }`}
                   onMouseEnter={() => setIsServicesOpen(true)}

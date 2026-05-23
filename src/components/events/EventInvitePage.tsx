@@ -24,6 +24,7 @@ import { EVENT_THEMES } from '@/lib/events/theme';
 import type { DrinkOption } from './OrderDrinksModal';
 import EventDrinksMenuModal from './EventDrinksMenuModal';
 import type { CuratedCatalog } from '@/lib/landing/getCuratedCatalog';
+import { loadRsvp, saveRsvp, loadCart } from '@/lib/events/sessionStore';
 
 type Props = {
   event: EventInvite;
@@ -46,6 +47,48 @@ export default function EventInvitePage({ event, catalog }: Props) {
   const [status, setStatus] = useState<'idle' | 'rsvped'>('idle');
   const [showDrinks, setShowDrinks] = useState(false);
   const rsvpRef = useRef<HTMLDivElement>(null);
+
+  // On mount, hydrate from localStorage (24h TTL). Lets a returning
+  // invitee skip re-entering their RSVP info AND pick up an in-progress
+  // drink order. Also pops a small "resume" callout if they have unfinished
+  // drink selections waiting.
+  const [hasUnfinishedCart, setHasUnfinishedCart] = useState(false);
+  useEffect(() => {
+    const stored = loadRsvp(event.slug);
+    if (stored) {
+      if (stored.firstName) setFirstName(stored.firstName);
+      if (stored.lastName) setLastName(stored.lastName);
+      if (stored.email) setEmail(stored.email);
+      if (stored.phone) setPhone(stored.phone);
+      if (stored.guestCount) setGuests(stored.guestCount);
+      if (stored.message) setMessage(stored.message);
+      // Email is the strongest signal someone actually finished the RSVP.
+      if (stored.email && stored.firstName) setStatus('rsvped');
+    }
+    const cart = loadCart(event.slug);
+    if (cart && Object.values(cart.selection).some((n) => n > 0)) {
+      setHasUnfinishedCart(true);
+    }
+  }, [event.slug]);
+
+  // Whenever the RSVP fields change, snapshot to localStorage so a tab
+  // close doesn't lose progress. Debounced lightly so we don't write on
+  // every keystroke.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      if (firstName || email || phone) {
+        saveRsvp(event.slug, {
+          firstName,
+          lastName,
+          email,
+          phone,
+          guestCount: guests,
+          message,
+        });
+      }
+    }, 400);
+    return () => clearTimeout(t);
+  }, [event.slug, firstName, lastName, email, phone, guests, message]);
 
   // Live countdown
   const [now, setNow] = useState<Date>(() => new Date());
@@ -363,13 +406,28 @@ export default function EventInvitePage({ event, catalog }: Props) {
                 tips.
               </p>
               {event.drinks.enabled && (
-                <button
-                  onClick={() => setShowDrinks(true)}
-                  className="w-full sm:w-auto px-7 py-3.5 rounded-md font-bold tracking-wider"
-                  style={{ background: theme.primary, color: theme.primaryText }}
-                >
-                  🍸 ORDER YOUR DRINKS →
-                </button>
+                <>
+                  {hasUnfinishedCart && (
+                    <div
+                      className="mb-3 rounded-md p-2.5 text-xs text-left"
+                      style={{
+                        background: theme.cream,
+                        color: theme.navy,
+                        border: `1px solid ${theme.primary}55`,
+                      }}
+                    >
+                      ⏱ <strong>Picked up where you left off</strong> — we saved your
+                      drink order. Click below to finish before the cutoff.
+                    </div>
+                  )}
+                  <button
+                    onClick={() => setShowDrinks(true)}
+                    className="w-full sm:w-auto px-7 py-3.5 rounded-md font-bold tracking-wider"
+                    style={{ background: theme.primary, color: theme.primaryText }}
+                  >
+                    {hasUnfinishedCart ? '🍸 FINISH YOUR ORDER →' : '🍸 ORDER YOUR DRINKS →'}
+                  </button>
+                </>
               )}
               <p className="text-[11px] text-gray-500 mt-3">
                 Free delivery to the venue. Pay your own way. Your name on the box.

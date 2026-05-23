@@ -82,7 +82,13 @@ export default function DashboardPage(): ReactElement {
                 </button>
               ))}
               <Link
-                href="/admin/analytics/recommendations"
+                href="/admin/operations"
+                className="px-4 py-2 text-sm font-semibold rounded-md bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 transition-colors inline-flex items-center gap-1.5"
+              >
+                Ops health
+              </Link>
+              <Link
+                href="/admin/recommendations"
                 className="px-4 py-2 text-sm font-semibold rounded-md bg-brand-blue text-white hover:bg-blue-700 transition-colors inline-flex items-center gap-1.5"
               >
                 Recommendations

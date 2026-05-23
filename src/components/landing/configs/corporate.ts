@@ -4,8 +4,8 @@ const PHONE_DISPLAY = '(737) 371-9700';
 
 export const corporateConfig: LandingConfig = {
   slug: 'austin-corporate-event-delivery',
-  metaTitle:
-    'Austin Corporate Event & Offsite Alcohol Delivery | Premium Spirits & Bar Setup | Party On Delivery',
+  // Title trimmed to <60 chars so it doesn't truncate in SERPs.
+  metaTitle: 'Austin Corporate Event Alcohol Delivery | Party On Delivery',
   metaDescription:
     'White-glove premium spirits, wine, and bar setups for Austin corporate offsites, client dinners, and team events. TABC-licensed. $1M insured. Invoices on request. Free returns.',
   ogImage: '/images/products/premium-spirits-boutique.webp',

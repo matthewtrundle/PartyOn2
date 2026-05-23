@@ -4,8 +4,8 @@ const PHONE_DISPLAY = '(737) 371-9700';
 
 export const bachelorConfig: LandingConfig = {
   slug: 'austin-bachelor-party-delivery',
-  metaTitle:
-    'Austin Bachelor Party Alcohol Delivery | Stocked Cold, On Time | Party On Delivery',
+  // Title trimmed to <60 chars so it doesn't truncate in SERPs.
+  metaTitle: 'Austin Bachelor Party Alcohol Delivery | Party On Delivery',
   metaDescription:
     'Beer, liquor, mixers and ice delivered cold to your Airbnb, hotel, party bus or Lake Travis dock. Group ordering, split pay, cocktail kits. 500+ Austin groups served.',
   ogImage: '/images/services/bach-parties/bachelor-party-epic.webp',

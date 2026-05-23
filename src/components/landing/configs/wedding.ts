@@ -4,8 +4,8 @@ const PHONE_DISPLAY = '(737) 371-9700';
 
 export const weddingConfig: LandingConfig = {
   slug: 'austin-wedding-weekend-delivery',
-  metaTitle:
-    'Austin Wedding Weekend Alcohol Delivery | Welcome Bags, Reception & More | Party On Delivery',
+  // Title trimmed to <60 chars so it doesn't truncate in SERPs.
+  metaTitle: 'Austin Wedding Alcohol Delivery | Party On Delivery',
   metaDescription:
     'Stock the welcome reception, rehearsal dinner, ceremony, and after-party — coordinated across the whole wedding weekend. TABC-licensed, planner-friendly, sommelier-curated.',
   ogImage: '/images/services/bach-parties/bachelorette-champagne-tower.webp',

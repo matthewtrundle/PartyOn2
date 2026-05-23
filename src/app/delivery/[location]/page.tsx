@@ -2,8 +2,10 @@
 import React from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Navigation from "@/components/Navigation"
+import { seoConfig } from '@/lib/seo/config'
 
 // Location data for Austin neighborhoods
 const locations: Record<string, {
@@ -73,6 +75,33 @@ const locations: Record<string, {
     deliveryFee: 30,
     minimum: 100,
     popularVenues: ['The Domain', 'Arboretum', 'Top Golf']
+  }
+}
+
+export async function generateMetadata(
+  { params }: { params: Promise<{ location: string }> }
+): Promise<Metadata> {
+  const { location } = await params
+  const data = locations[location]
+  const canonical = `${seoConfig.siteUrl}/delivery/${location}`
+
+  if (!data) {
+    return {
+      alternates: { canonical },
+      robots: { index: false, follow: false },
+    }
+  }
+
+  return {
+    title: `${data.title} | Party On Delivery`,
+    description: data.description,
+    alternates: { canonical },
+    openGraph: {
+      title: data.title,
+      description: data.description,
+      url: canonical,
+      type: 'website',
+    },
   }
 }
 

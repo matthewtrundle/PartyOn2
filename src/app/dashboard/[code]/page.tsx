@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useCallback, useRef, type ReactElement } 
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { useGroupOrderV2 } from '@/lib/group-orders-v2/hooks';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
+import DashboardCustomHero from '@/components/dashboard/DashboardCustomHero';
 import DeliveryHeroSection from '@/components/dashboard/DeliveryHeroSection';
 import OnboardingPopup from '@/components/dashboard/OnboardingPopup';
 import OrderSidebar from '@/components/dashboard/OrderSidebar';
@@ -23,6 +24,7 @@ import PromoCodeInput from '@/components/dashboard/PromoCodeInput';
 import PremierPerksBanner from '@/components/dashboard/PremierPerksBanner';
 import { OnboardingTourProvider, DashboardTour } from '@/components/dashboard/tour';
 import { getHiddenProductIds } from '@/lib/affiliates/product-exclusions';
+import { getCustomDashboardTheme } from '@/lib/dashboard/custom-themes';
 
 const CONFETTI_COLORS = ['#003087', '#FFD700', '#FF6B35', '#00B4D8', '#FF1493'];
 
@@ -115,6 +117,13 @@ export default function DashboardPage(): ReactElement {
   // Restore applied promo from localStorage
   useEffect(() => {
     if (!code) return;
+    // Private custom-themed dashboards never carry an applied promo —
+    // clear any stale entry that was set by a prior visit before this guard existed.
+    if (getCustomDashboardTheme(code)) {
+      localStorage.removeItem(`${PROMO_KEY_PREFIX}${code}`);
+      setAppliedPromo(null);
+      return;
+    }
     try {
       const stored = localStorage.getItem(`${PROMO_KEY_PREFIX}${code}`);
       if (stored) {
@@ -134,6 +143,8 @@ export default function DashboardPage(): ReactElement {
   // Auto-load affiliate from cookie (with confetti on first apply)
   useEffect(() => {
     if (!code || !participantId) return;
+    // Skip auto-attribution for private custom-themed dashboards (e.g. Ashley's birthday)
+    if (getCustomDashboardTheme(code)) return;
     // Skip if promo already applied
     const stored = localStorage.getItem(`${PROMO_KEY_PREFIX}${code}`);
     if (stored) return;
@@ -163,6 +174,8 @@ export default function DashboardPage(): ReactElement {
   // Fallback: auto-apply affiliate promo from groupOrder data (no cookie needed)
   useEffect(() => {
     if (!code || !participantId || !groupOrder) return;
+    // Skip auto-attribution for private custom-themed dashboards (e.g. Ashley's birthday)
+    if (getCustomDashboardTheme(code)) return;
     // Skip if promo already applied
     const stored = localStorage.getItem(`${PROMO_KEY_PREFIX}${code}`);
     if (stored) return;
@@ -386,6 +399,7 @@ export default function DashboardPage(): ReactElement {
     checkoutMode === 'all' ? tab.draftItems : myDraftItems;
 
   const currentIsHost = !!groupOrder.participants.find(p => p.id === participantId)?.isHost;
+  const customTheme = getCustomDashboardTheme(groupOrder.shareCode);
 
   // Compute effective promo per-tab: boat tabs get free delivery unconditionally,
   // other tabs need to meet the minimum order amount
@@ -409,6 +423,9 @@ export default function DashboardPage(): ReactElement {
         hasPartyType={!!groupOrder.partyType}
         shareCode={code}
       />
+      {customTheme && (
+        <DashboardCustomHero groupOrder={groupOrder} theme={customTheme} />
+      )}
       <DashboardHeader
         groupOrder={groupOrder}
         participantId={participantId}

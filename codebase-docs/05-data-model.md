@@ -3,13 +3,13 @@ title: Data Model
 project: PartyOn2
 doc_type: codebase-reference
 section: data-model
-last_generated: 2026-05-03
+last_generated: 2026-05-20
 tags: [partyondelivery, codebase, prisma, data-model, schema]
 ---
 
 # Data Model
 
-Source of truth: `prisma/schema.prisma`. Datasource is PostgreSQL (`POSTGRES_URL`, `POSTGRES_URL_NON_POOLING`). 77 models, 43 enums. Migrations live under `prisma/migrations/` (managed by Prisma CLI via `npm run db:migrate` / `db:push`).
+Source of truth: `prisma/schema.prisma`. Datasource is PostgreSQL (`POSTGRES_URL`, `POSTGRES_URL_NON_POOLING`). **89 models, 46 enums** (up from 77 / 43 at the 2026-05-03 sync — added: 4 Finance Director models, 2 Operations Director models, 3 Plaid models, 1 cart-share-link model, and the 3-table Lead/Visitor capture system). Migrations live under `prisma/migrations/` (managed by Prisma CLI via `npm run db:migrate` / `db:push`).
 
 > _`DeliveryZone` and `TaxRate` were removed 2026-04-23. Runtime uses hardcoded TS tables in `src/lib/delivery/rates.ts` and `src/lib/tax/rates.ts`. Postgres tables `delivery_zones` and `tax_rates` remain — drop in future migration._
 >
@@ -51,7 +51,7 @@ Source of truth: `prisma/schema.prisma`. Datasource is PostgreSQL (`POSTGRES_URL
 | | | | | 2371 | SyncLog |
 
 
-## Enums (all 43)
+## Enums (all 46)
 
 | Enum | Values |
 |---|---|
@@ -98,6 +98,9 @@ Source of truth: `prisma/schema.prisma`. Datasource is PostgreSQL (`POSTGRES_URL
 | `CallbackStatus` | (line 2130) |
 | `AgentProposalType` | (line 2262) |
 | `AgentProposalStatus` | (line 2267) |
+| `LeadStatus` | ANONYMOUS, PARTIAL, SUBMITTED, CONVERTED, ARCHIVED (added 2026-05) |
+| `LeadSourceWidget` | QUICK_BUY, PACKAGE_BUILDER, A_LA_CARTE, CALL_BOOKING, EMAIL_SIGNUP, CONTACT_FORM, DRINK_CALCULATOR, OTHER (added 2026-05) |
+| `LeadEventType` | PAGE_VIEW, FIELD_FOCUS, FIELD_BLUR, STEP_COMPLETE, CART_ADD, FORM_SUBMIT, CHECKOUT_START, CONVERSION, CUSTOM (added 2026-05) |
 
 ## ER diagram — Catalog & Inventory
 
@@ -298,6 +301,108 @@ erDiagram
 ## Domain: AI agent
 
 - **AgentConversation** (2249), **AgentProposal** (2273), **McpRequestLog** (2291) — agent sessions, proposed mutations, MCP request audit log. `AgentProposalType`, `AgentProposalStatus`.
+
+## Domain: Operations Director (added 2026-05)
+
+Phase 1B+ of the Operations Director pipeline. Schema notes live in `prisma/schema.prisma` and the long-form spec is at `docs/OPERATIONS-DIRECTOR-AGENT-BUILDOUT.md` §5a / §12. The Marketing/SEO equivalent is `RecommendationItem` — Operations is intentionally a parallel model rather than a unified table so the shared lib at `src/lib/recommendations/{lifecycle,measurement,card-types}.ts` can serve both.
+
+### OperationsRecommendation
+- Purpose: queue of detector-generated recommendations surfaced in `/admin/recommendations` (filtered by `domain=operations`) and `/admin/operations`.
+- Key fields: `signalKind`, `severity` (`urgent` | `high` | `normal`), `title`, `evidence Json`, `targetEntityType`, `targetEntityId`, `actionPayload Json`, `status` (default `open`), `snoozeUntil?`, `dismissReason?`, `actionLog Json[]`, `source` (default `auto-snapshot`), `shippedAt?`, `measuredAt?`, `measurementResult? Json`, **unique** `dedupeKey` (= `signalKind:targetEntityId`).
+- Indexed by `status`, `(severity, status)`, `(signalKind, status)`.
+- Touched by: `/api/cron/operations-snapshot`, `/api/cron/operations-drift-hourly`, `/api/cron/measure-operations-recommendations`, `/api/admin/recommendations/*`, `/admin/operations`, `npm run sync:operations` (Obsidian mirror).
+
+### OperationsSnapshot
+- Purpose: one row per snapshot run — powers the dashboard trend sparklines and the Monday briefing.
+- Key fields: `capturedAt`, `inventoryAccuracyPct?`, `driftEventsTotal`, `driftEventsBySignal Json`, `urgentShortagesCount`, `costCoveragePct`, `receivingLagP50Hours?`, `receivingLagP90Hours?`, `cycleCountsCompletedLast7d`, `paidOrders14dShortageCount`.
+- Indexed by `capturedAt`.
+
+### RecommendationItem — domain discriminator (existing model, new field)
+- New field `domain String @default("marketing")` (`marketing` | `seo`) + new index `(domain, status)`. SEO-director sourced rows use `source = 'seo-director'`. See ADR S0001 in the Obsidian vault.
+
+## Domain: Finance Director (added 2026-05)
+
+Phase 0 scaffolding for the Finance Director pipeline — see `docs/FINANCE-DIRECTOR-AGENT-BUILDOUT.md`. Phase 0 ships empty tables; Phase 1C+ populates and reconciles.
+
+### FinanceRecommendation
+- Mirror of `OperationsRecommendation` (same field set, same dedupe key strategy). Exists so the shared `src/lib/recommendations/*` lib serves Finance too. Phase 0 ships empty.
+
+### FinanceSnapshot
+- Purpose: one row per finance cron run. Key fields: `snapshotDate Date`, `payload Json`, `createdAt`. Indexed by `snapshotDate`. Payload schema defined per-phase.
+
+### IntuitOAuthState
+- Purpose: **single-row** singleton (`id = "singleton"`) holding the QuickBooks Online OAuth state.
+- Key fields: `realmId`, `accessToken @db.Text`, `refreshToken @db.Text`, `accessTokenExpires`, `refreshTokenExpires`, `environment` (`sandbox` | `production`), `lastRefreshedAt?`, `lastError?`.
+- Written by `/api/admin/finance/qb/callback`; refreshed in place when the access token rotates.
+
+### PlaidItem
+- Purpose: one row per linked Plaid Item (institution).
+- Key fields: unique `itemId`, `accessToken @db.Text`, `institutionId?`, `institutionName?`, `environment` (`sandbox` | `development` | `production`), `status` (`active` | `login_required` | `error` | `removed`), `lastSyncAt?`, `lastError?`.
+- Relations: → `PlaidAccount[]`, `PlaidTransaction[]` (cascade delete).
+
+### PlaidAccount
+- Purpose: one account within a Plaid Item (checking / savings / credit card).
+- Key fields: unique `accountId`, `plaidItemId` (FK), `name`, `officialName?`, `mask?`, `type` (`depository` | `credit` | `loan` | `investment`), `subtype?`, `currentBalance Decimal(15,2)`, `availableBalance Decimal(15,2)`, `isoCurrencyCode` (default `USD`).
+
+### PlaidTransaction
+- Purpose: bank transactions ingested via Plaid webhook + nightly sync. Phase 0 ships empty; Phase 2C populates and reconciles against Stripe payouts / receiving invoices / QBO.
+- Key fields: unique `transactionId`, `plaidItemId` (FK), `accountId`, `date Date`, `authorizedDate? Date`, `amount Decimal(15,2)` (positive = outflow per Plaid), `name`, `merchantName?`, `pending`, `paymentChannel?`, `category String[]`, `personalFinanceCategoryPrimary?`, `personalFinanceCategoryDetailed?`, `matchedStripePayoutId?`, `matchedReceivingInvoiceId?`, `qbTransactionId?`, `qbCategoryAssigned?`, `reconciledAt?`.
+- Indexed by `plaidItemId`, `date`, `(accountId, date)`, `reconciledAt`.
+
+```mermaid
+erDiagram
+  PlaidItem ||--o{ PlaidAccount : has
+  PlaidItem ||--o{ PlaidTransaction : ingests
+  IntuitOAuthState ||--|| Singleton : holds
+  OperationsSnapshot ||--o{ OperationsRecommendation : "informs (logical)"
+  FinanceSnapshot ||--o{ FinanceRecommendation : "informs (logical)"
+```
+
+## Domain: Lead capture & visitor tracking (added 2026-05)
+
+Three loosely-coupled tables powering the lead-tracking system surfaced at `/admin/brians-stuff?tab=leads`. A session may exist without a lead (anonymous browsing). A `Lead` is created the first time any of email/phone/name is captured; subsequent events on the same session re-attach to the lead. Re-identification across sessions is supported via `Lead.sessions[]`.
+
+### VisitorSession
+- Purpose: one row per anonymous browser session (cookie-based).
+- Key fields: unique `cookieId` (= `pod_vsid` cookie), `firstSeenAt`, `lastSeenAt`, `pageViewCount`, `eventCount`, `landingPage?`, `referrer?`, UTM bag (`utmSource/Medium/Campaign/Content/Term`), `ipAddress?`, geo (`city/region/country/postalCode`), enrichment bag (`enrichedCompany/Industry/Role/Size`), `userAgent?`, `deviceType?`, `metadata? Json`, `leadId?` (denormalized FK).
+- Relations: → `Lead?` (m:1 via leadId), `LeadEvent[]`.
+- Indexed by `leadId`, `firstSeenAt`, `lastSeenAt`.
+
+### Lead
+- Purpose: one row per identifiable person.
+- Key fields: `email?`, `phone?`, `firstName?`, `lastName?`, `status LeadStatus` (default `PARTIAL`), `sourcePage?`, `sourceWidget? LeadSourceWidget`, `lastPage?`, UTM bag (first-touch), `resumeCart? Json` (used to resume "finish your order"), `draftOrderId?`, `orderId?`, `metadata? Json`, `notes? @db.Text`.
+- Relations: → `LeadEvent[]`, `VisitorSession[]`.
+- Indexed by `email`, `phone`, `status`, `createdAt`, `draftOrderId`.
+
+### LeadEvent
+- Purpose: one row per atomic interaction (field blur, page view, form submit, step complete, etc.).
+- Key fields: `leadId?` (FK), `sessionId?` (FK), `type LeadEventType`, `page?`, `widget?`, `fieldName?`, `fieldValue? @db.Text` (truncated to 1000 chars upstream), `metadata? Json`, `occurredAt`.
+- Indexed by `leadId`, `sessionId`, `type`, `occurredAt`.
+- Written by `/api/v1/landing/visitor-pixel` (PAGE_VIEW) and `/api/v1/landing/lead-event` (everything else); read by `/admin/brians-stuff?tab=leads`.
+
+```mermaid
+erDiagram
+  VisitorSession ||--o{ LeadEvent : emits
+  Lead ||--o{ LeadEvent : emits
+  Lead ||--o{ VisitorSession : "identifies (n:m via leadId)"
+  Lead ||--o| DraftOrder : converted_to
+  Lead ||--o| Order : paid_as
+```
+
+## Domain: Shared cart links (added 2026-05)
+
+### CartShareLink
+- Purpose: short-link record for the `/s/<slug>` redirect → `/cart/shared?c=…&t=…` flow.
+- Key fields: unique `slug` (4–16 chars `[A-Za-z0-9]`), `cartData @db.Text` (base64 `c` payload), `token` (base36 `t` timestamp), `expiresAt`, `viewCount` (incremented on each `/s/<slug>` resolve).
+- Indexed by `expiresAt`.
+
+## Domain: Order tracking — Upsell A/B (existing models, new fields)
+
+### DraftOrder — new field
+- `upsellVariantId String?` — landing-page pre-checkout upsell A/B tracking. Records which arrangement of the overlay was shown. Per-item upsell attribution lives in the items JSON (each item may carry `{ ..., viaUpsell: true }`). Index on `upsellVariantId`.
+
+### SubOrder — new field
+- `deliveryDateConfirmed Boolean @default(false)` — flags that the host has manually confirmed the date on the universal dashboard.
 
 ## Domain: Boat schedule
 

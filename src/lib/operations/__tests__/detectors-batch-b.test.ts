@@ -137,6 +137,22 @@ describe('detectCostCoverageGap', () => {
     const [rec] = await detectCostCoverageGap();
     expect((rec.actionPayload.params as { href: string }).href).toContain('editCost=1');
   });
+
+  it('caps output at the top 15 variants in velocity order', async () => {
+    const rows = Array.from({ length: 30 }, (_, i) => ({
+      variant_id: `v${i}`,
+      title: `T${i}`,
+      product_title: `P${i}`,
+      // 30, 29, 28, ... 1 — SQL already sorted DESC
+      units_30d: BigInt(30 - i),
+    }));
+    prismaMock.$queryRawUnsafe.mockResolvedValue(rows);
+    const recs = await detectCostCoverageGap();
+    expect(recs).toHaveLength(15);
+    // first rec is the highest-velocity variant, last is the 15th
+    expect(recs[0].targetEntityId).toBe('v0');
+    expect(recs[14].targetEntityId).toBe('v14');
+  });
 });
 
 // ─── Signal #9: cycle-count-overdue ───────────────────────────────────

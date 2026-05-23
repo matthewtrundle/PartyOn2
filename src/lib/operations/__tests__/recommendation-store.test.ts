@@ -49,7 +49,7 @@ describe('upsertRecommendations', () => {
   it('creates a new rec when no dedupe match exists', async () => {
     prismaMock.operationsRecommendation.findUnique.mockResolvedValue(null);
     const summary = await upsertRecommendations([sampleInput()]);
-    expect(summary).toEqual({ created: 1, updated: 0, skipped: 0 });
+    expect(summary).toEqual({ created: 1, updated: 0, skipped: 0, reopened: 0, suppressed: 0 });
     expect(prismaMock.operationsRecommendation.create).toHaveBeenCalledOnce();
     const args = prismaMock.operationsRecommendation.create.mock.calls[0][0] as { data: { dedupeKey: string } };
     expect(args.data.dedupeKey).toBe('receiving-lag:inv_1');
@@ -60,7 +60,7 @@ describe('upsertRecommendations', () => {
       id: 'rec_1', status: 'open', severity: 'normal',
     });
     const summary = await upsertRecommendations([sampleInput({ severity: 'high' })]);
-    expect(summary).toEqual({ created: 0, updated: 1, skipped: 0 });
+    expect(summary).toEqual({ created: 0, updated: 1, skipped: 0, reopened: 0, suppressed: 0 });
     const updateArgs = prismaMock.operationsRecommendation.update.mock.calls[0][0] as { data: { severity: string } };
     expect(updateArgs.data.severity).toBe('high'); // bumped up
   });
@@ -74,12 +74,67 @@ describe('upsertRecommendations', () => {
     expect(updateArgs.data.severity).toBe('urgent'); // preserved
   });
 
-  it('skips when an existing rec is already shipped/rejected/snoozed', async () => {
+  it('skips a recently-dismissed rec (still within the no-re-emission window)', async () => {
     prismaMock.operationsRecommendation.findUnique.mockResolvedValue({
-      id: 'rec_1', status: 'rejected', severity: 'high',
+      id: 'rec_1',
+      status: 'rejected',
+      severity: 'high',
+      updatedAt: new Date(),
+      actionLog: [{ actionKind: 'dismiss', result: 'success' }],
     });
     const summary = await upsertRecommendations([sampleInput()]);
-    expect(summary).toEqual({ created: 0, updated: 0, skipped: 1 });
+    expect(summary).toEqual({ created: 0, updated: 0, skipped: 1, reopened: 0, suppressed: 0 });
+    expect(prismaMock.operationsRecommendation.update).not.toHaveBeenCalled();
+  });
+
+  it('re-opens an aged-out single-dismissal rec at knocked-down severity', async () => {
+    prismaMock.operationsRecommendation.findUnique.mockResolvedValue({
+      id: 'rec_1',
+      status: 'rejected',
+      severity: 'urgent',
+      updatedAt: new Date(Date.now() - 40 * 24 * 60 * 60 * 1000), // 40d ago
+      actionLog: [{ actionKind: 'dismiss', result: 'success' }],
+    });
+    const summary = await upsertRecommendations([sampleInput({ severity: 'urgent' })]);
+    expect(summary).toEqual({ created: 0, updated: 0, skipped: 0, reopened: 1, suppressed: 0 });
+    const updateArgs = prismaMock.operationsRecommendation.update.mock.calls[0][0] as {
+      data: { status: string; severity: string; dismissReason: string | null; snoozeUntil: Date | null };
+    };
+    expect(updateArgs.data.status).toBe('open');
+    // urgent → high after one dismissal
+    expect(updateArgs.data.severity).toBe('high');
+    expect(updateArgs.data.dismissReason).toBeNull();
+    expect(updateArgs.data.snoozeUntil).toBeNull();
+  });
+
+  it('suppresses re-emission once dismissCount crosses the threshold', async () => {
+    prismaMock.operationsRecommendation.findUnique.mockResolvedValue({
+      id: 'rec_1',
+      status: 'rejected',
+      severity: 'normal',
+      updatedAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000),
+      actionLog: [
+        { actionKind: 'dismiss', result: 'success' },
+        { actionKind: 'dismiss', result: 'success' },
+        { actionKind: 'dismiss', result: 'success' },
+      ],
+    });
+    const summary = await upsertRecommendations([sampleInput({ severity: 'high' })]);
+    expect(summary).toEqual({ created: 0, updated: 0, skipped: 0, reopened: 0, suppressed: 1 });
+    expect(prismaMock.operationsRecommendation.update).not.toHaveBeenCalled();
+  });
+
+  it('respects an active snooze window — skips even when aged out', async () => {
+    prismaMock.operationsRecommendation.findUnique.mockResolvedValue({
+      id: 'rec_1',
+      status: 'snoozed',
+      severity: 'high',
+      updatedAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000),
+      snoozeUntil: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000), // 5d in the future
+      actionLog: [],
+    });
+    const summary = await upsertRecommendations([sampleInput()]);
+    expect(summary.skipped).toBe(1);
     expect(prismaMock.operationsRecommendation.update).not.toHaveBeenCalled();
   });
 });

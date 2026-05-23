@@ -26,6 +26,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import { useLeadCapture } from '@/lib/leads/client';
 import type { CuratedCatalog } from '@/lib/landing/getCuratedCatalog';
+import { loadCart, saveCart, clearCart } from '@/lib/events/sessionStore';
 import type {
   BuilderCategory,
   BuilderProduct,
@@ -85,6 +86,29 @@ export default function EventDrinksMenuModal({
 
   const lead = useLeadCapture({ widget: 'A_LA_CARTE', page: `/events/${event.slug}` });
 
+  // Hydrate selection from localStorage when the modal opens (24h TTL).
+  // Lets a customer close the tab, come back tomorrow, and pick up exactly
+  // where they left off.
+  useEffect(() => {
+    if (!open) return;
+    const stored = loadCart(event.slug);
+    if (stored && Object.keys(stored.selection).length > 0) {
+      setSelection(stored.selection);
+      setStepIndex(Math.min(stored.stepIndex, STEPS.length - 1));
+    }
+  }, [open, event.slug]);
+
+  // Snapshot the selection + step on every change so we never lose state
+  // mid-flow. Wait until at least one item is in the cart so we don't
+  // litter localStorage with empty rows.
+  useEffect(() => {
+    if (!open || submitted) return;
+    const itemCount = Object.values(selection).reduce((s, n) => s + (n || 0), 0);
+    if (itemCount > 0) {
+      saveCart(event.slug, { selection, stepIndex });
+    }
+  }, [open, submitted, selection, stepIndex, event.slug]);
+
   // Fire step-complete events so we can see drop-off in the lead funnel.
   useEffect(() => {
     if (!open) return;
@@ -134,6 +158,55 @@ export default function EventDrinksMenuModal({
       [id]: Math.max(0, (s[id] ?? 0) - 1),
     }));
 
+  // Once the cart goes 0 → ≥1 item AND we have RSVP info, schedule an
+  // abandoned-cart nudge. The endpoint is idempotent on the server side
+  // (Lead row update with metadata) so we can call it whenever — but we
+  // only fire it once per modal open to avoid spam.
+  const [nudgeScheduled, setNudgeScheduled] = useState(false);
+  useEffect(() => {
+    if (nudgeScheduled || !open || submitted) return;
+    if (!guestEmail || !guestName) return;
+    const itemCount = Object.values(selection).reduce((s, n) => s + (n || 0), 0);
+    if (itemCount === 0) return;
+    setNudgeScheduled(true);
+    const [first, ...rest] = guestName.split(' ');
+    const subtotalEstimate = Object.entries(selection).reduce((sum, [id, qty]) => {
+      const p = productById[id];
+      return p ? sum + Number(p.price) * (qty ?? 0) : sum;
+    }, 0);
+    void fetch('/api/v1/events/abandon-nudge', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      credentials: 'same-origin',
+      keepalive: true,
+      body: JSON.stringify({
+        eventSlug: event.slug,
+        eventTitle: event.title,
+        firstName: first,
+        lastName: rest.join(' '),
+        email: guestEmail,
+        phone: guestPhone || null,
+        itemCount,
+        cartTotal: Number(subtotalEstimate.toFixed(2)),
+        resumeUrl: `/events/${event.slug}`,
+      }),
+    }).catch(() => {
+      // Silent — if it fails we'll just miss that one abandoned-cart
+      // opportunity; not worth blocking the UX over.
+    });
+  }, [
+    open,
+    submitted,
+    selection,
+    guestEmail,
+    guestName,
+    guestPhone,
+    event.slug,
+    event.title,
+    productById,
+    nudgeScheduled,
+  ]);
+
   const next = () => setStepIndex((s) => Math.min(STEPS.length - 1, s + 1));
   const prev = () => setStepIndex((s) => Math.max(0, s - 1));
   const isLastStep = stepIndex === STEPS.length - 1;
@@ -179,6 +252,10 @@ export default function EventDrinksMenuModal({
         }),
       );
     }
+
+    // Order locked in — clear the saved cart so the abandoned-cart cron
+    // doesn't keep nudging this user.
+    clearCart(event.slug);
 
     // Mockup: short delay then show confirmation. Real version will
     // create a DraftOrder + redirect to embedded Stripe checkout.

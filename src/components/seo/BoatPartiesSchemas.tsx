@@ -6,27 +6,34 @@ import { generateFAQSchema, generateEventSchema } from '@/lib/seo/schemas';
  * are in initial HTML for search engine crawlers
  */
 export default function BoatPartiesSchemas() {
-  // FAQ Data for Schema
+  // FAQ Data for Schema — these Q&A pairs match the visible content
+  // in the "Frequently Asked Questions" section of src/app/boat-parties/page.tsx.
+  // Google requires FAQ schema to mirror visible page content; otherwise
+  // the entire page can be disqualified from rich results.
   const faqs = [
     {
-      question: "Can you deliver to our boat at the marina?",
-      answer: "Yes! We deliver to all Lake Travis marinas and can coordinate with your rental company. Just provide the dock number and boat name when ordering."
+      question: "Dock vs. boat delivery?",
+      answer: "Both—we do slip handoffs or boat delivery to your anchored location."
     },
     {
-      question: "How do we handle drinks in the Texas heat?",
-      answer: "All deliveries include insulated coolers and ice packs. For longer trips, add our Ice Replenishment service ($49) for a second cooler delivery mid-day."
+      question: "How far ahead to book?",
+      answer: "72 hours recommended; peak lake weekends fill fast."
     },
     {
-      question: "What's the minimum order for Lake Travis delivery?",
-      answer: "Lake Travis deliveries have a $200 minimum due to distance. Most boat parties order $300-500 worth for 8-12 people."
+      question: "Can you provide a bartender?",
+      answer: "Yes for premium/yacht events via TABC-certified partners."
     },
     {
-      question: "Can you deliver to Devil's Cove?",
-      answer: "We deliver to marinas only, not open water. Most groups get delivery at the marina before departure or arrange a mid-day dock meetup."
+      question: "Glassware on the lake?",
+      answer: "Boat-safe options available; disposables recommended for safety."
     },
     {
-      question: "What if our boat rental gets canceled?",
-      answer: "Cancel or modify your delivery up to 24 hours before your scheduled time for a full refund. We understand weather happens on the lake!"
+      question: "Only need ice & cans?",
+      answer: "Use Order Now → Lake Day Essentials for quick delivery."
+    },
+    {
+      question: "Are you insured/licensed?",
+      answer: "Yes, fully insured and licensed for marine delivery."
     }
   ];
 

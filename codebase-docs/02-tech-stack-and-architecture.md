@@ -3,7 +3,7 @@ title: Tech Stack and Architecture
 project: PartyOn2
 doc_type: codebase-reference
 section: architecture
-last_generated: 2026-05-03
+last_generated: 2026-05-20
 tags: [partyondelivery, codebase, architecture, stack, env]
 ---
 
@@ -23,10 +23,11 @@ tags: [partyondelivery, codebase, architecture, stack, env]
 | ORM | Prisma (`@prisma/client`, `prisma`) | 6.15.0 |
 | Auth / JWT | `jose` | 6.1.3 |
 | Password hashing | `bcryptjs` | 3.0.3 |
-| Payments | `stripe` | 20.2.0 |
+| Payments | `stripe`, `@stripe/stripe-js`, `@stripe/react-stripe-js` (embedded checkout on landing pages) | 20.2.0 / 9.5.0 / 6.3.0 |
 | Email | `resend`, `@react-email/components` | 6.9.2 / 1.0.4 |
 | SMS / webhook relay | GoHighLevel via `src/lib/webhooks/ghl.ts`; Zapier inbound | n/a (webhook URL only) |
-| Analytics | `@vercel/analytics`, `@vercel/speed-insights`, `@google-analytics/data` (GA4 Data API), Meta Pixel | 1.5.0 / 1.2.0 / 5.2.1 |
+| Analytics | `@vercel/analytics`, `@vercel/speed-insights`, `@google-analytics/data` (GA4 Data API), Meta Pixel, Microsoft Clarity (`@microsoft/clarity`) | 1.5.0 / 1.2.0 / 5.2.1 / 1.0.2 |
+| Finance integrations | `plaid`, `react-plaid-link` (bank accounts), `intuit-oauth` (QuickBooks Online) | 42.2.0 / 4.1.1 / 4.2.3 |
 | Error / observability | Vercel Analytics Drain (see `api/analytics-ingest`) | n/a |
 | Shopify integration | `@shopify/buy-button-js`, `graphql`, `graphql-request` (Admin API only) | 3.0.5 / 16.11.0 / 7.2.0 |
 | AI | `@anthropic-ai/sdk`, `@google/generative-ai`, OpenRouter (via fetch) | 0.66.0 / 0.24.1 |
@@ -47,7 +48,7 @@ tags: [partyondelivery, codebase, architecture, stack, env]
 
 ```text
 src/
-├── app/                        # Next.js App Router — 143 page.tsx, 214 route.ts
+├── app/                        # Next.js App Router — 157 page.tsx, 241 route.ts
 │   ├── (main)/                 # Route group for marketing pages (areas, press, tabc…)
 │   ├── api/
 │   │   ├── v1/                 # Primary API: auth, products, orders, cart, inventory, admin, affiliate, invoice
@@ -257,6 +258,28 @@ Grouped to match the section headers in `.env.example` at repo root. This list i
 |---|---|
 | `NEXT_PUBLIC_META_PIXEL_ID` | Facebook/Meta Pixel ID (falls back to baked-in default if unset). |
 
+### Microsoft Clarity
+| Variable | Purpose |
+|---|---|
+| `NEXT_PUBLIC_CLARITY_PROJECT_ID` | Clarity project ID (the value after `clarity.ms/tag/<id>`). Initialized client-side by `src/components/ClarityInit.tsx` in production only. Added 2026-05. |
+
+### Finance Director — QuickBooks Online (Plaid integration too)
+Added 2026-05 alongside the Finance Director pipeline (Phase 0+).
+
+| Variable | Purpose |
+|---|---|
+| `INTUIT_CLIENT_ID` | Intuit developer app client ID (QBO OAuth). |
+| `INTUIT_CLIENT_SECRET` | Intuit app client secret. |
+| `INTUIT_ENV` | `sandbox` \| `production`. |
+| `INTUIT_REDIRECT_URI` | QBO OAuth redirect — must match the value in the Intuit developer console (`/api/admin/finance/qb/callback`). |
+
+### Finance Director — Plaid
+| Variable | Purpose |
+|---|---|
+| `PLAID_CLIENT_ID` | Plaid client ID. |
+| `PLAID_SECRET` | Plaid secret (matched to env). |
+| `PLAID_ENV` | `sandbox` \| `development` \| `production`. Sandbox creds work with Plaid's `user_good` / `pass_good` fake institution. |
+
 ### Supabase (product image storage)
 | Variable | Purpose |
 |---|---|
@@ -327,6 +350,8 @@ Grouped to match the section headers in `.env.example` at repo root. This list i
 | `npm run indexnow:*` | IndexNow submission helpers. |
 | `npm run extract-bundle` | Cocktail bundle image extractor (one-off tooling). |
 | `npm run add-partner` | CLI partner onboarding. |
+| `npm run sync:marketing` / `:watch` | Mirror `RecommendationItem` rows to the Obsidian vault for the Marketing Director agent. |
+| `npm run sync:operations` / `:watch` | Mirror `OperationsRecommendation` rows to the Obsidian vault for the Operations Director agent. Added 2026-05. |
 
 ## Conventions (enforced via CLAUDE.md)
 

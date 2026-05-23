@@ -107,6 +107,22 @@ function shouldSkip(el: Element): boolean {
   return false;
 }
 
+// Min characters before a partial value is worth saving. 1 = save the
+// instant they type anything (yes, even a single character). We err on
+// the side of "save too much" because the dedupe + Lead upsert by email
+// means duplicates collapse cleanly.
+const MIN_CAPTURE_LEN = 1;
+// Debounce window for in-progress typing. After this many ms of no
+// keystrokes, we snapshot the current value.
+const INPUT_DEBOUNCE_MS = 700;
+
+type PendingEntry = {
+  value: string;
+  fieldKind: 'firstName' | 'lastName' | 'email' | 'phone';
+  fieldName: string;
+  widget: string;
+};
+
 export default function FormCaptureWatcher() {
   const pathname = usePathname();
 
@@ -114,45 +130,136 @@ export default function FormCaptureWatcher() {
     if (!pathname) return;
     if (SKIP_PATH_PATTERNS.some((re) => re.test(pathname))) return;
 
-    const handler = (ev: FocusEvent) => {
-      const t = ev.target;
-      if (!(t instanceof HTMLInputElement) && !(t instanceof HTMLTextAreaElement) && !(t instanceof HTMLSelectElement)) {
-        return;
-      }
-      // Skip password, hidden, file, submit, button, checkbox, radio.
-      const type = (t.getAttribute('type') ?? '').toLowerCase();
-      if (['password', 'hidden', 'file', 'submit', 'button', 'checkbox', 'radio'].includes(type)) return;
+    // Most-recent in-progress value per field name. Drained on blur,
+    // debounced input timer, OR beforeunload (via sendBeacon) so we never
+    // lose what someone typed before closing the tab.
+    const pending = new Map<string, PendingEntry>();
+    let debounceId: number | null = null;
 
-      const value = ('value' in t ? t.value : '').trim();
-      if (!value || value.length < 2) return;
-      if (shouldSkip(t)) return;
-
-      const { fieldKind, fieldName } = classifyField(t);
-      if (!fieldKind) return; // Only capture obvious contact fields.
-
-      // De-dupe identical re-fires (same field + same value).
-      if (recentByField.get(fieldName) === value) return;
-      recentByField.set(fieldName, value);
+    const capture = (
+      entry: PendingEntry,
+      eventType: 'FIELD_BLUR' | 'FIELD_FOCUS' = 'FIELD_BLUR',
+      via: 'blur' | 'typing' | 'beacon' = 'blur',
+    ) => {
+      // De-dupe identical re-fires.
+      const dedupeKey = entry.fieldName;
+      if (recentByField.get(dedupeKey) === entry.value) return;
+      recentByField.set(dedupeKey, entry.value);
+      pending.delete(dedupeKey);
 
       const identify: Record<string, string> = {};
-      identify[fieldKind] = value;
-
-      const widget = inferWidget(t);
+      identify[entry.fieldKind] = entry.value;
 
       void sendLeadEvent({
-        type: 'FIELD_BLUR',
-        widget,
+        type: eventType,
+        widget: entry.widget as Parameters<typeof sendLeadEvent>[0]['widget'],
         page: pathname,
-        fieldName,
-        fieldValue: value,
+        fieldName: entry.fieldName,
+        fieldValue: entry.value,
         identify: identify as Parameters<typeof sendLeadEvent>[0]['identify'],
-        metadata: { source: 'global-form-watcher' },
+        metadata: { source: 'global-form-watcher', via },
       });
     };
 
-    document.addEventListener('focusout', handler, true);
+    const scheduleFlush = () => {
+      if (debounceId !== null) window.clearTimeout(debounceId);
+      debounceId = window.setTimeout(() => {
+        debounceId = null;
+        for (const entry of pending.values()) {
+          capture(entry, 'FIELD_FOCUS', 'typing');
+        }
+      }, INPUT_DEBOUNCE_MS);
+    };
+
+    const observe = (ev: Event, eventType: 'FIELD_BLUR' | 'FIELD_FOCUS') => {
+      const t = ev.target;
+      if (
+        !(t instanceof HTMLInputElement) &&
+        !(t instanceof HTMLTextAreaElement) &&
+        !(t instanceof HTMLSelectElement)
+      ) {
+        return;
+      }
+      const type = (t.getAttribute('type') ?? '').toLowerCase();
+      if (
+        ['password', 'hidden', 'file', 'submit', 'button', 'checkbox', 'radio'].includes(
+          type,
+        )
+      ) {
+        return;
+      }
+      const value = ('value' in t ? t.value : '').trim();
+      if (!value || value.length < MIN_CAPTURE_LEN) return;
+      if (shouldSkip(t)) return;
+
+      const { fieldKind, fieldName } = classifyField(t);
+      if (!fieldKind) return;
+
+      const widget = inferWidget(t);
+      const entry: PendingEntry = { value, fieldKind, fieldName, widget };
+
+      if (eventType === 'FIELD_BLUR') {
+        // Blur = commit immediately, mark as final.
+        capture(entry, 'FIELD_BLUR', 'blur');
+      } else {
+        // Input = stash for debounced flush. Pre-emptively capture once we
+        // see a fully-formed email so we don't lose it if they close the
+        // tab mid-debounce.
+        pending.set(fieldName, entry);
+        const looksLikeEmail =
+          fieldKind === 'email' && /.+@.+\..+/.test(value);
+        const looksLikePhone =
+          fieldKind === 'phone' && value.replace(/\D/g, '').length >= 10;
+        if (looksLikeEmail || looksLikePhone) {
+          capture(entry, 'FIELD_FOCUS', 'typing');
+        } else {
+          scheduleFlush();
+        }
+      }
+    };
+
+    const onBlur = (ev: FocusEvent) => observe(ev, 'FIELD_BLUR');
+    const onInput = (ev: Event) => observe(ev, 'FIELD_FOCUS');
+
+    // Beacon flush — if the user closes the tab with text still in a
+    // field that hasn't been committed, fire one last sendBeacon so we
+    // don't lose the partial.
+    const beaconFlush = () => {
+      if (pending.size === 0) return;
+      const payload = Array.from(pending.values()).map((entry) => ({
+        type: 'FIELD_FOCUS',
+        widget: entry.widget,
+        page: pathname,
+        fieldName: entry.fieldName,
+        fieldValue: entry.value,
+        identify: { [entry.fieldKind]: entry.value },
+        metadata: { source: 'global-form-watcher', via: 'beacon' },
+      }));
+      try {
+        for (const body of payload) {
+          // sendBeacon is more reliable than fetch on unload.
+          const blob = new Blob([JSON.stringify(body)], {
+            type: 'application/json',
+          });
+          navigator.sendBeacon?.('/api/v1/landing/lead-event', blob);
+        }
+        pending.clear();
+      } catch {
+        /* swallow */
+      }
+    };
+
+    document.addEventListener('focusout', onBlur, true);
+    document.addEventListener('input', onInput, true);
+    window.addEventListener('pagehide', beaconFlush);
+    window.addEventListener('beforeunload', beaconFlush);
+
     return () => {
-      document.removeEventListener('focusout', handler, true);
+      document.removeEventListener('focusout', onBlur, true);
+      document.removeEventListener('input', onInput, true);
+      window.removeEventListener('pagehide', beaconFlush);
+      window.removeEventListener('beforeunload', beaconFlush);
+      if (debounceId !== null) window.clearTimeout(debounceId);
     };
   }, [pathname]);
 

@@ -18,11 +18,14 @@ import {
   type OperationsRecommendationInput,
   type OpsSeverity,
 } from './types';
+import { evaluateSuppression } from './dismiss-suppression';
 
 export interface UpsertSummary {
   created: number;
   updated: number;
   skipped: number;
+  reopened: number;
+  suppressed: number;
 }
 
 /**
@@ -37,12 +40,21 @@ export async function upsertRecommendations(
   let created = 0;
   let updated = 0;
   let skipped = 0;
+  let reopened = 0;
+  let suppressed = 0;
 
   for (const rec of recs) {
     const dedupeKey = rec.dedupeKey ?? buildDedupeKey(rec.signalKind, rec.targetEntityId);
     const existing = await prisma.operationsRecommendation.findUnique({
       where: { dedupeKey },
-      select: { id: true, status: true, severity: true },
+      select: {
+        id: true,
+        status: true,
+        severity: true,
+        updatedAt: true,
+        snoozeUntil: true,
+        actionLog: true,
+      },
     });
 
     if (!existing) {
@@ -65,7 +77,35 @@ export async function upsertRecommendations(
     }
 
     if (existing.status !== 'open') {
-      skipped += 1;
+      // Non-open rec: ask the dismiss-feedback heuristic whether the detector
+      // should re-emit (knocked-down severity), suppress entirely, or wait.
+      const decision = evaluateSuppression(existing, rec.severity);
+      if (decision.action === 'skip') {
+        skipped += 1;
+        continue;
+      }
+      if (decision.action === 'suppress') {
+        suppressed += 1;
+        continue;
+      }
+      // Re-open: reset to open at the heuristic-decided severity, refresh
+      // evidence + payload + title. Preserve the actionLog so dismissal
+      // history compounds across re-emissions.
+      await prisma.operationsRecommendation.update({
+        where: { id: existing.id },
+        data: {
+          status: 'open',
+          severity: decision.nextSeverity,
+          title: rec.title,
+          evidence: rec.evidence as unknown as Prisma.InputJsonValue,
+          actionPayload: rec.actionPayload as unknown as Prisma.InputJsonValue,
+          // Re-opening clears the prior dismiss reason / snooze window per
+          // markStatus convention; the dismissCount lives in actionLog.
+          dismissReason: null,
+          snoozeUntil: null,
+        },
+      });
+      reopened += 1;
       continue;
     }
 
@@ -88,7 +128,7 @@ export async function upsertRecommendations(
     updated += 1;
   }
 
-  return { created, updated, skipped };
+  return { created, updated, skipped, reopened, suppressed };
 }
 
 /**

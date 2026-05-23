@@ -64,11 +64,20 @@ export interface OperationsRecommendationInput {
 
 /**
  * Audit trail entry on OperationsRecommendation.actionLog.
+ *
+ * Result vocabulary:
+ *  - 'navigated'        operator clicked a deep-link action; we logged the click
+ *                       and bumped status to `approved`. No mutation performed.
+ *  - 'success'          apiCall executed and the underlying endpoint returned 2xx.
+ *  - 'error'            apiCall failed; `errorMessage` carries the reason.
+ *  - 'not_implemented'  apiCall kind exists in the dispatcher but the writer
+ *                       isn't wired yet (Phase 1C scaffolds, Phase 1C-b ships).
  */
 export interface ActionLogEntry {
   timestamp: string; // ISO
+  actionKind?: string;
   actionLabel: string;
-  result: 'success' | 'error';
+  result: 'navigated' | 'success' | 'error' | 'not_implemented';
   errorMessage?: string;
   relatedMovementId?: string;
   actor?: string;

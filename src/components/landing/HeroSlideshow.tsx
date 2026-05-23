@@ -22,8 +22,8 @@ const SLIDES: { src: string; alt: string; kind: 'cocktail' | 'party' }[] = [
     kind: 'cocktail',
   },
   {
-    src: '/images/services/bach-parties/bachelor-party-epic.webp',
-    alt: 'Bachelor party scene',
+    src: '/images/ppc/ppc-ccs-238.jpg',
+    alt: 'Lake Travis bachelor party — photo by Capital City Shots for Premier Party Cruises',
     kind: 'party',
   },
   {
@@ -52,8 +52,8 @@ const SLIDES: { src: string; alt: string; kind: 'cocktail' | 'party' }[] = [
     kind: 'cocktail',
   },
   {
-    src: '/images/services/bach-parties/late-night-party-supplies.webp',
-    alt: 'Late-night party supplies',
+    src: '/images/ppc/ppc-ccs-196.jpg',
+    alt: 'Lake Travis party cruise — photo by Capital City Shots for Premier Party Cruises',
     kind: 'party',
   },
   {
@@ -62,8 +62,8 @@ const SLIDES: { src: string; alt: string; kind: 'cocktail' | 'party' }[] = [
     kind: 'cocktail',
   },
   {
-    src: '/images/boat-heroes/boat-party-epic-sunset.webp',
-    alt: 'Premier Party Cruises sunset boat party on Lake Travis',
+    src: '/images/ppc/ppc-deck.jpg',
+    alt: 'Premier Party Cruises deck party on Lake Travis',
     kind: 'party',
   },
 ];

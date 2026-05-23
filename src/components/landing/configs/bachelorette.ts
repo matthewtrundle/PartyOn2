@@ -4,8 +4,8 @@ const PHONE_DISPLAY = '(737) 371-9700';
 
 export const bacheloretteConfig: LandingConfig = {
   slug: 'austin-bachelorette-party-delivery',
-  metaTitle:
-    'Austin Bachelorette Party Alcohol Delivery | Champagne, Cocktails & More | Party On Delivery',
+  // Title trimmed to <60 chars so it doesn't truncate in SERPs.
+  metaTitle: 'Austin Bachelorette Alcohol Delivery | Party On Delivery',
   metaDescription:
     "Champagne, rosé, cocktail kits and brunch mimosa bars delivered to your Austin Airbnb, hotel suite, or boat. Group ordering, split pay, locally owned. 500+ groups served.",
   ogImage: '/images/services/bach-parties/bachelorette-champagne-tower.webp',
