@@ -99,24 +99,29 @@ export default function CalculatorResults({ plan }: Props): ReactElement {
         </div>
       </div>
 
-      <div className="card">
+      <div className="card border-brand-yellow/40 bg-brand-yellow/5">
         {status === 'success' ? (
           <div className="text-center py-2">
-            <p className="text-base font-semibold text-gray-900 mb-2">
-              We&apos;ll email you the shopping list.
+            <p className="text-base font-semibold text-gray-900 mb-1">
+              Saved. We&apos;ll email this list within 15 minutes.
             </p>
-            <Link href="/order?type=wedding" className="btn-primary inline-flex items-center justify-center mt-2">
-              Start Wedding Order
+            <p className="text-sm text-gray-700 mb-4">
+              We&apos;ll include a free delivery quote and let you tweak quantities
+              before you order.
+            </p>
+            <Link href="/order?type=wedding" className="btn-primary inline-flex items-center justify-center">
+              Start Wedding Order Now
             </Link>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <h3 className="font-heading text-lg font-bold tracking-[0.08em] text-gray-900">
-              Email me this plan
+              Save this list + get a free delivery quote
             </h3>
             <p className="text-sm text-gray-700">
-              We&apos;ll save the shopping list and follow up with delivery options. No
-              spam. No pricing yet.
+              We&apos;ll email this shopping list and a free venue-delivery quote
+              within 15 minutes. No spam, no pressure — you can tweak before you
+              order.
             </p>
             <div>
               <label htmlFor="first-name" className="block text-base font-medium text-gray-900 mb-1">

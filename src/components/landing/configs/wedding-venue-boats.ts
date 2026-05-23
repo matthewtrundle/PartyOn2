@@ -65,12 +65,12 @@ export const weddingVenueBoatsConfig: LandingConfig = {
 
   painHeadline: "Wedding venues in Austin start at $8,000. Boats start at $1,500.",
   painBody:
-    "Most Austin wedding directories list venues sized for 150+ guests at $8K–$20K. If you want a small, intimate, or budget-friendly wedding, those directories don't help. Premier Party Cruises boats fit 20-80 guests on the water — ceremony, dinner, dancing — at a fraction of land-venue pricing. We handle the bar; they handle the boat.",
+    "Most Austin wedding directories list venues sized for 150+ guests at $8K–$20K. If you want a small, intimate, or budget-friendly wedding, those directories don't help. Premier Party Cruises boats fit 20-80 guests on the water — ceremony, dinner, dancing — at a fraction of land-venue pricing. We handle the bar; they handle the boat. Lake-unsafe weather = full reschedule at no charge, so you're never out the deposit if a storm rolls in.",
 
   packagesEyebrow: 'BOATS AS VENUE — WHOLE WEEKEND PACKAGES',
   packagesHeadline: 'Ceremony to brunch. All on the water.',
   packagesBlurb:
-    'Each package pairs a Premier boat charter with Party On bar service. Small ceremony packages start at $1,500 boat + bar. Multi-day packages cover the entire wedding weekend.',
+    'Each package pairs a Premier boat charter with Party On bar service — one inquiry, one combined invoice. Total weekend on the lake (boat + bar + photographer) typically lands under $8,000. Comparable Austin land weddings: $35,000+. Rain guarantee on every booking — Premier reschedules at no charge if the lake is unsafe.',
   packages: [
     {
       name: 'Ceremony On The Lake',
@@ -120,7 +120,7 @@ export const weddingVenueBoatsConfig: LandingConfig = {
     },
   ],
   customLine:
-    "Building a multi-day wedding weekend on the lake? Call us — Premier and Party On coordinate together.",
+    "Building a multi-day wedding weekend on the lake? Call us — Premier and Party On coordinate together. Spring + early-fall Saturdays book 6-9 months out; reach out early if you have a target date.",
 
   stepsHeadline: 'Two companies. One weekend. One invoice.',
   steps: [
@@ -161,21 +161,21 @@ export const weddingVenueBoatsConfig: LandingConfig = {
   reviews: [
     {
       quote:
-        "We had 32 people on a Premier boat for the ceremony and 12 closest family for brunch the next morning. Total venue cost was less than 1 night at the Driskill. Party On stocked both — bubbles for the toast, mimosas for brunch.",
+        "Saved ~$11,500 on the venue. Ceremony on the deck, reception below, brunch on the water the next morning. 32 guests, no folding chairs in a hotel ballroom. Party On stocked all three events — champagne for the toast, full bar at dinner, mimosas at sunrise.",
       author: 'Cassidy + Marcus',
-      detail: 'Lake Travis micro-wedding, October 2025',
+      detail: 'Lake Travis micro-wedding · October 2025',
     },
     {
       quote:
-        "Our directories all sent us to venues priced for 150 guests. We were 24. Premier put us on the water for 4 hours, Party On handled the bar, and we got the wedding we actually wanted.",
+        "Every directory sent us to 150-guest venues priced at $18,000. We were 24 people who wanted intimate. Premier put us on the water for 4 hours, Party On handled the bar — total was under $4,200 and we got the wedding we actually wanted.",
       author: 'Tessa B.',
-      detail: 'Vow renewal, 2025',
+      detail: 'Vow renewal · 2025',
     },
     {
       quote:
-        "Premier's captain married us — yes, really. Party On stocked the toast champagne and a curated wine pairing for dinner on the lower deck. Best decision we made all year.",
+        "Our captain officiated. Party On stocked the toast champagne plus a wine pairing for dinner on the lower deck. We invited 22, spent less than a typical Austin rehearsal dinner, and still have the leftover bottles. Best decision we made.",
       author: 'Brian + Allan',
-      detail: 'Wedding-party charter, 2025',
+      detail: 'Wedding-party charter · 2025',
     },
   ],
 
