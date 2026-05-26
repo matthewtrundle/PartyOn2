@@ -7,6 +7,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import { useLeadCapture } from '@/lib/leads/client';
+import { trackFunnelStep } from '@/lib/experiments/funnelTrack';
+import type { FunnelStep } from '@/lib/experiments/funnelSteps';
 import type {
   LandingConfig,
   BuilderProduct,
@@ -122,14 +124,44 @@ export default function PackageBuilderModal({
   // Fire STEP_COMPLETE every time we advance steps so we can see drop-off.
   useEffect(() => {
     if (!open) return;
+    const stepKey = STEPS[stepIndex]?.key;
     lead.onStepComplete(`step_${stepIndex}_view`, {
-      stepKey: STEPS[stepIndex]?.key,
+      stepKey,
       people,
       itemCount: Object.values(selection).reduce((s, n) => s + (n || 0), 0),
     });
+    // Also fire the canonical funnel step for the Experiments dashboard.
+    // Map modal step keys → FunnelStep names.
+    const funnelMap: Record<string, FunnelStep> = {
+      basics: 'builder_step_basics',
+      beer: 'builder_step_beer',
+      liquor: 'builder_step_liquor',
+      mixers: 'builder_step_mixers',
+      review: 'builder_step_review',
+    };
+    const funnelStep = stepKey ? funnelMap[stepKey] : undefined;
+    if (funnelStep) {
+      trackFunnelStep({
+        step: funnelStep,
+        widget: 'PACKAGE_BUILDER',
+        metadata: { stepIndex, people },
+      });
+    }
     // We only care about stepIndex changing; ignore lead/STEPS in deps.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stepIndex, open]);
+
+  // Fire contact_filled funnel step once when at least one of name/email/phone
+  // has a value. Deduped via trackFunnelStep's session-scoped set.
+  useEffect(() => {
+    if (!open) return;
+    if (contactName || contactEmail || contactPhone) {
+      trackFunnelStep({
+        step: 'contact_filled',
+        widget: 'PACKAGE_BUILDER',
+      });
+    }
+  }, [open, contactName, contactEmail, contactPhone]);
 
   // Trigger upsell as soon as the user scrolls the review step toward the
   // contact/payment form. We attach an IntersectionObserver to the contact-
@@ -329,6 +361,12 @@ export default function PackageBuilderModal({
     } else {
       lead.onFormSubmit(leadIdentify, leadMeta, items);
     }
+    // Canonical funnel step for the Experiments dashboard.
+    trackFunnelStep({
+      step: 'checkout_start',
+      widget: 'PACKAGE_BUILDER',
+      metadata: { mode: submitMode, itemCount: items.length },
+    });
 
     try {
       const res = await fetch('/api/v1/landing/quote', {

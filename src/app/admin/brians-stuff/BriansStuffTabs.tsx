@@ -20,6 +20,7 @@ import type { ReactNode } from 'react';
 
 type TabKey =
   | 'playbook'
+  | 'experiments'
   | 'upsell'
   | 'leads'
   | 'events'
@@ -29,6 +30,7 @@ type TabKey =
 
 export default function BriansStuffTabs({
   playbook,
+  experiments,
   tracker,
   leads,
   events,
@@ -38,6 +40,7 @@ export default function BriansStuffTabs({
   initialTab = 'playbook',
 }: {
   playbook: ReactNode;
+  experiments: ReactNode;
   tracker: ReactNode;
   leads: ReactNode;
   events: ReactNode;
@@ -61,6 +64,9 @@ export default function BriansStuffTabs({
         <div className="max-w-5xl mx-auto px-6 md:px-10 flex gap-1 overflow-x-auto">
           <TabButton active={tab === 'playbook'} onClick={() => setTab('playbook')}>
             📘 Landing Page Playbook
+          </TabButton>
+          <TabButton active={tab === 'experiments'} onClick={() => setTab('experiments')}>
+            🧪 Experiments &amp; Funnels
           </TabButton>
           <TabButton active={tab === 'upsell'} onClick={() => setTab('upsell')}>
             ★ Upsell A/B Tracker
@@ -86,6 +92,9 @@ export default function BriansStuffTabs({
       {/* Mount all panels but hide inactive — keeps server-rendered content
           warm when toggling tabs. */}
       <div hidden={tab !== 'playbook'}>{playbook}</div>
+      <div hidden={tab !== 'experiments'} className="px-6 md:px-10 py-8">
+        {experiments}
+      </div>
       <div hidden={tab !== 'upsell'} className="px-6 md:px-10 py-8">
         {tracker}
       </div>

@@ -3,7 +3,7 @@
 // SHARED landing-page template — all 4 event landing pages render through this.
 // Pass a config (see types.ts) to customize copy, theme, packages, FAQs, etc.
 
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import PackageBuilderModal from './PackageBuilderModal';
@@ -12,6 +12,9 @@ import HeroSlideshow from './HeroSlideshow';
 import type { LandingConfig, Catalog, Package, ThemeColors } from './types';
 import type { UpsellProducts } from '@/lib/landing/getUpsellProducts';
 import { generateFAQSchema } from '@/lib/seo/schemas';
+import { experimentsForPath, type BachelorHeroPayload, type CtaCopyPayload } from '@/lib/experiments/registry';
+import { useVariant } from '@/lib/experiments/clientAssign';
+import { useFunnelTracker } from '@/lib/experiments/funnelTrack';
 
 // All 4 /austin-*-delivery landing pages. Used to render an "other event
 // types we cover" cross-link section near the final CTA — gives sibling
@@ -56,8 +59,60 @@ export default function LandingPageTemplate({ config, catalog, upsellProducts }:
   const [openSteps, setOpenSteps] = useState<Set<number>>(new Set([0]));
   const T = config.theme;
 
+  // ─── Experiments wiring ─────────────────────────────────────────
+  // For each running experiment on this path, assign a variant + fold
+  // its payload into the copy that renders below. First variant is
+  // always control so the page never regresses on fresh visitors.
+  const pagePath = `/${config.slug}`;
+  const activeExperiments = experimentsForPath(pagePath);
+
+  const heroExp = activeExperiments.find((e) => e.key.includes('hero-headline'));
+  const heroVariantKeys = heroExp?.variants.map((v) => v.key) ?? ['control'];
+  const { variant: heroVariantKey } = useVariant(
+    heroExp?.key ?? 'noop-hero',
+    heroVariantKeys,
+  );
+  const heroVariantPayload = heroExp?.variants.find((v) => v.key === heroVariantKey)
+    ?.payload as BachelorHeroPayload | undefined;
+
+  const ctaExp = activeExperiments.find((e) => e.key.includes('primary-cta'));
+  const ctaVariantKeys = ctaExp?.variants.map((v) => v.key) ?? ['control'];
+  const { variant: ctaVariantKey } = useVariant(
+    ctaExp?.key ?? 'noop-cta',
+    ctaVariantKeys,
+  );
+  const ctaVariantPayload = ctaExp?.variants.find((v) => v.key === ctaVariantKey)
+    ?.payload as CtaCopyPayload | undefined;
+
+  // Effective copy = variant override OR config default.
+  const heroEyebrow = heroVariantPayload?.eyebrow ?? config.heroEyebrow;
+  const heroHeadline = heroVariantPayload?.headline ?? config.heroHeadline;
+  const heroHeadlineAccent =
+    heroVariantPayload?.headlineAccent ?? config.heroHeadlineAccent;
+  const heroSubhead = heroVariantPayload?.subhead ?? config.heroSubhead;
+  const primaryCtaText = ctaVariantPayload?.primary ?? config.ctaText;
+
+  // Funnel tracker — fires LeadEvents stamped with the bachelor-hero key
+  // (the most consequential one). The CTA experiment piggybacks via
+  // per-call `experimentKey` overrides when we fire the CTA click event.
+  const funnel = useFunnelTracker({
+    experimentKey: heroExp?.key,
+    variant: heroVariantKey,
+  });
+
+  // Fire landing_view exactly once per session per variant.
+  useEffect(() => {
+    funnel.track('landing_view', { metadata: { slug: config.slug } });
+  }, [funnel, config.slug]);
+
   const openBuilder = (e?: React.MouseEvent) => {
     e?.preventDefault();
+    funnel.track('hero_cta_click', {
+      experimentKey: ctaExp?.key ?? heroExp?.key,
+      variant: ctaExp ? ctaVariantKey : heroVariantKey,
+      metadata: { source: 'hero-cta', ctaText: primaryCtaText },
+    });
+    funnel.track('builder_open', { metadata: { source: 'hero-cta' } });
     setBuilderOpen(true);
   };
 
@@ -67,6 +122,15 @@ export default function LandingPageTemplate({ config, catalog, upsellProducts }:
       if (next.has(i)) next.delete(i);
       else next.add(i);
       return next;
+    });
+  };
+
+  const onPackageClick = (pkg: Package, modal: 'quickbuy' | 'builder') => {
+    funnel.track('package_card_click', {
+      metadata: { package: pkg.name, modal },
+    });
+    funnel.track(modal === 'quickbuy' ? 'quickbuy_open' : 'builder_open', {
+      metadata: { package: pkg.name },
     });
   };
 
@@ -160,16 +224,16 @@ export default function LandingPageTemplate({ config, catalog, upsellProducts }:
               className="inline-block text-xs sm:text-sm font-bold tracking-[0.15em] px-3 py-1.5 rounded mb-6 shadow-lg"
               style={{ background: T.primary, color: T.primaryText }}
             >
-              {config.heroEyebrow}
+              {heroEyebrow}
             </h2>
 
             <h1
               className="font-heading font-bold text-white text-4xl sm:text-5xl md:text-7xl leading-[1.05] tracking-tight mb-5"
               style={{ textShadow: '0 2px 12px rgba(0,0,0,0.55)' }}
             >
-              {config.heroHeadline}
+              {heroHeadline}
               <span className="block" style={{ color: T.primary }}>
-                {config.heroHeadlineAccent}
+                {heroHeadlineAccent}
               </span>
             </h1>
 
@@ -195,7 +259,7 @@ export default function LandingPageTemplate({ config, catalog, upsellProducts }:
                 className="text-lg sm:text-xl text-white mb-8 max-w-2xl leading-relaxed"
                 style={{ textShadow: '0 1px 6px rgba(0,0,0,0.6)' }}
               >
-                {config.heroSubhead}
+                {heroSubhead}
               </p>
             )}
 
@@ -206,7 +270,7 @@ export default function LandingPageTemplate({ config, catalog, upsellProducts }:
                 className="inline-flex items-center justify-center font-bold text-base sm:text-lg px-8 py-5 rounded-md tracking-wide transition-colors shadow-xl"
                 style={{ background: T.primary, color: T.primaryText }}
               >
-                {config.ctaText}
+                {primaryCtaText}
               </button>
               {config.planningCallUrl && (
                 <a
@@ -313,8 +377,14 @@ export default function LandingPageTemplate({ config, catalog, upsellProducts }:
                 key={pkg.name}
                 pkg={pkg}
                 theme={T}
-                onCta={openBuilder}
-                onBuyNow={(p) => setQuickBuyPkg(p)}
+                onCta={() => {
+                  onPackageClick(pkg, 'builder');
+                  openBuilder();
+                }}
+                onBuyNow={(p) => {
+                  onPackageClick(p, 'quickbuy');
+                  setQuickBuyPkg(p);
+                }}
               />
             ))}
           </div>
