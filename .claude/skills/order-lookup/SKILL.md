@@ -1,7 +1,7 @@
 ---
 name: order-lookup
-description: Look up a PartyOn customer by name / email / phone and return their orders, group dashboard, boat manifest name, and dashboard URL. Use whenever the operator asks "who is X", "is there a dashboard for Y", "what boat is Z on", or anything that needs to resolve a person to their order(s) and group context.
-argument-hint: "<name | email | phone>"
+description: Look up a PartyOn customer by name / email / phone and return their orders, group dashboard, boat manifest name, and dashboard URL. Also covers CREATING a new dashboard when one doesn't exist (e.g. operator says "make a dashboard for X"). Use whenever the operator asks "who is X", "is there a dashboard for Y", "what boat is Z on", "make a dashboard for ___", or anything that needs to resolve a person to (or create) their order context.
+argument-hint: "<name | email | phone>  OR  create <name> [+email +phone +date +partyType]"
 ---
 
 You are looking up a person in the PartyOn database. The operator usually wants four things in the answer:
@@ -86,8 +86,73 @@ If the person's `customerName` ≠ the group's manifest name (common — guests 
 - **Multiple groups for same person** → list all, sort by `createdAt` DESC.
 - **Old Shopify-migrated orders** → may have `groupOrderV2Id: null` and live only in `Order`. That's fine.
 
+---
+
+## Creating a new dashboard
+
+When the operator asks to **make a new dashboard** for someone (no existing match found, or explicitly creating fresh):
+
+### ⚠️ Do NOT `prisma.groupOrderV2.create()` directly
+
+A bare GroupOrderV2 row will render **"No location tab found."** on the dashboard. The UI requires a related `SubOrder` (location tab) AND a host `GroupParticipantV2`. Both need to be created in the same transaction.
+
+### The right way — use the service function
+
+`createDashboardOrder()` in `src/lib/group-orders-v2/service.ts` creates GroupOrderV2 + first SubOrder + host participant + share code + claim token + sensible defaults (delivery fee calc, order deadline 3 days before delivery, address normalization, expiresAt) in one shot.
+
+```bash
+set -a && source .env.local && set +a
+npx tsx -e "
+import { createDashboardOrder } from './src/lib/group-orders-v2/service';
+
+(async () => {
+  const result = await createDashboardOrder({
+    hostName: 'Renee Safir',
+    hostEmail: 'rsdmwedding27@gmail.com',
+    hostPhone: '+14157132313',
+    partyType: 'BACH',           // 'BOAT' | 'BACH' | 'WEDDING' | 'CORPORATE' | 'OTHER'
+    source: 'DIRECT',            // 'DIRECT' | 'PARTNER_PAGE' | 'WEBHOOK'
+    name: 'Renee Safir',         // dashboard title (optional — defaults to '<hostName>\\'s Party')
+    deliveryDate: '2026-10-15',  // ISO date; defaults to 7 days out
+    // deliveryAddress: { address1, city, zip } — optional; left blank means customer fills at checkout
+    // affiliateId: 'd21bac1a-...' — only if attached to a partner like Premier
+    // isLastMinute: true — only if <14 days out and you want the flag
+  });
+  console.log('Dashboard URL: https://partyondelivery.com/dashboard/' + result.shareCode);
+  console.log('Share code:', result.shareCode);
+})();
+"
+```
+
+### Premier-specific shortcut (boat dashboards at Anderson Mill Marina)
+
+For Premier customers (BOAT + cruise + lodging dashboard), use the dedicated script — it handles affiliate attachment, marina address, 2 tabs (Cruise + Lodging), and the GHL contact webhook:
+
+```bash
+node scripts/ops/create-dashboard.mjs \
+  --name "Jane Doe" --email jane@example.com --phone +15125551234 \
+  --date 2026-10-15 --type private
+```
+
+### After creating
+
+1. Surface the dashboard URL: `https://partyondelivery.com/dashboard/<shareCode>`
+2. Offer to send the share-link email: `POST /api/v2/group-orders/<shareCode>/send-link` with `{ hostEmail, hostPhone }` — pass empty string for `hostPhone` to send email only (skip SMS).
+3. If the event is far in the future (>30 days), the default `expiresAt` may be too short. Extend with a follow-up `prisma.groupOrderV2.update` setting `expiresAt` to ~30 days past the event.
+
+### What you need from the operator before creating
+
+Ask in this order (use AskUserQuestion to batch if multiple are missing):
+
+1. **Party type** (BOAT / BACH / WEDDING / CORPORATE / OTHER)
+2. **Host email + phone** (one or both — but at least one is needed to send the link)
+3. **Delivery date** (or "let them pick")
+4. **Affiliate?** (default: none. Premier = `d21bac1a-3f99-489c-89fd-e1980c264a8d` only if she came through Premier)
+5. **Discount code?** (default: none — discounts attach to orders at checkout, not to the dashboard itself)
+
 ## Don't
 
-- Don't modify any rows. This skill is read-only.
+- Don't modify any rows in the LOOKUP flow. (Creation is a separate, explicit operation gated on operator request.)
 - Don't expose internal IDs (UUIDs) unless asked — share codes are the user-facing identifier.
 - Don't guess a Premier reservation ID — if `externalBookingId` is null, say so. Suggest checking Premier's system by name + phone.
+- **Don't `prisma.groupOrderV2.create()` directly** for new dashboards — always use `createDashboardOrder()` or the Premier script. (Bare GroupOrderV2 rows render "No location tab found.")
