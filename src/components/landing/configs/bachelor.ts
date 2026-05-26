@@ -33,8 +33,7 @@ export const bachelorConfig: LandingConfig = {
     'Order in 30 seconds. 48-hour notice = guaranteed pricing.',
   ],
   heroImage: '/images/services/bach-parties/bachelor-party-epic.webp',
-  // Hero badges removed — trustStats below handle this so the hero stays uncluttered.
-  heroTrustBadges: [],
+  heroTrustBadges: ['✓ TABC-licensed', '✓ 500+ Austin bach groups', '★ 5.0 on Google', '✓ Split pay built-in'],
 
   trustStats: [
     { stat: 'Group ordering', label: 'Whole crew adds to one cart' },
@@ -217,7 +216,7 @@ export const bachelorConfig: LandingConfig = {
   planningCallUrl: 'https://123.partyondelivery.com/planning-call',
   secondaryCtaText: 'SCHEDULE A 10-MIN CALL →',
 
-  quoteInbox: 'brian@premierpartycruises.com',
+  quoteInbox: 'info@partyondelivery.com',
 
   modal: {
     title: 'Build Your Bach Package',

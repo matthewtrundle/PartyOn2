@@ -33,7 +33,7 @@ export const corporateConfig: LandingConfig = {
     'White-glove delivery — coordinated with your venue',
   ],
   heroImage: '/images/products/premium-spirits-lifestyle.webp',
-  heroTrustBadges: [],
+  heroTrustBadges: ['✓ TABC-licensed', '✓ $1M insured', '✓ COI available', '✓ Corporate cards / ACH / wire'],
 
   trustStats: [
     { stat: 'TABC-licensed', label: 'Packaged-store license' },
@@ -201,7 +201,7 @@ export const corporateConfig: LandingConfig = {
   planningCallUrl: 'https://123.partyondelivery.com/planning-call',
   secondaryCtaText: 'SCHEDULE A 10-MIN CALL →',
 
-  quoteInbox: 'brian@premierpartycruises.com',
+  quoteInbox: 'info@partyondelivery.com',
 
   modal: {
     title: 'Request Your Corporate Quote',

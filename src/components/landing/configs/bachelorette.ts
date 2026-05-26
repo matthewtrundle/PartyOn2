@@ -33,7 +33,7 @@ export const bacheloretteConfig: LandingConfig = {
     'Locally owned. 500+ Austin groups served. 5.0★ on Google.',
   ],
   heroImage: '/images/services/bach-parties/bachelorette-champagne-tower.webp',
-  heroTrustBadges: [],
+  heroTrustBadges: ['✓ TABC-licensed', '✓ 500+ Austin bach weekends', '★ 5.0 on Google', '✓ Split pay built-in'],
 
   trustStats: [
     { stat: 'Group ordering', label: 'Girls add to one shared cart' },
@@ -216,7 +216,7 @@ export const bacheloretteConfig: LandingConfig = {
   primaryCtaHref: '#builder',
   ctaText: 'BUILD MY BACHELORETTE PACKAGE →',
 
-  quoteInbox: 'brian@premierpartycruises.com',
+  quoteInbox: 'info@partyondelivery.com',
 
   modal: {
     title: 'Build Your Bachelorette Package',
@@ -242,7 +242,7 @@ export const bacheloretteConfig: LandingConfig = {
     groupSizeUnit: 'guests',
     defaultPeople: 8,
     reviewHeadline: 'Review & lock it in.',
-    successQuoteHeadline: 'Quote on the way! 🥂',
+    successQuoteHeadline: 'Quote on the way!',
     successCheckoutHeadline: "We've got you, MOH.",
     emailNotice:
       "We'll never spam you. TABC-licensed alcohol retailer — must be 21+ at delivery.",
