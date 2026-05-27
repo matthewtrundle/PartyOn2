@@ -43,7 +43,16 @@ function isGtagAvailable(): boolean {
 export function trackCTAClick(
   buttonText: string,
   buttonUrl: string,
-  section: 'hero' | 'choose_path' | 'services' | 'footer_cta' | 'navigation' | 'group_order_strip',
+  section:
+    | 'hero'
+    | 'choose_path'
+    | 'services'
+    | 'footer_cta'
+    | 'navigation'
+    | 'group_order_strip'
+    | 'wedding_calc_hero'
+    | 'wedding_calc_package'
+    | 'wedding_calc_sticky',
   experimentId?: string,
   variantId?: string
 ): void {
