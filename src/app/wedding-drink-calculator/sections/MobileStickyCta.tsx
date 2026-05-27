@@ -4,9 +4,9 @@ import type { ReactElement } from 'react';
 import { trackCTAClick } from '@/lib/analytics/ga4-events';
 
 /**
- * Mobile sticky CTA — only shown on <md viewports. Tapping scrolls to the
- * quote form section. Matches the height/spacing pattern from the Wes
- * landing template so the spacer below avoids covering trailing content.
+ * Mobile sticky CTA — espresso + gold to match the editorial palette.
+ * Tapping scrolls to the quote form. Spacer matches the bar's footprint
+ * so trailing content isn't covered.
  */
 export default function MobileStickyCta(): ReactElement {
   const handleClick = () => {
@@ -21,13 +21,14 @@ export default function MobileStickyCta(): ReactElement {
 
   return (
     <>
-      <div className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t border-gray-200 px-4 py-3 shadow-2xl">
+      <div className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-[#1a1410] border-t border-[#C8A96A]/20 px-4 py-3 shadow-2xl">
         <button
           type="button"
           onClick={handleClick}
-          className="w-full inline-flex items-center justify-center font-bold py-3 rounded-lg text-sm tracking-[0.05em] bg-[#F2D34F] text-gray-900"
+          className="w-full inline-flex items-center justify-center gap-3 py-3 rounded-lg text-[11px] tracking-[0.4em] uppercase font-light text-[#C8A96A] border border-[#C8A96A] hover:bg-[#C8A96A] hover:text-[#1a1410] transition-colors"
         >
-          Get My Wedding Bar Quote →
+          Get My Wedding Bar Quote
+          <span>→</span>
         </button>
       </div>
       <div className="md:hidden h-16" aria-hidden />

@@ -1,20 +1,20 @@
 'use client';
 
-import Link from 'next/link';
 import { useState, type ReactElement } from 'react';
 import type { WeddingPlan } from '@/lib/weddingDrinkCalculator';
 import { trackCTAClick } from '@/lib/analytics/ga4-events';
-import PackageCardGrid from '@/components/landing/sections/PackageCardGrid';
-import ReviewsSection from '@/components/landing/sections/ReviewsSection';
 import { weddingConfig } from '@/components/landing/configs/wedding';
 import CalculatorClient from './CalculatorClient';
 import CalculatorHero from './sections/CalculatorHero';
 import WhyYouNeedUs from './sections/WhyYouNeedUs';
+import ReceptionPackagesColumns from './sections/ReceptionPackagesColumns';
 import GuaranteeRow from './sections/GuaranteeRow';
+import EditorialReviews from './sections/EditorialReviews';
 import HowMathWorks from './sections/HowMathWorks';
+import FaqColumn from './sections/FaqColumn';
+import QuoteFormCard from './sections/QuoteFormCard';
 import QuoteFormSection from './sections/QuoteFormSection';
 import MobileStickyCta from './sections/MobileStickyCta';
-import { RECEPTION_PACKAGES, WEDDING_THEME } from './sections/receptionPackages';
 import type { Faq } from '@/components/landing/types';
 
 type Props = {
@@ -26,6 +26,10 @@ type Props = {
  * calculator-plan state so the quote form section near the bottom of the
  * page can populate hidden item handles + guest count when the visitor
  * submits.
+ *
+ * Editorial-estate design pass: each section component owns its own
+ * full-bleed background and vertical rhythm. This file just composes
+ * them in order.
  */
 export default function CalculatorPageBody({ faqs }: Props): ReactElement {
   const [plan, setPlan] = useState<WeddingPlan | null>(null);
@@ -44,72 +48,54 @@ export default function CalculatorPageBody({ faqs }: Props): ReactElement {
     <>
       <CalculatorHero />
 
-      {/* B. Calculator tool — unchanged mechanics, plus result-state callback */}
-      <section id="calculator" className="bg-white py-12">
-        <div className="container-custom max-w-5xl">
+      {/* B. Calculator tool — editorial header above the inputs */}
+      <section id="calculator" className="bg-white py-24 md:py-32">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="text-center mb-16 md:mb-20 max-w-2xl mx-auto">
+            <div className="h-px w-12 bg-[#C8A96A] mx-auto mb-8" />
+            <p className="text-xs tracking-[0.5em] text-[#7E5A40] uppercase font-light mb-8">
+              Begin Here
+            </p>
+            <h2 className="font-heading text-4xl md:text-5xl text-[#2A2218] font-light leading-[1.05] tracking-tight">
+              The wedding drink
+              <span className="block italic font-extralight text-[#7E5A40]">
+                calculator.
+              </span>
+            </h2>
+            <p className="text-base md:text-lg text-gray-600 leading-relaxed font-light mt-6">
+              Adjust the inputs on the left. Your shopping list builds in
+              real time on the right.
+            </p>
+          </div>
           <CalculatorClient onResultsComputed={setPlan} />
+
+          {/* Inline quote form — same component / same endpoint as the
+              bottom-of-page form, kept inside the calculator section so it
+              reads as the natural next step. Editorial hairline divider
+              keeps the visual rhythm consistent with the section above. */}
+          <div className="mt-16 md:mt-20 pt-12 md:pt-16 border-t border-[#2A2218]/10 max-w-3xl mx-auto">
+            <QuoteFormCard plan={plan} placement="inline" />
+          </div>
         </div>
       </section>
 
-      {/* C. Why you need us — three facts couples don't realize + refund promise */}
+      {/* C. Why your wedding alcohol is harder than it looks */}
       <WhyYouNeedUs />
 
-      {/* D. 3 Sample Reception Bar Packages */}
-      <PackageCardGrid
-        packages={RECEPTION_PACKAGES}
-        theme={WEDDING_THEME}
-        eyebrow="SAMPLE RECEPTION BAR PACKAGES · 100 GUESTS"
-        headline="Three tiers. Same 100-guest reception. Pick your level."
-        blurb="Same crowd, three price points — so you can compare apples to apples. Final quote scales to your actual guest count + bar style."
-        primaryCtaLabel="Get My Wedding Bar Quote →"
-        onPrimaryCta={scrollToQuoteForm}
-        footer={
-          <div className="text-center mt-12">
-            <p className="text-base text-gray-600 mb-3">
-              Need full-weekend coordination (welcome reception → ceremony → after-party)?
-            </p>
-            <Link
-              href="/austin-wedding-weekend-delivery"
-              className="inline-flex items-center font-semibold text-brand-blue hover:underline"
-            >
-              Build your weekend at /austin-wedding-weekend-delivery →
-            </Link>
-          </div>
-        }
-      />
+      {/* D. 3 Sample Reception Bar Packages — wedding-specific editorial layout */}
+      <ReceptionPackagesColumns onPrimaryCta={scrollToQuoteForm} />
 
-      {/* E. Hormozi Guarantee Row */}
+      {/* E. Hormozi-style guarantee, treated as editorial manifesto */}
       <GuaranteeRow />
 
-      {/* F. Named Reviews */}
-      <ReviewsSection
-        reviews={weddingConfig.reviews}
-        theme={WEDDING_THEME}
-        eyebrow="★★★★★ 5.0 ON GOOGLE"
-        headline="The vendor every Austin wedding planner books first."
-      />
+      {/* F. Named reviews — wedding-specific editorial treatment */}
+      <EditorialReviews reviews={weddingConfig.reviews} />
 
-      {/* G. How the math works — kept verbatim for SEO */}
+      {/* G. How the math works — publication treatment */}
       <HowMathWorks />
 
-      {/* H. FAQ — 5 original + 2 new */}
-      <section className="bg-white section-padding">
-        <div className="container-custom max-w-4xl">
-          <h2 className="font-heading text-3xl md:text-4xl tracking-[0.1em] text-gray-900 mb-6">
-            Frequently asked questions
-          </h2>
-          <div className="space-y-6">
-            {faqs.map((f) => (
-              <div key={f.q} className="card">
-                <h3 className="font-heading text-lg font-bold tracking-[0.08em] text-gray-900 mb-2">
-                  {f.q}
-                </h3>
-                <p className="text-base text-gray-700 leading-relaxed">{f.a}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* H. FAQ — hairline-divided column */}
+      <FaqColumn faqs={faqs} />
 
       {/* I. Quote Form — single conversion goal */}
       <QuoteFormSection plan={plan} />
