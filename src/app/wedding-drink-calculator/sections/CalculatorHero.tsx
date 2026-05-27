@@ -17,7 +17,7 @@ export default function CalculatorHero(): ReactElement {
   };
 
   return (
-    <section className="relative h-[88vh] min-h-[640px] mt-16 overflow-hidden bg-[#1a1410]">
+    <section className="relative h-[55vh] md:h-[65vh] min-h-[480px] overflow-hidden bg-[#1a1410]">
       <Image
         src="/images/services/weddings/outdoor-bar-setup.webp"
         alt="Outdoor wedding bar setup at an Austin reception"

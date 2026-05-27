@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import type { ReactElement } from 'react';
 import { generateFAQSchema } from '@/lib/seo/schemas';
-import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import CalculatorPageBody from './CalculatorPageBody';
 
@@ -102,9 +101,13 @@ export default function WeddingDrinkCalculatorPage(): ReactElement {
   const faqSchema = generateFAQSchema(
     FAQS.map((f) => ({ question: f.q, answer: f.a })),
   );
+  // Note: no <Navigation /> on this page. It's a dedicated paid-ad landing
+  // target and CRO best practice for cold traffic is zero exit paths above
+  // the conversion goal. Brand identity lives in the hero's corner marks
+  // (Est. Austin / No. 01 — Reception · Bar · Delivery). Footer stays for
+  // TABC compliance + phone-call CTA.
   return (
     <>
-      <Navigation />
       <main className="bg-white">
         <script
           type="application/ld+json"

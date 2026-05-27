@@ -48,21 +48,14 @@ export default function CalculatorPageBody({ faqs }: Props): ReactElement {
     <>
       <CalculatorHero />
 
-      {/* B. Calculator tool — editorial header above the inputs */}
-      <section id="calculator" className="bg-white py-24 md:py-32">
+      {/* B. Calculator tool — get to it FAST. No duplicate H2 header
+          (the hero already says "Wedding drink calculator."). A single
+          short instruction line + hairline rule for visual rhythm. */}
+      <section id="calculator" className="bg-white py-10 md:py-14">
         <div className="max-w-6xl mx-auto px-6">
-          <div className="text-center mb-16 md:mb-20 max-w-2xl mx-auto">
-            <div className="h-px w-12 bg-[#C8A96A] mx-auto mb-8" />
-            <p className="text-xs tracking-[0.5em] text-[#7E5A40] uppercase font-light mb-8">
-              Begin Here
-            </p>
-            <h2 className="font-heading text-4xl md:text-5xl text-[#2A2218] font-light leading-[1.05] tracking-tight">
-              The wedding drink
-              <span className="block italic font-extralight text-[#7E5A40]">
-                calculator.
-              </span>
-            </h2>
-            <p className="text-base md:text-lg text-gray-600 leading-relaxed font-light mt-6">
+          <div className="text-center mb-10 md:mb-14 max-w-2xl mx-auto">
+            <div className="h-px w-12 bg-[#C8A96A] mx-auto mb-6" />
+            <p className="text-base md:text-lg text-gray-600 leading-relaxed font-light">
               Adjust the inputs on the left. Your shopping list builds in
               real time on the right.
             </p>
