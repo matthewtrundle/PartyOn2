@@ -83,8 +83,8 @@ export const LEAD_MAGNETS: LeadMagnet[] = [
       '/',
       '/austin-bachelor-party-delivery',
       '/austin-bachelorette-party-delivery',
-      '/austin-corporate-party-delivery',
-      '/austin-wedding-delivery',
+      '/austin-corporate-event-delivery',
+      '/austin-wedding-weekend-delivery',
       '/services/*',
       '/flyer',
     ],
@@ -98,6 +98,7 @@ export const LEAD_MAGNETS: LeadMagnet[] = [
       '/api/*',
       '/partners/*',
       '/affiliate/*',
+      '/wedding-drink-calculator',
     ],
     triggers: [
       { type: 'time', seconds: 25 },

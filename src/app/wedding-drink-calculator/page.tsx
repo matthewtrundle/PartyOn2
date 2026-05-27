@@ -1,18 +1,17 @@
 import type { Metadata } from 'next';
 import type { ReactElement } from 'react';
-import Link from 'next/link';
 import { generateFAQSchema } from '@/lib/seo/schemas';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
-import CalculatorClient from './CalculatorClient';
+import CalculatorPageBody from './CalculatorPageBody';
 
 /**
  * Public-facing Wedding Drink Calculator route.
  * Target keyword: "wedding drink calculator" (vol 1,900, KD 8).
  *
  * Server component for SEO metadata + structured data. The interactive
- * calculator is a client component (CalculatorClient.tsx) that reuses
- * src/lib/weddingDrinkCalculator.ts.
+ * calculator, quote form, and Wes/Hormozi sections live in
+ * CalculatorPageBody (client) which shares state between them.
  */
 
 export const metadata: Metadata = {
@@ -33,29 +32,39 @@ export const metadata: Metadata = {
 
 const FAQS = [
   {
-    question: 'How much alcohol do I need for my wedding?',
-    answer:
+    q: 'How much alcohol do I need for my wedding?',
+    a:
       'A common rule for receptions of 3+ hours is guest count multiplied by hours plus one. A 100-guest, 5-hour reception works out to about 600 drinks. The calculator above applies that formula and splits the result across beer, wine, and spirits based on your bar style.',
   },
   {
-    question: 'How do I count guests who don\'t drink alcohol?',
-    answer:
+    q: 'How do I count guests who don\'t drink alcohol?',
+    a:
       'Subtract non-drinkers from your guest count before entering the number, then add a few non-alcoholic options separately. We typically suggest adding water, soda, or mocktail kits — those aren\'t in the calculator output but should be on your shopping list.',
   },
   {
-    question: 'What if my reception runs longer than expected?',
-    answer:
+    q: 'What if my reception runs longer than expected?',
+    a:
       'Add an hour of buffer to the input. Wedding bars often slow down after dinner, but late-night guests will keep drinking. It\'s safer to round up than to run out.',
   },
   {
-    question: 'Does this account for signature cocktails?',
-    answer:
+    q: 'Does this account for signature cocktails?',
+    a:
       'Yes — select "Cocktail Kits" as one of the categories. The calculator reduces the spirits share and adds 3 cocktail kits sized for your crowd. Each kit serves about 16 drinks.',
   },
   {
-    question: 'Can you deliver this order in Austin?',
-    answer:
-      'Yes. Party On Delivery handles alcohol delivery for weddings across the Austin area. Use the order link in the result panel to start a wedding-tagged order — we\'ll review the list with you before delivery.',
+    q: 'Can you deliver this order in Austin?',
+    a:
+      'Yes. Party On Delivery handles alcohol delivery for weddings across the Austin area. Use the quote form below the calculator to start a wedding-tagged order — we\'ll review the list with you before delivery.',
+  },
+  {
+    q: 'Can I return bottles we didn\'t open?',
+    a:
+      'Yes — we can take back unopened cases for a partial refund (depending on volume) or leave everything with you. Your call. Decision made at delivery.',
+  },
+  {
+    q: 'Do you set up the bar or just deliver?',
+    a:
+      'Both options. Standard delivery drops everything at your venue, on time and cold. We can also coordinate timing and handoff with your bartender or venue staff so the run-of-show stays clean — just note what level of support you need on the quote form.',
   },
 ];
 
@@ -90,7 +99,9 @@ const HOW_TO_SCHEMA = {
 };
 
 export default function WeddingDrinkCalculatorPage(): ReactElement {
-  const faqSchema = generateFAQSchema(FAQS);
+  const faqSchema = generateFAQSchema(
+    FAQS.map((f) => ({ question: f.q, answer: f.a })),
+  );
   return (
     <>
       <Navigation />
@@ -104,221 +115,7 @@ export default function WeddingDrinkCalculatorPage(): ReactElement {
           dangerouslySetInnerHTML={{ __html: JSON.stringify(HOW_TO_SCHEMA) }}
         />
 
-        <section className="relative bg-gradient-to-b from-gray-50 to-white mt-24 pt-12 pb-8">
-          <div className="container-custom max-w-5xl">
-            <h1 className="font-heading text-4xl md:text-5xl lg:text-6xl tracking-[0.1em] text-gray-900 text-center">
-              Wedding Drink Calculator
-            </h1>
-            <p className="mt-4 text-base md:text-lg text-gray-700 text-center max-w-3xl mx-auto">
-              Enter guest count and reception hours. Get exact bottle counts in 10
-              seconds — built by Austin&apos;s TABC-licensed wedding delivery team.
-            </p>
-
-            {/* Trust + compliance strip — merges PR #95's SEO social proof with
-                the Google Ads alcohol policy disclosures (21+ / ID at delivery)
-                required by the Wes/Hormozi audit (Blocker 3). Single unified row,
-                SVG icons (no emojis per CLAUDE.md). */}
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-sm text-gray-700">
-              <span className="inline-flex items-center gap-2">
-                <svg className="w-4 h-4 text-brand-yellow" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                </svg>
-                <span><strong className="text-gray-900">500+</strong> Austin weddings since 2022</span>
-              </span>
-              <Link href="/tabc" className="inline-flex items-center gap-2 hover:text-brand-blue">
-                <svg className="w-4 h-4 text-brand-blue" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                <span>TABC-licensed · $1M insured</span>
-              </Link>
-              <span className="inline-flex items-center gap-2">
-                <svg className="w-4 h-4 text-brand-blue" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                <span>Must be 21+ · ID required at delivery</span>
-              </span>
-              <span className="inline-flex items-center gap-2">
-                <svg className="w-4 h-4 text-brand-yellow" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                </svg>
-                <span><strong className="text-gray-900">5.0</strong> on Google · 98+ reviews</span>
-              </span>
-            </div>
-          </div>
-        </section>
-
-        <section className="bg-white py-8">
-          <div className="container-custom max-w-5xl">
-            <CalculatorClient />
-          </div>
-        </section>
-
-        {/* Comparison row — Party On vs. self-haul vs. open-bar markup */}
-        <section className="bg-white section-padding border-t border-gray-200">
-          <div className="container-custom max-w-5xl">
-            <div className="text-center mb-10">
-              <p className="text-sm font-heading uppercase tracking-[0.08em] text-brand-blue mb-2">
-                Why Order Through Party On
-              </p>
-              <h2 className="font-heading text-3xl md:text-4xl tracking-[0.05em] text-gray-900">
-                Three ways to stock your wedding bar
-              </h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="card flex flex-col">
-                <p className="text-sm font-heading uppercase tracking-[0.08em] text-brand-blue mb-2">
-                  Party On Delivery
-                </p>
-                <p className="text-2xl font-heading tracking-[0.05em] text-gray-900 mb-3">
-                  Free venue delivery
-                </p>
-                <ul className="space-y-2 text-sm text-gray-700 flex-1">
-                  <li>✓ Bottles delivered to your venue, iced</li>
-                  <li>✓ Cooler, ice, cups, glassware included</li>
-                  <li>✓ TABC-licensed, $1M insured</li>
-                  <li>✓ Brand swaps + substitutions reviewed with you</li>
-                  <li>✓ Returns on unopened bottles after the event</li>
-                </ul>
-              </div>
-              <div className="card flex flex-col bg-gray-50">
-                <p className="text-sm font-heading uppercase tracking-[0.08em] text-gray-500 mb-2">
-                  Spec&apos;s / Total Wine self-haul
-                </p>
-                <p className="text-2xl font-heading tracking-[0.05em] text-gray-900 mb-3">
-                  ~$45-60 hidden cost
-                </p>
-                <ul className="space-y-2 text-sm text-gray-700 flex-1">
-                  <li>· You drive, load, and haul</li>
-                  <li>· Ice, cups, cooler bought separately</li>
-                  <li>· Gas + 3-4 hours of wedding-week time</li>
-                  <li>· Returns rarely accepted</li>
-                  <li>· No event-day backup if a bottle breaks</li>
-                </ul>
-              </div>
-              <div className="card flex flex-col bg-gray-50">
-                <p className="text-sm font-heading uppercase tracking-[0.08em] text-gray-500 mb-2">
-                  Venue open-bar package
-                </p>
-                <p className="text-2xl font-heading tracking-[0.05em] text-gray-900 mb-3">
-                  $18-28 per guest
-                </p>
-                <ul className="space-y-2 text-sm text-gray-700 flex-1">
-                  <li>· Per-head pricing, regardless of drinkers</li>
-                  <li>· Venue picks the brands</li>
-                  <li>· No leftover bottles for you</li>
-                  <li>· Service tip + tax stacked on top</li>
-                  <li>· Common quote: $2,000-$3,000 for 100 guests</li>
-                </ul>
-              </div>
-            </div>
-            <p className="mt-8 text-center text-sm text-gray-600 max-w-2xl mx-auto">
-              The calculator above sizes the list. Below covers the math + how to read it.
-            </p>
-          </div>
-        </section>
-
-        <section className="bg-gray-50 section-padding">
-          <div className="container-custom max-w-4xl">
-            <h2 className="font-heading text-3xl md:text-4xl tracking-[0.1em] text-gray-900 mb-6">
-              How the math works
-            </h2>
-            <div className="prose prose-gray max-w-none text-base md:text-lg leading-relaxed">
-              <p>
-                For wedding receptions of 3 hours or more, a reliable starting point is{' '}
-                <strong>guests &times; (hours + 1)</strong>. The +1 covers the cocktail
-                hour spike at the front of the night, when most guests pick up their first
-                two drinks fast. A 100-guest, 5-hour reception comes out to around 600
-                drinks total.
-              </p>
-              <p>
-                From there we split the total roughly: <strong>spirits 50%</strong>,{' '}
-                <strong>beer 30%</strong>, <strong>wine 15%</strong>,{' '}
-                <strong>seltzers 5%</strong>. If you add cocktail kits, the spirits share
-                drops and the kits absorb part of the mix. Wedding bars tilt heavier
-                toward mixed drinks than house parties; the calculator reflects that.
-              </p>
-              <h3 className="font-heading text-2xl tracking-[0.08em] mt-8 mb-3">
-                Three common mistakes
-              </h3>
-              <ol>
-                <li>
-                  <strong>Counting kids and non-drinkers as drinkers.</strong> Subtract
-                  guests under 21 plus anyone you know doesn’t drink before entering
-                  the number. Easy way to over-order by 15-20%.
-                </li>
-                <li>
-                  <strong>Forgetting late arrivals.</strong> Out-of-town guests often
-                  arrive after the ceremony. Round hours up if you’re close to the
-                  limit; running out at 10pm is much worse than 6 unopened bottles.
-                </li>
-                <li>
-                  <strong>Skipping the ice and water.</strong> One bag of ice per 10
-                  guests is included in the result panel below. Add bottled water on the
-                  shopping list separately — it isn’t alcohol, but every wedding
-                  needs it.
-                </li>
-              </ol>
-              <h3 className="font-heading text-2xl tracking-[0.08em] mt-8 mb-3">
-                Austin-specific notes
-              </h3>
-              <p>
-                Party On Delivery is a TABC-licensed alcohol delivery company serving the
-                Austin area. We deliver to wedding venues across Lake Travis, downtown
-                Austin, Hill Country, South Austin, and the Westlake area. For deliveries
-                outside Austin city limits, lead time is usually 48 hours. We’ll
-                review your shopping list with you before delivery and answer questions
-                about quantity, brand swaps, or substitutions.
-              </p>
-              <p>
-                Wedding party order minimums and delivery windows are set per zone —
-                check the order page for specifics.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <section className="bg-white section-padding">
-          <div className="container-custom max-w-4xl">
-            <h2 className="font-heading text-3xl md:text-4xl tracking-[0.1em] text-gray-900 mb-6">
-              Frequently asked questions
-            </h2>
-            <div className="space-y-6">
-              {FAQS.map((f) => (
-                <div key={f.question} className="card">
-                  <h3 className="font-heading text-lg font-bold tracking-[0.08em] text-gray-900 mb-2">
-                    {f.question}
-                  </h3>
-                  <p className="text-base text-gray-700 leading-relaxed">{f.answer}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <section className="bg-gray-50 section-padding">
-          <div className="container-custom max-w-4xl text-center">
-            <h2 className="font-heading text-3xl md:text-4xl tracking-[0.1em] text-gray-900 mb-4">
-              Ready to order your wedding bar?
-            </h2>
-            <p className="text-base md:text-lg text-gray-700 mb-8 max-w-2xl mx-auto">
-              Take the result above and place a wedding-tagged order. We&apos;ll review
-              the list with you before delivery — brand swaps, quantity tweaks,
-              substitutions if anything&apos;s out of stock.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-6">
-              <Link href="/order?type=wedding" className="btn-primary inline-flex items-center justify-center">
-                Start Wedding Order
-              </Link>
-              <Link href="/contact" className="btn-secondary inline-flex items-center justify-center">
-                Not sure? Free 15-min planning call
-              </Link>
-            </div>
-            <p className="text-sm text-gray-600">
-              Returns on unopened bottles after the event · No-substitute guarantee ·
-              Free delivery to Austin-area venues
-            </p>
-          </div>
-        </section>
+        <CalculatorPageBody faqs={FAQS} />
       </main>
       <Footer />
     </>

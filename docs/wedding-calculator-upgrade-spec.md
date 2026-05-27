@@ -264,3 +264,13 @@ Then locally (`npm run dev`):
 ## When Phase B is done
 
 Move to Phase C (Google Ads campaign build). See plan file for spec.
+
+## Phase B follow-up: ops admin UI shows deliveryNotes?
+
+**Resolved 2026-05-26**: no action needed. The DraftOrders table in ops
+links each row directly to `/ops/orders/[id]/edit`, which already renders
+`deliveryNotes` as a textarea (line 1304). When an operator opens a
+landing-quote draft order, the calculator summary is visible in the Notes
+field. Post-payment Order detail page doesn't display deliveryNotes, but
+by that stage the operator has already converted the draft, so the
+summary's window of relevance has closed.
