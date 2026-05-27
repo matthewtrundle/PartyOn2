@@ -28,8 +28,6 @@ export default function GoogleAdsTag() {
       />
       <Script id="google-ads-tag" strategy="lazyOnload">
         {`
-          window.dataLayer = window.dataLayer || [];
-          window.gtag = window.gtag || function(){ window.dataLayer.push(arguments); };
           gtag('config', '${adsId}');
         `}
       </Script>
