@@ -24,10 +24,14 @@ const QUICK_GUEST_VALUES = [50, 75, 100, 125, 150, 200];
 const QUICK_HOUR_VALUES = [3, 4, 5, 6];
 
 /**
- * Interactive wedding drink calculator. Editorial-estate treatment:
- * hairline borders, generous spacing, no card chrome. Inputs on the
- * left, results on the right — each input is a stand-alone editorial
- * group with a tracked small-caps label and a single rule underneath.
+ * Interactive wedding drink calculator. Editorial-pragmatic treatment:
+ * each input group sits in a subtle bordered card so visitors get clear
+ * visual containment (the previous all-hairline-no-chrome version was
+ * pretty but cost usability for cold paid traffic). Inputs themselves
+ * still use the editorial hairline-underline style — the card chrome
+ * groups them, the input chrome stays minimal.
+ *
+ * Inputs left, results right on desktop. Single column on mobile.
  */
 export default function CalculatorClient({ onResultsComputed }: Props = {}): ReactElement {
   const [guests, setGuests] = useState(100);
@@ -50,9 +54,9 @@ export default function CalculatorClient({ onResultsComputed }: Props = {}): Rea
   return (
     <div className="grid lg:grid-cols-5 gap-10 lg:gap-16">
       {/* Inputs column */}
-      <div className="lg:col-span-2 space-y-12">
+      <div className="lg:col-span-2 space-y-5">
         {/* Guest count */}
-        <fieldset>
+        <fieldset className="bg-white border border-[#2A2218]/12 rounded-lg p-6 md:p-7 shadow-[0_1px_0_rgba(42,34,24,0.04)]">
           <legend className="block text-sm tracking-[0.25em] text-[#7E5A40] uppercase mb-3 font-medium">
             Guest Count
           </legend>
@@ -89,7 +93,7 @@ export default function CalculatorClient({ onResultsComputed }: Props = {}): Rea
         </fieldset>
 
         {/* Reception length */}
-        <fieldset>
+        <fieldset className="bg-white border border-[#2A2218]/12 rounded-lg p-6 md:p-7 shadow-[0_1px_0_rgba(42,34,24,0.04)]">
           <legend className="block text-sm tracking-[0.25em] text-[#7E5A40] uppercase mb-3 font-medium">
             Reception Length
           </legend>
@@ -126,7 +130,7 @@ export default function CalculatorClient({ onResultsComputed }: Props = {}): Rea
         </fieldset>
 
         {/* Bar style */}
-        <fieldset>
+        <fieldset className="bg-white border border-[#2A2218]/12 rounded-lg p-6 md:p-7 shadow-[0_1px_0_rgba(42,34,24,0.04)]">
           <legend className="block text-sm tracking-[0.25em] text-[#7E5A40] uppercase mb-5 font-medium">
             Bar Style
           </legend>
@@ -158,9 +162,13 @@ export default function CalculatorClient({ onResultsComputed }: Props = {}): Rea
         </fieldset>
       </div>
 
-      {/* Results column */}
+      {/* Results column — sits in a cream card so it reads as the natural
+          counterpart to the input cards, but the cream tint quietly
+          signals "this is the output side." */}
       <div className="lg:col-span-3">
-        <CalculatorResults plan={plan} />
+        <div className="bg-[#FBF6EC]/60 border border-[#2A2218]/12 rounded-lg p-6 md:p-10 shadow-[0_1px_0_rgba(42,34,24,0.04)]">
+          <CalculatorResults plan={plan} />
+        </div>
       </div>
     </div>
   );
