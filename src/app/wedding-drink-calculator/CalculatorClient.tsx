@@ -1,9 +1,15 @@
 'use client';
 
-import { useMemo, useState, type ReactElement } from 'react';
+import { useEffect, useMemo, useState, type ReactElement } from 'react';
 import type { DrinkCategory } from '@/lib/drinkPlannerTypes';
 import { calculateWeddingPlan, type WeddingPlan } from '@/lib/weddingDrinkCalculator';
 import CalculatorResults from './CalculatorResults';
+
+type Props = {
+  /** Fires whenever the computed plan changes — used by the quote-form section
+      below the calculator to populate hidden items + guest count. */
+  onResultsComputed?: (plan: WeddingPlan) => void;
+};
 
 const CATEGORY_OPTIONS: { id: DrinkCategory; label: string; hint: string }[] = [
   { id: 'beer', label: 'Beer', hint: 'Domestic + craft mix' },
@@ -21,7 +27,7 @@ const QUICK_HOUR_VALUES = [3, 4, 5, 6];
  * Interactive wedding drink calculator. Wraps `calculateWeddingPlan` and
  * renders inline results as the user adjusts inputs.
  */
-export default function CalculatorClient(): ReactElement {
+export default function CalculatorClient({ onResultsComputed }: Props = {}): ReactElement {
   const [guests, setGuests] = useState(100);
   const [hours, setHours] = useState(5);
   const [categories, setCategories] = useState<DrinkCategory[]>(['beer', 'wine', 'spirits']);
@@ -30,6 +36,10 @@ export default function CalculatorClient(): ReactElement {
     () => calculateWeddingPlan({ guests, hours, categories }),
     [guests, hours, categories],
   );
+
+  useEffect(() => {
+    onResultsComputed?.(plan);
+  }, [plan, onResultsComputed]);
 
   const toggleCategory = (cat: DrinkCategory) => {
     setCategories((prev) => (prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat]));

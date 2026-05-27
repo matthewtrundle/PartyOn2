@@ -8,6 +8,7 @@ import { CustomerProvider } from "@/contexts/CustomerContext";
 import ClientLayoutWrapper from "@/components/ClientLayoutWrapper";
 import { structuredData } from "./structured-data";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
+import GoogleAdsTag from "@/components/GoogleAdsTag";
 import MetaPixel from "@/components/MetaPixel";
 import ClarityInit from "@/components/ClarityInit";
 import AttributionTracker from "@/components/AttributionTracker";
@@ -118,6 +119,7 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
 
         <GoogleAnalytics />
+        <GoogleAdsTag />
         <MetaPixel />
         <AttributionTracker />
         <script

@@ -113,6 +113,17 @@ function CheckoutSuccessContent() {
               currency: data.data.currency?.toUpperCase() || 'USD',
               content_name: 'Stripe Order',
             });
+            if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
+              const conversionId = process.env.NEXT_PUBLIC_GADS_PURCHASE_CONVERSION_ID;
+              if (conversionId) {
+                window.gtag('event', 'conversion', {
+                  send_to: conversionId,
+                  value: amount,
+                  currency: data.data.currency?.toUpperCase() || 'USD',
+                  transaction_id: sessionId,
+                });
+              }
+            }
           }
         } catch (error) {
           console.error('Failed to fetch session:', error);
@@ -137,6 +148,17 @@ function CheckoutSuccessContent() {
         currency: 'USD',
         content_name: orderName || order || 'Order',
       });
+      if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
+        const conversionId = process.env.NEXT_PUBLIC_GADS_PURCHASE_CONVERSION_ID;
+        if (conversionId) {
+          window.gtag('event', 'conversion', {
+            send_to: conversionId,
+            value: orderTotal ? parseFloat(orderTotal) : 0,
+            currency: 'USD',
+            transaction_id: orderName || order || 'Unknown',
+          });
+        }
+      }
     }
 
     if (isAuthenticated) {
