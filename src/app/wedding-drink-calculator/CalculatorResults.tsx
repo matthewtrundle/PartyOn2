@@ -38,39 +38,39 @@ export default function CalculatorResults({ plan }: Props): ReactElement {
   }, {});
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-5">
       {/* The Number — hero stat */}
-      <div className="border-t border-b border-[#2A2218]/10 py-10">
-        <p className="text-xs tracking-[0.5em] uppercase text-[#7E5A40] mb-4 font-light">
+      <div className="border-b border-[#2A2218]/10 pb-4">
+        <p className="text-xs tracking-[0.4em] uppercase text-[#7E5A40] mb-2 font-light">
           Your Wedding Bar Plan
         </p>
-        <p className="font-heading text-7xl md:text-8xl lg:text-9xl font-extralight text-[#2A2218] leading-[0.95] italic">
+        <p className="font-heading text-5xl md:text-6xl lg:text-7xl font-extralight text-[#2A2218] leading-[0.95] italic">
           {plan.totalDrinks.toLocaleString()}
         </p>
-        <p className="text-xs tracking-[0.4em] uppercase text-[#C8A96A] mt-3 font-light">
+        <p className="text-xs tracking-[0.35em] uppercase text-[#C8A96A] mt-1.5 font-light">
           Drinks Total
         </p>
-        <p className="text-sm text-gray-500 mt-5 font-light tracking-wide">
+        <p className="text-xs text-gray-500 mt-2 font-light tracking-wide">
           For {plan.summary.guests} guests across {plan.summary.hours} hours.
         </p>
       </div>
 
       {/* Shopping list */}
       <div>
-        <p className="text-xs tracking-[0.5em] uppercase text-[#7E5A40] mb-8 font-light">
+        <p className="text-xs tracking-[0.4em] uppercase text-[#7E5A40] mb-3 font-light">
           Shopping List
         </p>
-        <div className="space-y-10">
+        <div className="space-y-4">
           {Object.entries(grouped).map(([category, items]) => (
             <div key={category}>
-              <p className="font-heading text-xl text-[#2A2218] font-light tracking-tight mb-4 italic">
+              <p className="font-heading text-base text-[#2A2218] font-light tracking-tight mb-2 italic">
                 {CATEGORY_LABEL[category] ?? category}
               </p>
-              <ul className="space-y-3">
+              <ul className="space-y-1.5">
                 {items.map((item) => (
                   <li
                     key={item.name}
-                    className="flex items-baseline justify-between gap-4 text-sm text-gray-700 font-light pb-3 border-b border-[#2A2218]/8 last:border-0"
+                    className="flex items-baseline justify-between gap-4 text-sm text-gray-700 font-light pb-1.5 border-b border-[#2A2218]/8 last:border-0"
                   >
                     <span className="flex-1 leading-snug">{item.name}</span>
                     <span className="text-[#2A2218] tracking-wide font-normal whitespace-nowrap">

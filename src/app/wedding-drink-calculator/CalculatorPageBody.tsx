@@ -49,17 +49,14 @@ export default function CalculatorPageBody({ faqs }: Props): ReactElement {
       <CalculatorHero />
 
       {/* B. Calculator tool — get to it FAST. No duplicate H2 header
-          (the hero already says "Wedding drink calculator."). A single
-          short instruction line + hairline rule for visual rhythm. */}
-      <section id="calculator" className="bg-white py-10 md:py-14">
+          (the hero already says "Wedding drink calculator."). The
+          two-column desktop layout is self-evident so the instruction
+          line only renders on mobile where columns stack. */}
+      <section id="calculator" className="bg-white py-5 md:py-7">
         <div className="max-w-6xl mx-auto px-6">
-          <div className="text-center mb-10 md:mb-14 max-w-2xl mx-auto">
-            <div className="h-px w-12 bg-[#C8A96A] mx-auto mb-6" />
-            <p className="text-base md:text-lg text-gray-600 leading-relaxed font-light">
-              Adjust the inputs on the left. Your shopping list builds in
-              real time on the right.
-            </p>
-          </div>
+          <p className="md:hidden text-center text-sm text-gray-600 font-light mb-4">
+            Inputs first. Shopping list updates as you go.
+          </p>
           <CalculatorClient onResultsComputed={setPlan} />
 
           {/* Inline quote form — same component / same endpoint as the
