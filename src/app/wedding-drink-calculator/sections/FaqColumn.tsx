@@ -16,11 +16,11 @@ export default function FaqColumn({ faqs }: Props): ReactElement {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
-    <section className="py-24 md:py-32 bg-white">
+    <section className="py-14 md:py-20 bg-white">
       <div className="max-w-3xl mx-auto px-6">
-        <div className="text-center mb-16 md:mb-20">
-          <div className="h-px w-12 bg-[#C8A96A] mx-auto mb-8" />
-          <p className="text-xs tracking-[0.5em] text-[#7E5A40] uppercase font-light mb-8">
+        <div className="text-center mb-10 md:mb-12">
+          <div className="h-px w-12 bg-[#C8A96A] mx-auto mb-5" />
+          <p className="text-xs tracking-[0.5em] text-[#7E5A40] uppercase font-light mb-5">
             Frequently Asked
           </p>
           <h2 className="font-heading text-4xl md:text-5xl text-[#2A2218] font-light leading-[1.05] tracking-tight">
@@ -43,7 +43,7 @@ export default function FaqColumn({ faqs }: Props): ReactElement {
                   type="button"
                   onClick={() => setOpenIndex(isOpen ? null : i)}
                   aria-expanded={isOpen}
-                  className="w-full flex items-baseline justify-between gap-6 py-7 md:py-8 text-left group"
+                  className="w-full flex items-baseline justify-between gap-6 py-5 md:py-6 text-left group"
                 >
                   <span className="font-heading text-lg md:text-xl text-[#2A2218] font-light leading-[1.3] tracking-tight group-hover:text-[#7E5A40] transition-colors">
                     {f.q}
@@ -57,7 +57,7 @@ export default function FaqColumn({ faqs }: Props): ReactElement {
                   </span>
                 </button>
                 {isOpen && (
-                  <div className="pb-8 pr-10 md:pr-14">
+                  <div className="pb-5 pr-10 md:pr-14">
                     <p className="text-base md:text-lg text-gray-700 leading-relaxed font-light">
                       {f.a}
                     </p>

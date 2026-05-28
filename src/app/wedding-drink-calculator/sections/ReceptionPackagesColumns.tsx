@@ -18,15 +18,15 @@ type Props = {
  */
 export default function ReceptionPackagesColumns({ onPrimaryCta }: Props): ReactElement {
   return (
-    <section className="py-24 md:py-32 bg-white">
+    <section className="py-14 md:py-20 bg-white">
       <div className="max-w-7xl mx-auto px-6">
         {/* Section heading */}
-        <div className="text-center mb-20 md:mb-24 max-w-2xl mx-auto">
-          <div className="h-px w-12 bg-[#C8A96A] mx-auto mb-8" />
-          <p className="text-xs tracking-[0.5em] text-[#7E5A40] uppercase font-light mb-8">
+        <div className="text-center mb-10 md:mb-14 max-w-2xl mx-auto">
+          <div className="h-px w-12 bg-[#C8A96A] mx-auto mb-5" />
+          <p className="text-xs tracking-[0.5em] text-[#7E5A40] uppercase font-light mb-5">
             Sample Bar Packages · 100 Guests
           </p>
-          <h2 className="font-heading text-4xl md:text-5xl lg:text-6xl text-[#2A2218] font-light leading-[1.05] tracking-tight mb-6">
+          <h2 className="font-heading text-4xl md:text-5xl lg:text-6xl text-[#2A2218] font-light leading-[1.05] tracking-tight mb-4">
             Three tiers.
             <span className="block italic font-extralight text-[#7E5A40]">
               Same 100-guest reception.
@@ -51,8 +51,8 @@ export default function ReceptionPackagesColumns({ onPrimaryCta }: Props): React
         </div>
 
         {/* Cross-link to weekend page */}
-        <div className="text-center mt-20 md:mt-24">
-          <div className="h-px w-12 bg-[#C8A96A]/40 mx-auto mb-8" />
+        <div className="text-center mt-10 md:mt-14">
+          <div className="h-px w-12 bg-[#C8A96A]/40 mx-auto mb-5" />
           <p className="text-sm text-gray-600 mb-3 font-light tracking-wide">
             Coordinating welcome reception → ceremony → after-party?
           </p>
@@ -82,9 +82,9 @@ function PackageColumn({
   return (
     <div
       className={[
-        'relative flex flex-col p-8 md:p-10 transition-colors',
+        'relative flex flex-col p-6 md:p-8 transition-colors',
         featured
-          ? 'bg-[#FBF6EC] md:-mt-6 md:-mb-6 border-y md:border md:border-[#C8A96A] z-10'
+          ? 'bg-[#FBF6EC] md:-mt-4 md:-mb-4 border-y md:border md:border-[#C8A96A] z-10'
           : 'bg-white',
         // Hairline separators between columns on desktop. Skipped between
         // the middle (featured) column and its neighbors because the
@@ -102,7 +102,7 @@ function PackageColumn({
       )}
 
       {/* Image — quiet, framed loosely */}
-      <div className="relative w-full aspect-[4/3] mb-8 overflow-hidden">
+      <div className="relative w-full aspect-[4/3] mb-5 overflow-hidden">
         <Image
           src={pkg.image}
           alt={pkg.name}
@@ -113,36 +113,36 @@ function PackageColumn({
       </div>
 
       {/* Tier marker */}
-      <p className="text-[10px] tracking-[0.5em] uppercase text-[#7E5A40] font-light mb-4">
+      <p className="text-[10px] tracking-[0.5em] uppercase text-[#7E5A40] font-light mb-3">
         {pkg.save /* "Best price" / "Most booked" / "Premium tier" */}
       </p>
 
       {/* Tier name */}
-      <h3 className="font-heading text-2xl md:text-3xl text-[#2A2218] font-light leading-[1.15] tracking-tight mb-6">
+      <h3 className="font-heading text-2xl md:text-3xl text-[#2A2218] font-light leading-[1.15] tracking-tight mb-4">
         {pkg.name}
       </h3>
 
       {/* Price — monumental */}
-      <div className="mb-8">
+      <div className="mb-5">
         <p className="font-heading text-5xl md:text-6xl font-extralight text-[#2A2218] leading-none italic">
           {pkg.price}
         </p>
-        <p className="text-xs tracking-[0.3em] uppercase text-gray-500 mt-3 font-light">
+        <p className="text-xs tracking-[0.3em] uppercase text-gray-500 mt-2 font-light">
           {pkg.serves}
         </p>
       </div>
 
       {/* Blurb */}
-      <p className="text-base text-gray-700 leading-relaxed font-light mb-8">
+      <p className="text-base text-gray-700 leading-relaxed font-light mb-5">
         {pkg.blurb}
       </p>
 
       {/* Inclusions — no checkmarks, just hairline-divided rows */}
-      <ul className="space-y-3 mb-10 flex-1">
+      <ul className="space-y-2 mb-6 flex-1">
         {(pkg.items ?? []).map((item) => (
           <li
             key={item}
-            className="text-sm text-gray-700 leading-relaxed font-light pb-3 border-b border-[#2A2218]/8 last:border-0"
+            className="text-sm text-gray-700 leading-relaxed font-light pb-2 border-b border-[#2A2218]/8 last:border-0"
           >
             {item}
           </li>

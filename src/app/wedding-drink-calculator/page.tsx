@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import type { ReactElement } from 'react';
 import { generateFAQSchema } from '@/lib/seo/schemas';
-import Footer from '@/components/Footer';
+import WeddingFooter from '@/components/WeddingFooter';
 import CalculatorPageBody from './CalculatorPageBody';
 
 /**
@@ -120,7 +120,7 @@ export default function WeddingDrinkCalculatorPage(): ReactElement {
 
         <CalculatorPageBody faqs={FAQS} />
       </main>
-      <Footer />
+      <WeddingFooter />
     </>
   );
 }

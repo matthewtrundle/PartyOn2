@@ -7,19 +7,19 @@ import type { ReactElement } from 'react';
  */
 export default function GuaranteeRow(): ReactElement {
   return (
-    <section className="py-24 md:py-32 bg-[#1a1410] text-white">
+    <section className="py-14 md:py-20 bg-[#1a1410] text-white">
       <div className="max-w-3xl mx-auto px-6 text-center">
-        <div className="h-px w-12 bg-[#C8A96A] mx-auto mb-8" />
-        <p className="text-xs tracking-[0.5em] text-[#C8A96A] uppercase mb-10 font-light">
+        <div className="h-px w-12 bg-[#C8A96A] mx-auto mb-5" />
+        <p className="text-xs tracking-[0.5em] text-[#C8A96A] uppercase mb-6 font-light">
           Our Promise
         </p>
 
-        <p className="font-heading text-3xl md:text-4xl lg:text-5xl text-white font-extralight italic leading-[1.2] tracking-tight mb-10">
+        <p className="font-heading text-3xl md:text-4xl lg:text-5xl text-white font-extralight italic leading-[1.2] tracking-tight mb-6">
           &ldquo;If we&apos;re late, we refund your delivery fee.
           <span className="block mt-1">No questions asked.&rdquo;</span>
         </p>
 
-        <div className="h-px w-12 bg-[#C8A96A]/40 mx-auto mb-8" />
+        <div className="h-px w-12 bg-[#C8A96A]/40 mx-auto mb-5" />
 
         <p className="text-sm md:text-base text-white/65 font-light tracking-wide">
           Call or text{' '}
