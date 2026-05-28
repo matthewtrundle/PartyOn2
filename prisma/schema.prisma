@@ -2939,6 +2939,41 @@ model CartShareLink {
 }
 
 /// =========================================================================
+/// SEMrush scrape snapshots — one row per (surface × capture run).
+///
+/// Written by scripts/seo/scrape-semrush.ts (Playwright job in GitHub
+/// Actions, daily cron + manual dispatch). Read by the SEO tab in
+/// Brian's Stuff to render the latest scrape status + by the SEO
+/// Director sub-agent to produce its weekly briefing.
+///
+/// payload shape varies per surface — see scripts/seo/lib/types.ts for
+/// the per-surface TypeScript schemas. `failure` is null on success;
+/// when the surface fails, payload may be null or contain a partial
+/// capture (e.g. a screenshot path).
+/// =========================================================================
+model SeoSnapshot {
+  id          String   @id @default(uuid())
+  capturedAt  DateTime @default(now()) @map("captured_at")
+  /// e.g. 'position-tracking', 'keyword-gap', 'site-audit', 'organic-research',
+  /// 'backlink-analytics', 'ai-brand-visibility', 'ai-prompt-tracking', 'keyword-magic'
+  surface     String
+  domain      String   // 'partyondelivery.com'
+  payload     Json?
+  /// Null on success. On failure: short, scannable message.
+  failure     String?  @db.Text
+  /// Wall-clock time spent on this surface (ms). Useful for spotting
+  /// SEMrush slowdowns + cookie-expiry edge cases.
+  durationMs  Int?     @map("duration_ms")
+  /// SHA of the GitHub Actions run + run id, so we can deep-link from
+  /// the dashboard to the workflow run that produced this row.
+  runRef      String?  @map("run_ref")
+
+  @@index([surface, capturedAt])
+  @@index([capturedAt])
+  @@map("seo_snapshots")
+}
+
+/// =========================================================================
 /// Lead capture & visitor tracking (Brian's Stuff → Leads tab)
 ///
 /// Three loosely-coupled tables that power the lead-tracking system:
@@ -3021,6 +3056,11 @@ enum LeadSourceWidget {
   EMAIL_SIGNUP
   CONTACT_FORM
   DRINK_CALCULATOR
+  /// Added by partner-FareHarbor integration (Allan's PR) — kept here so
+  /// `prisma db push` doesn't drop the enum value when we sync this branch.
+  PARTNER_FAREHARBOR_WEBHOOK
+  PARTNER_EMAIL_OPTIN
+  PARTNER_LANDING_PAGE
   OTHER
 }
 
@@ -3053,6 +3093,9 @@ model Lead {
   metadata        Json?
   /// Internal sales notes.
   notes           String?         @db.Text
+  /// Affiliate attribution — populated by partner-attribution code added
+  /// in a later PR. Kept here so `prisma db push` doesn't drop the column.
+  affiliateId     String?         @map("affiliate_id")
 
   events          LeadEvent[]
   sessions        VisitorSession[]
