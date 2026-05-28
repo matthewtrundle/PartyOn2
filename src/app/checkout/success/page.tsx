@@ -114,6 +114,18 @@ function CheckoutSuccessContent() {
               content_name: 'Stripe Order',
             });
             if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
+              // GA4 standard purchase event. trackPurchase() above sends to
+              // Vercel Analytics + first-party only; without this gtag call
+              // GA4 never sees Stripe purchases (the existing GA4 purchase
+              // conversions in Google Ads were dead since the Shopify migration).
+              window.gtag('event', 'purchase', {
+                transaction_id: sessionId,
+                value: amount,
+                currency: data.data.currency?.toUpperCase() || 'USD',
+              });
+
+              // Google Ads direct-fire conversion (in addition to the GA4
+              // import path) — only fires if env var is populated.
               const conversionId = process.env.NEXT_PUBLIC_GADS_PURCHASE_CONVERSION_ID;
               if (conversionId) {
                 window.gtag('event', 'conversion', {
@@ -149,6 +161,14 @@ function CheckoutSuccessContent() {
         content_name: orderName || order || 'Order',
       });
       if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
+        // GA4 standard purchase event — non-Stripe fallback path.
+        window.gtag('event', 'purchase', {
+          transaction_id: orderName || order || 'Unknown',
+          value: orderTotal ? parseFloat(orderTotal) : 0,
+          currency: 'USD',
+        });
+
+        // Google Ads direct-fire (in addition to GA4 import path).
         const conversionId = process.env.NEXT_PUBLIC_GADS_PURCHASE_CONVERSION_ID;
         if (conversionId) {
           window.gtag('event', 'conversion', {
