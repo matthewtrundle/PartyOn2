@@ -8,12 +8,12 @@ import type { ReactElement } from 'react';
  */
 export default function HowMathWorks(): ReactElement {
   return (
-    <section className="py-24 md:py-32 bg-white">
+    <section className="py-14 md:py-20 bg-white">
       <div className="max-w-2xl mx-auto px-6">
         {/* Section heading */}
-        <div className="text-center mb-16 md:mb-20">
-          <div className="h-px w-12 bg-[#C8A96A] mx-auto mb-8" />
-          <p className="text-xs tracking-[0.5em] text-[#7E5A40] uppercase font-light mb-8">
+        <div className="text-center mb-10 md:mb-12">
+          <div className="h-px w-12 bg-[#C8A96A] mx-auto mb-5" />
+          <p className="text-xs tracking-[0.5em] text-[#7E5A40] uppercase font-light mb-5">
             The Method
           </p>
           <h2 className="font-heading text-4xl md:text-5xl text-[#2A2218] font-light leading-[1.05] tracking-tight">
@@ -24,7 +24,7 @@ export default function HowMathWorks(): ReactElement {
           </h2>
         </div>
 
-        <div className="space-y-8 text-[#2A2218]">
+        <div className="space-y-5 text-[#2A2218]">
           {/* Drop-cap opening */}
           <p className="text-lg leading-[1.7] font-light text-gray-800">
             <span className="float-left mr-3 mt-1 font-heading text-7xl text-[#C8A96A] font-extralight italic leading-[0.85]">
@@ -49,11 +49,11 @@ export default function HowMathWorks(): ReactElement {
         </div>
 
         {/* Three common mistakes — set apart with gold rule */}
-        <div className="mt-16 pt-16 border-t border-[#C8A96A]/30">
-          <p className="text-xs tracking-[0.5em] uppercase text-[#7E5A40] font-light mb-8">
+        <div className="mt-10 pt-10 border-t border-[#C8A96A]/30">
+          <p className="text-xs tracking-[0.5em] uppercase text-[#7E5A40] font-light mb-5">
             Three common mistakes
           </p>
-          <ol className="space-y-8 list-none">
+          <ol className="space-y-5 list-none">
             <li className="grid grid-cols-[40px_1fr] gap-5 items-start">
               <span className="font-heading text-2xl text-[#C8A96A] font-extralight italic leading-none">
                 01
@@ -104,11 +104,11 @@ export default function HowMathWorks(): ReactElement {
         </div>
 
         {/* Austin notes */}
-        <div className="mt-16 pt-16 border-t border-[#C8A96A]/30">
-          <p className="text-xs tracking-[0.5em] uppercase text-[#7E5A40] font-light mb-8">
+        <div className="mt-10 pt-10 border-t border-[#C8A96A]/30">
+          <p className="text-xs tracking-[0.5em] uppercase text-[#7E5A40] font-light mb-5">
             Austin Notes
           </p>
-          <div className="space-y-6 text-lg leading-[1.7] font-light text-gray-800">
+          <div className="space-y-4 text-lg leading-[1.7] font-light text-gray-800">
             <p>
               Party On Delivery is a TABC-licensed alcohol delivery company
               serving the Austin area. We deliver to wedding venues across

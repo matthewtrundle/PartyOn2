@@ -179,7 +179,7 @@ export default function QuoteFormCard({
           {invoiceUrl && (
             <a
               href={invoiceUrl}
-              className="btn-primary inline-flex items-center justify-center"
+              className="inline-flex items-center justify-center gap-3 bg-[#C8A96A] text-[#1a1410] hover:bg-[#d8b97a] transition-colors duration-300 px-8 py-3 text-sm tracking-[0.25em] uppercase font-medium rounded-lg"
             >
               Open My Invoice →
             </a>

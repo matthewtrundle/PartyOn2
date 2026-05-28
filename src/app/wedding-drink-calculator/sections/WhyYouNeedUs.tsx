@@ -28,12 +28,12 @@ export default function WhyYouNeedUs(): ReactElement {
   ];
 
   return (
-    <section className="py-24 md:py-32 bg-[#FBF6EC]">
+    <section className="py-14 md:py-20 bg-[#FBF6EC]">
       <div className="max-w-3xl mx-auto px-6">
         {/* Section heading */}
-        <div className="text-center mb-20 md:mb-24">
-          <div className="h-px w-12 bg-[#C8A96A] mx-auto mb-8" />
-          <p className="text-xs tracking-[0.5em] text-[#7E5A40] uppercase font-light mb-8">
+        <div className="text-center mb-10 md:mb-14">
+          <div className="h-px w-12 bg-[#C8A96A] mx-auto mb-5" />
+          <p className="text-xs tracking-[0.5em] text-[#7E5A40] uppercase font-light mb-5">
             Things No One Tells You
           </p>
           <h2 className="font-heading text-4xl md:text-5xl lg:text-6xl text-[#2A2218] font-light leading-[1.05] tracking-tight">
@@ -45,7 +45,7 @@ export default function WhyYouNeedUs(): ReactElement {
         </div>
 
         {/* Numbered rows */}
-        <div className="space-y-16 md:space-y-20">
+        <div className="space-y-10 md:space-y-12">
           {facts.map((f) => (
             <div
               key={f.n}
@@ -67,7 +67,7 @@ export default function WhyYouNeedUs(): ReactElement {
         </div>
 
         {/* Refund promise — framed by a single gold rule, set apart */}
-        <div className="mt-24 md:mt-28 relative">
+        <div className="mt-12 md:mt-16 relative">
           <div className="absolute left-0 top-0 bottom-0 w-px bg-[#C8A96A]" />
           <div className="pl-8 md:pl-12">
             <p className="text-xs tracking-[0.5em] text-[#C8A96A] uppercase mb-5 font-light">
