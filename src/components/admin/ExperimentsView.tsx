@@ -59,8 +59,8 @@ const PAGE_OPTIONS: Array<{ value: string; label: string }> = [
   { value: '', label: 'All landing pages' },
   { value: '/austin-bachelor-party-delivery', label: 'Bachelor' },
   { value: '/austin-bachelorette-party-delivery', label: 'Bachelorette' },
-  { value: '/austin-corporate-party-delivery', label: 'Corporate' },
-  { value: '/austin-wedding-delivery', label: 'Wedding' },
+  { value: '/austin-corporate-event-delivery', label: 'Corporate' },
+  { value: '/austin-wedding-weekend-delivery', label: 'Wedding' },
   { value: '/', label: 'Homepage' },
   { value: '/flyer', label: 'Flyer' },
 ];
