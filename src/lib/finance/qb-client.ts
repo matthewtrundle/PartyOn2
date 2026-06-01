@@ -212,52 +212,86 @@ export async function getValidAccessToken(): Promise<{
 }
 
 /**
+ * Base URL for the QBO REST API in the configured environment.
+ * Hard-coded rather than going through the SDK to avoid trailing-slash drift.
+ */
+function getQboApiBaseUrl(): string {
+  return getEnv() === 'production'
+    ? 'https://quickbooks.api.intuit.com'
+    : 'https://sandbox-quickbooks.api.intuit.com';
+}
+
+/** Stable QB Online API minor version. Bump cautiously. */
+const QBO_MINOR_VERSION = 65;
+
+/**
+ * Low-level authenticated call to the QBO REST API using native `fetch`.
+ * Skips the intuit-oauth SDK's wrapper (which silently strips bodies on
+ * non-2xx and made debugging connection issues hard — see PR #93). Refreshes
+ * the access token if it's within 5 minutes of expiry.
+ *
+ * Returns the parsed JSON body. Throws with the status + a body snippet on
+ * any non-OK response so failures are debuggable from `lastError`.
+ */
+async function qboFetch<T = unknown>(
+  path: string, // starts with `/v3/...`
+  init: { method?: 'GET' | 'POST' | 'PUT' | 'DELETE'; body?: unknown } = {}
+): Promise<T> {
+  const { accessToken } = await getValidAccessToken();
+  const url = `${getQboApiBaseUrl()}${path}`;
+  const method = init.method ?? 'GET';
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${accessToken}`,
+    Accept: 'application/json',
+  };
+  if (init.body !== undefined) {
+    headers['Content-Type'] = 'application/json';
+  }
+  const response = await fetch(url, {
+    method,
+    headers,
+    body: init.body !== undefined ? JSON.stringify(init.body) : undefined,
+  });
+  const text = await response.text();
+  if (!response.ok) {
+    throw new Error(
+      `QB API ${method} ${path} → HTTP ${response.status}: ${text.slice(0, 500)}`
+    );
+  }
+  if (text.length === 0) return undefined as unknown as T;
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    throw new Error(
+      `QB API ${method} ${path} returned non-JSON (status ${response.status}): ${text.slice(0, 500)}`
+    );
+  }
+}
+
+/**
  * Fetch company info from the QBO API. Used by the health check.
  */
 export async function getCompanyInfo(): Promise<CompanyInfo> {
-  const tokens = await loadStoredTokens();
-  const client = new OAuthClient({
-    ...requireCreds(),
-    environment: getEnv(),
-    redirectUri: getRedirectUri(),
-    token: {
-      access_token: tokens.accessToken,
-      refresh_token: tokens.refreshToken,
-      realmId: tokens.realmId,
-      token_type: 'bearer',
-      expires_in: Math.max(
-        0,
-        Math.floor((tokens.accessTokenExpires.getTime() - Date.now()) / 1000)
-      ),
-      x_refresh_token_expires_in: Math.max(
-        0,
-        Math.floor((tokens.refreshTokenExpires.getTime() - Date.now()) / 1000)
-      ),
-    },
-  });
-
-  // If we know the token is stale, refresh first.
-  const fiveMinFromNow = new Date(Date.now() + 5 * 60 * 1000);
-  if (tokens.accessTokenExpires < fiveMinFromNow) {
-    await refreshTokens();
-    return getCompanyInfo();
+  const { realmId } = await getValidAccessToken();
+  interface CompanyInfoResponse {
+    CompanyInfo?: {
+      CompanyName?: string;
+      LegalName?: string;
+    };
   }
-
-  const baseUrl = client.getQBOEnvironmentURI();
-  const url = `${baseUrl}v3/company/${tokens.realmId}/companyinfo/${tokens.realmId}?minorversion=70`;
-  const response = await client.makeApiCall({
-    url,
-    method: 'GET',
-    headers: { Accept: 'application/json' },
-  });
-  const ci = response.json?.CompanyInfo;
+  const json = await qboFetch<CompanyInfoResponse>(
+    `/v3/company/${realmId}/companyinfo/${realmId}?minorversion=${QBO_MINOR_VERSION}`
+  );
+  const ci = json.CompanyInfo;
   if (!ci) {
-    throw new Error('CompanyInfo response missing CompanyInfo node');
+    throw new Error(
+      `CompanyInfo response missing CompanyInfo node. Got keys: ${Object.keys(json).join(', ')}`
+    );
   }
   return {
     companyName: ci.CompanyName ?? 'Unknown',
     legalName: ci.LegalName,
-    realmId: tokens.realmId,
+    realmId,
   };
 }
 
@@ -289,29 +323,9 @@ interface QbApiResponseJson {
 export async function qboQuery(
   query: string
 ): Promise<QbApiResponseJson['QueryResponse']> {
-  const { accessToken, realmId } = await getValidAccessToken();
-  const tokens = await loadStoredTokens();
-  const client = new OAuthClient({
-    ...requireCreds(),
-    environment: getEnv(),
-    redirectUri: getRedirectUri(),
-    token: {
-      access_token: accessToken,
-      refresh_token: tokens.refreshToken,
-      realmId,
-      token_type: 'bearer',
-      expires_in: 3600,
-      x_refresh_token_expires_in: 8726400,
-    },
-  });
-  const baseUrl = client.getQBOEnvironmentURI();
-  const url = `${baseUrl}v3/company/${realmId}/query?minorversion=70&query=${encodeURIComponent(query)}`;
-  const response = await client.makeApiCall({
-    url,
-    method: 'GET',
-    headers: { Accept: 'application/json' },
-  });
-  const json = response.json as QbApiResponseJson;
+  const { realmId } = await getValidAccessToken();
+  const path = `/v3/company/${realmId}/query?minorversion=${QBO_MINOR_VERSION}&query=${encodeURIComponent(query)}`;
+  const json = await qboFetch<QbApiResponseJson>(path);
   return json?.QueryResponse ?? {};
 }
 
@@ -346,28 +360,13 @@ export interface QboJournalEntryResponse {
 
 /**
  * POST a JournalEntry to QuickBooks Online. Phase 2B uses this from the
- * operator-approval flow. Throws on QB error so the caller can surface
+ * autonomous-daily-post flow. Throws on QB error so the caller can surface
  * the failure via the entry's failureReason.
  */
 export async function postJournalEntryToQb(
   payload: QboJournalEntryPayload
 ): Promise<QboJournalEntryResponse> {
-  const { accessToken, realmId } = await getValidAccessToken();
-  const tokens = await loadStoredTokens();
-  const client = new OAuthClient({
-    ...requireCreds(),
-    environment: getEnv(),
-    redirectUri: getRedirectUri(),
-    token: {
-      access_token: accessToken,
-      refresh_token: tokens.refreshToken,
-      realmId,
-      token_type: 'bearer',
-      expires_in: 3600,
-      x_refresh_token_expires_in: 8726400,
-    },
-  });
-
+  const { realmId } = await getValidAccessToken();
   const body = {
     TxnDate: payload.txnDate,
     PrivateNote: payload.privateNote,
@@ -382,21 +381,15 @@ export async function postJournalEntryToQb(
       },
     })),
   };
-
-  const baseUrl = client.getQBOEnvironmentURI();
-  const url = `${baseUrl}v3/company/${realmId}/journalentry?minorversion=70`;
-  const response = await client.makeApiCall({
-    url,
+  const path = `/v3/company/${realmId}/journalentry?minorversion=${QBO_MINOR_VERSION}`;
+  const result = await qboFetch<{ JournalEntry?: { Id?: string } }>(path, {
     method: 'POST',
-    headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
     body,
   });
-
-  const result = response.json as { JournalEntry?: { Id?: string } };
   const id = result?.JournalEntry?.Id;
   if (!id) {
     throw new Error(
-      `QB JournalEntry POST returned no Id (status ${response.status}): ${JSON.stringify(result).slice(0, 500)}`
+      `QB JournalEntry POST returned no Id. Body: ${JSON.stringify(result).slice(0, 500)}`
     );
   }
   return { qbTransactionId: id, raw: result };
