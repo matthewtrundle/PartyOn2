@@ -40,6 +40,13 @@ export default function CalculatorResults({ plan }: Props): ReactElement {
           addChampagne: plan.summary.categories.includes('champagne'),
           addCocktailKits: plan.summary.categories.includes('cocktail-kits'),
           totalDrinks: plan.totalDrinks,
+          // Server uses items to auto-send the personalized plan email.
+          items: plan.items.map((i) => ({
+            name: i.name,
+            quantity: i.quantity,
+            unit: i.unit,
+            category: i.category,
+          })),
         }),
       });
       if (!res.ok) {
@@ -103,11 +110,11 @@ export default function CalculatorResults({ plan }: Props): ReactElement {
         {status === 'success' ? (
           <div className="text-center py-2">
             <p className="text-base font-semibold text-gray-900 mb-1">
-              Saved. We&apos;ll email this list within 15 minutes.
+              Check your inbox — your list is on its way.
             </p>
             <p className="text-sm text-gray-700 mb-4">
-              We&apos;ll include a free delivery quote and let you tweak quantities
-              before you order.
+              We&apos;ve emailed the full shopping list plus delivery options. Tweak
+              quantities or swap brands on the order page when you&apos;re ready.
             </p>
             <Link href="/order?type=wedding" className="btn-primary inline-flex items-center justify-center">
               Start Wedding Order Now
@@ -116,12 +123,12 @@ export default function CalculatorResults({ plan }: Props): ReactElement {
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <h3 className="font-heading text-lg font-bold tracking-[0.08em] text-gray-900">
-              Save this list + get a free delivery quote
+              Email me this list + a free delivery quote
             </h3>
             <p className="text-sm text-gray-700">
-              We&apos;ll email this shopping list and a free venue-delivery quote
-              within 15 minutes. No spam, no pressure — you can tweak before you
-              order.
+              We&apos;ll send this shopping list straight to your inbox along with a
+              free venue-delivery quote. No spam, no pressure — you can tweak
+              quantities or swap brands before you order.
             </p>
             <div>
               <label htmlFor="first-name" className="block text-base font-medium text-gray-900 mb-1">
