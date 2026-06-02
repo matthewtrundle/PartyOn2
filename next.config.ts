@@ -358,12 +358,12 @@ const nextConfig: NextConfig = {
     // own sites while the rest of the app stays locked down.
     const baseCspDirectives = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' *.shopify.com *.myshopify.com *.google-analytics.com *.googletagmanager.com cdn.vercel-insights.com vercel.live connect.facebook.net *.doubleclick.net www.googleadservices.com *.google.com js.stripe.com *.clarity.ms",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' *.shopify.com *.myshopify.com *.google-analytics.com *.googletagmanager.com cdn.vercel-insights.com vercel.live connect.facebook.net *.doubleclick.net www.googleadservices.com *.google.com js.stripe.com *.clarity.ms cdn.plaid.com",
       "style-src 'self' 'unsafe-inline' fonts.googleapis.com",
       "font-src 'self' fonts.gstatic.com data:",
       "img-src 'self' data: blob: https: http: *.shopify.com *.myshopify.com images.unsplash.com *.squarespace-cdn.com *.wixstatic.com *.showit.co *.googleapis.com *.website-files.com *.simpleviewinc.com *.facebook.com www.facebook.com *.clarity.ms",
-      "connect-src 'self' *.shopify.com *.myshopify.com *.google-analytics.com *.googletagmanager.com vitals.vercel-insights.com hooks.zapier.com connect.facebook.net *.facebook.com *.doubleclick.net www.googleadservices.com *.google.com api.stripe.com *.clarity.ms",
-      "frame-src 'self' *.shopify.com *.myshopify.com *.youtube.com *.youtube-nocookie.com *.recomsale.com vercel.live *.googletagmanager.com *.instagram.com js.stripe.com hooks.stripe.com checkout.stripe.com",
+      "connect-src 'self' *.shopify.com *.myshopify.com *.google-analytics.com *.googletagmanager.com vitals.vercel-insights.com hooks.zapier.com connect.facebook.net *.facebook.com *.doubleclick.net www.googleadservices.com *.google.com api.stripe.com *.clarity.ms production.plaid.com sandbox.plaid.com development.plaid.com",
+      "frame-src 'self' *.shopify.com *.myshopify.com *.youtube.com *.youtube-nocookie.com *.recomsale.com vercel.live *.googletagmanager.com *.instagram.com js.stripe.com hooks.stripe.com checkout.stripe.com cdn.plaid.com",
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self' *.shopify.com *.myshopify.com",
