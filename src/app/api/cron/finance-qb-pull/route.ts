@@ -72,8 +72,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const sinceIso = since.toISOString().slice(0, 10);
 
   try {
-    const { upserted } = await syncQbAccounts();
+    const { upserted, perTypeErrors } = await syncQbAccounts();
     report.accountsUpserted = upserted;
+    for (const e of perTypeErrors) {
+      report.errors.push(`accounts: ${e}`);
+    }
   } catch (err) {
     report.errors.push(`accounts: ${err instanceof Error ? err.message : String(err)}`);
   }
