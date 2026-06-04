@@ -12,31 +12,21 @@ Triage keywords loaded: loaded 66 keywords
 
 ## Totals
 
-- Total posts: 188 (132 MDX + 56 legacy JSON)
+- Total posts: 178 (122 MDX + 56 legacy JSON)
 - KEEP: 160
 - OPTIMIZE: 13
-- REDIRECT: 15
+- REDIRECT: 5
 - DELETE: 0
 
 ## Redirects required
 
 | Source slug | Target | Reason |
 |-------------|--------|--------|
-| all-inclusive-austin-wedding-venues-with-packages | /blog/all-inclusive-austin-wedding-venues | near-dupe of all-inclusive-austin-wedding-venues |
-| austin-elopement-ideas-for-minimalist-couples | /blog/austin-elopement-ideas-minimalist | near-dupe of austin-elopement-ideas-minimalist |
 | best-party-barge-rentals-in-austin-for-large-groups | /blog/best-party-barge-rentals-austin | near-dupe of best-party-barge-rentals-austin |
-| best-small-wedding-venues-near-austin | /blog/best-small-wedding-venues-austin | near-dupe of best-small-wedding-venues-austin |
 | corporate-events-austin-guide | /blog/ultimate-guide-austin-corporate-events | near-dupe of ultimate-guide-austin-corporate-events |
 | essential-checklist-for-your-lake-travis-party-boat-day | /blog/lake-travis-party-boat-checklist | near-dupe of lake-travis-party-boat-checklist |
-| how-to-build-a-stress-free-wedding-vendor-checklist | /blog/stress-free-wedding-vendor-checklist | near-dupe of stress-free-wedding-vendor-checklist |
-| how-to-plan-a-friday-or-sunday-wedding-to-save-money | /blog/friday-sunday-wedding-save-money | near-dupe of friday-sunday-wedding-save-money |
-| how-to-plan-a-hill-country-wedding-in-under-six-months | /blog/plan-hill-country-wedding-six-months | near-dupe of plan-hill-country-wedding-six-months |
-| how-to-plan-a-rehearsal-dinner-at-austin-restaurants | /blog/rehearsal-dinner-austin-restaurants | near-dupe of rehearsal-dinner-austin-restaurants |
-| local-austin-florists-and-caterers-for-texas-style-weddings | /blog/austin-florists-caterers-texas-weddings | near-dupe of austin-florists-caterers-texas-weddings |
-| signature-wedding-cocktails-perfect-for-texas-heat | /blog/signature-wedding-cocktails-texas-heat | near-dupe of signature-wedding-cocktails-texas-heat |
 | ultimate-guide-austin-boat-parties-lake-travis | /blog/ultimate-guide-lake-travis-boat-parties | near-dupe of ultimate-guide-lake-travis-boat-parties |
 | ultimate-guide-to-austin-boat-parties-on-lake-travis | /blog/ultimate-guide-lake-travis-boat-parties | near-dupe of ultimate-guide-lake-travis-boat-parties |
-| wedding-photography-locations-around-austin-s-lakes-and-hills | /blog/wedding-photography-austin-lakes-hills | near-dupe of wedding-photography-austin-lakes-hills |
 
 ## Optimize candidates
 
@@ -62,13 +52,10 @@ Triage keywords loaded: loaded 66 keywords
 
 ## By cluster
 
-### (none) (82)
+### (none) (73)
 
-- `all-inclusive-austin-wedding-venues-with-packages` — REDIRECT → /blog/all-inclusive-austin-wedding-venues
-- `austin-elopement-ideas-for-minimalist-couples` — REDIRECT → /blog/austin-elopement-ideas-minimalist
 - `austin-gift-guide-party-lovers-home-bartenders` — KEEP
 - `best-party-barge-rentals-in-austin-for-large-groups` — REDIRECT → /blog/best-party-barge-rentals-austin
-- `best-small-wedding-venues-near-austin` — REDIRECT → /blog/best-small-wedding-venues-austin
 - `best-tailgate-food-and-bbq-recipes-for-longhorn-fans` — KEEP
 - `best-time-of-year-for-boat-parties-on-lake-travis` — KEEP
 - `budgeting-your-boat-rental-and-extras-for-the-day` — KEEP
@@ -76,17 +63,11 @@ Triage keywords loaded: loaded 66 keywords
 - `essential-checklist-for-your-lake-travis-party-boat-day` — REDIRECT → /blog/lake-travis-party-boat-checklist
 - `food-and-drink-ideas-for-your-byob-austin-boat-party` — KEEP
 - `how-to-book-a-double-decker-barge-for-your-group` — KEEP
-- `how-to-build-a-stress-free-wedding-vendor-checklist` — REDIRECT → /blog/stress-free-wedding-vendor-checklist
 - `how-to-create-the-perfect-boat-party-playlist` — KEEP
 - `how-to-host-a-bachelorette-pool-party-on-lake-travis` — KEEP
-- `how-to-plan-a-friday-or-sunday-wedding-to-save-money` — REDIRECT → /blog/friday-sunday-wedding-save-money
-- `how-to-plan-a-hill-country-wedding-in-under-six-months` — REDIRECT → /blog/plan-hill-country-wedding-six-months
-- `how-to-plan-a-rehearsal-dinner-at-austin-restaurants` — REDIRECT → /blog/rehearsal-dinner-austin-restaurants
 - `how-to-throw-a-birthday-bash-on-lake-austin` — KEEP
-- `local-austin-florists-and-caterers-for-texas-style-weddings` — REDIRECT → /blog/austin-florists-caterers-texas-weddings
 - `top-safety-tips-for-renting-a-party-boat` — KEEP
 - `unique-airbnbs-for-large-bachelorette-groups-in-austin` — KEEP
-- `wedding-photography-locations-around-austin-s-lakes-and-hills` — REDIRECT → /blog/wedding-photography-austin-lakes-hills
 - `what-to-wear-and-pack-for-an-austin-boat-party` — KEEP
 - `where-to-find-custom-party-favors-and-d-cor-in-austin` — KEEP
 - `where-to-tailgate-for-ut-football-games-in-austin` — KEEP
@@ -166,7 +147,7 @@ Triage keywords loaded: loaded 66 keywords
 - `top-corporate-catering-options-for-austin-business-events` — KEEP
 - `ultimate-guide-austin-corporate-events` — KEEP
 
-### ultimate-guide-austin-weddings (14)
+### ultimate-guide-austin-weddings (13)
 
 - `all-inclusive-austin-wedding-venues` — KEEP
 - `austin-elopement-ideas-minimalist` — OPTIMIZE
@@ -176,7 +157,6 @@ Triage keywords loaded: loaded 66 keywords
 - `plan-hill-country-wedding-six-months` — OPTIMIZE
 - `rehearsal-dinner-austin-restaurants` — OPTIMIZE
 - `rustic-modern-wedding-decor-texas` — OPTIMIZE
-- `signature-wedding-cocktails-perfect-for-texas-heat` — REDIRECT → /blog/signature-wedding-cocktails-texas-heat
 - `signature-wedding-cocktails-texas-heat` — OPTIMIZE
 - `stress-free-wedding-vendor-checklist` — OPTIMIZE
 - `ultimate-guide-austin-wedding-bar-service` — OPTIMIZE
