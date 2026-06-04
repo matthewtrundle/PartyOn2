@@ -1,10 +1,12 @@
 ---
-description: Drive a signed-in SEMrush session via the Claude in Chrome extension to capture all 8 dashboards for partyondelivery.com. Writes screenshots + JSON to data/seo/semrush/<YYYY-MM-DD>/. Run this from a Claude Code session with the Chrome extension paired and Allan/Brian already logged into SEMrush.
+description: Drive a signed-in SEMrush session via the Claude in Chrome extension to capture all 8 dashboards for partyondelivery.com. Writes screenshots + raw page text to data/seo/semrush/<YYYY-MM-DD>/. Run this from a Claude Code session with the Chrome extension paired and Allan/Brian already logged into SEMrush.
 ---
 
 # /scrape-semrush-pod — Party On Delivery SEMrush weekly scrape
 
 You are running an automated SEMrush capture for `partyondelivery.com`.
+
+Your job is to **drive Chrome and dump raw page text** for each dashboard. You do NOT transcribe numbers into JSON yourself — a deterministic parser handles that in step 2 of the postflight.
 
 ## Preflight (do these in order, stop if any fail)
 
@@ -16,96 +18,124 @@ You are running an automated SEMrush capture for `partyondelivery.com`.
 4. Navigate to `https://www.semrush.com/dashboard/`. If the page redirects to `/login` or shows the sign-in form, tell the user:
    > "SEMrush session expired. Sign into SEMrush in this browser, then run /scrape-semrush-pod again."
    Then stop.
-5. Determine today's date in YYYY-MM-DD (use the local clock). Create the output directory:
+5. Determine today's date in YYYY-MM-DD (use the local clock). Create the output directories:
+   ```bash
+   mkdir -p "data/seo/semrush/<YYYY-MM-DD>/raw"
+   mkdir -p "data/seo/semrush/<YYYY-MM-DD>/ai-brand-visibility"
+   mkdir -p "data/seo/semrush/<YYYY-MM-DD>/keyword-magic"
    ```
-   mkdir -p "data/seo/semrush/<YYYY-MM-DD>"
-   ```
-6. Read `tenants/party-on-delivery.json` if it exists at the repo root (one-line lookup; if missing, that's fine — we'll discover the project id from the `/projects/` page and write it back at the end).
+6. Read `tenants/party-on-delivery.json` if it exists at the repo root (one-line lookup; if missing, discover the project id from the `/projects/` page and write it back at the end).
 
 ## What to capture (8 surfaces)
 
-For each surface below: navigate, wait briefly, screenshot the visible viewport, then read the page DOM and extract the rows/numbers described. Write both files to today's data directory. On per-surface failure, write a short `FAILED-<surface>.md` describing what broke and keep going to the next surface — do NOT abort the run.
+For each surface below:
 
-Use `mcp__Claude_in_Chrome__browser_batch` to chain navigation + read_page in one trip whenever possible. Sleep 3–5 seconds between surfaces (use `mcp__computer-use__wait` or a short `Bash` sleep) so SEMrush doesn't throttle.
+1. Navigate to the URL with `mcp__Claude_in_Chrome__navigate` (use `browser_batch` to chain when possible).
+2. Wait 3–5 seconds for the page to settle.
+3. Take a viewport screenshot via `mcp__Claude_in_Chrome__preview_screenshot` (or the appropriate Chrome MCP screenshot tool) to `data/seo/semrush/<date>/<surface>.png`.
+4. Extract the page's full `document.body.innerText` via `mcp__Claude_in_Chrome__javascript_tool` (run `return document.body.innerText`).
+5. Write the raw text to TWO places:
+   - `data/seo/semrush/<date>/raw/<surface>.txt` — operator debugging copy
+   - `data/seo/semrush/<date>/<surface>.json` — stub JSON with the schema below, so the parser can find it
+
+Stub JSON shape (this is the ONLY shape you write — the parser fills in the `extracted` block):
+
+```json
+{
+  "captured_at": "<ISO-8601 timestamp>",
+  "dashboard": "<surface-slug>",
+  "label": "<human-readable label>",
+  "url": "<URL navigated to>",
+  "domain": "partyondelivery.com",
+  "project_id": "<project id if known>",
+  "raw_body_text": "<full innerText dump>"
+}
+```
+
+**Do NOT populate the `extracted` field yourself. Do NOT invent schema. The parser owns the structured output.**
+
+On per-surface failure, write a short `FAILED-<surface>.md` describing what broke and keep going to the next surface — do NOT abort the run.
+
+Sleep 3–5 seconds between surfaces so SEMrush doesn't throttle.
 
 ### 1. Position Tracking — `position-tracking`
 - URL: `https://www.semrush.com/projects/{projectId}/tracking/positions/`
-- (If projectId unknown, navigate to `/projects/`, find the partyondelivery.com card, click into it, then click "Position Tracking". Capture the project id from the URL after navigation.)
-- Capture per-keyword rows: keyword, current rank, previous rank (delta), search volume, KD%, ranking URL, tracked-since date.
-- Schema:
-  ```json
-  {
-    "captured_at": "<ISO>",
-    "domain": "partyondelivery.com",
-    "rows": [
-      { "keyword": "...", "position": 14, "previous_position": 18,
-        "url": "...", "search_volume": 720, "kd_pct": 38,
-        "tracked_since": "2026-04-15" }
-    ]
-  }
-  ```
+- If projectId unknown, navigate to `/projects/`, find the partyondelivery.com card, click into it, click "Position Tracking", capture project id from the resulting URL.
 
 ### 2. Keyword Gap Analysis — `keyword-gap`
 - URL template:
   `https://www.semrush.com/analytics/keywordgap/?q=partyondelivery.com&q1={competitor1}&q2={competitor2}&q3={competitor3}`
-- Default competitors if not configured in `tenants/party-on-delivery.json`: `drizly.com`, `gopuff.com`, `saucey.com`.
-- Capture up to 500 rows across the "Missing" + "Weak" + "Untapped" tabs (paginate if needed; cap at 500 total to bound run time).
-- Each row: keyword, volume, KD%, intent, partyondelivery position (if any), competitor positions.
+- Default competitors if not in `tenants/party-on-delivery.json`: `drizly.com`, `gopuff.com`, `saucey.com`.
+- Just dump the page's innerText — the parser handles the per-tab breakdown.
 
 ### 3. Site Audit — `site-audit`
 - URL: `https://www.semrush.com/projects/{projectId}/siteaudit/campaign/`
-- If the latest crawl date shown on the page is older than 7 days, click "Re-run crawl" / "Start audit" — but DO NOT wait for it to finish; just note `audit_in_progress: true` in the JSON.
-- Capture: site-health %, total errors / warnings / notices, top 10 issue categories with counts, crawled pages count, blocked pages count.
+- If the latest crawl date shown on the page is older than 7 days, click "Re-run crawl" / "Start audit" — but DO NOT wait for it to finish.
 
 ### 4. Organic Research — `organic-research`
-- URL: `https://www.semrush.com/analytics/organic/overview/?q=partyondelivery.com`
-- Capture: organic traffic estimate, total ranking keywords, authority score, top-3 / top-10 / top-20 counts. Top 20 organic pages (URL + traffic + keyword count).
+- URL: `https://www.semrush.com/analytics/organic/overview/?db=us&q=partyondelivery.com&searchType=domain`
 
 ### 5. Backlink Analytics — `backlink-analytics`
-- URL: `https://www.semrush.com/analytics/backlinks/overview/?q=partyondelivery.com`
-- Capture: total backlinks, referring domains, top anchors (anchor + share of total), 20 most recent referring domains.
+- URL: `https://www.semrush.com/analytics/backlinks/overview/?q=partyondelivery.com&searchType=domain`
 
 ### 6. AI Toolkit · Brand Visibility — `ai-brand-visibility/`
 - URL: `https://www.semrush.com/ai-toolkit/projects/{projectId}/brand-visibility/`
-- If the page returns 404 or shows an "Upgrade to AI Toolkit" gate, write `FAILED-ai-brand-visibility.md` with the reason and skip to surface 7.
-- Otherwise iterate every per-LLM tab present in the UI (typically ChatGPT, Gemini, Perplexity, Copilot — but also pick up Claude if it appears).
+- If the page 404s or shows an "Upgrade to AI Toolkit" gate, write `FAILED-ai-brand-visibility.md` and skip to surface 7.
+- Otherwise iterate every per-LLM tab (typically ChatGPT, Gemini, Perplexity, Copilot — also Claude if present).
 - For each LLM tab:
-  - Screenshot it to `ai-brand-visibility/<llm-slug>.png`
-  - Scrape DOM-readable legend numbers (presence rate %, sentiment % split, top cited domains) → `ai-brand-visibility/<llm-slug>.json`
-  - Note: the time-series share-of-voice chart renders in `<canvas>`; you cannot extract the series — only the legend totals.
+  - Screenshot to `ai-brand-visibility/<llm-slug>.png`
+  - Dump innerText to `ai-brand-visibility/<llm-slug>.json` using the stub shape above (`dashboard: "ai-brand-visibility-<llm-slug>"`).
 
 ### 7. AI Toolkit · Prompt Tracking — `ai-prompt-tracking`
 - URL: `https://www.semrush.com/ai-toolkit/projects/{projectId}/prompts/`
 - Same 404/gate handling as surface 6.
-- For each tracked prompt:
-  - Click the prompt row → modal opens
-  - Iterate every per-LLM tab in the modal
-  - Capture for each (prompt × LLM) cell: full LLM response text (truncate at 4000 chars), whether POD is cited, citation rank, competitors mentioned in the response
-- Output is one flat array of `{ prompt, llm, response_text, cited: bool, rank: int|null, competitors: [...] }` rows.
-- Hard cap: 50 prompts × however many LLMs. If there are more prompts, capture the first 50 alphabetically and note `truncated: true` in the JSON header.
+- For each tracked prompt, click into it, iterate every per-LLM tab in the modal, and dump the innerText of each tab to its own stub JSON. Hard cap: 50 prompts.
 
 ### 8. Keyword Magic — `keyword-magic/`
 - Only run if `data/seo/semrush/_queue/keyword-magic.txt` exists and is non-empty.
 - For each line in that file (one seed keyword per line):
   - URL: `https://www.semrush.com/analytics/keywordmagic/?q=<url-encoded-seed>`
-  - Capture top 100 related keywords with volume / KD% / intent / SERP features
-  - Write to `keyword-magic/<slug-of-seed>.json` + `.png`
+  - Dump innerText to `keyword-magic/<slug-of-seed>.json` + screenshot to `.png`.
 
 ## Postflight
 
-1. If we discovered a new `projectId`, write it to `tenants/party-on-delivery.json`:
+1. **Run the parser to populate the `extracted` field on every stub JSON:**
+   ```bash
+   node scripts/seo/parse-semrush-snapshot.mjs data/seo/semrush/<YYYY-MM-DD>/
+   ```
+   The parser reads each `*.json` file (except `manifest.json`), runs a deterministic regex extractor on `raw_body_text`, and writes the structured `extracted` object back to the same file. It also updates `manifest.json` with `re_extracted_at`.
+
+   If the parser prints any `parse_warnings` for a surface, surface them to the operator in the final summary — those are fields the parser couldn't extract confidently and left as `null`.
+
+2. If we discovered a new `projectId`, write it to `tenants/party-on-delivery.json`:
    ```json
    { "domain": "partyondelivery.com", "semrush_project_id": "<id>",
      "competitors": ["drizly.com", "gopuff.com", "saucey.com"],
      "last_scrape": "<YYYY-MM-DD>" }
    ```
-2. Print a one-screen summary to the user with:
+
+3. Write `manifest.json` with the per-surface success/failure list (the parser will then patch in `re_extracted_at`):
+   ```json
+   {
+     "captured_at": "<ISO>",
+     "domain": "partyondelivery.com",
+     "project_id": "<id>",
+     "results": [
+       { "id": "position-tracking", "ok": true },
+       { "id": "site-audit", "ok": false, "error": "..." }
+     ],
+     "success": true
+   }
+   ```
+
+4. Print a one-screen summary to the user with:
    - ✓ surfaces captured successfully (count)
    - ✗ surfaces that failed (with reason from FAILED-*.md)
+   - Any parse_warnings the parser reported
    - Path to the output directory
    - "Next: ping the SEO Director sub-agent with /seo-director or similar"
 
-3. Open `data/seo/semrush/<YYYY-MM-DD>/` in a Finder window so the operator can spot-check screenshots:
+5. Open the output directory so the operator can spot-check screenshots:
    ```bash
    open "data/seo/semrush/<YYYY-MM-DD>"
    ```
@@ -114,8 +144,8 @@ Use `mcp__Claude_in_Chrome__browser_batch` to chain navigation + read_page in on
 
 - NEVER touch the SEMrush login form. If you see one, the session expired — tell the user and stop.
 - NEVER click "Upgrade plan" or any billing CTA. If a feature is gated, write FAILED-<surface>.md and move on.
+- NEVER write to the `extracted` field on a stub JSON. That's the parser's job. If you populate it, the content-integrity hook will reject the file.
 - Respect rate limits: 3–5s between surfaces, 1–2s between paginated table reads.
-- If any surface produces zero rows when it clearly shouldn't (e.g. position tracking with a known-tracked project), write FAILED-<surface>.md flagging the selector likely changed.
 - All file writes go through normal Bash/Write tools — keep the Chrome extension focused on navigation + DOM reads.
 
 End the run with a short summary + the path to the output dir.
