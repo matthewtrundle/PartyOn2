@@ -103,6 +103,23 @@ function createClient(): PlaidApi {
 }
 
 /**
+ * Public webhook URL Plaid will POST to when transactions / item events
+ * happen. Bound at link_token creation so every new Item is auto-wired —
+ * no Plaid-dashboard config required.
+ *
+ * Note: there's no team-level default webhook URL setting for the
+ * Transactions product in the Plaid dashboard (the dashboard "Webhooks"
+ * page is only for Transfer / Wallet / Bank Income product listeners).
+ * Per-Item is the supported path.
+ */
+function getWebhookUrl(): string {
+  return (
+    process.env.PLAID_WEBHOOK_URL ||
+    'https://partyondelivery.com/api/webhooks/plaid'
+  );
+}
+
+/**
  * Create a link_token the browser SDK exchanges for a public_token.
  * Phase 0 only requests `Transactions` since that's all Phase 2C uses.
  */
@@ -114,8 +131,52 @@ export async function createLinkToken(userId: string): Promise<string> {
     products: [Products.Transactions],
     country_codes: [CountryCode.Us],
     language: 'en',
+    webhook: getWebhookUrl(),
   });
   return response.data.link_token;
+}
+
+/**
+ * Update the webhook URL on an already-linked Item. Used for the one-shot
+ * backfill that wires the webhook on every existing PlaidItem (which were
+ * created before we passed `webhook` into link_token).
+ */
+export async function updateItemWebhook(accessToken: string): Promise<void> {
+  const client = createClient();
+  await client.itemWebhookUpdate({
+    access_token: accessToken,
+    webhook: getWebhookUrl(),
+  });
+}
+
+/**
+ * One-shot: walk every active PlaidItem and set its webhook URL on Plaid's
+ * side. Idempotent. Used by /api/admin/finance/plaid/backfill-webhooks once
+ * after this PR deploys, then optionally removed.
+ */
+export async function backfillItemWebhooks(): Promise<{
+  updated: number;
+  failed: number;
+  errors: string[];
+}> {
+  const { prisma } = await import('@/lib/database/client');
+  const items = await prisma.plaidItem.findMany({
+    where: { status: { in: ['active', 'error'] } },
+    select: { id: true, itemId: true, accessToken: true },
+  });
+  let updated = 0;
+  let failed = 0;
+  const errors: string[] = [];
+  for (const item of items) {
+    try {
+      await updateItemWebhook(item.accessToken);
+      updated++;
+    } catch (err) {
+      failed++;
+      errors.push(`${item.itemId}: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+  return { updated, failed, errors };
 }
 
 /**
