@@ -197,6 +197,63 @@ function PremierPartyCruisesPageContent(): ReactElement {
       <HouseTabUpsell />
 
       {/* ============================================ */}
+      {/* SECTION 4b: WEDDING VENUE PACKAGES           */}
+      {/* Cross-link to /austin-wedding-venue-boats —  */}
+      {/* Premier boats double as a wedding venue.     */}
+      {/* ============================================ */}
+      <section className="bg-white py-16 md:py-24 border-t border-gray-200">
+        <div className="max-w-6xl mx-auto px-6 md:px-8">
+          <div className="text-center mb-10">
+            <p className="text-sm font-heading uppercase tracking-[0.08em] text-brand-blue mb-2">
+              Wedding Venue Packages
+            </p>
+            <h2 className="font-heading text-3xl md:text-4xl text-gray-900 mb-4">
+              Getting married on the lake?
+            </h2>
+            <p className="text-base text-gray-700 max-w-2xl mx-auto">
+              Premier boats also serve as a small, intimate wedding venue —
+              ceremony on the deck, rehearsal dinner the night before, brunch
+              cruise the morning after. 20-80 guests. We handle the bar.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            {[
+              {
+                title: 'Ceremony On The Lake',
+                price: 'From $1,899',
+                blurb: 'Elopements, micro-weddings, vow renewals. 20-30 guests.',
+              },
+              {
+                title: 'Wedding Weekend',
+                price: 'From $5,999',
+                blurb: 'Rehearsal + ceremony + brunch. One boat, one weekend.',
+              },
+              {
+                title: 'Photography Cruise',
+                price: '$1,499',
+                blurb: '90-min sunset cruise for photos + the wedding party.',
+              },
+            ].map((card) => (
+              <div key={card.title} className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+                <h3 className="font-heading text-lg font-bold tracking-[0.05em] text-gray-900 mb-1">
+                  {card.title}
+                </h3>
+                <p className="text-sm font-semibold text-brand-blue mb-2">{card.price}</p>
+                <p className="text-sm text-gray-700">{card.blurb}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="text-center">
+            <Button variant="primary" size="lg" href="/austin-wedding-venue-boats">
+              See Wedding Venue Packages
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* ============================================ */}
       {/* SECTION 5: EXPERIENCE PROOF (Video)          */}
       {/* ============================================ */}
       <section id="experience-proof" className="bg-white py-16 md:py-24">

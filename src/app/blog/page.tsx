@@ -1,10 +1,16 @@
 import React from 'react'
 import Link from 'next/link'
+import type { Metadata } from 'next'
 import Navigation from "@/components/Navigation"
 import migratedPosts from '@/data/blog-posts/posts.json'
 import { getAllMDXPosts, mdxPostToLegacyFormat } from '@/lib/blog-mdx'
+import { seoConfig } from '@/lib/seo/config'
 import BlogPageClient from './BlogPageClient'
 import BlogSearchFilter from './BlogSearchFilter'
+
+export const metadata: Metadata = {
+  alternates: { canonical: `${seoConfig.siteUrl}/blog` },
+}
 
 interface BlogPost {
   slug: string;

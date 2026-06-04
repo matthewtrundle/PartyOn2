@@ -844,6 +844,12 @@ model Order {
   stripePaymentIntentId   String? @unique @map("stripe_payment_intent_id")
   stripeCheckoutSessionId String? @unique @map("stripe_checkout_session_id")
   stripeChargeId          String? @map("stripe_charge_id")
+  // Stripe net amounts — snapshotted from the BalanceTransaction at order
+  // creation (or backfilled by scripts/finance/backfill-stripe-history.ts).
+  // All in CENTS to match Stripe's API. null = not yet snapshotted.
+  stripeChargeAmountCents Int?     @map("stripe_charge_amount_cents")
+  stripeFeesCents         Int?     @map("stripe_fees_cents")
+  netReceivedCents        Int?     @map("net_received_cents")
 
   // Amounts
   subtotal       Decimal @db.Decimal(10, 2)
@@ -2552,6 +2558,351 @@ model OperationsSnapshot {
 
   @@index([capturedAt])
   @@map("operations_snapshots")
+}
+
+/// Finance Director recommendation queue (Phase 0 scaffolding; populated in Phase 5).
+/// Mirrors OperationsRecommendation exactly so the shared lib at
+/// src/lib/recommendations/{lifecycle,measurement,card-types}.ts works unchanged.
+///
+/// dedupeKey = signalKind + ':' + targetEntityId.
+model FinanceRecommendation {
+  id                String    @id @default(cuid())
+  signalKind        String    @map("signal_kind")
+  severity          String    // 'urgent' | 'high' | 'normal'
+  title             String
+  evidence          Json
+  targetEntityType  String    @map("target_entity_type")
+  targetEntityId    String    @map("target_entity_id")
+  actionPayload     Json      @map("action_payload")
+  status            String    @default("open")
+  snoozeUntil       DateTime? @map("snooze_until")
+  dismissReason     String?   @map("dismiss_reason") @db.Text
+  actionLog         Json      @default("[]") @map("action_log")
+  source            String    @default("auto-snapshot")
+  shippedAt         DateTime? @map("shipped_at")
+  measuredAt        DateTime? @map("measured_at")
+  measurementResult Json?     @map("measurement_result")
+  dedupeKey         String    @unique @map("dedupe_key")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([severity, status])
+  @@index([signalKind, status])
+  @@map("finance_recommendations")
+}
+
+/// Daily finance snapshot — populated by /api/cron/finance-snapshot starting Phase 1C.
+/// Payload schema defined per-phase; Phase 0 ships the table empty.
+model FinanceSnapshot {
+  id           String   @id @default(cuid())
+  snapshotDate DateTime @map("snapshot_date") @db.Date
+  payload      Json
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([snapshotDate])
+  @@map("finance_snapshots")
+}
+
+/// Single-row holder for the active QuickBooks Online OAuth state. Refresh
+/// token rotates on each refresh; the row is updated in place. Operator-created
+/// via the /admin/finance/connect-quickbooks OAuth flow — never seeded by migration.
+model IntuitOAuthState {
+  id                  String    @id @default("singleton")
+  realmId             String    @map("realm_id")
+  accessToken         String    @map("access_token") @db.Text
+  refreshToken        String    @map("refresh_token") @db.Text
+  accessTokenExpires  DateTime  @map("access_token_expires")
+  refreshTokenExpires DateTime  @map("refresh_token_expires")
+  environment         String    @default("sandbox") // 'sandbox' | 'production'
+  lastRefreshedAt     DateTime? @map("last_refreshed_at")
+  lastError           String?   @map("last_error") @db.Text
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  @@map("intuit_oauth_state")
+}
+
+/// One row per linked Plaid Item (institution). Operator can re-link the same
+/// institution; existing row is upserted by item_id.
+model PlaidItem {
+  id              String   @id @default(cuid())
+  itemId          String   @unique @map("item_id")
+  accessToken     String   @map("access_token") @db.Text
+  institutionId   String?  @map("institution_id")
+  institutionName String?  @map("institution_name")
+  environment     String   @default("sandbox") // 'sandbox' | 'development' | 'production'
+  status          String   @default("active") // 'active' | 'login_required' | 'error' | 'removed'
+  lastSyncAt      DateTime? @map("last_sync_at")
+  lastError       String?  @map("last_error") @db.Text
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  accounts     PlaidAccount[]
+  transactions PlaidTransaction[]
+
+  @@map("plaid_items")
+}
+
+/// One row per account within a Plaid Item (checking, savings, credit card).
+model PlaidAccount {
+  id               String   @id @default(cuid())
+  plaidItemId      String   @map("plaid_item_id")
+  accountId        String   @unique @map("account_id")
+  name             String
+  officialName     String?  @map("official_name")
+  mask             String?
+  type             String   // 'depository' | 'credit' | 'loan' | 'investment'
+  subtype          String?
+  currentBalance   Decimal? @map("current_balance") @db.Decimal(15, 2)
+  availableBalance Decimal? @map("available_balance") @db.Decimal(15, 2)
+  isoCurrencyCode  String?  @default("USD") @map("iso_currency_code")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  item PlaidItem @relation(fields: [plaidItemId], references: [id], onDelete: Cascade)
+
+  @@index([plaidItemId])
+  @@map("plaid_accounts")
+}
+
+/// Bank transactions ingested via Plaid webhook + nightly sync.
+/// Phase 0 ships the table empty; Phase 2C populates and reconciles.
+model PlaidTransaction {
+  id                              String    @id @default(cuid())
+  plaidItemId                     String    @map("plaid_item_id")
+  accountId                       String    @map("account_id")
+  transactionId                   String    @unique @map("transaction_id")
+  date                            DateTime  @db.Date
+  authorizedDate                  DateTime? @map("authorized_date") @db.Date
+  amount                          Decimal   @db.Decimal(15, 2) // positive = outflow per Plaid convention
+  isoCurrencyCode                 String?   @default("USD") @map("iso_currency_code")
+  name                            String
+  merchantName                    String?   @map("merchant_name")
+  pending                         Boolean   @default(false)
+  paymentChannel                  String?   @map("payment_channel")
+  category                        String[]  @default([])
+  personalFinanceCategoryPrimary  String?   @map("pfc_primary")
+  personalFinanceCategoryDetailed String?   @map("pfc_detailed")
+  matchedStripePayoutId           String?   @map("matched_stripe_payout_id")
+  /// Phase 1B cancelled — column kept for migration compatibility, never read.
+  matchedReceivingInvoiceId       String?   @map("matched_receiving_invoice_id")
+  /// Phase 2C — links to QbExpense.qbTransactionId when we found a matching
+  /// QB Purchase/Bill for an outflow.
+  matchedQbExpenseId              String?   @map("matched_qb_expense_id")
+  qbTransactionId                 String?   @map("qb_transaction_id")
+  qbCategoryAssigned              String?   @map("qb_category_assigned")
+  reconciledAt                    DateTime? @map("reconciled_at")
+  createdAt                       DateTime  @default(now()) @map("created_at")
+  updatedAt                       DateTime  @updatedAt @map("updated_at")
+
+  item PlaidItem @relation(fields: [plaidItemId], references: [id], onDelete: Cascade)
+
+  @@index([plaidItemId])
+  @@index([date])
+  @@index([accountId, date])
+  @@index([reconciledAt])
+  @@map("plaid_transactions")
+}
+
+/// Per-Item Plaid /transactions/sync cursor (Phase 2C). Plaid's sync endpoint
+/// is incremental: each call returns "added/modified/removed" since the
+/// stored cursor + a new cursor to use next time. Stored per PlaidItem.
+model PlaidSyncCursor {
+  id           String   @id @default(cuid())
+  plaidItemId  String   @unique @map("plaid_item_id")
+  cursor       String?  @db.Text
+  lastSyncedAt DateTime? @map("last_synced_at")
+  lastError    String?  @map("last_error") @db.Text
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("plaid_sync_cursors")
+}
+
+/// QuickBooks Chart of Accounts cache (Phase 2A). Pulled from QB on each
+/// /api/cron/finance-qb-pull run so the dashboard can render category
+/// totals without re-querying QB. One row per QB account ID.
+model QbAccount {
+  id              String   @id @default(cuid())
+  qbAccountId     String   @unique @map("qb_account_id")
+  name            String
+  fullyQualifiedName String? @map("fully_qualified_name")
+  accountType     String?  @map("account_type") // 'Expense' | 'Income' | 'Asset' | etc.
+  accountSubType  String?  @map("account_sub_type")
+  currency        String   @default("USD")
+  active          Boolean  @default(true)
+  lastSyncedAt    DateTime @default(now()) @map("last_synced_at")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  expenses        QbExpense[]
+
+  @@index([accountType])
+  @@map("qb_accounts")
+}
+
+/// QuickBooks expense transactions cached in PartyOn (Phase 2A). Sourced from
+/// QB Purchase + Bill objects pulled by /api/cron/finance-qb-pull weekly.
+/// Upsert key = qbTransactionId so re-pulls are idempotent.
+model QbExpense {
+  id                String   @id @default(cuid())
+  qbTransactionId   String   @unique @map("qb_transaction_id")
+  txnType           String   @map("txn_type") // 'Purchase' | 'Bill' | 'JournalEntry'
+  txnDate           DateTime @map("txn_date") @db.Date
+  amountCents       Int      @map("amount_cents")
+  currency          String   @default("USD")
+  /// Free-text vendor name from QB (vendor lookups happen in Phase 3 for 1099s).
+  vendorName        String?  @map("vendor_name")
+  qbAccountId       String?  @map("qb_account_id")
+  /// PartyOn-side normalised category for dashboard grouping (e.g.
+  /// "Software", "Fuel", "Rent"). Derived from qb-account-map.ts.
+  categorySlug      String?  @map("category_slug")
+  memo              String?  @db.Text
+  rawPayload        Json     @map("raw_payload")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  account           QbAccount? @relation(fields: [qbAccountId], references: [qbAccountId])
+
+  @@index([txnDate])
+  @@index([categorySlug, txnDate])
+  @@index([qbAccountId])
+  @@map("qb_expenses")
+}
+
+/// Per-day sales journal entries posted from PartyOn → QuickBooks (Phase 2B).
+/// Drafted by the daily cron, REQUIRE operator approval before posting
+/// (autonomy decision #4 — only qb-categorize bypasses operator click).
+model QbJournalEntry {
+  id                String   @id @default(cuid())
+  /// The PartyOn day this entry summarises (YYYY-MM-DD).
+  entryDate         DateTime @map("entry_date") @db.Date
+  status            String   @default("PENDING_APPROVAL")
+                              // 'PENDING_APPROVAL' | 'APPROVED' | 'POSTED' |
+                              // 'REJECTED' | 'FAILED' | 'SUPERSEDED'
+  /// Source data used to compute this entry (revenue, refunds, fees).
+  /// Snapshotted at draft time so the entry reflects the day even if a
+  /// later sync changes the numbers.
+  sourcePayload     Json     @map("source_payload")
+  /// The exact JournalEntry payload posted to QB on approval.
+  /// Re-drafts overwrite this until POSTED.
+  proposedPayload   Json     @map("proposed_payload")
+  /// Human-readable line list shown in the approval UI.
+  lineSummary       Json     @map("line_summary")
+  /// QB transaction ID returned on successful post.
+  qbTransactionId   String?  @map("qb_transaction_id")
+  postedAt          DateTime? @map("posted_at")
+  approvedBy        String?  @map("approved_by")
+  approvedAt        DateTime? @map("approved_at")
+  rejectedReason    String?  @map("rejected_reason") @db.Text
+  failureReason     String?  @map("failure_reason") @db.Text
+  /// Audit log of state transitions: [{at, actor, from, to, note?}]
+  actionLog         Json     @default("[]") @map("action_log")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@unique([entryDate, status], name: "qb_journal_entry_active_per_day")
+  @@index([status])
+  @@index([entryDate])
+  @@map("qb_journal_entries")
+}
+
+/// Operator-edited mapping from PartyOn revenue/expense concepts to QB
+/// account IDs (Phase 2B). Single-row pattern — operator picks from synced
+/// qb_accounts on /admin/finance/journals/settings. Stored in DB rather than
+/// env vars so the operator can update without a redeploy.
+model QbJournalConfig {
+  id                       String   @id @default("singleton")
+  /// QB account ID where net Stripe deposits land (typically a clearing /
+  /// undeposited-funds asset account).
+  stripeClearingAccountId  String?  @map("stripe_clearing_account_id")
+  stripeFeesAccountId      String?  @map("stripe_fees_account_id")
+  salesRevenueAccountId    String?  @map("sales_revenue_account_id")
+  salesTaxPayableAccountId String?  @map("sales_tax_payable_account_id")
+  deliveryRevenueAccountId String?  @map("delivery_revenue_account_id")
+  tipsPayableAccountId     String?  @map("tips_payable_account_id")
+  refundsAccountId         String?  @map("refunds_account_id")
+  discountsAccountId       String?  @map("discounts_account_id")
+  /// If false, the cron drafts entries but doesn't make them visible — used
+  /// while operator is still wiring up account IDs.
+  enabled                  Boolean  @default(false)
+  updatedAt                DateTime @updatedAt @map("updated_at")
+
+  @@map("qb_journal_config")
+}
+
+/// Stripe payouts to the bank (Phase 1A). Lets us reconcile Plaid bank
+/// deposits to Stripe payouts in Phase 2C. Populated by:
+///   - /api/webhooks/stripe (payout.* events)
+///   - /api/cron/finance-stripe-sync (catch-up sweep)
+///   - scripts/finance/backfill-stripe-history.ts (historical)
+model StripePayout {
+  id                String   @id @default(cuid())
+  stripePayoutId    String   @unique @map("stripe_payout_id")
+  amountCents       Int      @map("amount_cents")
+  currency          String   @default("usd")
+  status            String   // 'paid' | 'pending' | 'in_transit' | 'failed' | 'canceled'
+  arrivalDate       DateTime @map("arrival_date") @db.Date
+  method            String?  // 'standard' | 'instant'
+  destination       String?  // bank account fingerprint or last 4
+  description       String?  @db.Text
+  failureCode       String?  @map("failure_code")
+  failureMessage    String?  @map("failure_message") @db.Text
+  /// Set in Phase 2C when a matching PlaidTransaction is found.
+  matchedPlaidTxId  String?  @map("matched_plaid_tx_id")
+  matchedAt         DateTime? @map("matched_at")
+  /// Full Stripe object for audit / future fields.
+  rawPayload        Json     @map("raw_payload")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@index([arrivalDate])
+  @@index([status])
+  @@index([matchedPlaidTxId])
+  @@map("stripe_payouts")
+}
+
+/// Daily Stripe balance snapshot (Phase 1A). Populated by
+/// /api/cron/finance-stripe-sync. Lets the dashboard answer "how much
+/// is sitting in Stripe vs the bank?" without hammering the live API.
+model StripeBalance {
+  id                String   @id @default(cuid())
+  capturedAt        DateTime @default(now()) @map("captured_at")
+  availableCents    Int      @map("available_cents")
+  pendingCents      Int      @map("pending_cents")
+  instantAvailableCents Int? @map("instant_available_cents")
+  reservedCents     Int?     @map("reserved_cents")
+  currency          String   @default("usd")
+  rawPayload        Json     @map("raw_payload")
+
+  @@index([capturedAt])
+  @@map("stripe_balances")
+}
+
+/// Stripe disputes / chargebacks (Phase 1A). One row per dispute lifecycle;
+/// updated on every charge.dispute.* webhook event.
+model ChargeDispute {
+  id                  String   @id @default(cuid())
+  stripeDisputeId     String   @unique @map("stripe_dispute_id")
+  stripeChargeId      String   @map("stripe_charge_id")
+  stripePaymentIntentId String? @map("stripe_payment_intent_id")
+  amountCents         Int      @map("amount_cents")
+  currency            String   @default("usd")
+  reason              String?  // 'fraudulent' | 'product_not_received' | 'duplicate' | etc.
+  status              String   // 'warning_needs_response' | 'needs_response' | 'under_review' | 'won' | 'lost' | etc.
+  evidenceDueBy       DateTime? @map("evidence_due_by")
+  isChargeRefundable  Boolean  @default(false) @map("is_charge_refundable")
+  /// Order this dispute relates to (best-effort link via stripeChargeId).
+  orderId             String?  @map("order_id")
+  rawPayload          Json     @map("raw_payload")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  @@index([status])
+  @@index([stripeChargeId])
+  @@index([orderId])
+  @@map("charge_disputes")
 }
 
 model SyncLog {

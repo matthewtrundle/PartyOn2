@@ -28,21 +28,15 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // Close expired group orders (30 days old)
-    const expiredGroups = await prisma.groupOrderV2.updateMany({
-      where: {
-        status: 'ACTIVE',
-        expiresAt: { lt: now },
-      },
-      data: {
-        status: 'CLOSED',
-      },
-    });
+    // Auto-close of expired group orders is intentionally disabled.
+    // Business rule: dashboards must never close on their own — a customer
+    // hitting a CLOSED group sees "not accepting new participants" and we
+    // lose the order. If a group genuinely needs to be ended, do it manually.
 
     return NextResponse.json({
       success: true,
       tabsLocked: result.count,
-      groupsClosed: expiredGroups.count,
+      groupsClosed: 0,
       timestamp: now.toISOString(),
     });
   } catch (error) {

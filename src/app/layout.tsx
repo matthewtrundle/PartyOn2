@@ -8,8 +8,9 @@ import { CustomerProvider } from "@/contexts/CustomerContext";
 import ClientLayoutWrapper from "@/components/ClientLayoutWrapper";
 import { structuredData } from "./structured-data";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
+import GoogleAdsTag from "@/components/GoogleAdsTag";
 import MetaPixel from "@/components/MetaPixel";
-import MicrosoftClarity from "@/components/MicrosoftClarity";
+import ClarityInit from "@/components/ClarityInit";
 import AttributionTracker from "@/components/AttributionTracker";
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
@@ -118,8 +119,8 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
 
         <GoogleAnalytics />
+        <GoogleAdsTag />
         <MetaPixel />
-        <MicrosoftClarity />
         <AttributionTracker />
         <script
           type="application/ld+json"
@@ -138,6 +139,7 @@ export default function RootLayout({
             </GroupOrderProvider>
           </CartProvider>
         </CustomerProvider>
+        <ClarityInit />
         <Analytics />
         <SpeedInsights />
       </body>

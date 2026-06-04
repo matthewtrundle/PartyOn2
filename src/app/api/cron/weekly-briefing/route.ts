@@ -255,7 +255,7 @@ ${stageA}`;
       generatedAt: now,
       openRecs,
       archiveUrl: `https://github.com/${process.env.GITHUB_REPO_OWNER ?? 'allan-cmyk'}/${process.env.GITHUB_REPO_NAME ?? 'PartyOn2'}/blob/${process.env.GITHUB_REPO_BRANCH ?? 'main'}/docs/marketing/weekly/${week.label}-director.md`,
-      queueUrl: 'https://partyondelivery.com/admin/analytics/recommendations',
+      queueUrl: 'https://partyondelivery.com/admin/recommendations?domain=marketing',
     });
   } catch (err) {
     console.warn('[weekly-briefing] structured payload build failed; falling back to plain HTML:', err);

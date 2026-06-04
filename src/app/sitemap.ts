@@ -53,16 +53,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Fetch dynamic data
   const products = await getProducts();
 
-  // Static pages (excluding /account pages blocked by robots.txt)
+  // Static pages (excluding /account pages blocked by robots.txt).
+  // Routes that intentionally canonicalize to another URL are not
+  // listed here — including a URL in the sitemap while its canonical
+  // points elsewhere is flagged as "Incorrect pages found in
+  // sitemap.xml" by site-audit tools and confuses Google:
+  //   - /plan-event       canonicalizes to /order
+  //   - /austin-partners  canonicalizes to /partners
+  //   - /blogs/news       has no page; canonical resolves to /
   const staticPages = [
     '',
     '/about',
     '/contact',
     '/order',
-    '/plan-event',
     '/blog',
-    '/blogs/news',
     '/weddings',
+    '/wedding-drink-calculator',
+    '/austin-wedding-venue-boats',
     '/boat-parties',
     '/austin-bachelor-party-delivery',
     '/austin-bachelorette-party-delivery',
@@ -72,12 +79,27 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/privacy',
     '/faqs',
     '/partners',
+    '/partners/austin-wedding-dj',
     '/austin-partners'
   ].map(route => ({
     url: `${baseUrl}${route}`,
     lastModified: new Date('2026-03-27'),
     changeFrequency: 'weekly' as const,
     priority: route === '' ? 1 : route === '/order' ? 0.9 : 0.8
+  }))
+
+  // /austin-*-delivery conversion-oriented landing pages (added 2026-05-06).
+  // Priority 0.9 to match /order — these are commercial-intent destinations.
+  const austinDeliveryLandingPages = [
+    '/austin-bachelor-party-delivery',
+    '/austin-bachelorette-party-delivery',
+    '/austin-corporate-event-delivery',
+    '/austin-wedding-weekend-delivery',
+  ].map(route => ({
+    url: `${baseUrl}${route}`,
+    lastModified: new Date('2026-05-06'),
+    changeFrequency: 'weekly' as const,
+    priority: 0.9
   }))
 
   // Product pages (dynamic) - filter out test products
@@ -145,6 +167,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   return [
     ...staticPages,
+    ...austinDeliveryLandingPages,
     ...productPages,
     ...locationPages,
     ...jsonBlogPosts,

@@ -4,11 +4,11 @@ const PHONE_DISPLAY = '(737) 371-9700';
 
 export const weddingConfig: LandingConfig = {
   slug: 'austin-wedding-weekend-delivery',
-  metaTitle:
-    'Austin Wedding Weekend Alcohol Delivery | Welcome Bags, Reception & More | Party On Delivery',
+  // Title trimmed to <60 chars so it doesn't truncate in SERPs.
+  metaTitle: 'Austin Wedding Alcohol Delivery | Party On Delivery',
   metaDescription:
     'Stock the welcome reception, rehearsal dinner, ceremony, and after-party — coordinated across the whole wedding weekend. TABC-licensed, planner-friendly, sommelier-curated.',
-  ogImage: '/images/services/bach-parties/bachelorette-champagne-tower.webp',
+  ogImage: '/images/services/weddings/outdoor-bar-setup-travis.webp',
 
   theme: {
     primary: '#C8A96A',          // champagne gold
@@ -32,7 +32,7 @@ export const weddingConfig: LandingConfig = {
     'One coordinator handles every event of the weekend',
     'TABC-licensed · $1M insured · trusted by Austin planners',
   ],
-  heroImage: '/images/services/bach-parties/bachelorette-champagne-tower.webp',
+  heroImage: '/images/services/weddings/boho-hill-country-1.webp',
   heroTrustBadges: ['✓ TABC-licensed', '✓ Wedding planners trust us', '★ 5.0 on Google'],
 
   trustStats: [
@@ -190,7 +190,7 @@ export const weddingConfig: LandingConfig = {
   finalCtaHeadlineAccent: "Let us own the bar.",
   finalCtaSubhead:
     "From welcome reception to brunch the morning after — one coordinator, one invoice, every event handled.",
-  finalCtaImage: '/images/services/bach-parties/bachelorette-champagne-tower.webp',
+  finalCtaImage: '/images/services/weddings/signature-cocktails-rings.webp',
 
   phoneDisplay: PHONE_DISPLAY,
   phoneTel: 'tel:7373719700',
@@ -200,7 +200,7 @@ export const weddingConfig: LandingConfig = {
   planningCallUrl: 'https://123.partyondelivery.com/planning-call',
   secondaryCtaText: 'SCHEDULE A 10-MIN CALL →',
 
-  quoteInbox: 'brian@premierpartycruises.com',
+  quoteInbox: 'info@partyondelivery.com',
 
   modal: {
     title: 'Build Your Wedding Weekend',
@@ -226,7 +226,7 @@ export const weddingConfig: LandingConfig = {
     groupSizeUnit: 'guests',
     defaultPeople: 100,
     reviewHeadline: 'Review & lock it in.',
-    successQuoteHeadline: 'Wedding quote received. 🥂',
+    successQuoteHeadline: 'Wedding quote received.',
     successCheckoutHeadline: 'Wedding quote received.',
     emailNotice:
       "Wedding planners welcome — cc your planner. TABC-licensed retailer. Must be 21+ at delivery.",

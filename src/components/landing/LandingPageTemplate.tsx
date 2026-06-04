@@ -11,6 +11,37 @@ import QuickBuyModal from './QuickBuyModal';
 import HeroSlideshow from './HeroSlideshow';
 import type { LandingConfig, Catalog, Package, ThemeColors } from './types';
 import type { UpsellProducts } from '@/lib/landing/getUpsellProducts';
+import { generateFAQSchema } from '@/lib/seo/schemas';
+
+// All 4 /austin-*-delivery landing pages. Used to render an "other event
+// types we cover" cross-link section near the final CTA — gives sibling
+// pages reciprocal internal links (was 0 cross-linking before).
+const ALL_AUSTIN_LANDING_PAGES = [
+  {
+    slug: 'austin-bachelor-party-delivery',
+    title: 'Bachelor Parties',
+    blurb:
+      'Beer, liquor, and cocktail kits to Airbnbs, Lake Travis docks, and party buses.',
+  },
+  {
+    slug: 'austin-bachelorette-party-delivery',
+    title: 'Bachelorette Parties',
+    blurb:
+      'Champagne, rosé, and brunch mimosa bars to your weekend home base.',
+  },
+  {
+    slug: 'austin-corporate-event-delivery',
+    title: 'Corporate Events',
+    blurb:
+      'Premium spirits and bar setups for offsites, client dinners, and team events.',
+  },
+  {
+    slug: 'austin-wedding-weekend-delivery',
+    title: 'Wedding Weekends',
+    blurb:
+      'Welcome reception, rehearsal dinner, reception bar, and after-party — coordinated.',
+  },
+];
 
 type Props = {
   config: LandingConfig;
@@ -48,8 +79,28 @@ export default function LandingPageTemplate({ config, catalog, upsellProducts }:
     return 'wedding';
   })();
 
+  // FAQ schema — Schema.org FAQPage built from the same Q&A rendered
+  // on the page. Eligible for FAQ rich-snippet treatment in SERPs.
+  // Note: Google requires the schema's questions/answers to match the
+  // visible content; we read directly from config.faqs so they can't
+  // drift.
+  const faqSchema = generateFAQSchema(
+    config.faqs.map((f) => ({ question: f.q, answer: f.a }))
+  );
+
+  // Sibling landing pages (the other 3) for the cross-linking section.
+  const siblingLandingPages = ALL_AUSTIN_LANDING_PAGES.filter(
+    (p) => p.slug !== config.slug
+  );
+
   return (
     <main className="bg-white text-gray-900">
+      {/* FAQ schema — server-rendered into initial HTML so search crawlers see it */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+
       {/* Slim header */}
       <header
         className="sticky top-0 z-40 backdrop-blur border-b"
@@ -100,12 +151,17 @@ export default function LandingPageTemplate({ config, catalog, upsellProducts }:
               WebkitBackdropFilter: 'blur(4px)',
             }}
           >
-            <p
+            {/*
+              Rendered as <h2> rather than <p> so the target keyword phrase
+              (e.g. "AUSTIN BACHELOR PARTY ALCOHOL DELIVERY") is in a
+              semantic heading element. Visual rendering is unchanged.
+            */}
+            <h2
               className="inline-block text-xs sm:text-sm font-bold tracking-[0.15em] px-3 py-1.5 rounded mb-6 shadow-lg"
               style={{ background: T.primary, color: T.primaryText }}
             >
               {config.heroEyebrow}
-            </p>
+            </h2>
 
             <h1
               className="font-heading font-bold text-white text-4xl sm:text-5xl md:text-7xl leading-[1.05] tracking-tight mb-5"
@@ -495,6 +551,48 @@ export default function LandingPageTemplate({ config, catalog, upsellProducts }:
           </div>
         </div>
       </section>
+
+      {/* OTHER AUSTIN EVENT TYPES — internal cross-link to sibling /austin-*-delivery pages */}
+      {siblingLandingPages.length > 0 && (
+        <section className="py-20 bg-white border-t border-gray-100">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6">
+            <h2
+              className="font-heading text-3xl md:text-4xl font-bold text-center mb-3"
+              style={{ color: T.navy }}
+            >
+              Other Austin event types we cover
+            </h2>
+            <p className="text-center text-gray-600 mb-12 max-w-2xl mx-auto">
+              Different occasion? Same on-time, ice-cold delivery — tailored to the event.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {siblingLandingPages.map((p) => (
+                <Link
+                  key={p.slug}
+                  href={`/${p.slug}`}
+                  className="block p-6 rounded-xl border border-gray-200 hover:border-gray-400 hover:shadow-md transition-all bg-white"
+                >
+                  <h3
+                    className="font-heading text-xl font-bold mb-2 tracking-[0.05em]"
+                    style={{ color: T.navy }}
+                  >
+                    {p.title}
+                  </h3>
+                  <p className="text-sm text-gray-600 leading-relaxed mb-4">
+                    {p.blurb}
+                  </p>
+                  <span
+                    className="text-sm font-semibold inline-flex items-center gap-1"
+                    style={{ color: T.blue }}
+                  >
+                    See packages →
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* FINAL CTA */}
       <section className="relative py-24 overflow-hidden">

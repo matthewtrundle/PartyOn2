@@ -3,7 +3,7 @@ title: Customer Journey
 project: PartyOn2
 doc_type: codebase-reference
 section: journey
-last_generated: 2026-04-23
+last_generated: 2026-05-20
 tags: [partyondelivery, codebase, journey, conversion]
 ---
 
@@ -107,6 +107,29 @@ End-to-end funnels traced with route + file references. For the full route inven
 5. Delivery confirmation — ops marks `Fulfillment.status = DELIVERED` from `/ops/orders/[id]`.
 6. Review request — `/api/v1/admin/orders/send-review-requests` can trigger review asks.
 7. Refund / amendment — `/api/v1/admin/orders/[id]/refund` or `/amend` writes `Refund` / `OrderAmendment`.
+
+## Journey H — Landing-page lead capture & embedded checkout _(added 2026-05)_
+
+**Trigger**: paid-ad or organic visit to one of the `/austin-*-delivery` landing pages (`bachelor`, `bachelorette`, `corporate`, `wedding-weekend`).
+
+1. Visitor pixel fires — `src/components/VisitorPixel.tsx` POSTs `/api/v1/landing/visitor-pixel`. First hit sets the `pod_vsid` cookie + creates `VisitorSession`; subsequent hits bump counters. A `LeadEvent(PAGE_VIEW)` is written.
+2. Visitor interacts with one of three modals (Quick-Buy, Package-Builder, A-la-carte). Every form field fires `/api/v1/landing/lead-event` on blur — the first time email/phone/name is captured, a `Lead` row is upserted and linked back to the session. `Lead.status` goes `ANONYMOUS → PARTIAL`.
+3. Pre-checkout upsell overlay shows a real-product grid. The variant arrangement is randomized + stamped on the `DraftOrder` as `upsellVariantId`; per-item attribution is `viaUpsell: true` in the items JSON.
+4. Embedded Stripe checkout runs inline via `@stripe/react-stripe-js` (no redirect). On success the modal advances; on failure the page falls back to a hosted checkout URL.
+5. Stripe webhook materializes the order as in Journey C; the `Lead` row picks up `orderId` and transitions to `CONVERTED`.
+
+**Success**: `Lead.status = CONVERTED`, `Order.upsellVariantId` informs the `/admin/brians-stuff?tab=upsell` A/B tracker.
+**Failure / edge**:
+- Visitor never identifies → session stays `ANONYMOUS`. Abandoned-cart nudge `/api/cron/event-abandoned-rsvps` (15-min cron) emails partial leads.
+- Stripe.js fails to load → graceful fallback to standard `/checkout` redirect (commit `d20b8b3f`).
+
+## Journey I — Cart sharing _(added 2026-05)_
+
+**Trigger**: user clicks "Share my cart".
+
+1. Client POSTs `/api/cart/share` with cart payload → creates a `CartShareLink` row with random 7-char `slug`. Response includes the short URL `/s/<slug>`.
+2. Recipient hits `/s/<slug>` → `src/app/s/[slug]/route.ts` looks up the slug, increments `viewCount`, 302-redirects to `/cart/shared?c=…&t=…`.
+3. `/cart/shared` parses the payload and lets the recipient claim or modify the cart.
 
 ## Journey G — Account (returning customer)
 

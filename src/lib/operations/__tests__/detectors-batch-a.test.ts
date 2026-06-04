@@ -179,7 +179,31 @@ describe('detectNegativeAvailable', () => {
     ]);
     const recs = await detectNegativeAvailable();
     expect(recs).toHaveLength(1);
+    // shortfall = 7 → urgent
     expect(recs[0].severity).toBe('urgent');
+  });
+
+  it('tiers severity by shortfall magnitude (1 → normal, 3 → high, 10 → urgent)', async () => {
+    prismaMock.$queryRawUnsafe.mockResolvedValue([
+      { id: 'v_small', title: 'Default', product_title: 'Jameson 750ml', inventory_quantity: 0, committed_quantity: 1 },
+      { id: 'v_mid', title: 'Default', product_title: 'Modelo 12pk', inventory_quantity: 2, committed_quantity: 5 },
+      { id: 'v_big', title: 'Default', product_title: 'Dripping Springs Vodka', inventory_quantity: 0, committed_quantity: 10 },
+    ]);
+    const recs = await detectNegativeAvailable();
+    expect(recs).toHaveLength(3);
+    expect(recs[0].severity).toBe('normal');
+    expect(recs[1].severity).toBe('high');
+    expect(recs[2].severity).toBe('urgent');
+  });
+
+  it('boundary: shortfall=2 is high, shortfall=6 is urgent', async () => {
+    prismaMock.$queryRawUnsafe.mockResolvedValue([
+      { id: 'v_2', title: 'X', product_title: 'Y', inventory_quantity: 0, committed_quantity: 2 },
+      { id: 'v_6', title: 'X', product_title: 'Y', inventory_quantity: 0, committed_quantity: 6 },
+    ]);
+    const recs = await detectNegativeAvailable();
+    expect(recs[0].severity).toBe('high');
+    expect(recs[1].severity).toBe('urgent');
   });
 
   it('returns [] when no variants in deficit', async () => {

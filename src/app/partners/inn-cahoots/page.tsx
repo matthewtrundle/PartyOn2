@@ -10,22 +10,28 @@ import JoinOrderModal from '@/components/partners/JoinOrderModal';
 import InnCahootsHero from '@/components/partners/InnCahootsHero';
 import LazyVideo from '@/components/partners/LazyVideo';
 
+// Real Google reviews pulled from GbpReview table (synced via Places API).
+// Selected for relevance to Inn Cahoots' BnB / lodging / event-venue use case.
 const TESTIMONIALS = [
   {
-    reviewer: 'Bachelorette Weekend Group',
-    text: 'Fridge was stocked when we checked in for our bachelorette weekend. Didn\'t have to make a single liquor store run.',
+    reviewer: 'Austin Bach Babes',
+    rating: 5,
+    text: 'Party On Delivery made our weekend absolutely effortless and so much fun! They brought all our alcohol right to our Airbnb! No stress, no running around, just pure convenience! We added the Skinnyrita drink package and it even came with a dispenser so our group could keep the drinks flowing. If you want that luxury, full-service party vibe brought to you anywhere... pool, lake, backyard, you name it — this is the team to call!',
   },
   {
-    reviewer: 'Corporate Offsite Team',
-    text: 'Ordered for our corporate offsite — had everything delivered to the suite before the team arrived. So easy.',
+    reviewer: 'Qiana Valentine',
+    rating: 5,
+    text: 'Party On Delivery was amazing! Took one big part off of my plate for my sister\'s bachelorette weekend. I didn\'t have to worry about drinks at all. Highly recommend them for all needs. Ordering online in advance and having what we needed waiting for us was perfect! 10/10',
   },
   {
-    reviewer: 'Wedding Party',
-    text: 'We fridge-stocked our hotel rooms the night before the wedding. One less thing to worry about on the big day.',
+    reviewer: 'Mary H.',
+    rating: 5,
+    text: 'Party on Delivery did a great job helping me plan drinks for my son\'s wedding reception, setting us up with a good bartender, delivering the drinks as ordered and refunding unopened cases afterwards. It was a pleasure working with Allan, who made the whole process so easy for me.',
   },
   {
-    reviewer: 'Girls\' Trip Crew',
-    text: 'Walked into our room and the fridge was full of rosé and seltzers. Best way to start a weekend on 6th Street.',
+    reviewer: 'Jodi Hiller',
+    rating: 5,
+    text: 'Party On Delivery was amazing to work with! They had ample availability for delivery time slots, were communicative throughout the whole process, and got us everything we needed right to our door. It\'s great that they have mixers, alcohol, hydration packets, and food! All in one spot. Can\'t recommend enough!',
   },
 ];
 
@@ -227,16 +233,26 @@ function InnCahootsPageContent(): ReactElement {
             <p className="text-gray-500 tracking-[0.1em] uppercase text-sm mb-3">
               Real Reviews
             </p>
-            <h2 className="font-heading text-3xl md:text-4xl text-gray-900 tracking-wide">
-              What Our Hotel Guests Say
+            <h2 className="font-heading text-3xl md:text-4xl text-gray-900 tracking-wide mb-4">
+              What Our Customers Say
             </h2>
+            <div className="inline-flex items-center gap-2 bg-white border border-gray-200 rounded-full px-4 py-2 shadow-sm">
+              <div className="flex gap-0.5">
+                {[...Array(5)].map((_, i) => (
+                  <svg key={i} className="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                ))}
+              </div>
+              <span className="text-sm font-medium text-gray-900">4.9 · 94+ reviews on Google</span>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
             {TESTIMONIALS.map((review, idx) => (
               <div key={idx} className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
                 <div className="flex gap-1 mb-4">
-                  {[...Array(5)].map((_, i) => (
+                  {[...Array(review.rating)].map((_, i) => (
                     <svg key={i} className="w-5 h-5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                     </svg>

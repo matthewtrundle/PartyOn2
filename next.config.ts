@@ -182,6 +182,13 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
 
+      // Product slug rename: ping pong balls 10pcs → 6pcs (pack size changed)
+      {
+        source: '/products/ping-pong-balls-10pcs',
+        destination: '/products/ping-pong-balls-6pcs',
+        permanent: true,
+      },
+
       // Main ordering page redirects
       {
         source: '/products',
@@ -262,6 +269,129 @@ const nextConfig: NextConfig = {
         destination: '/blog',
         permanent: true,
       },
+
+      // Blog corpus de-duplication (WS4, 2026-05). Source list lives in
+      // docs/seo/blog-audit-2026-05.md. Regenerate via scripts/seo/audit-blog-corpus.mjs.
+      {
+        source: '/blog/all-inclusive-austin-wedding-venues-with-packages',
+        destination: '/blog/all-inclusive-austin-wedding-venues',
+        permanent: true,
+      },
+      {
+        source: '/blog/austin-elopement-ideas-for-minimalist-couples',
+        destination: '/blog/austin-elopement-ideas-minimalist',
+        permanent: true,
+      },
+      {
+        source: '/blog/best-party-barge-rentals-in-austin-for-large-groups',
+        destination: '/blog/best-party-barge-rentals-austin',
+        permanent: true,
+      },
+      {
+        source: '/blog/best-small-wedding-venues-near-austin',
+        destination: '/blog/best-small-wedding-venues-austin',
+        permanent: true,
+      },
+      {
+        source: '/blog/corporate-events-austin-guide',
+        destination: '/blog/ultimate-guide-austin-corporate-events',
+        permanent: true,
+      },
+      {
+        source: '/blog/essential-checklist-for-your-lake-travis-party-boat-day',
+        destination: '/blog/lake-travis-party-boat-checklist',
+        permanent: true,
+      },
+      {
+        source: '/blog/how-to-build-a-stress-free-wedding-vendor-checklist',
+        destination: '/blog/stress-free-wedding-vendor-checklist',
+        permanent: true,
+      },
+      {
+        source: '/blog/how-to-plan-a-friday-or-sunday-wedding-to-save-money',
+        destination: '/blog/friday-sunday-wedding-save-money',
+        permanent: true,
+      },
+      {
+        source: '/blog/how-to-plan-a-hill-country-wedding-in-under-six-months',
+        destination: '/blog/plan-hill-country-wedding-six-months',
+        permanent: true,
+      },
+      {
+        source: '/blog/how-to-plan-a-rehearsal-dinner-at-austin-restaurants',
+        destination: '/blog/rehearsal-dinner-austin-restaurants',
+        permanent: true,
+      },
+      {
+        source: '/blog/local-austin-florists-and-caterers-for-texas-style-weddings',
+        destination: '/blog/austin-florists-caterers-texas-weddings',
+        permanent: true,
+      },
+      {
+        source: '/blog/signature-wedding-cocktails-perfect-for-texas-heat',
+        destination: '/blog/signature-wedding-cocktails-texas-heat',
+        permanent: true,
+      },
+      {
+        source: '/blog/ultimate-guide-austin-boat-parties-lake-travis',
+        destination: '/blog/ultimate-guide-lake-travis-boat-parties',
+        permanent: true,
+      },
+      {
+        source: '/blog/ultimate-guide-to-austin-boat-parties-on-lake-travis',
+        destination: '/blog/ultimate-guide-lake-travis-boat-parties',
+        permanent: true,
+      },
+      {
+        source: '/blog/wedding-photography-locations-around-austin-s-lakes-and-hills',
+        destination: '/blog/wedding-photography-austin-lakes-hills',
+        permanent: true,
+      },
+
+      // Blog slug consolidation (2026-05). The source slugs were auto-generated
+      // junk content (legacy posts.json entries) with hostile URLs and low-
+      // quality content. The JSON entries are removed; redirects send any
+      // residual organic traffic to the canonical landing/cluster pages we
+      // built in the WS1-3 wedding cluster work.
+      {
+        source: '/blog/austin-party-houses-wedding-alcohol-delivery-unique-venues-for-austin-celebrations',
+        destination: '/austin-wedding-venue-boats',
+        permanent: true,
+      },
+      {
+        source: '/blog/outdoor-wedding-alcohol-logistics-hill-country-and-austin-party-houses-coordination',
+        destination: '/austin-wedding-venue-boats',
+        permanent: true,
+      },
+      {
+        source: '/blog/austin-wedding-venue-alcohol-policies-delivery-solutions-for-every-location',
+        destination: '/blog/ultimate-guide-austin-wedding-bar-service',
+        permanent: true,
+      },
+      {
+        source: '/blog/wedding-anniversary-celebration-ideas-recreating-your-special-day-with-boat-and-alcohol-packages',
+        destination: '/austin-wedding-venue-boats',
+        permanent: true,
+      },
+      {
+        source: '/blog/wedding-party-alcohol-coordination-getting-ready-bachelor-bachelorette-and-reception',
+        destination: '/wedding-drink-calculator',
+        permanent: true,
+      },
+      {
+        source: '/blog/rehearsal-dinner-boat-alcohol-delivery-unique-wedding-weekend-experiences',
+        destination: '/austin-wedding-venue-boats',
+        permanent: true,
+      },
+
+      // Audit-missed near-dupe (the rustic-modern-wedding-decor pair). The
+      // MDX with the unusual "-d-cor-" slug is deleted in this PR; canonical
+      // lives at /blog/rustic-modern-wedding-decor-texas.
+      {
+        source: '/blog/how-to-blend-rustic-and-modern-wedding-d-cor-in-texas',
+        destination: '/blog/rustic-modern-wedding-decor-texas',
+        permanent: true,
+      },
     ];
   },
 
@@ -273,11 +403,11 @@ const nextConfig: NextConfig = {
     // own sites while the rest of the app stays locked down.
     const baseCspDirectives = [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' *.shopify.com *.myshopify.com *.google-analytics.com *.googletagmanager.com cdn.vercel-insights.com vercel.live connect.facebook.net *.doubleclick.net www.googleadservices.com *.google.com js.stripe.com",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' *.shopify.com *.myshopify.com *.google-analytics.com *.googletagmanager.com cdn.vercel-insights.com vercel.live connect.facebook.net *.doubleclick.net www.googleadservices.com *.google.com js.stripe.com *.clarity.ms",
       "style-src 'self' 'unsafe-inline' fonts.googleapis.com",
       "font-src 'self' fonts.gstatic.com data:",
-      "img-src 'self' data: blob: https: http: *.shopify.com *.myshopify.com images.unsplash.com *.squarespace-cdn.com *.wixstatic.com *.showit.co *.googleapis.com *.website-files.com *.simpleviewinc.com *.facebook.com www.facebook.com",
-      "connect-src 'self' *.shopify.com *.myshopify.com *.google-analytics.com *.googletagmanager.com vitals.vercel-insights.com hooks.zapier.com connect.facebook.net *.facebook.com *.doubleclick.net www.googleadservices.com *.google.com api.stripe.com",
+      "img-src 'self' data: blob: https: http: *.shopify.com *.myshopify.com images.unsplash.com *.squarespace-cdn.com *.wixstatic.com *.showit.co *.googleapis.com *.website-files.com *.simpleviewinc.com *.facebook.com www.facebook.com *.clarity.ms",
+      "connect-src 'self' *.shopify.com *.myshopify.com *.google-analytics.com *.googletagmanager.com vitals.vercel-insights.com hooks.zapier.com connect.facebook.net *.facebook.com *.doubleclick.net www.googleadservices.com *.google.com api.stripe.com *.clarity.ms",
       "frame-src 'self' *.shopify.com *.myshopify.com *.youtube.com *.youtube-nocookie.com *.recomsale.com vercel.live *.googletagmanager.com *.instagram.com js.stripe.com hooks.stripe.com checkout.stripe.com",
       "object-src 'none'",
       "base-uri 'self'",

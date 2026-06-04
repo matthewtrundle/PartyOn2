@@ -45,7 +45,7 @@ export const TOPIC_CLUSTERS: TopicCluster[] = [
       'essential-bar-setup-checklist-for-austin-office-parties',
       'corporate-client-appreciation-event-ideas-in-austin',
       'how-to-host-a-professional-happy-hour-for-your-austin-team',
-      'corporate-events-austin-guide',
+      // 'corporate-events-austin-guide' — 301'd to this pillar (WS4)
     ],
   },
   {
@@ -100,6 +100,42 @@ export const TOPIC_CLUSTERS: TopicCluster[] = [
       'ultimate-guide-austin-wedding-bar-service',
     ],
   },
+  // Wedding sub-clusters (added 2026-05 in WS4). Each is anchored on a new
+  // commercial page (WS1/WS2/WS3) rather than a blog pillar — the service URL
+  // is the conversion target, the cluster posts are top-of-funnel feeders.
+  {
+    pillarSlug: 'wedding-venues',
+    pillarTitle: 'Austin Wedding Venues — Cheap, Small, and Intimate Options',
+    category: 'Wedding Venues',
+    serviceUrl: '/austin-wedding-venue-boats',
+    clusterSlugs: [
+      'best-small-wedding-venues-austin',
+      'all-inclusive-austin-wedding-venues',
+      'austin-elopement-ideas-minimalist',
+    ],
+  },
+  {
+    pillarSlug: 'wedding-budget',
+    pillarTitle: 'Austin Wedding Budget — How Much, How Many, How Affordable',
+    category: 'Wedding Budget',
+    serviceUrl: '/wedding-drink-calculator',
+    clusterSlugs: [
+      'friday-sunday-wedding-save-money',
+      'plan-hill-country-wedding-six-months',
+    ],
+  },
+  {
+    pillarSlug: 'wedding-vendors',
+    pillarTitle: 'Austin Wedding Vendors — DJs, Florists, Photographers, Caterers',
+    category: 'Wedding Vendors',
+    serviceUrl: '/partners/austin-wedding-dj',
+    clusterSlugs: [
+      'austin-florists-caterers-texas-weddings',
+      'stress-free-wedding-vendor-checklist',
+      'wedding-photography-austin-lakes-hills',
+      'rehearsal-dinner-austin-restaurants',
+    ],
+  },
   {
     pillarSlug: 'ultimate-guide-lake-travis-boat-parties',
     pillarTitle: 'The Ultimate Guide to Lake Travis Boat Parties',
@@ -108,7 +144,7 @@ export const TOPIC_CLUSTERS: TopicCluster[] = [
     clusterSlugs: [
       'lake-travis-party-boat-checklist',
       'best-party-barge-rentals-austin',
-      'ultimate-guide-austin-boat-parties-lake-travis',
+      // 'ultimate-guide-austin-boat-parties-lake-travis' — 301'd to this pillar in next.config.ts (WS4)
     ],
   },
   {

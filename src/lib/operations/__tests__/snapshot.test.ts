@@ -27,9 +27,11 @@ beforeEach(() => {
 });
 
 describe('computeInventoryAccuracyPct', () => {
-  it('returns null when no counts exist', async () => {
+  it('returns null when no counts exist (divide-by-zero guard, not 100)', async () => {
     prismaMock.inventoryMovement.findMany.mockResolvedValue([]);
-    expect(await computeInventoryAccuracyPct()).toBeNull();
+    const result = await computeInventoryAccuracyPct();
+    expect(result).toBeNull();
+    expect(result).not.toBe(100);
   });
 
   it('returns 100 when all counts confirmed (|delta|≤50)', async () => {

@@ -3,7 +3,7 @@ title: Routes and Pages
 project: PartyOn2
 doc_type: codebase-reference
 section: routes
-last_generated: 2026-05-03
+last_generated: 2026-05-20
 tags: [partyondelivery, codebase, routes, api, pages]
 ---
 
@@ -45,6 +45,10 @@ Every `page.tsx` and `route.ts` discovered under `src/app/`. Paths are literal f
 | `/affiliate/dashboard/orders` | `src/app/affiliate/dashboard/orders/page.tsx` | Orders attributed to this affiliate. | — | Yes | |
 | `/aperol-spritz` | `src/app/aperol-spritz/page.tsx` | Cocktail landing. | — | No | |
 | `/atx-delivery-info` | `src/app/atx-delivery-info/page.tsx` | Delivery info. | — | No | |
+| `/austin-bachelor-party-delivery` | `src/app/austin-bachelor-party-delivery/page.tsx` | High-conversion bachelor-party landing page (Quick-Buy + Package-Builder + a-la-carte modals, embedded Stripe checkout, pre-checkout upsell overlay). Added 2026-05. | — | No | Indexable. Uses shared `LandingPageTemplate` with `bachelorConfig`. |
+| `/austin-bachelorette-party-delivery` | `src/app/austin-bachelorette-party-delivery/page.tsx` | Bachelorette equivalent of the above. | — | No | Indexable. |
+| `/austin-corporate-event-delivery` | `src/app/austin-corporate-event-delivery/page.tsx` | Corporate-event landing variant. | — | No | Indexable. |
+| `/austin-wedding-weekend-delivery` | `src/app/austin-wedding-weekend-delivery/page.tsx` | Wedding-weekend landing variant. | — | No | Indexable. |
 | `/austin-byob-venues` | `src/app/austin-byob-venues/page.tsx` | BYOB venues index. | — | No | |
 | `/austin-partners` | `src/app/austin-partners/page.tsx` | Partner overview. | — | No | |
 | `/bach-parties` | `src/app/bach-parties/page.tsx` | Bach funnel. | — | No | |
@@ -60,6 +64,7 @@ Every `page.tsx` and `route.ts` discovered under `src/app/`. Paths are literal f
 | `/boat-parties/products` | (layout only) | Shell. | — | No | |
 | `/cart/shared` | `src/app/cart/shared/page.tsx` | Shared cart (root). | — | No | |
 | `/cart/shared/[id]` | `src/app/cart/shared/[id]/page.tsx` | Shared cart by id. | `id` | No | |
+| `/s/[slug]` | `src/app/s/[slug]/route.ts` | Short-link redirect for shared carts — 302 → `/cart/shared?c=…&t=…`. Looks up `CartShareLink` by slug + bumps `viewCount`. Added 2026-05. | `slug` | No | Route handler, not a page. |
 | `/checkout` | `src/app/checkout/page.tsx` | Stripe checkout handoff. | — | Optional | Age verification required. |
 | `/checkout/success` | `src/app/checkout/success/page.tsx` | Post-payment success. | — | No | |
 | `/cocktail-kits` | `src/app/cocktail-kits/page.tsx` | Cocktail kits catalog. | — | No | |
@@ -75,7 +80,9 @@ Every `page.tsx` and `route.ts` discovered under `src/app/`. Paths are literal f
 | `/delivery-areas` | `src/app/delivery-areas/page.tsx` | Delivery coverage. | — | No | |
 | `/delivery/[location]` | `src/app/delivery/[location]/page.tsx` | Programmatic delivery-area pages. | `location` | No | |
 | `/design-example` | `src/app/design-example/page.tsx` | Design system live showcase. | — | No | Internal / reference. |
+| `/events/[slug]` | `src/app/events/[slug]/page.tsx` | Public event invite page (RSVP + BYOB order flow). Currently backed by a demo registry (`src/lib/events/demoEvents.ts`) — Prisma persistence pending. | `slug` | No | `noindex` while in demo phase. Added 2026-05. |
 | `/faqs` | `src/app/faqs/page.tsx` | FAQ. | — | No | |
+| `/flyer` | `src/app/flyer/page.tsx` | One-page marketing flyer ("The Playbook") summarising every service. Indexable. Added 2026-05. | — | No | `force-static`. Wired to lead-magnet email flow. |
 | `/gifts/cocktail-kits` | `src/app/gifts/cocktail-kits/page.tsx` | Gifting catalog. | — | No | |
 | `/gin-martini` | `src/app/gin-martini/page.tsx` | Cocktail landing. | — | No | |
 | `/group/[code]` | `src/app/group/[code]/page.tsx` | v2 group order home. | `code` | Soft | |
@@ -87,6 +94,8 @@ Every `page.tsx` and `route.ts` discovered under `src/app/`. Paths are literal f
 | `/invoices/[...slug]` | `src/app/invoices/[...slug]/page.tsx` | Legacy invoice catch-all. | `slug[]` | Token | |
 | `/[storeId]/invoices/[...slug]` | `src/app/[storeId]/invoices/[...slug]/page.tsx` | Tenant-scoped legacy invoice. | `storeId`, `slug[]` | Token | |
 | `/kegs` | `src/app/kegs/page.tsx` | Keg service. | — | No | |
+| `/landing-page-playbook` | `src/app/landing-page-playbook/page.tsx` | Internal methodology doc for replicating the landing-page system on another brand. | — | No | `noindex`. Added 2026-05. |
+| `/landing-pages` | `src/app/landing-pages/page.tsx` | Internal preview directory of all four `/austin-*-delivery` landing pages. | — | No | `noindex`. Added 2026-05. |
 | `/negroni` | `src/app/negroni/page.tsx` | Cocktail landing. | — | No | |
 | `/old-fashioned` | `src/app/old-fashioned/page.tsx` | Cocktail landing. | — | No | |
 | `/order` | `src/app/order/page.tsx` | Primary product browse. | — | No | `/products` → here. |
@@ -166,7 +175,7 @@ Every `page.tsx` and `route.ts` discovered under `src/app/`. Paths are literal f
 | `/api/v1/orders` | `.../orders/route.ts` | GET | Customer orders. | Yes |
 | `/api/v1/orders/[id]` | `.../orders/[id]/route.ts` | GET | Order detail. | Yes |
 | `/api/orders/[orderNumber]` | `src/app/api/orders/[orderNumber]/route.ts` | GET | Order lookup by number. | Token / yes |
-| `/api/cart/share` | `src/app/api/cart/share/route.ts` | POST | Create shared cart link. | No |
+| `/api/cart/share` | `src/app/api/cart/share/route.ts` | POST | Create shared cart link. Now persists a `CartShareLink` row + returns `/s/<slug>` short URL. | No |
 | `/api/cart/share/[id]` | `.../share/[id]/route.ts` | GET | Fetch shared cart. | No |
 
 ### Invoice / draft order (public-facing)
@@ -269,6 +278,7 @@ v1 `/api/group-orders/*` and v2 `/api/v2/group-orders/*` are **both live** — v
 | `/api/ops/email-preview/send` | `.../email-preview/send/route.ts` | POST | Send test email. | Ops |
 | `/api/ops/email-template-content` | `.../email-template-content/route.ts` | GET/PATCH | Edit template content. | Ops |
 | `/api/ops/orders/[id]/picks` | `.../orders/[id]/picks/route.ts` | GET/PUT | Persistent pick/pack state for the `/ops/orders` picker UI. Per `(orderId, itemKey)` row in `OrderItemPickState`; replaces prior per-browser localStorage so multiple devices see the same checkbox + short-by state. Added `86f58c77`. | Ops |
+| `/api/ops/weekly-summary` | `.../weekly-summary/route.ts` | GET | Returns the print-friendly weekly checklist JSON (PAID orders, next 7 days, cooler-by-cooler). Backs the `/weekly-summary` skill. Added 2026-05. | Ops |
 
 ### Admin API namespaces — `/api/admin/*` vs `/api/v1/admin/*`
 
@@ -330,6 +340,19 @@ These are **parallel namespaces, not a migration** — neither supersedes the ot
 |---|---|---|
 | `/api/admin/verify` | `src/app/api/admin/verify/route.ts` | Verify admin API key. |
 | `/api/admin/analytics` | `.../analytics/route.ts` | Analytics aggregates. |
+| `/api/admin/analytics/recommendations` | `.../analytics/recommendations/route.ts` | Marketing/SEO recommendation list + transitions (legacy mount; the unified queue is at `/api/admin/recommendations`). |
+| `/api/admin/recommendations` | `.../recommendations/route.ts` | Unified Marketing + SEO + Operations recommendation list. Read-only; mutations go through `[id]/{execute,snooze,dismiss}`. Added 2026-05 (Operations Director Phase 1C). |
+| `/api/admin/recommendations/[id]/execute` | `.../[id]/execute/route.ts` | Execute the recommended action (writes `actionLog` + `shippedAt`). |
+| `/api/admin/recommendations/[id]/snooze` | `.../[id]/snooze/route.ts` | Snooze until `snoozeUntil`. |
+| `/api/admin/recommendations/[id]/dismiss` | `.../[id]/dismiss/route.ts` | Dismiss with a reason — used by the operator triage queue. |
+| `/api/admin/operations/snapshot` | `.../operations/snapshot/route.ts` | One-stop JSON for the `/admin/operations` dashboard + agent: latest snapshot, 30-snapshot trend, active-rec counts, top urgent recs. Added 2026-05. |
+| `/api/admin/seo/latest-snapshot` | `.../seo/latest-snapshot/route.ts` | Latest SEMrush snapshot summary for the Brian's Stuff → SEO tab. Added 2026-05. |
+| `/api/admin/finance/qb/connect` | `.../finance/qb/connect/route.ts` | Start QuickBooks Online OAuth flow. Added 2026-05 (Finance Director Phase 0). |
+| `/api/admin/finance/qb/callback` | `.../finance/qb/callback/route.ts` | QBO OAuth callback — upserts `IntuitOAuthState`. |
+| `/api/admin/finance/qb/health` | `.../finance/qb/health/route.ts` | QBO connection health check. |
+| `/api/admin/finance/plaid/link-token` | `.../finance/plaid/link-token/route.ts` | Mint a Plaid Link token for the connect-bank flow. |
+| `/api/admin/finance/plaid/exchange` | `.../finance/plaid/exchange/route.ts` | Exchange Plaid public_token → access_token, upsert `PlaidItem`/`PlaidAccount`. |
+| `/api/admin/finance/plaid/health` | `.../finance/plaid/health/route.ts` | Plaid connection health check. |
 | `/api/admin/orders` | `.../orders/route.ts` | Legacy orders list. |
 | `/api/admin/sync` | `.../sync/route.ts` | Legacy sync. |
 | `/api/admin/experiments` | `.../experiments/route.ts` | Experiments list. |
@@ -404,6 +427,11 @@ These are **parallel namespaces, not a migration** — neither supersedes the ot
 | `/api/contact` | `src/app/api/contact/route.ts` | Contact form. |
 | `/api/newsletter` | `src/app/api/newsletter/route.ts` | Newsletter signup. |
 | `/api/leads/drink-calculator` | `.../leads/drink-calculator/route.ts` | Drink calculator lead capture. |
+| `/api/v1/landing/visitor-pixel` | `.../v1/landing/visitor-pixel/route.ts` | Page-view beacon fired from the root layout. Sets the `pod_vsid` cookie + creates/updates a `VisitorSession`, writes a `LeadEvent(PAGE_VIEW)`. Added 2026-05. |
+| `/api/v1/landing/lead-event` | `.../v1/landing/lead-event/route.ts` | Generic form-field / step / submit event. Upserts `Lead` if any identifiable field is captured. Returns `{ leadId, sessionId }`. Added 2026-05. |
+| `/api/v1/landing/quote` | `.../v1/landing/quote/route.ts` | Landing-page quote submission — converts a captured cart into a `DraftOrder` + invoice email. Added 2026-05. |
+| `/api/v1/lead-magnet` | `.../v1/lead-magnet/route.ts` | Lead-magnet (Playbook PDF) email send via Resend. Companion event row is written by the client through `/lead-event`. Added 2026-05. |
+| `/api/v1/events/abandon-nudge` | `.../v1/events/abandon-nudge/route.ts` | Sends the abandoned-RSVP email for the events flow (called by the 15-min cron). Added 2026-05. |
 | `/api/partners/inquiry` | `.../partners/inquiry/route.ts` | Partner form → Zapier. |
 | `/api/profile/upload-image` | `.../profile/upload-image/route.ts` | Avatar upload. |
 | `/api/experiments/assign` | `.../experiments/assign/route.ts` | Assign variant. |
@@ -431,8 +459,13 @@ These are **parallel namespaces, not a migration** — neither supersedes the ot
 | `/api/cron/analytics-snapshot` | `.../analytics-snapshot/route.ts` | `0 7 * * *` | Daily GA4/GSC rollup → `AnalyticsSnapshot`. |
 | `/api/cron/weekly-briefing` | `.../weekly-briefing/route.ts` | `0 13 * * 1` | Weekly Mon 13:00 UTC operator briefing email. |
 | `/api/cron/weekly-purchase-plan` | `.../weekly-purchase-plan/route.ts` | `0 13 * * 1` | Weekly Mon 13:00 UTC distributor purchase plan. |
-| `/api/cron/group-orders-v2` | `.../group-orders-v2/route.ts` | `0 */2 * * *` | Every 2h — locks expired `SubOrder` tabs (OPEN → LOCKED) and closes expired `GroupOrderV2` (ACTIVE → CLOSED). Added 2026-04-23. |
-| `/api/cron/measure-recommendations` | `.../measure-recommendations/route.ts` | `0 8 * * *` | Daily 08:00 UTC — captures the 14-day after-snapshot for shipped `MarketingRecommendation` rows (revenue/orders/AOV/margin coverage), then re-mirrors the markdown to GitHub. Added 2026-05-03. |
+| `/api/cron/group-orders-v2` | `.../group-orders-v2/route.ts` | `0 */2 * * *` | Every 2h — locks expired `SubOrder` tabs (OPEN → LOCKED) and closes expired `GroupOrderV2` (ACTIVE → CLOSED). Added 2026-04-23. Now non-destructive: never auto-closes groups on `expiresAt` alone (see commit `38150db4`). |
+| `/api/cron/measure-recommendations` | `.../measure-recommendations/route.ts` | `0 8 * * *` | Daily 08:00 UTC — captures the 14-day after-snapshot for shipped `RecommendationItem` rows (marketing/SEO). Re-mirrors markdown to GitHub. Added 2026-05-03. |
+| `/api/cron/operations-snapshot` | `.../operations-snapshot/route.ts` | `30 7 * * *` | Daily 07:30 UTC — runs 10 drift detectors + writes the day's `OperationsSnapshot` row + upserts `OperationsRecommendation` rows. Added 2026-05 (Phase 1B). |
+| `/api/cron/operations-drift-hourly` | `.../operations-drift-hourly/route.ts` | `0 * * * *` | Hourly — runs the fast drift detectors only (subset of the daily snapshot) so urgent shortages don't wait 24 h. Added 2026-05. |
+| `/api/cron/measure-operations-recommendations` | `.../measure-operations-recommendations/route.ts` | `0 8 * * *` | Daily 08:00 UTC — measures shipped `OperationsRecommendation` rows. Added 2026-05. |
+| `/api/cron/operations-briefing` | `.../operations-briefing/route.ts` | `30 13 * * 1` | Monday 13:30 UTC — emails the Operations Director weekly briefing. Added 2026-05 (Phase 1D). |
+| `/api/cron/event-abandoned-rsvps` | `.../event-abandoned-rsvps/route.ts` | `*/15 * * * *` | Every 15 min — emails an abandoned-cart nudge for lead-tracked sessions that started but didn't finish ordering. Added 2026-05. |
 
 ## Route groups & layouts
 

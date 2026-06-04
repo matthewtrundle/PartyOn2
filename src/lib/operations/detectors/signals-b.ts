@@ -136,7 +136,10 @@ export async function detectCostCoverageGap(now: Date = new Date()): Promise<Ope
       LIMIT 50`,
     start
   );
-  return rows.map((r) => ({
+  // Cap to the top 15 movers — the long tail clogs the triage queue without
+  // adding signal. Remaining uncosted variants still count toward
+  // costCoveragePct, just not the rec queue.
+  return rows.slice(0, 15).map((r) => ({
     signalKind: 'cost-coverage-gap' as const,
     severity: 'normal' as const,
     title: `${r.product_title}${r.title && r.title !== 'Default' ? ` (${r.title})` : ''}: ${Number(r.units_30d)} units sold in 30d, no cost set`,

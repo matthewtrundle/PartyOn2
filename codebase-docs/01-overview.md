@@ -3,7 +3,7 @@ title: Business Overview
 project: PartyOn2
 doc_type: codebase-reference
 section: overview
-last_generated: 2026-04-23
+last_generated: 2026-05-20
 tags: [partyondelivery, codebase, overview, business]
 ---
 
@@ -15,7 +15,7 @@ PartyOn Delivery is a premium on-demand alcohol and party-goods delivery service
 
 The site is built as a hybrid of a marketing site, an e-commerce storefront, and a set of collaborative order dashboards. Visitors can either self-serve through the standard `/order` catalog, or go through curated landing pages for their use case (weddings, bach parties, boat parties, corporate, BYOB venues, delivery-area pages). A distinctive second flow is the **Universal Order Dashboard** — a shareable, code-addressable ordering surface at `/dashboard/[code]` where a host, a partner, or an affiliate can curate a cart that guests join, add to, and pay for individually or as one invoice.
 
-Behind the storefront sits a comprehensive back-office: an ops panel for order picking / inventory / receiving shipments / distributor invoice OCR, an admin panel for customers / promotions / discounts / reports / experiments / AI assistance, and an affiliate program with magic-link auth, commission accrual, and monthly payout generation. (A points-based loyalty program was previously planned but the code was removed 2026-04-23 before launch; Postgres tables remain for data preservation only.)
+Behind the storefront sits a comprehensive back-office: an ops panel for order picking / inventory / receiving shipments / distributor invoice OCR, an admin panel for customers / promotions / discounts / reports / experiments / AI assistance, and an affiliate program with magic-link auth, commission accrual, and monthly payout generation. Three "Director" pipelines (Marketing, SEO, Operations) generate prioritized recommendation rows surfaced in a unified triage queue at `/admin/recommendations`; a Finance Director pipeline (Plaid + QuickBooks Online) is in Phase 0 scaffolding. A lead-capture + visitor-tracking system writes `Lead` / `VisitorSession` / `LeadEvent` rows from every form interaction site-wide. (A points-based loyalty program was previously planned but the code was removed 2026-04-23 before launch; Postgres tables remain for data preservation only.)
 
 ## User types
 
@@ -48,6 +48,7 @@ Behind the storefront sits a comprehensive back-office: an ops panel for order p
 - **Affiliate flow** — applicant submits at `/affiliate/apply` → admin approves → `ref=` attribution cookie set for 30 days by `src/middleware.ts` → commissions accrue via cron → monthly payout generated.
 - **Blog / SEO engine** — daily Vercel cron fires `/api/cron/generate-blog` → AI-generated MDX committed to `content/blog/posts/` → served under `/blog/*`.
 - **Inventory ops** — `/ops/inventory` + receiving flow with AI distributor-invoice OCR (`InventoryNote`, `ReceivingInvoice`, `DistributorSkuMap`).
+- **Landing-page lead capture** — anonymous visitors get a `pod_vsid` cookie + `VisitorSession` row; any captured form field upgrades them to a `Lead`; the `/austin-*-delivery` landing pages run an embedded Stripe checkout with a pre-checkout A/B upsell overlay (tracked via `DraftOrder.upsellVariantId`).
 
 ## Monetization
 

@@ -4,6 +4,7 @@ import UpsellTrackerView from '@/components/admin/UpsellTrackerView';
 import LeadsView from '@/components/admin/LeadsView';
 import EventsView from '@/components/admin/EventsView';
 import LeadMagnetView from '@/components/admin/LeadMagnetView';
+import SeoIntelligenceView from '@/components/admin/SeoIntelligenceView';
 import EnrichmentDocsView from '@/components/admin/EnrichmentDocsView';
 import BriansStuffTabs from './BriansStuffTabs';
 
@@ -36,9 +37,11 @@ export default async function Page({ searchParams }: { searchParams: SP }) {
           ? 'events'
           : params.tab === 'magnets'
             ? 'magnets'
-            : params.tab === 'docs'
-              ? 'docs'
-              : 'playbook';
+            : params.tab === 'seo'
+              ? 'seo'
+              : params.tab === 'docs'
+                ? 'docs'
+                : 'playbook';
 
   return (
     <BriansStuffTabs
@@ -48,6 +51,7 @@ export default async function Page({ searchParams }: { searchParams: SP }) {
       leads={<LeadsView />}
       events={<EventsView />}
       magnets={<LeadMagnetView />}
+      seo={<SeoIntelligenceView />}
       docs={<EnrichmentDocsView />}
     />
   );

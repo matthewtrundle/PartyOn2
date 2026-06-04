@@ -3,7 +3,7 @@ title: Admin Features
 project: PartyOn2
 doc_type: codebase-reference
 section: admin
-last_generated: 2026-05-03
+last_generated: 2026-05-20
 tags: [partyondelivery, codebase, admin, ops, affiliate, cron, webhooks]
 ---
 
@@ -40,7 +40,13 @@ Three admin surfaces live in the app: `/admin/*` (business operator), `/ops/*` (
 | `/admin/affiliates/commissions` | `.../commissions/page.tsx` | Commission ledger. |
 | `/admin/affiliates/payouts` | `.../payouts/page.tsx` | Payouts. |
 | `/admin/affiliates/embed-generator` | `.../embed-generator/page.tsx` | Embed snippet builder. |
-| `/admin/analytics/recommendations` | `.../analytics/recommendations/page.tsx` | Marketing recommendation triage queue. Reads `MarketingRecommendation` rows surfaced by the snapshot cron + Marketing Director agent; operator moves items through `open → approved → shipped` (or `rejected` / `invalidated`). |
+| `/admin/analytics/recommendations` | `.../analytics/recommendations/page.tsx` | Marketing/SEO recommendation triage queue (legacy mount — now redirects/links to the unified `/admin/recommendations`). |
+| `/admin/recommendations` | `.../recommendations/page.tsx` | **Unified triage queue** — Marketing + SEO + Operations recommendations in one view, filtered by `?domain=`. Inline execute/snooze/dismiss. Backed by `/api/admin/recommendations*`. Added 2026-05 (Operations Director Phase 1C). |
+| `/admin/operations` | `.../operations/page.tsx` | Operations Director health dashboard — latest `OperationsSnapshot`, 30-day drift trend, drift by signal, top urgent recs. Backed by `/api/admin/operations/snapshot`. Added 2026-05 (Phase 1D). |
+| `/admin/brians-stuff` | `.../brians-stuff/page.tsx` | Multi-tab admin landing — Playbook, Upsell A/B tracker, Leads, Events, Lead-magnet send list, SEO Intelligence snapshot, Enrichment docs. Tabs selected via `?tab=`. Added 2026-05. |
+| `/admin/upsell-tracker` | `.../upsell-tracker/page.tsx` | Redirect → `/admin/brians-stuff?tab=upsell`. |
+| `/admin/finance/connect-bank` | `.../finance/connect-bank/page.tsx` | Plaid Link launcher for connecting bank accounts. Added 2026-05 (Finance Director Phase 0). |
+| `/admin/finance/connect-quickbooks` | `.../finance/connect-quickbooks/page.tsx` | Starts QuickBooks Online OAuth — writes `IntuitOAuthState` on callback. Added 2026-05. |
 
 ### `/ops/*` — warehouse / fulfilment
 
@@ -95,7 +101,7 @@ Three admin surfaces live in the app: `/admin/*` (business operator), `/ops/*` (
 
 These are **parallel namespaces, not a migration** — neither supersedes the other.
 
-- **`/api/admin/*`** is admin-UI-facing and is guarded by `ADMIN_API_KEY` / admin session. Covers: `affiliates`, `analytics` (sub-routes: `ga4`, `gbp`, `vercel`, `internal`, `experiments`, `recommendations`), `experiments`, `orders`, `sync`, `verify`.
+- **`/api/admin/*`** is admin-UI-facing and is guarded by `ADMIN_API_KEY` / admin session. Covers: `affiliates`, `analytics` (sub-routes: `ga4`, `gbp`, `vercel`, `internal`, `experiments`, `recommendations`), `experiments`, `orders`, `sync`, `verify`, plus (added 2026-05) the unified `recommendations` queue, `operations/snapshot`, `seo/latest-snapshot`, and the Finance Director routes under `finance/{qb,plaid}/*`.
 - **`/api/v1/admin/*`** is ops-panel-facing. Covers: `collections`, `customers`, `dashboard`, `discounts`, `draft-orders`, `features`, `orders`, `products`, `reports`, `shortage-list`, `sync`, `unpaid-carts`. (Loyalty admin page and APIs were removed 2026-04-23.)
 - Overlap is only `orders` and `sync`; each namespace's `orders` / `sync` endpoints serve a different consumer. Do not treat either as deprecated.
 
@@ -176,6 +182,43 @@ These are **parallel namespaces, not a migration** — neither supersedes the ot
 - `/ops/boat-schedule` + `/api/ops/boat-schedule*` with sync to match orders (`ScheduleOrderMatch`).
 - Public read: `/api/public/boat-schedule*` + `/premier-boat-schedule`.
 
+### Recommendations triage (Marketing / SEO / Operations) — _added 2026-05_
+- Unified queue at `/admin/recommendations` (legacy `/admin/analytics/recommendations` redirects in).
+- Marketing/SEO rows live in `RecommendationItem` (`domain` field discriminates between `marketing` and `seo` — see ADR S0001 in the Obsidian vault).
+- Operations rows live in `OperationsRecommendation` — kept parallel to `RecommendationItem` so the shared lib at `src/lib/recommendations/{lifecycle,measurement,card-types}.ts` serves both. Long-form spec: `docs/OPERATIONS-DIRECTOR-AGENT-BUILDOUT.md`.
+- Mutations: `POST /api/admin/recommendations/[id]/{execute,snooze,dismiss}` write to `actionLog`/`shippedAt`/`snoozeUntil`/`dismissReason`.
+- Measurement: 14-day after-snapshot for both `MarketingRecommendation` (via `/api/cron/measure-recommendations`) and `OperationsRecommendation` (via `/api/cron/measure-operations-recommendations`).
+- Obsidian mirroring: `npm run sync:marketing` / `npm run sync:operations` write per-row markdown to the vault for the agent.
+
+### Operations Director — _added 2026-05_
+- Dashboard: `/admin/operations` (RSC) backed by `/api/admin/operations/snapshot`.
+- 10 drift detectors run from `/api/cron/operations-snapshot` (daily 07:30 UTC) + a fast subset at `/api/cron/operations-drift-hourly`.
+- Daily snapshot row: `OperationsSnapshot` (inventory accuracy, drift events by signal, urgent shortages, cost coverage, receiving lag p50/p90, cycle counts completed last 7d, 14-day shortage count on PAID orders).
+- Monday briefing email: `/api/cron/operations-briefing` (Mon 13:30 UTC).
+- Volume cap + severity tiering rules baked in (commit `4be754e3`).
+
+### Finance Director — _Phase 0 added 2026-05_
+- Connect flows live at `/admin/finance/connect-bank` (Plaid Link) and `/admin/finance/connect-quickbooks` (Intuit OAuth).
+- Plaid: `PlaidItem` / `PlaidAccount` / `PlaidTransaction` populated via `/api/admin/finance/plaid/{link-token,exchange,health}`. Phase 0 ships the transactions table empty; Phase 2C reconciles against Stripe payouts / `ReceivingInvoice` / QuickBooks.
+- QuickBooks Online: singleton `IntuitOAuthState` row holds the rotating access/refresh tokens. Endpoints under `/api/admin/finance/qb/{connect,callback,health}`.
+- Recommendation queue scaffold: `FinanceRecommendation` + `FinanceSnapshot` ship empty in Phase 0; populated by `/api/cron/finance-snapshot` starting Phase 1C (not yet in `vercel.json`).
+- Long-form spec: `docs/FINANCE-DIRECTOR-AGENT-BUILDOUT.md`.
+
+### Lead capture & visitor tracking (Brian's Stuff) — _added 2026-05_
+- Multi-tab admin landing at `/admin/brians-stuff` (Playbook, Upsell A/B, Leads, Events, Lead-magnet, SEO Intelligence, Enrichment docs).
+- Visitor pixel `src/components/VisitorPixel.tsx` (wrapped client-only) fires `/api/v1/landing/visitor-pixel` on every page-view → upserts `VisitorSession` keyed by the `pod_vsid` cookie + writes a `LeadEvent(PAGE_VIEW)`.
+- Form fields fire `/api/v1/landing/lead-event` on focus/blur/step/submit. A `Lead` is created the first time any of email/phone/name is captured; subsequent events on the same session re-attach. Re-identification across sessions is supported via `Lead.sessions[]`.
+- Landing-page "Get a quote" flow posts `/api/v1/landing/quote` → creates `DraftOrder` + invoice email. The Lead row is stamped with `draftOrderId`.
+- Lead magnet (flyer PDF): `/flyer` page + `/api/v1/lead-magnet` Resend send. Lead row goes to `SUBMITTED` after the modal completes.
+- Abandoned-cart nudge: `/api/cron/event-abandoned-rsvps` (every 15 min) calls `/api/v1/events/abandon-nudge` for sessions that started but didn't finish ordering.
+- Upsell A/B attribution: `DraftOrder.upsellVariantId` + per-item `viaUpsell` JSON flag; tracker view at `/admin/brians-stuff?tab=upsell`.
+- Cart sharing: short links served from `/s/[slug]` (route handler) → 302 → `/cart/shared?c=…&t=…`, backed by `CartShareLink`.
+
+### Microsoft Clarity (session replay) — _added 2026-05_
+- Initialized client-side by `src/components/ClarityInit.tsx` in production only.
+- Project ID lives in `NEXT_PUBLIC_CLARITY_PROJECT_ID`.
+- CSP `script-src` / `img-src` / `connect-src` whitelist `*.clarity.ms` (commit `ac1b7587`).
+
 ## Background jobs (Vercel cron — `vercel.json`)
 
 | Schedule (UTC) | Endpoint | Purpose |
@@ -187,7 +230,13 @@ These are **parallel namespaces, not a migration** — neither supersedes the ot
 | `0 7 * * *` (daily 07:00) | `/api/cron/analytics-snapshot` | Daily GA4/GSC rollup → `AnalyticsSnapshot`. |
 | `0 13 * * 1` (Mon 13:00) | `/api/cron/weekly-briefing` | Weekly operator briefing email. |
 | `0 13 * * 1` (Mon 13:00) | `/api/cron/weekly-purchase-plan` | Weekly distributor purchase plan (PAID orders, 14-day window). |
-| `0 */2 * * *` (every 2h) | `/api/cron/group-orders-v2` | Locks expired `SubOrder` tabs (`OPEN` → `LOCKED` when `orderDeadline` has passed) and closes expired `GroupOrderV2` (`ACTIVE` → `CLOSED` when `expiresAt` has passed). Added to `vercel.json` 2026-04-23. |
+| `0 */2 * * *` (every 2h) | `/api/cron/group-orders-v2` | Locks expired `SubOrder` tabs (`OPEN` → `LOCKED` when `orderDeadline` has passed). No longer auto-closes `GroupOrderV2` rows on `expiresAt` alone (commit `38150db4`, 2026-05). |
+| `0 8 * * *` (daily 08:00) | `/api/cron/measure-recommendations` | 14-day after-snapshot measurement for shipped Marketing/SEO `RecommendationItem` rows. |
+| `30 7 * * *` (daily 07:30) | `/api/cron/operations-snapshot` | Runs the 10 drift detectors, writes `OperationsSnapshot`, upserts `OperationsRecommendation` rows. Added 2026-05 (Operations Director Phase 1B). |
+| `0 * * * *` (hourly) | `/api/cron/operations-drift-hourly` | Fast subset of the drift detectors — keeps urgent shortages fresh between daily snapshots. Added 2026-05. |
+| `0 8 * * *` (daily 08:00) | `/api/cron/measure-operations-recommendations` | 14-day after-snapshot measurement for shipped `OperationsRecommendation` rows. Added 2026-05. |
+| `30 13 * * 1` (Mon 13:30) | `/api/cron/operations-briefing` | Weekly Operations Director briefing email. Added 2026-05 (Phase 1D). |
+| `*/15 * * * *` | `/api/cron/event-abandoned-rsvps` | Abandoned-cart nudge for the lead-capture events flow. Added 2026-05. |
 
 ### Blog automation (GitHub Actions)
 
@@ -220,6 +269,9 @@ These are **parallel namespaces, not a migration** — neither supersedes the ot
 | Supabase | aux | Auxiliary storage (`src/lib/supabase/`). |
 | Vercel Blob / KV | aux | Blob uploads + KV cache. |
 | IndexNow / Bing / Google ping | out | `scripts/indexnow-*.mjs`, `sitemap:ping` script. |
+| Plaid | in (webhook) + out (sync) | Bank-account linking for Finance Director. `PlaidItem` / `PlaidAccount` / `PlaidTransaction`. Added 2026-05. |
+| QuickBooks Online (Intuit) | OAuth + REST | Accounting bridge for Finance Director — `IntuitOAuthState` singleton. Added 2026-05. |
+| Microsoft Clarity | in (script) | Session replay + heatmaps via `@microsoft/clarity`. Added 2026-05. |
 
 ## Gaps / TODOs
 

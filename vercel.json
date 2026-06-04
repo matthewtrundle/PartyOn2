@@ -47,6 +47,34 @@
     {
       "path": "/api/cron/measure-operations-recommendations",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/operations-briefing",
+      "schedule": "30 13 * * 1"
+    },
+    {
+      "path": "/api/cron/event-abandoned-rsvps",
+      "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/finance-stripe-sync",
+      "schedule": "15 7 * * *"
+    },
+    {
+      "path": "/api/cron/finance-snapshot",
+      "schedule": "45 7 * * *"
+    },
+    {
+      "path": "/api/cron/finance-qb-pull",
+      "schedule": "50 7 * * 1"
+    },
+    {
+      "path": "/api/cron/finance-qb-post-sales",
+      "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/finance-plaid-sync",
+      "schedule": "5 8 * * *"
     }
   ]
 }

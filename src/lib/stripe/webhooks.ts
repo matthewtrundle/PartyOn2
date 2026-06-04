@@ -10,7 +10,6 @@ import { prisma } from '@/lib/database/client';
 import { createOrderFromCheckout, createRefund, getOrderByCheckoutSession, createOrderFromDraftOrder } from '@/lib/inventory/services/order-service';
 import { getCartById } from '@/lib/inventory/services/cart-service';
 import { getDraftOrderById, updateDraftOrderStatus, DraftOrderWithTotal } from '@/lib/draft-orders';
-import { Prisma } from '@prisma/client';
 import {
   sendOrderConfirmationEmail,
   sendPaymentFailedEmail,
@@ -25,6 +24,12 @@ import {
 import { linkOrderToAffiliate, voidCommissionForOrder } from '@/lib/affiliates/commission-engine';
 import { getAffiliateByCode } from '@/lib/affiliates/affiliate-service';
 import { createOrderCalendarEvent } from '@/lib/calendar/google-calendar';
+import {
+  snapshotOrderStripeFees,
+  snapshotStripeBalance,
+  upsertDispute,
+  upsertPayout,
+} from '@/lib/finance/stripe-extended';
 
 /**
  * Verify webhook signature and construct event
@@ -550,14 +555,87 @@ export async function processWebhookEvent(event: Stripe.Event): Promise<void> {
       await handleChargeRefunded(event.data.object as Stripe.Charge);
       break;
 
+    // ---- Finance Director Phase 1A ---------------------------------------
+    case 'payout.created':
+    case 'payout.paid':
+    case 'payout.failed':
+    case 'payout.canceled':
+    case 'payout.updated':
+      await handleFinancePayoutEvent(event.data.object as Stripe.Payout);
+      break;
+
+    case 'balance.available':
+      await handleFinanceBalanceAvailable();
+      break;
+
+    case 'charge.dispute.created':
+    case 'charge.dispute.updated':
+    case 'charge.dispute.funds_withdrawn':
+    case 'charge.dispute.funds_reinstated':
+    case 'charge.dispute.closed':
+      await handleFinanceDisputeEvent(event.data.object as Stripe.Dispute);
+      break;
+
     default:
       console.log('[Stripe Webhook] Unhandled event type:', event.type);
   }
 }
 
 /**
- * Handle amendment invoice payment
- * Updates the existing order instead of creating a new one
+ * Phase 1A — persist payout to StripePayout. Also kicks off fee-snapshot
+ * backfill for any recent orders that haven't been snapshotted yet (the
+ * payout signal means the underlying charges have settled and have
+ * BalanceTransactions available).
+ */
+async function handleFinancePayoutEvent(payout: Stripe.Payout): Promise<void> {
+  try {
+    await upsertPayout(payout);
+  } catch (err) {
+    console.error('[Stripe Webhook] upsertPayout failed:', err);
+    throw err;
+  }
+}
+
+async function handleFinanceBalanceAvailable(): Promise<void> {
+  try {
+    await snapshotStripeBalance();
+  } catch (err) {
+    console.error('[Stripe Webhook] snapshotStripeBalance failed:', err);
+    throw err;
+  }
+}
+
+async function handleFinanceDisputeEvent(dispute: Stripe.Dispute): Promise<void> {
+  try {
+    await upsertDispute(dispute);
+  } catch (err) {
+    console.error('[Stripe Webhook] upsertDispute failed:', err);
+    throw err;
+  }
+}
+
+/**
+ * Phase 1A — exported so the order-creation path can snapshot fees opportunistically.
+ * Re-export of snapshotOrderStripeFees so callers don't need to import from
+ * @/lib/finance/* directly.
+ */
+export { snapshotOrderStripeFees };
+
+/**
+ * Handle amendment invoice payment.
+ *
+ * IMPORTANT: do NOT mutate OrderItem rows or Order totals here. Those are already
+ * applied synchronously at amendment submission time by POST /api/v1/admin/orders/[id]/amend
+ * (see amend/route.ts). When this webhook used to re-apply the diff, every paid
+ * amendment ended up with item quantities and order totals doubled — the customer
+ * was charged correctly via Stripe, but the order rows reflected 2× the request,
+ * causing over-delivery. (Repaired on prod 2026-05-19; see
+ * scripts/ops/fix-doubled-amendment-orders.mjs.)
+ *
+ * This handler now ONLY:
+ *   1. Marks the DraftOrder as CONVERTED.
+ *   2. Marks the OrderAmendment as PAID.
+ *   3. Sends a confirmation email for the amendment items.
  */
 async function handleAmendmentInvoicePayment(
   draftOrderId: string,
@@ -569,63 +647,17 @@ async function handleAmendmentInvoicePayment(
 
   const existingOrder = await prisma.order.findUnique({
     where: { id: existingOrderId },
-    include: { items: true },
   });
 
   if (!existingOrder) {
     throw new Error(`[Stripe Webhook] Existing order not found for amendment: ${existingOrderId}`);
   }
 
-  // Add amendment items to existing order
   const amendmentItems = draftOrder.items;
-  for (const item of amendmentItems) {
-    // Check if this product+variant already exists on the order
-    const existingItem = existingOrder.items.find(
-      i => i.productId === item.productId && i.variantId === item.variantId
-    );
-
-    if (existingItem) {
-      // Increase quantity on existing item
-      const newQty = existingItem.quantity + item.quantity;
-      await prisma.orderItem.update({
-        where: { id: existingItem.id },
-        data: {
-          quantity: newQty,
-          totalPrice: new Prisma.Decimal(Number(existingItem.price) * newQty),
-        },
-      });
-    } else {
-      // Create new order item
-      await prisma.orderItem.create({
-        data: {
-          orderId: existingOrderId,
-          productId: item.productId,
-          variantId: item.variantId,
-          title: item.title,
-          variantTitle: item.variantTitle || null,
-          price: new Prisma.Decimal(item.price),
-          quantity: item.quantity,
-          totalPrice: new Prisma.Decimal(item.price * item.quantity),
-        },
-      });
-    }
-  }
-
-  // Update order totals (add amendment amounts)
   const amendmentSubtotal = Number(draftOrder.subtotal);
   const amendmentTax = Number(draftOrder.taxAmount);
   const amendmentDeliveryFee = Number(draftOrder.deliveryFee);
   const amendmentTotal = Number(draftOrder.total);
-
-  await prisma.order.update({
-    where: { id: existingOrderId },
-    data: {
-      subtotal: new Prisma.Decimal(Number(existingOrder.subtotal) + amendmentSubtotal),
-      taxAmount: new Prisma.Decimal(Number(existingOrder.taxAmount) + amendmentTax),
-      deliveryFee: new Prisma.Decimal(Number(existingOrder.deliveryFee) + amendmentDeliveryFee),
-      total: new Prisma.Decimal(Number(existingOrder.total) + amendmentTotal),
-    },
-  });
 
   // Mark draft order as converted
   await updateDraftOrderStatus(draftOrderId, 'CONVERTED', {

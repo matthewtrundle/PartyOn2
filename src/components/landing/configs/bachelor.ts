@@ -4,8 +4,8 @@ const PHONE_DISPLAY = '(737) 371-9700';
 
 export const bachelorConfig: LandingConfig = {
   slug: 'austin-bachelor-party-delivery',
-  metaTitle:
-    'Austin Bachelor Party Alcohol Delivery | Stocked Cold, On Time | Party On Delivery',
+  // Title trimmed to <60 chars so it doesn't truncate in SERPs.
+  metaTitle: 'Austin Bachelor Party Alcohol Delivery | Party On Delivery',
   metaDescription:
     'Beer, liquor, mixers and ice delivered cold to your Airbnb, hotel, party bus or Lake Travis dock. Group ordering, split pay, cocktail kits. 500+ Austin groups served.',
   ogImage: '/images/services/bach-parties/bachelor-party-epic.webp',
@@ -33,8 +33,7 @@ export const bachelorConfig: LandingConfig = {
     'Order in 30 seconds. 48-hour notice = guaranteed pricing.',
   ],
   heroImage: '/images/services/bach-parties/bachelor-party-epic.webp',
-  // Hero badges removed — trustStats below handle this so the hero stays uncluttered.
-  heroTrustBadges: [],
+  heroTrustBadges: ['✓ TABC-licensed', '✓ 500+ Austin bach groups', '★ 5.0 on Google', '✓ Split pay built-in'],
 
   trustStats: [
     { stat: 'Group ordering', label: 'Whole crew adds to one cart' },
@@ -217,7 +216,7 @@ export const bachelorConfig: LandingConfig = {
   planningCallUrl: 'https://123.partyondelivery.com/planning-call',
   secondaryCtaText: 'SCHEDULE A 10-MIN CALL →',
 
-  quoteInbox: 'brian@premierpartycruises.com',
+  quoteInbox: 'info@partyondelivery.com',
 
   modal: {
     title: 'Build Your Bach Package',
