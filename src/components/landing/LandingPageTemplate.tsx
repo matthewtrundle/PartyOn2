@@ -50,12 +50,33 @@ const ALL_AUSTIN_LANDING_PAGES = [
 type Props = {
   config: LandingConfig;
   catalog: Catalog;
+  /**
+   * Optional last-minute catalog (deep-stock-only product pool). When
+   * the customer picks a delivery date of today or tomorrow inside
+   * either modal, we swap the active catalog to this one so they can
+   * only order from items ops can absolutely fulfill in 24h.
+   *
+   * Pages that don't pre-fetch this just pass nothing — the modals
+   * silently fall back to the regular catalog regardless of date.
+   */
+  lastMinuteCatalog?: Catalog;
   upsellProducts?: UpsellProducts;
 };
 
-export default function LandingPageTemplate({ config, catalog, upsellProducts }: Props) {
+export default function LandingPageTemplate({
+  config,
+  catalog,
+  lastMinuteCatalog,
+  upsellProducts,
+}: Props) {
   const [builderOpen, setBuilderOpen] = useState(false);
   const [quickBuyPkg, setQuickBuyPkg] = useState<Package | null>(null);
+  // Live mode flag — flipped by the modals when the customer picks a
+  // today/tomorrow delivery date so the catalog narrows to the
+  // last-minute pool. Kept on the template so both modals share state.
+  const [lastMinuteMode, setLastMinuteMode] = useState(false);
+  const activeCatalog =
+    lastMinuteMode && lastMinuteCatalog ? lastMinuteCatalog : catalog;
   // Accordion state for the HOW IT WORKS section — first step open by default.
   const [openSteps, setOpenSteps] = useState<Set<number>>(new Set([0]));
   const T = config.theme;
@@ -786,7 +807,10 @@ export default function LandingPageTemplate({ config, catalog, upsellProducts }:
         open={builderOpen}
         onClose={() => setBuilderOpen(false)}
         config={config}
-        catalog={catalog}
+        catalog={activeCatalog}
+        hasLastMinuteCatalog={!!lastMinuteCatalog}
+        lastMinuteMode={lastMinuteMode}
+        onLastMinuteModeChange={setLastMinuteMode}
         upsellProducts={upsellProducts}
       />
       {quickBuyPkg && (

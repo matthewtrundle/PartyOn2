@@ -1,32 +1,33 @@
 'use client';
 
 /**
- * EVENT QUIZ MODAL
+ * EVENT QUIZ MODAL — 3-step paid-ad funnel router.
  *
- * Renders on top of the bachelor landing page on /event-quiz. 4-step
- * wizard, can't be dismissed (the entire purpose of this page is to
- * route inbound ad traffic through the quiz):
+ * Lives on top of the bachelor landing page at /event-quiz. Can't be
+ * dismissed. Three steps:
  *
  *   1. Party type — single select
- *      ("Just deliver drinks now" short-circuits to contact, skipping
- *       the rest of the quiz)
- *   2. Delivery timing — single select
- *   3. Needs — multi-select
- *   4. Contact info — name, email, phone
+ *      ("Order Drinks Now" short-circuits → contact step)
+ *   2. Needs — multi-select
+ *   3. Contact info — name, email, phone
  *
- * On submit: POST /api/v1/event-quiz/submit → creates Lead, sends
- * welcome email, returns the target landing-page URL. We then
- * window.location.href the user to that URL with ?welcome=1 so the
- * destination landing page renders its "Step one" hero.
+ * No delivery-timing step. Delivery date is collected on the destination
+ * landing page (PackageBuilderModal + QuickBuyModal), and the catalog
+ * there auto-switches to the last-minute menu when the date is today
+ * or tomorrow.
  *
- * Field captures fire FIELD_BLUR lead events along the way (via the
- * global FormCaptureWatcher) so partial drop-offs still produce Leads
- * even if the user bails before step 4.
+ * Style notes (matches landing-page theme):
+ *   - Order Drinks Now → big yellow button, black font, dark border
+ *   - 6 party-type buttons cycle a left-to-right gold shimmer in
+ *     sequence, 500ms per button (subtle ad-style motion that draws
+ *     the eye through all options without being annoying)
+ *
+ * On submit: POST /api/v1/event-quiz/submit → Lead + welcome email +
+ * redirect to /<landing-page>?welcome=1.
  */
 import { useState } from 'react';
 import {
   PARTY_TYPE_LABEL,
-  DELIVERY_TIMING_LABEL,
   EVENT_NEED_LABEL,
   type PartyType,
   type DeliveryTiming,
@@ -35,12 +36,11 @@ import {
 import { sendLeadEvent } from '@/lib/leads/client';
 
 const NAVY = '#0A1F33';
-const GOLD = '#D4AF37';
+const GOLD = '#F2D34F'; // brand-yellow — matches bachelor landing theme.primary
+const GOLD_HOVER = '#FACC15';
 const CREAM = '#FAF6EE';
 
-// ─── Step config ────────────────────────────────────────────────────
-const PARTY_OPTIONS: PartyType[] = [
-  'just-deliver',
+const PARTY_OPTIONS_SECONDARY: PartyType[] = [
   'bachelor',
   'bachelorette',
   'corporate',
@@ -49,7 +49,6 @@ const PARTY_OPTIONS: PartyType[] = [
   'house',
   'hotel',
 ];
-const TIMING_OPTIONS: DeliveryTiming[] = ['today', 'tomorrow', 'future'];
 const NEEDS_OPTIONS: EventNeed[] = [
   'stock-drinks',
   'transportation',
@@ -58,12 +57,11 @@ const NEEDS_OPTIONS: EventNeed[] = [
   'event-rentals',
 ];
 
-type Step = 'party' | 'timing' | 'needs' | 'contact';
+type Step = 'party' | 'needs' | 'contact';
 
 export default function EventQuizModal() {
   const [step, setStep] = useState<Step>('party');
   const [partyType, setPartyType] = useState<PartyType | null>(null);
-  const [timing, setTiming] = useState<DeliveryTiming | null>(null);
   const [needs, setNeeds] = useState<Set<EventNeed>>(new Set());
 
   const [firstName, setFirstName] = useState('');
@@ -73,7 +71,6 @@ export default function EventQuizModal() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // ─── Step transitions ─────────────────────────────────────────────
   const choosePartyType = (p: PartyType) => {
     setPartyType(p);
     void sendLeadEvent({
@@ -84,30 +81,8 @@ export default function EventQuizModal() {
       fieldValue: p,
       metadata: { flow: 'event-quiz', step: 'party', partyType: p },
     });
-    // "Just deliver drinks now" short-circuits the quiz.
-    if (p === 'just-deliver') {
-      setStep('timing');
-      return;
-    }
-    setStep('timing');
-  };
-
-  const chooseTiming = (t: DeliveryTiming) => {
-    setTiming(t);
-    void sendLeadEvent({
-      type: 'STEP_COMPLETE',
-      widget: 'CONTACT_FORM',
-      page: '/event-quiz',
-      fieldName: 'timing',
-      fieldValue: t,
-      metadata: { flow: 'event-quiz', step: 'timing', timing: t },
-    });
-    // Short-circuit: "Just deliver drinks now" jumps past the needs step.
-    if (partyType === 'just-deliver') {
-      setStep('contact');
-      return;
-    }
-    setStep('needs');
+    // "Just deliver drinks now" skips the needs step.
+    setStep(p === 'just-deliver' ? 'contact' : 'needs');
   };
 
   const toggleNeed = (n: EventNeed) => {
@@ -130,13 +105,16 @@ export default function EventQuizModal() {
     setStep('contact');
   };
 
-  // ─── Submit ───────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!partyType || !timing || !firstName || !email) return;
+    if (!partyType || !firstName || !email) return;
     setError(null);
     setSubmitting(true);
     try {
+      // Backend still accepts a `timing` field — send 'future' as a sentinel
+      // since we no longer ask. Landing-page date picker is the real source
+      // of truth for delivery timing now.
+      const timingSentinel: DeliveryTiming = 'future';
       const res = await fetch('/api/v1/event-quiz/submit', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -147,7 +125,7 @@ export default function EventQuizModal() {
           email,
           phone: phone || null,
           partyType,
-          timing,
+          timing: timingSentinel,
           needs: Array.from(needs),
         }),
       });
@@ -155,8 +133,6 @@ export default function EventQuizModal() {
       if (!res.ok || !json.ok) {
         throw new Error(json.error || 'Could not save your info.');
       }
-      // Redirect to the personalized landing page. ?welcome=1 query
-      // param tells the landing page to render the "Step one ..." hero.
       window.location.href = json.redirectTo;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.');
@@ -164,57 +140,87 @@ export default function EventQuizModal() {
     }
   };
 
-  // ─── Render ───────────────────────────────────────────────────────
+  const totalSteps = partyType === 'just-deliver' ? 2 : 3;
+
   return (
     <div
       className="fixed inset-0 z-[200] flex items-center justify-center p-2 sm:p-4"
       style={{ background: 'rgba(5,10,20,0.82)' }}
     >
+      {/* Animation keyframes for the sequential shimmer effect on party
+          buttons. Injected globally because <style jsx> would scope it
+          per-element. */}
+      <style jsx global>{`
+        @keyframes pod-quiz-shimmer {
+          0% { transform: translateX(-110%); opacity: 0; }
+          15% { opacity: 1; }
+          85% { opacity: 1; }
+          100% { transform: translateX(110%); opacity: 0; }
+        }
+        .pod-shimmer-overlay {
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          overflow: hidden;
+          border-radius: 0.5rem;
+        }
+        .pod-shimmer-overlay::after {
+          content: '';
+          position: absolute;
+          top: 0; bottom: 0;
+          left: 0;
+          width: 40%;
+          background: linear-gradient(
+            120deg,
+            transparent 0%,
+            rgba(255,255,255,0) 20%,
+            rgba(255,255,255,0.6) 50%,
+            rgba(255,255,255,0) 80%,
+            transparent 100%
+          );
+          transform: translateX(-110%);
+          animation: pod-quiz-shimmer 4s linear infinite;
+          animation-delay: var(--shimmer-delay, 0s);
+        }
+      `}</style>
+
       <div
         className="bg-white rounded-2xl w-full max-w-2xl max-h-[95vh] flex flex-col overflow-hidden shadow-2xl"
         style={{ background: CREAM }}
       >
         {/* HEADER */}
         <div
-          className="px-5 py-4 flex items-center justify-between"
+          className="px-5 py-4"
           style={{ background: NAVY, color: '#FFFFFF', borderBottom: `3px solid ${GOLD}` }}
         >
-          <div className="min-w-0">
-            <div
-              className="text-[10px] font-bold tracking-widest"
-              style={{ color: GOLD }}
-            >
-              {step === 'party' && 'STEP 1 OF 4'}
-              {step === 'timing' && (partyType === 'just-deliver' ? 'STEP 2 OF 3' : 'STEP 2 OF 4')}
-              {step === 'needs' && 'STEP 3 OF 4'}
-              {step === 'contact' && 'FINAL STEP'}
-            </div>
-            <div className="font-heading text-xl md:text-2xl font-bold leading-tight mt-1">
-              {step === 'party' && 'What kind of party are you planning?'}
-              {step === 'timing' && 'When is your delivery?'}
-              {step === 'needs' && 'What do you need help with?'}
-              {step === 'contact' && 'Last step — we’ll send you the playbook.'}
-            </div>
-            <div className="text-xs opacity-85 mt-0.5">
-              Quick — takes 30 seconds. Then we route you to the right page.
-            </div>
+          <div
+            className="text-[10px] font-bold tracking-widest"
+            style={{ color: GOLD }}
+          >
+            {step === 'party' && `STEP 1 OF ${totalSteps}`}
+            {step === 'needs' && `STEP 2 OF ${totalSteps}`}
+            {step === 'contact' && 'FINAL STEP'}
+          </div>
+          <div className="font-heading text-xl md:text-2xl font-bold leading-tight mt-1">
+            {step === 'party' && 'What kind of party are you planning?'}
+            {step === 'needs' && 'What do you need help with?'}
+            {step === 'contact' && "Last step — we'll send you the playbook."}
+          </div>
+          <div className="text-xs opacity-85 mt-0.5">
+            Quick — takes 30 seconds. Then we route you to the right page.
           </div>
         </div>
 
         {/* Progress dots */}
         <div className="px-5 pt-3 pb-2 flex gap-1.5">
-          {['party', 'timing', 'needs', 'contact'].map((s) => {
-            const idx = ['party', 'timing', 'needs', 'contact'].indexOf(step);
-            const sIdx = ['party', 'timing', 'needs', 'contact'].indexOf(s);
-            // Hide the needs dot for the "just deliver" path.
-            if (s === 'needs' && partyType === 'just-deliver') return null;
+          {Array.from({ length: totalSteps }).map((_, i) => {
+            const stepIdx =
+              step === 'party' ? 0 : step === 'needs' ? 1 : totalSteps - 1;
             return (
               <div
-                key={s}
+                key={i}
                 className="h-1 flex-1 rounded-full transition-colors"
-                style={{
-                  background: sIdx <= idx ? GOLD : '#E5E7EB',
-                }}
+                style={{ background: i <= stepIdx ? GOLD : '#E5E7EB' }}
               />
             );
           })}
@@ -223,43 +229,39 @@ export default function EventQuizModal() {
         {/* BODY */}
         <div className="flex-1 overflow-y-auto px-5 py-4">
           {step === 'party' && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              <OptionButton
-                key="just-deliver"
-                label={PARTY_TYPE_LABEL['just-deliver']}
-                sub="Skip the planning — just get drinks ASAP"
-                selected={partyType === 'just-deliver'}
+            <div className="space-y-3">
+              {/* Primary CTA — big yellow, black font, dark border, no shimmer
+                  (it's already the loudest button on the screen) */}
+              <button
+                type="button"
                 onClick={() => choosePartyType('just-deliver')}
-                emphasis
-              />
-              {PARTY_OPTIONS.filter((p) => p !== 'just-deliver').map((p) => (
-                <OptionButton
-                  key={p}
-                  label={PARTY_TYPE_LABEL[p]}
-                  selected={partyType === p}
-                  onClick={() => choosePartyType(p)}
-                />
-              ))}
-            </div>
-          )}
-
-          {step === 'timing' && (
-            <div className="grid grid-cols-1 gap-2.5 max-w-md mx-auto">
-              {TIMING_OPTIONS.map((t) => (
-                <OptionButton
-                  key={t}
-                  label={DELIVERY_TIMING_LABEL[t]}
-                  sub={
-                    t === 'today'
-                      ? 'Same-day delivery, available where eligible'
-                      : t === 'tomorrow'
-                        ? "Guaranteed pricing, we'll lock your window"
-                        : 'Schedule a delivery for any upcoming date'
-                  }
-                  selected={timing === t}
-                  onClick={() => chooseTiming(t)}
-                />
-              ))}
+                className="w-full rounded-lg py-4 px-5 font-heading text-xl md:text-2xl font-bold tracking-wider transition-transform hover:scale-[1.01]"
+                style={{
+                  background: GOLD,
+                  color: NAVY,
+                  border: `3px solid ${NAVY}`,
+                  boxShadow: `0 6px 0 ${NAVY}, 0 10px 20px rgba(10,15,25,0.25)`,
+                }}
+              >
+                ⚡ ORDER DRINKS NOW
+              </button>
+              <div className="text-center text-xs text-gray-500 uppercase tracking-widest font-bold">
+                — or pick your occasion —
+              </div>
+              {/* 6 (actually 7) party-type buttons. Each has a shimmer overlay
+                  with a staggered animation-delay so the highlight sweeps
+                  through them in sequence, 500ms apart. */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {PARTY_OPTIONS_SECONDARY.map((p, idx) => (
+                  <PartyTypeButton
+                    key={p}
+                    label={PARTY_TYPE_LABEL[p]}
+                    selected={partyType === p}
+                    onClick={() => choosePartyType(p)}
+                    shimmerDelay={`${idx * 0.5}s`}
+                  />
+                ))}
+              </div>
             </div>
           )}
 
@@ -304,11 +306,7 @@ export default function EventQuizModal() {
                   value={firstName}
                   onChange={setFirstName}
                 />
-                <Input
-                  label="Last name"
-                  value={lastName}
-                  onChange={setLastName}
-                />
+                <Input label="Last name" value={lastName} onChange={setLastName} />
               </div>
               <Input
                 label="Email"
@@ -339,7 +337,12 @@ export default function EventQuizModal() {
                 type="submit"
                 disabled={submitting || !firstName || !email}
                 className="w-full py-3.5 rounded-md font-bold tracking-widest text-sm disabled:opacity-40 transition-transform hover:scale-[1.01]"
-                style={{ background: GOLD, color: NAVY }}
+                style={{
+                  background: GOLD,
+                  color: NAVY,
+                  border: `3px solid ${NAVY}`,
+                  boxShadow: `0 4px 0 ${NAVY}`,
+                }}
               >
                 {submitting ? 'LOCKING IT IN…' : 'GET ME TO MY DRINKS →'}
               </button>
@@ -359,8 +362,7 @@ export default function EventQuizModal() {
           >
             <button
               onClick={() => {
-                if (step === 'timing') setStep('party');
-                else if (step === 'needs') setStep('timing');
+                if (step === 'needs') setStep('party');
               }}
               disabled={step === 'party'}
               className="px-4 py-2 rounded-md font-semibold text-sm disabled:opacity-30"
@@ -372,7 +374,11 @@ export default function EventQuizModal() {
               <button
                 onClick={advanceFromNeeds}
                 className="px-6 py-2.5 rounded-md font-bold text-sm tracking-wider"
-                style={{ background: GOLD, color: NAVY }}
+                style={{
+                  background: GOLD,
+                  color: NAVY,
+                  border: `2px solid ${NAVY}`,
+                }}
               >
                 Next →
               </button>
@@ -384,38 +390,44 @@ export default function EventQuizModal() {
   );
 }
 
-// ─── Subcomponents ──────────────────────────────────────────────────
-function OptionButton({
+/**
+ * Party-type tile button. Bold black border, soft cream interior, gold
+ * fill on hover/select. A `pod-shimmer-overlay` element sits on top with
+ * a staggered animation-delay so a thin gold sweep travels through each
+ * card in sequence.
+ */
+function PartyTypeButton({
   label,
-  sub,
   selected,
   onClick,
-  emphasis,
+  shimmerDelay,
 }: {
   label: string;
-  sub?: string;
   selected: boolean;
   onClick: () => void;
-  emphasis?: boolean;
+  shimmerDelay: string;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="text-left rounded-md p-3 transition-transform hover:scale-[1.01]"
+      className="relative rounded-lg py-3.5 px-4 text-left font-bold text-sm md:text-base transition-all hover:scale-[1.02] overflow-hidden"
       style={{
         background: selected ? GOLD : '#FFFFFF',
-        color: selected ? NAVY : NAVY,
-        border: `2px solid ${selected ? GOLD : emphasis ? GOLD : '#E5E7EB'}`,
+        color: NAVY,
+        border: `2px solid ${selected ? GOLD_HOVER : NAVY}`,
         boxShadow: selected
-          ? '0 4px 12px rgba(212,175,55,0.4)'
-          : emphasis
-            ? '0 2px 6px rgba(212,175,55,0.2)'
-            : '0 1px 3px rgba(0,0,0,0.04)',
+          ? `0 4px 0 ${NAVY}`
+          : `0 3px 0 ${NAVY}, 0 1px 3px rgba(0,0,0,0.06)`,
       }}
     >
-      <div className="font-bold text-sm">{label}</div>
-      {sub && <div className="text-[11px] opacity-75 mt-0.5">{sub}</div>}
+      <span className="relative z-10">{label}</span>
+      {/* Shimmer overlay — staggered per index. */}
+      <span
+        className="pod-shimmer-overlay"
+        style={{ ['--shimmer-delay' as string]: shimmerDelay }}
+        aria-hidden
+      />
     </button>
   );
 }
@@ -436,7 +448,7 @@ function CheckboxRow({
       className="flex items-center gap-3 rounded-md p-3 text-left transition-colors"
       style={{
         background: checked ? `${GOLD}22` : '#FFFFFF',
-        border: `2px solid ${checked ? GOLD : '#E5E7EB'}`,
+        border: `2px solid ${checked ? GOLD_HOVER : '#E5E7EB'}`,
         color: NAVY,
       }}
     >
@@ -444,7 +456,7 @@ function CheckboxRow({
         className="w-5 h-5 rounded flex items-center justify-center flex-shrink-0 font-bold"
         style={{
           background: checked ? GOLD : '#FFFFFF',
-          border: `2px solid ${checked ? GOLD : '#9CA3AF'}`,
+          border: `2px solid ${checked ? GOLD_HOVER : '#9CA3AF'}`,
           color: NAVY,
         }}
       >

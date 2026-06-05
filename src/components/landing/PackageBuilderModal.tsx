@@ -30,7 +30,19 @@ type Props = {
   open: boolean;
   onClose: () => void;
   config: LandingConfig;
+  /**
+   * Already-resolved catalog — either the curated catalog or the
+   * last-minute catalog depending on `lastMinuteMode` controlled by
+   * the parent template.
+   */
   catalog: Catalog;
+  /** True when the parent has a last-minute catalog pre-fetched. */
+  hasLastMinuteCatalog?: boolean;
+  /** Parent's state — used to drive the banner + product pool. */
+  lastMinuteMode?: boolean;
+  /** Called when the chosen delivery date crosses the today/tomorrow
+   *  threshold so the parent can swap the catalog. */
+  onLastMinuteModeChange?: (next: boolean) => void;
   upsellProducts?: UpsellProducts;
 };
 
@@ -47,6 +59,9 @@ export default function PackageBuilderModal({
   onClose,
   config,
   catalog,
+  hasLastMinuteCatalog,
+  lastMinuteMode,
+  onLastMinuteModeChange,
   upsellProducts,
 }: Props) {
   const T = config.theme;
@@ -59,6 +74,29 @@ export default function PackageBuilderModal({
   const [deliveryDate, setDeliveryDate] = useState<Date | null>(null);
   const [selection, setSelection] = useState<Selection>({});
   const [extraSelection, setExtraSelection] = useState<string[]>([]);
+
+  // Whenever the customer picks a date, check whether it's today or
+  // tomorrow and tell the parent to swap to the last-minute catalog.
+  // Cleared selections are kept — the user re-confirms anything missing.
+  useEffect(() => {
+    if (!onLastMinuteModeChange || !hasLastMinuteCatalog) return;
+    if (!deliveryDate) {
+      onLastMinuteModeChange(false);
+      return;
+    }
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    const picked = new Date(
+      deliveryDate.getFullYear(),
+      deliveryDate.getMonth(),
+      deliveryDate.getDate(),
+    );
+    const isToday = picked.getTime() === today.getTime();
+    const isTomorrow = picked.getTime() === tomorrow.getTime();
+    onLastMinuteModeChange(isToday || isTomorrow);
+  }, [deliveryDate, hasLastMinuteCatalog, onLastMinuteModeChange]);
 
   const [contactName, setContactName] = useState('');
   const [contactEmail, setContactEmail] = useState('');
@@ -521,6 +559,19 @@ export default function PackageBuilderModal({
               />
             ))}
           </div>
+          {/* Last-minute mode banner — pops the moment the customer picks
+              today/tomorrow as their delivery date. Tells them the menu
+              narrowed + why. */}
+          {lastMinuteMode && hasLastMinuteCatalog && (
+            <div
+              className="mt-3 rounded-md px-3 py-2 text-xs font-bold leading-snug"
+              style={{ background: T.primary, color: T.primaryText }}
+            >
+              ⚡ <span className="tracking-wider">LAST-MINUTE MENU ACTIVE</span> —
+              showing only deep-stock items we can deliver in 24h. Pick a date
+              further out to see the full catalog.
+            </div>
+          )}
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 sm:px-7 py-5">
