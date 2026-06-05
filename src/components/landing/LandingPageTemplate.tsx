@@ -15,6 +15,7 @@ import { generateFAQSchema } from '@/lib/seo/schemas';
 import { experimentsForPath, type BachelorHeroPayload, type CtaCopyPayload } from '@/lib/experiments/registry';
 import { useVariant } from '@/lib/experiments/clientAssign';
 import { useFunnelTracker } from '@/lib/experiments/funnelTrack';
+import { useSearchParams } from 'next/navigation';
 
 // All 4 /austin-*-delivery landing pages. Used to render an "other event
 // types we cover" cross-link section near the final CTA — gives sibling
@@ -85,11 +86,23 @@ export default function LandingPageTemplate({ config, catalog, upsellProducts }:
     ?.payload as CtaCopyPayload | undefined;
 
   // Effective copy = variant override OR config default.
-  const heroEyebrow = heroVariantPayload?.eyebrow ?? config.heroEyebrow;
-  const heroHeadline = heroVariantPayload?.headline ?? config.heroHeadline;
-  const heroHeadlineAccent =
-    heroVariantPayload?.headlineAccent ?? config.heroHeadlineAccent;
-  const heroSubhead = heroVariantPayload?.subhead ?? config.heroSubhead;
+  // ?welcome=1 (set by the /event-quiz redirect) further overrides the
+  // hero copy with the "Step one: drinks → rest of weekend" framing.
+  const searchParams = useSearchParams();
+  const cameFromQuiz = searchParams?.get('welcome') === '1';
+
+  const heroEyebrow = cameFromQuiz
+    ? 'WELCOME — STEP 1 OF 2'
+    : heroVariantPayload?.eyebrow ?? config.heroEyebrow;
+  const heroHeadline = cameFromQuiz
+    ? "Step one: Let's get started with"
+    : heroVariantPayload?.headline ?? config.heroHeadline;
+  const heroHeadlineAccent = cameFromQuiz
+    ? 'your drinks.'
+    : heroVariantPayload?.headlineAccent ?? config.heroHeadlineAccent;
+  const heroSubhead = cameFromQuiz
+    ? "Then we'll plan the rest of your weekend. Pick a package below or build your own — your contact info is already on file so checkout takes 30 seconds."
+    : heroVariantPayload?.subhead ?? config.heroSubhead;
   const primaryCtaText = ctaVariantPayload?.primary ?? config.ctaText;
 
   // Funnel tracker — fires LeadEvents stamped with the bachelor-hero key

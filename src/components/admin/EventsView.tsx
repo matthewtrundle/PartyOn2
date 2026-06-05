@@ -36,6 +36,69 @@ export default function EventsView() {
         </p>
       </div>
 
+      {/* AD FUNNEL — the /event-quiz routing page */}
+      <Section title="🚀 Paid-ad routing — /event-quiz">
+        <p className="text-sm text-gray-700 mb-3">
+          Send ads to <code>/event-quiz</code>. The visitor sees the bachelor
+          landing page behind a 4-step modal: party type → delivery timing →
+          needs (multi-select) → contact info. On submit we create a Lead,
+          send a welcome email summarizing every service we offer + Premier
+          Party Cruises, and route them to the matching landing page with{' '}
+          <code>?welcome=1</code> so the hero changes to{' '}
+          <strong>&quot;Step one: Let&apos;s get started with your drinks.&quot;</strong>
+        </p>
+        <div className="grid sm:grid-cols-2 gap-3 mb-3">
+          <Link
+            href="/event-quiz"
+            target="_blank"
+            className="flex items-center justify-between gap-3 p-3 rounded-md border-2 border-purple-400 bg-purple-50 hover:bg-purple-100 transition-colors"
+          >
+            <div className="min-w-0">
+              <div className="font-bold text-sm text-purple-900">
+                /event-quiz (live)
+              </div>
+              <div className="text-xs text-purple-800">
+                Bachelor landing + modal quiz. Public, but noindex.
+              </div>
+            </div>
+            <span className="text-purple-700 font-bold text-xs whitespace-nowrap">
+              OPEN →
+            </span>
+          </Link>
+          <Link
+            href="/admin/brians-stuff?tab=leads"
+            className="flex items-center justify-between gap-3 p-3 rounded-md border border-gray-200 bg-white hover:border-purple-400 hover:bg-purple-50 transition-colors"
+          >
+            <div className="min-w-0">
+              <div className="font-bold text-sm text-gray-900">
+                See submissions in Leads tab
+              </div>
+              <div className="text-xs text-gray-600">
+                Filter <code>metadata.eventQuiz.partyType</code> to slice by intent.
+              </div>
+            </div>
+            <span className="text-purple-700 font-bold text-xs whitespace-nowrap">
+              OPEN →
+            </span>
+          </Link>
+        </div>
+        <details className="rounded-md border border-gray-200 bg-white p-3">
+          <summary className="cursor-pointer text-xs font-bold tracking-widest text-gray-700">
+            ROUTING TABLE (party type → landing page)
+          </summary>
+          <ul className="text-xs text-gray-700 mt-2 space-y-0.5">
+            <li>Bachelor party → <code>/austin-bachelor-party-delivery</code></li>
+            <li>Bachelorette party → <code>/austin-bachelorette-party-delivery</code></li>
+            <li>Corporate event → <code>/austin-corporate-event-delivery</code></li>
+            <li>Wedding party → <code>/austin-wedding-weekend-delivery</code></li>
+            <li>Boat / House / Hotel / Just deliver → <code>/austin-bachelor-party-delivery</code> (fallback for now)</li>
+          </ul>
+          <p className="text-[11px] text-gray-500 mt-2 italic">
+            Edit the routing in <code>src/lib/eventQuiz/routing.ts</code>.
+          </p>
+        </details>
+      </Section>
+
       {/* Demo links */}
       <Section title="Live demos">
         <p className="text-sm text-gray-700 mb-3">
