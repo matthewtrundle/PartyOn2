@@ -72,14 +72,28 @@ export async function fetchGroupOrderV2(code: string): Promise<GroupOrderV2Full>
   return apiFetch<GroupOrderV2Full>(`${API_BASE}/${code}`);
 }
 
-/** Update group order */
+/**
+ * Update group order. Requires the caller's participantId -- the server
+ * verifies it belongs to a host (server returns 403 otherwise).
+ */
 export async function updateGroupOrderV2(
   code: string,
-  data: { name?: string; status?: string; partyType?: string | null; hostEmail?: string; hostPhone?: string }
+  participantId: string,
+  data: {
+    name?: string;
+    /** Empty string -> "clear back to smart default" (treated as null by the server). */
+    subtitle?: string | null;
+    /** Empty string -> "clear back to party-type default". */
+    heroVibeKey?: string | null;
+    status?: string;
+    partyType?: string | null;
+    hostEmail?: string;
+    hostPhone?: string;
+  }
 ): Promise<GroupOrderV2Full> {
   return apiFetch<GroupOrderV2Full>(`${API_BASE}/${code}`, {
     method: 'PATCH',
-    body: JSON.stringify(data),
+    body: JSON.stringify({ participantId, ...data }),
   });
 }
 

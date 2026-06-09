@@ -1804,6 +1804,14 @@ enum GroupV2PaymentStatus {
 model GroupOrderV2 {
   id              String             @id @default(uuid())
   name            String
+  // Editable subtitle below the H1 in the dashboard WelcomeHero. Null means
+  // "show the smart default" (delivery date + city, with a welcome-copy
+  // fallback). Customers edit it inline; clearing back to empty resets to
+  // null and the default returns.
+  subtitle        String?            @map("subtitle")
+  // Key into the heroVibes catalog (src/lib/dashboard/heroVibes.ts). When
+  // null, the hero falls back to the party-type default photo/gradient.
+  heroVibeKey     String?            @map("hero_vibe_key")
   hostCustomerId  String?            @map("host_customer_id")
   hostName        String             @map("host_name")
   hostEmail       String?            @map("host_email")

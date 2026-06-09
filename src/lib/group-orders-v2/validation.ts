@@ -105,7 +105,16 @@ export const UpdateDraftItemSchema = z.object({
 
 /** Update group order status */
 export const UpdateGroupOrderSchema = z.object({
+  // Required: identifies the caller. Server verifies this participant is a
+  // host on the group. Mismatch -> 403.
+  participantId: z.string().min(1, 'participantId is required'),
   name: z.string().min(1).max(200).optional(),
+  // Subtitle: empty string is treated as "clear to default" by the service layer.
+  subtitle: z.string().max(200).optional().nullable(),
+  // Hero vibe key: must match a key in heroVibes catalog if non-null; the
+  // service layer doesn't validate against the catalog (storage layer is
+  // catalog-agnostic), so the client should send valid keys.
+  heroVibeKey: z.string().max(64).optional().nullable(),
   status: z.enum(['ACTIVE', 'CLOSED', 'COMPLETED', 'CANCELLED']).optional(),
   partyType: z.enum(['BACHELOR', 'BACHELORETTE', 'WEDDING', 'CORPORATE', 'HOUSE_PARTY', 'OTHER', 'BOAT', 'BACH']).optional().nullable(),
   hostEmail: z.string().email('Invalid email').optional().or(z.literal('')),

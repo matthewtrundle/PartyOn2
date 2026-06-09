@@ -202,6 +202,8 @@ function serializeGroup(group: Record<string, any>): GroupOrderV2Full {
   return {
     id: group.id,
     name: group.name,
+    subtitle: group.subtitle ?? null,
+    heroVibeKey: group.heroVibeKey ?? null,
     shareCode: group.shareCode,
     status: group.status,
     hostName: group.hostName,
@@ -467,9 +469,16 @@ export async function updateTab(
   if (input.deliveryTime) data.deliveryTime = input.deliveryTime;
   if (input.deliveryAddress) {
     data.deliveryAddress = input.deliveryAddress as unknown as Record<string, string>;
-    const zip = input.deliveryAddress.zip;
-    const feeResult = calculateDeliveryFee(zip, 0, false);
-    data.deliveryFee = feeResult.originalFee;
+    if (input.deliveryAddress.isPickup) {
+      // In-store pickup — no driver, no fee
+      data.deliveryFee = 0;
+      data.deliveryFeeWaived = true;
+    } else {
+      const zip = input.deliveryAddress.zip;
+      const feeResult = calculateDeliveryFee(zip, 0, false);
+      data.deliveryFee = feeResult.originalFee;
+      data.deliveryFeeWaived = false;
+    }
   }
   if (input.deliveryPhone !== undefined) data.deliveryPhone = input.deliveryPhone || null;
   if (input.deliveryNotes !== undefined) data.deliveryNotes = input.deliveryNotes || null;
@@ -791,6 +800,23 @@ export async function isActiveParticipant(
 /**
  * Transfer host role from one participant to another
  */
+/**
+ * Promote an active participant to host. Additive -- the existing host
+ * keeps their role too. Either host can edit the dashboard.
+ *
+ * Auth: caller must already be a host on this group. The original behavior
+ * was an exclusive TRANSFER (demote caller, promote target, rewrite the
+ * group's primary host fields). That made "share edit access" feel like
+ * "permanently give up your access," which surprised users -- so the
+ * semantics changed to additive.
+ *
+ * GroupOrderV2.hostName/hostEmail/hostPhone represent the ORIGINAL host
+ * (used for Premier manifest, billing, etc.) and stay put when co-hosts
+ * are added. The added co-host is visible via participants where
+ * isHost === true.
+ *
+ * No-op when the target is already a host.
+ */
 export async function transferHost(
   shareCode: string,
   currentHostParticipantId: string,
@@ -805,31 +831,22 @@ export async function transferHost(
   const currentHost = group.participants.find(
     (p) => p.id === currentHostParticipantId && p.isHost
   );
-  if (!currentHost) throw new Error('Only the current host can transfer host');
+  if (!currentHost) throw new Error('Only an existing host can promote another participant');
 
   const newHost = group.participants.find(
     (p) => p.id === newHostParticipantId && p.status === 'ACTIVE'
   );
-  if (!newHost) throw new Error('New host must be an active participant');
+  if (!newHost) throw new Error('Target must be an active participant');
 
-  await prisma.$transaction([
-    prisma.groupParticipantV2.update({
-      where: { id: currentHostParticipantId },
-      data: { isHost: false },
-    }),
-    prisma.groupParticipantV2.update({
-      where: { id: newHostParticipantId },
-      data: { isHost: true },
-    }),
-    prisma.groupOrderV2.update({
-      where: { shareCode },
-      data: {
-        hostName: newHost.guestName || 'Unknown',
-        hostEmail: newHost.guestEmail,
-        hostPhone: newHost.guestPhone,
-      },
-    }),
-  ]);
+  // Idempotent: target is already a host -> nothing to do.
+  if (newHost.isHost) return;
+
+  // Additive promote. Caller stays host; group-level primary host fields
+  // are NOT rewritten (they still reflect the original/billing host).
+  await prisma.groupParticipantV2.update({
+    where: { id: newHostParticipantId },
+    data: { isHost: true },
+  });
 }
 
 /**
@@ -1083,16 +1100,54 @@ export async function moveAllDraftsToPurchased(
 }
 
 /**
- * Update group order fields (partyType, name, etc.)
+ * Update group order fields (partyType, name, subtitle, heroVibeKey, etc.).
+ *
+ * Auth: requires `participantId` of an ACTIVE host on the group. Throws
+ * NotHostError on mismatch -- the route maps that to a 403. The data
+ * model supports multiple hosts (claimHost is additive), so any co-host
+ * granted access via "Add Another Host" can update too.
+ *
+ * Null-vs-undefined rule: `undefined` means "don't touch", `null` means
+ * "clear it". Subtitle and heroVibeKey both honor this so the customer can
+ * reset to defaults by saving an empty string (the caller maps "" -> null).
  */
+export class NotHostError extends Error {
+  constructor(message = 'Only hosts can update this dashboard') {
+    super(message);
+    this.name = 'NotHostError';
+  }
+}
+
 export async function updateGroupOrderFields(
   shareCode: string,
-  data: { name?: string; status?: string; partyType?: string | null; hostEmail?: string; hostPhone?: string }
+  participantId: string,
+  data: {
+    name?: string;
+    status?: string;
+    partyType?: string | null;
+    subtitle?: string | null;
+    heroVibeKey?: string | null;
+    hostEmail?: string;
+    hostPhone?: string;
+  }
 ): Promise<void> {
+  // Host check -- one query, indexed by shareCode.
+  const participant = await prisma.groupParticipantV2.findFirst({
+    where: {
+      id: participantId,
+      isHost: true,
+      status: 'ACTIVE',
+      groupOrder: { shareCode },
+    },
+    select: { id: true },
+  });
+  if (!participant) throw new NotHostError();
   const updateData: Record<string, unknown> = {};
   if (data.name) updateData.name = data.name;
   if (data.status) updateData.status = data.status;
   if (data.partyType !== undefined) updateData.partyType = data.partyType || null;
+  if (data.subtitle !== undefined) updateData.subtitle = data.subtitle ? data.subtitle : null;
+  if (data.heroVibeKey !== undefined) updateData.heroVibeKey = data.heroVibeKey ? data.heroVibeKey : null;
   if (data.hostEmail !== undefined) updateData.hostEmail = data.hostEmail || null;
   if (data.hostPhone !== undefined) updateData.hostPhone = data.hostPhone || null;
 

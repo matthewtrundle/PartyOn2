@@ -137,7 +137,7 @@ const OrderSidebar = forwardRef<HTMLDivElement, Props>(function OrderSidebar(
           type="button"
           onClick={() => clickable && openProductModal(item)}
           disabled={!clickable}
-          className={`w-14 h-14 rounded-lg bg-gray-100 flex-shrink-0 relative overflow-hidden ${clickable ? 'cursor-pointer hover:ring-2 hover:ring-brand-blue/30 transition-shadow' : ''}`}
+          className={`w-14 h-14 rounded-lg bg-cream flex-shrink-0 relative overflow-hidden ${clickable ? 'cursor-pointer hover:ring-2 hover:ring-brand-blue/30 transition-shadow' : ''}`}
         >
           {item.imageUrl && (
             <Image
@@ -279,7 +279,7 @@ const OrderSidebar = forwardRef<HTMLDivElement, Props>(function OrderSidebar(
   function renderPurchasedRow(item: PurchasedItemView) {
     return (
       <div key={item.id} className="flex items-center gap-3 py-3 opacity-50">
-        <div className="w-14 h-14 rounded-lg bg-gray-100 flex-shrink-0 relative overflow-hidden">
+        <div className="w-14 h-14 rounded-lg bg-cream flex-shrink-0 relative overflow-hidden">
           {item.imageUrl && (
             <Image
               src={item.imageUrl}
@@ -404,20 +404,25 @@ const OrderSidebar = forwardRef<HTMLDivElement, Props>(function OrderSidebar(
         )}
 
         {isSolo ? (
+          // Direction E Rec #2: solo checkout button is the cart CTA -- yellow,
+          // 48px min, warm shadow, rounded-xl to match the card family.
           <button
             onClick={onCheckoutMine}
             disabled={myItems.length === 0 || isLocked}
-            className="w-full py-3 bg-brand-blue text-white text-base font-semibold tracking-[0.08em] rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-3.5 min-h-[48px] bg-brand-yellow text-gray-900 text-base font-semibold tracking-[0.08em] rounded-xl hover:bg-yellow-400 active:bg-yellow-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-warm-md"
           >
             Checkout - ${myTotal.toFixed(2)}
           </button>
         ) : (
           <div className="space-y-2">
             {myItems.length > 0 && (
+              // "Checkout My Items" stays blue to visually distinguish from the
+              // "Pay for Everything" primary action below (which is yellow).
+              // Both still meet the 48px tap-target floor.
               <button
                 onClick={onCheckoutMine}
                 disabled={isLocked}
-                className="w-full py-3 bg-brand-blue text-white text-base font-semibold tracking-[0.08em] rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-colors disabled:opacity-50"
+                className="w-full py-3.5 min-h-[48px] bg-brand-blue text-white text-base font-semibold tracking-[0.08em] rounded-xl hover:bg-blue-700 active:bg-blue-800 transition-colors disabled:opacity-50"
               >
                 Checkout My Items - ${myTotal.toFixed(2)}
               </button>
@@ -426,7 +431,7 @@ const OrderSidebar = forwardRef<HTMLDivElement, Props>(function OrderSidebar(
               <button
                 onClick={onCheckoutAll}
                 disabled={isLocked}
-                className="w-full py-3 bg-brand-yellow text-gray-900 text-base font-semibold tracking-[0.08em] rounded-lg hover:bg-yellow-400 active:bg-yellow-500 transition-colors disabled:opacity-50"
+                className="w-full py-3.5 min-h-[48px] bg-brand-yellow text-gray-900 text-base font-semibold tracking-[0.08em] rounded-xl hover:bg-yellow-400 active:bg-yellow-500 transition-colors disabled:opacity-50 shadow-warm-md"
               >
                 {hasPurchased
                   ? `Pay for Remaining - $${allDraftTotal.toFixed(2)}`
@@ -443,7 +448,9 @@ const OrderSidebar = forwardRef<HTMLDivElement, Props>(function OrderSidebar(
     <>
       {/* Desktop sidebar -- hidden on mobile */}
       <div className="hidden lg:block">
-        <div data-tour="cart" className="sticky top-20 h-[calc(100vh-5rem)] overflow-y-auto bg-white rounded-xl border border-gray-200 shadow-sm">
+        {/* Direction E: no border on cream -- rely on the warm shadow alone.
+            rounded-2xl matches the WelcomeHero family. */}
+        <div data-tour="cart" className="sticky top-20 h-[calc(100vh-5rem)] overflow-y-auto bg-white rounded-2xl shadow-warm-md">
           <div className="px-5 py-4 border-b border-gray-100">
             <div className="flex items-center gap-3">
               <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -456,6 +463,8 @@ const OrderSidebar = forwardRef<HTMLDivElement, Props>(function OrderSidebar(
                 ${myTotal.toFixed(2)}
               </span>
             </div>
+            {/* Direction E premium accent: 48px gold rule under the cart head. */}
+            <div className="h-px w-12 bg-gold mt-3" />
           </div>
           {renderCartContent()}
 
@@ -465,7 +474,7 @@ const OrderSidebar = forwardRef<HTMLDivElement, Props>(function OrderSidebar(
       {/* Mobile collapsible cart -- hidden when empty */}
       {!isEmpty && (
         <div ref={ref} className="lg:hidden mb-6" data-tour="cart">
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-warm-md overflow-hidden">
             {/* Header */}
             <button
               onClick={() => setExpanded(!expanded)}
