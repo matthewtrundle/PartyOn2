@@ -6,7 +6,13 @@ import { useGroupOrderV2 } from '@/lib/group-orders-v2/hooks';
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardCustomHero from '@/components/dashboard/DashboardCustomHero';
 import DeliveryHeroSection from '@/components/dashboard/DeliveryHeroSection';
-import OnboardingPopup from '@/components/dashboard/OnboardingPopup';
+import MoodWash from '@/components/dashboard/MoodWash';
+import VibePickerModal from '@/components/dashboard/VibePickerModal';
+// OnboardingPopup intentionally not mounted on the dashboard anymore --
+// friction reduction G2. Party type is collected at /order via the chip
+// selector; dashboard name is captured via the inline-editable header
+// title. The file remains in tree for partner-page flows that may still use
+// it. See plan: /Users/allan/.claude/plans/rustling-snacking-rain.md
 import OrderSidebar from '@/components/dashboard/OrderSidebar';
 import ProductBrowse from '@/components/dashboard/ProductBrowse';
 import DashboardBottomBar from '@/components/dashboard/DashboardBottomBar';
@@ -26,9 +32,18 @@ import { OnboardingTourProvider, DashboardTour } from '@/components/dashboard/to
 import { getHiddenProductIds } from '@/lib/affiliates/product-exclusions';
 import { getCustomDashboardTheme } from '@/lib/dashboard/custom-themes';
 
-const CONFETTI_COLORS = ['#003087', '#FFD700', '#FF6B35', '#00B4D8', '#FF1493'];
+// Direction E Rec #5: brand palette only (was darker blue + magenta + orange,
+// none of which are on-brand). Once-per-session cap so the celebration stays
+// special; honors prefers-reduced-motion for accessibility.
+const CONFETTI_COLORS = ['#0B74B8', '#F2D34F', '#D4AF37', '#FAF6EE', '#FFFFFF'];
+//                       brand-blue   yellow      gold       cream      white
+const CONFETTI_SESSION_KEY = 'pod_confetti_fired';
 
 function fireConfetti() {
+  if (typeof window === 'undefined') return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (window.sessionStorage.getItem(CONFETTI_SESSION_KEY)) return;
+  window.sessionStorage.setItem(CONFETTI_SESSION_KEY, '1');
   import('canvas-confetti').then((mod) => {
     const confetti = mod.default;
     confetti({
@@ -60,7 +75,6 @@ export default function DashboardPage(): ReactElement {
   const { groupOrder, isLoading, refresh } = useGroupOrderV2(code);
 
   const [participantId, setParticipantId] = useState<string | null>(null);
-  const [showOnboarding, setShowOnboarding] = useState(false);
   const [activeTabIndex, setActiveTabIndex] = useState(0);
   const [checkoutMode, setCheckoutMode] = useState<'mine' | 'all' | null>(null);
   const [showGetRecs, setShowGetRecs] = useState(false);
@@ -68,6 +82,7 @@ export default function DashboardPage(): ReactElement {
   const [showShareModal, setShowShareModal] = useState(false);
   const [showLocationDetails, setShowLocationDetails] = useState(false);
   const [showNewLocation, setShowNewLocation] = useState(false);
+  const [showVibePicker, setShowVibePicker] = useState(false);
   const [needsJoin, setNeedsJoin] = useState(false);
   const [appliedPromo, setAppliedPromo] = useState<AppliedPromo | null>(null);
 
@@ -104,6 +119,7 @@ export default function DashboardPage(): ReactElement {
       cancelled = true;
     };
   }, [groupOrder?.isLastMinute]);
+
 
   // Restore participant ID from localStorage
   useEffect(() => {
@@ -215,18 +231,12 @@ export default function DashboardPage(): ReactElement {
   }, [groupOrder, participantId, code]);
 
   // Show onboarding for new orders (no party type set yet)
-  useEffect(() => {
-    if (!groupOrder || !participantId) return;
-    const isHost = groupOrder.participants.find(
-      (p) => p.id === participantId
-    )?.isHost;
-    if (isHost && !groupOrder.partyType) {
-      const dismissed = localStorage.getItem(`dashboard_onboarding_${code}`);
-      if (!dismissed) {
-        setShowOnboarding(true);
-      }
-    }
-  }, [groupOrder, participantId, code]);
+  // Friction reduction G2: the auto-popup that fired OnboardingPopup when a
+  // host arrived without a partyType is removed. Party type is now collected
+  // at /order (chip selector) before the dashboard mounts. Dashboards that
+  // somehow land here with partyType=null still render -- the WelcomeHero
+  // falls through to its OTHER fallback ("Party On" eyebrow + "Let's get
+  // this started" subhead), which is friendlier than a forced modal.
 
   // Handle host claim token from URL
   useEffect(() => {
@@ -254,12 +264,6 @@ export default function DashboardPage(): ReactElement {
       });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [groupOrder?.id, participantId]);
-
-  const handleOnboardingDismiss = useCallback(() => {
-    setShowOnboarding(false);
-    localStorage.setItem(`dashboard_onboarding_${code}`, '1');
-    refresh();
-  }, [code, refresh]);
 
   const handlePromoApply = useCallback(async (promo: AppliedPromo) => {
     setAppliedPromo(promo);
@@ -325,7 +329,7 @@ export default function DashboardPage(): ReactElement {
 
   if (isLoading || !groupOrder) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-cream flex items-center justify-center">
         <div className="text-center">
           <div className="w-8 h-8 border-3 border-gray-900 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
           <p className="text-base text-gray-500">Loading your order...</p>
@@ -336,7 +340,7 @@ export default function DashboardPage(): ReactElement {
 
   if (groupOrder.status === 'CANCELLED') {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+      <div className="min-h-screen bg-cream flex items-center justify-center px-4">
         <div className="max-w-md text-center space-y-3">
           <h1 className="text-2xl font-semibold text-gray-900">This order has been cancelled</h1>
           <p className="text-gray-600">
@@ -347,6 +351,13 @@ export default function DashboardPage(): ReactElement {
     );
   }
 
+  // Friction reduction G3 (deferred -- see plan): the intent is to drop this
+  // full-page JoinOverlay interception and instead show an inline
+  // first-name + age-21 prompt anchored to the product card on first
+  // Add-to-Cart tap. That change requires loosening participantId from
+  // `string` to `string | null` across ProductBrowse + DashboardProductCard
+  // and their API call sites -- a sizeable refactor. Until then, joiners
+  // still see this overlay. Tracked as a follow-up to this PR.
   if (!participantId && needsJoin && groupOrder) {
     const host = groupOrder.participants.find((p) => p.isHost);
     const firstTab = groupOrder.tabs[0];
@@ -370,7 +381,7 @@ export default function DashboardPage(): ReactElement {
 
   if (!participantId) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-cream flex items-center justify-center">
         <div className="text-center">
           <div className="w-8 h-8 border-3 border-gray-900 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
           <p className="text-base text-gray-500">Setting up...</p>
@@ -384,7 +395,7 @@ export default function DashboardPage(): ReactElement {
   const tab = groupOrder.tabs[safeTabIndex];
   if (!tab) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-cream flex items-center justify-center">
         <p className="text-gray-500">No location tab found.</p>
       </div>
     );
@@ -417,7 +428,12 @@ export default function DashboardPage(): ReactElement {
 
   return (
     <OnboardingTourProvider shareCode={code}>
-    <div className="min-h-screen bg-gray-50 pb-20 lg:pb-6">
+    {/* Direction E: cream replaces the cool gray-50 default surface. The whole
+        dashboard is a warm "Saturday-morning sunlight" environment. */}
+    <div className="min-h-screen bg-cream pb-20 lg:pb-6">
+      {/* MoodWash: subtle theme-able color shift behind everything. Skipped
+          for CORPORATE/OTHER party types and honors prefers-reduced-motion. */}
+      <MoodWash partyType={groupOrder.partyType} />
       <DashboardTour
         isHost={currentIsHost}
         hasPartyType={!!groupOrder.partyType}
@@ -442,10 +458,12 @@ export default function DashboardPage(): ReactElement {
             activeTabIndex={safeTabIndex}
             activeTab={tab}
             participantId={participantId}
+            isLocked={isLocked}
             onTabChange={setActiveTabIndex}
             onAddDelivery={() => setShowNewLocation(true)}
             onEditDelivery={() => setShowLocationDetails(true)}
             onRefresh={refresh}
+            onVibePickerOpen={() => setShowVibePicker(true)}
           />
           {/* Mobile cart (hidden on desktop) */}
           <div className="lg:hidden">
@@ -466,7 +484,10 @@ export default function DashboardPage(): ReactElement {
             />
           </div>
 
-          {/* Promo code + Get Recs */}
+          {/* Promo code + Get Recommendations. Both surfaces stay visible on
+              mobile (we previously hid Get Recs on mobile because the hero
+              had a Get ideas chip; that chip is gone, so this button is the
+              only entry point again). */}
           <div className="mb-4 flex flex-col sm:flex-row items-stretch gap-3 sm:gap-4">
             <div className="flex-1 basis-0 min-w-0">
               <PromoCodeInput
@@ -588,6 +609,16 @@ export default function DashboardPage(): ReactElement {
         />
       )}
 
+      <VibePickerModal
+        isOpen={showVibePicker}
+        onClose={() => setShowVibePicker(false)}
+        currentVibeKey={groupOrder.heroVibeKey}
+        partyType={groupOrder.partyType}
+        shareCode={groupOrder.shareCode}
+        participantId={participantId}
+        onSaved={refresh}
+      />
+
       {showLocationDetails && (
         <DeliveryDetailsModal
           shareCode={groupOrder.shareCode}
@@ -620,18 +651,6 @@ export default function DashboardPage(): ReactElement {
         />
       )}
 
-      {showOnboarding && (
-        <OnboardingPopup
-          shareCode={groupOrder.shareCode}
-          firstTabId={groupOrder.tabs[0]?.id}
-          participantId={participantId}
-          onComplete={() => {
-            handleOnboardingDismiss();
-            refresh();
-          }}
-          onDismiss={handleOnboardingDismiss}
-        />
-      )}
     </div>
     </OnboardingTourProvider>
   );

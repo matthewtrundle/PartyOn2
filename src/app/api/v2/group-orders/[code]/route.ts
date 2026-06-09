@@ -9,6 +9,7 @@ import {
   getGroupOrderByCode,
   updateGroupOrderFields,
   cancelGroupOrder,
+  NotHostError,
 } from '@/lib/group-orders-v2/service';
 import { UpdateGroupOrderSchema } from '@/lib/group-orders-v2/validation';
 
@@ -48,11 +49,18 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    await updateGroupOrderFields(code, parsed.data);
+    const { participantId, ...fields } = parsed.data;
+    await updateGroupOrderFields(code, participantId, fields);
     const updated = await getGroupOrderByCode(code);
 
     return NextResponse.json({ success: true, data: updated });
   } catch (error) {
+    if (error instanceof NotHostError) {
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: 403 }
+      );
+    }
     console.error('[Group V2] Update error:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to update group order' },

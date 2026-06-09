@@ -28,6 +28,12 @@ export interface DeliveryAddressV2 {
   province: string;
   zip: string;
   country: string;
+  /**
+   * When true, this "address" represents in-store pickup at the Party On shop
+   * rather than a real delivery destination. Fee is waived and ops/dispatch
+   * should not route a driver.
+   */
+  isPickup?: boolean;
 }
 
 export interface ParticipantInfo {
@@ -44,6 +50,10 @@ export interface ParticipantInfo {
 export interface GroupOrderV2Full {
   id: string;
   name: string;
+  /** Editable subtitle below the H1 in the dashboard WelcomeHero. null = use smart default. */
+  subtitle: string | null;
+  /** Key into heroVibes catalog. null = use party-type default background. */
+  heroVibeKey: string | null;
   shareCode: string;
   status: GroupOrderV2Status;
   hostName: string;

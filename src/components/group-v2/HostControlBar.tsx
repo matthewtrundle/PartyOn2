@@ -32,7 +32,7 @@ export default function HostControlBar({
     if (!confirm('Close this group? No new participants can join, but existing members can still checkout.')) return;
     setLoading('close');
     try {
-      await updateGroupOrderV2(code, { status: 'CLOSED' });
+      await updateGroupOrderV2(code, hostParticipantId, { status: 'CLOSED' });
       onRefresh();
     } catch (err) {
       console.error('Failed to close group:', err);
@@ -44,7 +44,7 @@ export default function HostControlBar({
   const handleReopenGroup = async () => {
     setLoading('reopen');
     try {
-      await updateGroupOrderV2(code, { status: 'ACTIVE' });
+      await updateGroupOrderV2(code, hostParticipantId, { status: 'ACTIVE' });
       onRefresh();
     } catch (err) {
       console.error('Failed to reopen group:', err);
