@@ -2,6 +2,7 @@
 
 import type { ReactElement } from 'react';
 import type { WeddingPlan } from '@/lib/weddingDrinkCalculator';
+import ResultsQuoteCapture from './sections/ResultsQuoteCapture';
 
 interface Props {
   plan: WeddingPlan;
@@ -84,6 +85,11 @@ export default function CalculatorResults({ plan }: Props): ReactElement {
           ))}
         </div>
       </div>
+
+      {/* Email-first capture at the peak-intent moment — converts the
+          "I have my number" moment into a real, editable quote. The full
+          list above stays free; this is the page's primary conversion. */}
+      <ResultsQuoteCapture plan={plan} />
     </div>
   );
 }
