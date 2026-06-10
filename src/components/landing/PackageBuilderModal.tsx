@@ -747,19 +747,37 @@ export default function PackageBuilderModal({
                 {stepIndex === 0 ? 'Start →' : 'Next →'}
               </button>
             ) : (
-              <button
-                type="submit"
-                form="quote-form"
-                disabled={submitting}
-                className="px-4 py-2 text-xs sm:text-sm font-bold rounded-md tracking-wide transition-all hover:scale-[1.03] shadow-md whitespace-nowrap disabled:opacity-60"
-                style={{ background: T.primary, color: T.primaryText }}
-              >
-                {submitting
-                  ? '…'
-                  : submitMode === 'checkout'
-                    ? 'Pay →'
-                    : 'Send →'}
-              </button>
+              // Review step — two CTAs at the bottom right. Both submit
+              // the same form (handleSubmit creates a real dashboard
+              // and redirects). "Send" = casual / send-me-the-link
+              // intent; "Pay Now" = ready-to-check-out intent. Both
+              // land on /dashboard/<code> where checkout lives.
+              <div className="flex gap-2 items-center">
+                <button
+                  type="submit"
+                  form="quote-form"
+                  onClick={() => setSubmitMode('quote')}
+                  disabled={submitting}
+                  className="px-3 py-2 text-xs sm:text-sm font-bold rounded-md tracking-wide transition-all hover:scale-[1.03] shadow-md whitespace-nowrap disabled:opacity-60"
+                  style={{
+                    background: '#FFFFFF',
+                    color: T.navy,
+                    border: `2px solid ${T.navy}`,
+                  }}
+                >
+                  {submitting ? '…' : 'Send →'}
+                </button>
+                <button
+                  type="submit"
+                  form="quote-form"
+                  onClick={() => setSubmitMode('checkout')}
+                  disabled={submitting}
+                  className="px-4 py-2 text-xs sm:text-sm font-bold rounded-md tracking-wide transition-all hover:scale-[1.03] shadow-md whitespace-nowrap disabled:opacity-60"
+                  style={{ background: T.primary, color: T.primaryText }}
+                >
+                  {submitting ? '…' : 'Pay Now →'}
+                </button>
+              </div>
             )}
           </div>
         )}
@@ -1325,46 +1343,25 @@ function ReviewStep({
   modal: LandingConfig['modal'];
   theme: LandingConfig['theme'];
 }) {
-  const addressRequired = submitMode === 'checkout';
+  // submitMode + setSubmitMode are still passed by the parent — the
+  // sticky footer's Send / Pay Now buttons use them to tag intent on
+  // each submission. There's no mode-toggle UI inside the review step
+  // anymore; both buttons just call handleSubmit, which always creates
+  // a dashboard and redirects. Reference once to keep eslint quiet
+  // when the props aren't read inside this component body.
+  void submitMode;
+  void setSubmitMode;
+  // Address fields are always optional from this surface — dashboard
+  // collects them on its own checkout step.
+  const addressRequired = false;
   return (
     <div>
-      {/* Compact toggle at the top — Send me this quote / Pay now */}
-      <div className="grid grid-cols-2 gap-2 mb-3">
-        <button
-          type="button"
-          onClick={() => setSubmitMode('quote')}
-          className="px-3 py-2 rounded-md text-center transition-all text-sm font-bold"
-          style={{
-            background: submitMode === 'quote' ? theme.primary : '#FFFFFF',
-            color: submitMode === 'quote' ? theme.primaryText : theme.navy,
-            border: `2px solid ${submitMode === 'quote' ? theme.primary : '#E5E7EB'}`,
-            boxShadow: submitMode === 'quote' ? `0 2px 6px ${theme.primary}66` : 'none',
-          }}
-        >
-          📧 Send me this quote
-        </button>
-        <button
-          type="button"
-          onClick={() => setSubmitMode('checkout')}
-          className="px-3 py-2 rounded-md text-center transition-all text-sm font-bold"
-          style={{
-            background: submitMode === 'checkout' ? theme.primary : '#FFFFFF',
-            color: submitMode === 'checkout' ? theme.primaryText : theme.navy,
-            border: `2px solid ${submitMode === 'checkout' ? theme.primary : '#E5E7EB'}`,
-            boxShadow: submitMode === 'checkout' ? `0 2px 6px ${theme.primary}66` : 'none',
-          }}
-        >
-          💳 Pay now
-        </button>
-      </div>
-
       <h2 className="font-heading text-xl font-bold mb-1 leading-tight" style={{ color: theme.navy }}>
-        {modal.reviewHeadline}
+        Review your order
       </h2>
       <p className="text-xs text-gray-600 mb-3">
-        {submitMode === 'quote'
-          ? "We'll email you an editable invoice you can pay anytime."
-          : "Lock your date with secure Stripe checkout."}
+        We&apos;ll create your dashboard, email you the link, and drop you
+        on the order page to keep shopping or check out.
       </p>
 
       {/* Compact event summary — totals live in the modal's sticky footer */}
