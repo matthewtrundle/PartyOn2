@@ -1,94 +1,118 @@
 # Google Ads Conversion Tracking — Setup Guide
 
-This doc explains the conversion actions the operator needs to create in
-the Google Ads UI before paid traffic to `/wedding-drink-calculator`
-(and future landing pages) can be optimized by Smart Bidding.
-
 The code-level wiring is already in place behind env-var gates. Until the
 env vars below are populated in Vercel, conversion firing is a silent
 no-op — safe to deploy unset.
 
-## The three env vars
+## 1. The 3 conversion actions to build in Google Ads UI
 
-| Env var | Holds | Used by |
-|---|---|---|
-| `NEXT_PUBLIC_GOOGLE_ADS_ID` | The account-level tag id, format `AW-XXXXXXXXX` | `src/components/GoogleAdsTag.tsx` (loads gtag.js) |
-| `NEXT_PUBLIC_GADS_QUOTE_CONVERSION_ID` | Full conversion label for the Quote Lead action, format `AW-XXXXXXXXX/abc123def456` | `src/app/wedding-drink-calculator/sections/QuoteFormSection.tsx` |
-| `NEXT_PUBLIC_GADS_PURCHASE_CONVERSION_ID` | Full conversion label for the Invoice Purchase action, format `AW-XXXXXXXXX/abc123def456` | `src/app/checkout/success/page.tsx` |
+In Google Ads UI: **Tools → Conversions → + New conversion action → Website**.
+Create all three:
 
-**Important**: the conversion-id env vars must hold the FULL label
-(`AW-XXXXXXXXX/abc123def456`), not just the suffix after the slash.
-That's the value you paste into `send_to` on `gtag('event', 'conversion', ...)`.
+### Wedding Quote Lead
 
-## Conversion actions to create in Google Ads
-
-In Google Ads UI: **Tools & Settings → Measurement → Conversions → + New conversion action → Website**.
-
-Create these three actions. For each, capture the resulting "Conversion ID + label" pair
-(under "Tag setup → Use Google tag → install yourself") — that's the value the env var holds.
-
-### 1. Quote Lead
-
-- **Conversion name**: `Wedding Bar Quote Submitted`
-- **Category**: Submit lead form
-- **Value**: Don't use a value for this conversion action (we send `value: 0` from code)
-- **Count**: One (one conversion per click — quote forms aren't a repeat action)
-- **Click-through conversion window**: 30 days
+- **Category**: Lead
+- **Value**: `0` (no monetary value on a quote — value comes when the invoice is paid)
+- **Count**: One (one conversion per click)
+- **Deduplication**: None — quote leads don't repeat in a meaningful window
+- **Click-through window**: 30 days
 - **Attribution model**: Data-driven (fall back to Last click if traffic is too low)
-- **Includes "Conversions" column**: Yes (Smart Bidding will optimize toward this)
+- **Include in "Conversions" column**: Yes (Smart Bidding optimizes toward this)
 
-Once created, paste `NEXT_PUBLIC_GADS_QUOTE_CONVERSION_ID=AW-XXXXXXXXX/quote-label-here` into Vercel.
+### Invoice Purchase
 
-### 2. Invoice Purchase
-
-- **Conversion name**: `Invoice Purchase (Stripe)`
 - **Category**: Purchase
-- **Value**: Use different values for each conversion (code passes the `value` from the Stripe session amount)
-- **Count**: Every (purchases can repeat)
-- **Click-through conversion window**: 30 days
+- **Value**: Use different values per conversion (code sends the Stripe session
+  `amount` at fire time)
+- **Count**: Every (purchases can legitimately repeat)
+- **Deduplication**: by `transaction_id` (code already passes the Stripe session
+  id / order id as `transaction_id` so Google can dedupe direct fires against
+  any GA4-imported purchase events)
+- **Click-through window**: 30 days
 - **Attribution model**: Data-driven
-- **Includes "Conversions" column**: Yes
-- **Enhanced conversions**: Recommended once live — code already passes `transaction_id` for dedup
+- **Include in "Conversions" column**: Yes
+- **Enhanced Conversions**: Recommended once live
 
-Once created, paste `NEXT_PUBLIC_GADS_PURCHASE_CONVERSION_ID=AW-XXXXXXXXX/purchase-label-here` into Vercel.
+### Phone Call (Ad)
 
-### 3. Phone Call
-
-- **Conversion name**: `Wedding Calculator Phone Call`
-- **Category**: Phone call lead
-- **Method**: Calls from ads using call extensions (set up via Google's "Call from ads" — no code change needed)
+- **Category**: Lead
+- **Source**: Calls from ads (call-extension conversion) — set up via Google's
+  "Call from ads" feature, no code change needed
 - **Minimum call length**: 60 seconds (filters out misdials)
 - **Count**: One
 
 No env var for this one — Google Ads tracks call-extension conversions natively.
-It's listed here so the operator remembers to enable it in the same setup pass.
 
-## GA4 ↔ Google Ads link (redundancy)
+## 2. Env-var → conversion-action mapping
 
-In parallel with the direct conversion firing above, link the GA4 property to
-Google Ads (**Google Ads UI → Tools & Settings → Linked accounts → Google Analytics (GA4)**).
-That gives Google Ads access to GA4-defined `generate_lead` and `purchase`
-events as importable conversions. If the direct `gtag('event', 'conversion')`
-calls ever drift or block, the GA4 import keeps Smart Bidding fed.
+| Env var | Value format | Holds |
+|---|---|---|
+| `NEXT_PUBLIC_GOOGLE_ADS_ID` | `AW-XXXXXXXXX` | The account-level tag id, no slash |
+| `NEXT_PUBLIC_GADS_QUOTE_CONVERSION_ID` | `AW-XXXXXXXXX/abc123def456` | Full conversion label for Wedding Quote Lead |
+| `NEXT_PUBLIC_GADS_PURCHASE_CONVERSION_ID` | `AW-XXXXXXXXX/xyz789ghi012` | Full conversion label for Invoice Purchase |
 
-Set the direct-fired action as **primary** and the GA4-imported version as
-**secondary** for the same conversion category, so they don't double-count.
+**Important**: the two conversion-id env vars hold the FULL label including
+the slash + suffix (`AW-XXXXXXXXX/abc123def456`). That's the value pasted into
+`send_to` on `gtag('event', 'conversion', { send_to: ... })`. Not just the
+suffix.
 
-## Verifying it works
+## 3. How to find the labels
 
-1. Once env vars are set in Vercel and a build is deployed, open the
-   calculator page in Chrome with the [Google Tag Assistant](https://tagassistant.google.com/)
-   extension. Confirm gtag.js loads with the `AW-` id.
-2. Submit a test quote. Tag Assistant should show a `conversion` hit
-   with `send_to` matching `NEXT_PUBLIC_GADS_QUOTE_CONVERSION_ID`.
-3. Run a Stripe test checkout and land on `/checkout/success`. Tag Assistant
-   should show a second `conversion` hit with the purchase id and `value`.
-4. In Google Ads UI, the conversion action status will flip from
-   "No recent conversions" to "Recording conversions" within ~3 hours of the first fire.
+In Google Ads UI:
+
+1. **Tools → Conversions** → click into the conversion action you created.
+2. Scroll to **Tag setup**.
+3. Click **Use Google Tag Manager** (don't actually use GTM — this view exposes the raw label).
+4. Copy the `send_to` value. It looks like `AW-1234567890/AbCdEfGhIjKlMnOp`.
+5. Paste into the corresponding Vercel env var.
+
+Repeat for both Quote and Purchase.
+
+## 4. GA4 linking as redundancy
+
+Beyond the direct `gtag('event', 'conversion', ...)` fires the code already does,
+also link Google Ads ↔ GA4:
+
+1. Google Ads → **Tools → Linked accounts → Google Analytics 4** → link the
+   GA4 property `376300916`.
+2. Once linked, GA4-defined `generate_lead` and `purchase` events can be
+   imported into Google Ads as conversion actions automatically.
+3. Set the direct-fired actions (above) as **primary** and the GA4-imported
+   ones as **secondary** so the same event doesn't double-count.
+
+This is defensive: if the direct `gtag` firing ever breaks (CSP change,
+ad-blocker, env-var typo), the GA4 import keeps Smart Bidding fed.
+
+## 5. Verification
+
+After env vars are set in Vercel + deploy is live:
+
+1. Install the [Google Tag Assistant](https://tagassistant.google.com/) Chrome
+   extension.
+2. Visit `https://partyondelivery.com/wedding-drink-calculator`. Confirm
+   gtag.js loads with the `AW-` id.
+3. Submit a test quote on the page. Tag Assistant should show a `conversion`
+   hit with `send_to` matching `NEXT_PUBLIC_GADS_QUOTE_CONVERSION_ID`.
+4. Run a Stripe test checkout, land on `/checkout/success`. Tag Assistant
+   should show a `conversion` hit with the purchase id and dollar `value`.
+5. Within ~3 hours, Google Ads UI flips the conversion action status from
+   "No recent conversions" to "Recording conversions."
+
+## 6. Where conversions fire in the codebase
+
+| Conversion | File | Trigger |
+|---|---|---|
+| Wedding Quote Lead | `src/app/wedding-drink-calculator/sections/QuoteFormCard.tsx` | On successful POST to `/api/v1/landing/quote` (form `setStatus('success')` path). Fires both inline + bottom placements; `placement` parameter on the GA4 event distinguishes them. |
+| Invoice Purchase | `src/app/checkout/success/page.tsx` | Two call sites — one inside the Stripe-session-fetched `try` block (~line 110), one in the non-Stripe fallback (~line 134). Each fires `gtag('event', 'conversion', ...)` right after its existing `trackMetaEvent('Purchase', ...)` call. |
+| Phone Call (Ad) | n/a | Tracked entirely in Google Ads via call-extension setup. No code path. |
+
+All three direct-fire calls are env-gated: if the matching
+`NEXT_PUBLIC_GADS_*_CONVERSION_ID` is empty, the `gtag('event', 'conversion', ...)`
+call short-circuits and nothing fires. Safe to ship without the env vars set.
 
 ## References
 
 - [Set up conversion tracking for your website](https://support.google.com/google-ads/answer/6095821)
 - [Use the Google tag for conversion tracking](https://support.google.com/google-ads/answer/12002338)
-- [Link Google Analytics 4 to Google Ads](https://support.google.com/google-ads/answer/9379420)
+- [Link GA4 to Google Ads](https://support.google.com/google-ads/answer/9379420)
 - [Enhanced conversions for web](https://support.google.com/google-ads/answer/9888656)

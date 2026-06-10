@@ -4,6 +4,7 @@ import UpsellTrackerView from '@/components/admin/UpsellTrackerView';
 import LeadsView from '@/components/admin/LeadsView';
 import EventsView from '@/components/admin/EventsView';
 import LeadMagnetView from '@/components/admin/LeadMagnetView';
+import ExperimentsView from '@/components/admin/ExperimentsView';
 import SeoIntelligenceView from '@/components/admin/SeoIntelligenceView';
 import EnrichmentDocsView from '@/components/admin/EnrichmentDocsView';
 import BriansStuffTabs from './BriansStuffTabs';
@@ -28,25 +29,27 @@ type SP = Promise<{ tab?: string }>;
  */
 export default async function Page({ searchParams }: { searchParams: SP }) {
   const params = await searchParams;
-  const initialTab =
-    params.tab === 'upsell'
-      ? 'upsell'
-      : params.tab === 'leads'
-        ? 'leads'
-        : params.tab === 'events'
-          ? 'events'
-          : params.tab === 'magnets'
-            ? 'magnets'
-            : params.tab === 'seo'
-              ? 'seo'
-              : params.tab === 'docs'
-                ? 'docs'
-                : 'playbook';
+  const VALID_TABS = [
+    'playbook',
+    'experiments',
+    'upsell',
+    'leads',
+    'events',
+    'magnets',
+    'seo',
+    'docs',
+  ] as const;
+  const initialTab = (
+    (VALID_TABS as readonly string[]).includes(params.tab ?? '')
+      ? (params.tab as (typeof VALID_TABS)[number])
+      : 'playbook'
+  );
 
   return (
     <BriansStuffTabs
       initialTab={initialTab}
       playbook={<PlaybookClient />}
+      experiments={<ExperimentsView />}
       tracker={<UpsellTrackerView />}
       leads={<LeadsView />}
       events={<EventsView />}

@@ -6,65 +6,84 @@ import type { ReactElement } from 'react';
 import { trackCTAClick } from '@/lib/analytics/ga4-events';
 
 /**
- * Full-bleed hero for /wedding-drink-calculator. Follows the `mt-24 h-[60vh]
- * md:h-[70vh]` pattern from CLAUDE.md. Keeps the 4-badge TABC/21+ compliance
- * strip required by Google Ads alcohol policy.
+ * Paid-ad landing hero. Editorial-luxury aesthetic (espresso ground,
+ * champagne gold accent, restrained type) executed for conversion:
+ *
+ *   - One-line H1 = exact keyword match for "wedding drink calculator"
+ *   - Single Fraunces italic gold "exact" in the subhead carries the
+ *     entire editorial signature — no fragmented headline, no
+ *     decorative furniture (corner marks, "No. 01", etc.)
+ *   - Solid-gold filled CTA above the fold at 1366×768
+ *   - Inline "★ 5.0 on Google" trust line below the CTA — social proof
+ *     ABOVE the policy compliance strip
+ *   - Staggered 600ms entrance reads as composed/premium
  */
 export default function CalculatorHero(): ReactElement {
   const handleHeroCta = () => {
-    trackCTAClick('Show me the calculator', '#calculator', 'wedding_calc_hero');
+    trackCTAClick('Start the calculator', '#calculator', 'wedding_calc_hero');
   };
 
   return (
-    <section className="relative h-[60vh] md:h-[70vh] mt-16 flex items-center justify-center overflow-hidden">
+    <section className="relative h-[45vh] md:h-[50vh] min-h-[420px] overflow-hidden bg-[#1a1410]">
       <Image
         src="/images/services/weddings/outdoor-bar-setup.webp"
-        alt="Outdoor wedding bar setup at an Austin reception"
+        alt="Austin wedding bar setup with champagne and spirits"
         fill
-        className="object-cover"
+        className="object-cover opacity-70"
         priority
         sizes="100vw"
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-gray-900/65 via-gray-900/45 to-gray-900/65" />
+      {/* Bottom-heavy vignette — gives the type guaranteed dark ground
+          without flattening the image */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#1a1410]/55 via-[#1a1410]/15 to-[#1a1410]" />
 
-      <div className="relative z-10 text-center text-white max-w-4xl mx-auto px-6">
-        <p className="text-xs sm:text-sm font-semibold tracking-[0.18em] text-[#F2D34F] mb-4">
-          AUSTIN WEDDING BAR DELIVERY
-        </p>
-        <h1 className="font-heading font-bold text-4xl sm:text-5xl md:text-6xl leading-[1.05] tracking-tight mb-5">
-          Your Wedding Bar.
-          <span className="block text-[#C8A96A]">Calculated. Delivered. Done.</span>
+      <div className="relative z-10 h-full flex flex-col items-center justify-center text-center text-white px-6 max-w-3xl mx-auto">
+        <h1
+          className="font-heading text-4xl md:text-5xl lg:text-6xl font-light tracking-tight leading-[1.05] opacity-0 animate-[fadeUp_0.6s_cubic-bezier(0.22,1,0.36,1)_forwards]"
+        >
+          Wedding Drink Calculator
         </h1>
-        <p className="text-base sm:text-lg md:text-xl text-white/90 max-w-2xl mx-auto leading-relaxed mb-7">
-          Plug in your guest count. Get exact quantities for beer, wine, spirits,
-          and bubbly. Then let Austin&apos;s wedding alcohol delivery team handle the rest.
+
+        <p
+          className="mt-6 max-w-xl text-lg md:text-xl text-white/85 font-light leading-relaxed opacity-0 animate-[fadeUp_0.6s_cubic-bezier(0.22,1,0.36,1)_0.2s_forwards]"
+        >
+          Get{' '}
+          <span className="font-cormorant italic text-[#C8A96A]">exact</span>{' '}
+          beer, wine, spirits, and bubbly counts for your Austin wedding.
+          Delivered cold to your venue.
         </p>
 
         <a
           href="#calculator"
           onClick={handleHeroCta}
-          className="inline-flex items-center justify-center font-bold text-base sm:text-lg px-8 py-4 rounded-lg tracking-wide bg-[#F2D34F] text-gray-900 hover:bg-[#FACC15] transition-colors shadow-xl"
+          className="group mt-8 inline-flex items-center gap-3 bg-[#C8A96A] text-[#1a1410] hover:bg-[#d8b97a] transition-colors duration-300 px-10 py-4 text-sm tracking-[0.25em] uppercase font-medium rounded-lg opacity-0 animate-[fadeUp_0.6s_cubic-bezier(0.22,1,0.36,1)_0.4s_forwards]"
         >
-          Show Me The Calculator ↓
+          Start the Calculator
+          <span className="transition-transform duration-300 group-hover:translate-y-0.5">
+            ↓
+          </span>
         </a>
 
-        {/* Compliance + trust strip — required for Google Ads alcohol policy.
-            Surfaces TABC license and 21+ disclosure above the fold. */}
-        <ul className="mt-8 flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-sm">
+        <p
+          className="mt-5 text-sm text-white/65 tracking-wide font-light opacity-0 animate-[fadeUp_0.6s_cubic-bezier(0.22,1,0.36,1)_0.6s_forwards]"
+        >
+          <span className="text-[#C8A96A]">★ 5.0</span> on Google · 98+ Austin wedding reviews
+        </p>
+      </div>
+
+      {/* TABC compliance — policy-mandated bottom strip, kept separate
+          from the social-proof line above (different jobs) */}
+      <div className="absolute bottom-0 inset-x-0 z-10 border-t border-white/10 bg-black/40 backdrop-blur-sm">
+        <ul className="flex flex-wrap items-center justify-center gap-x-6 sm:gap-x-10 gap-y-2 py-2.5 px-4 text-xs sm:text-sm tracking-[0.25em] uppercase font-light text-white/80">
           <li>
-            <Link
-              href="/tabc"
-              className="inline-flex items-center gap-1.5 rounded-full bg-white/15 backdrop-blur px-3 py-1.5 font-semibold text-white hover:bg-white/25 border border-white/25"
-            >
-              ✓ TABC-Licensed Retailer
+            <Link href="/tabc" className="hover:text-[#C8A96A] transition-colors">
+              TABC-Licensed
             </Link>
           </li>
-          <li className="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur px-3 py-1.5 font-semibold text-white border border-white/20">
-            ✓ Must Be 21+ to Order
-          </li>
-          <li className="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur px-3 py-1.5 font-semibold text-white border border-white/20">
-            ★ 5.0 on Google · 98+ reviews
-          </li>
+          <li className="text-white/25">·</li>
+          <li>21+ to Order</li>
+          <li className="text-white/25">·</li>
+          <li>ID Required</li>
         </ul>
       </div>
     </section>

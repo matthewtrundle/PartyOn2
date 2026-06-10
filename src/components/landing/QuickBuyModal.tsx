@@ -19,6 +19,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLeadCapture } from '@/lib/leads/client';
+import { trackFunnelStep } from '@/lib/experiments/funnelTrack';
 import type { LandingConfig, Package } from './types';
 import type { UpsellProducts, UpsellProduct } from '@/lib/landing/getUpsellProducts';
 import UpsellOverlay from './UpsellOverlay';
@@ -268,6 +269,12 @@ export default function QuickBuyModal({
         },
         items,
       );
+      // Canonical funnel step for the Experiments dashboard.
+      trackFunnelStep({
+        step: 'checkout_start',
+        widget: 'QUICK_BUY',
+        metadata: { package: pkg.name, itemCount: items.length },
+      });
       const res = await fetch('/api/v1/landing/quote', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -632,9 +639,10 @@ export default function QuickBuyModal({
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              onBlur={(e) =>
-                lead.onBlurField('email', e.target.value, { email: e.target.value })
-              }
+              onBlur={(e) => {
+                trackFunnelStep({ step: 'contact_filled', widget: 'QUICK_BUY' });
+                lead.onBlurField('email', e.target.value, { email: e.target.value });
+              }}
               placeholder="Email"
               className="w-full bg-white rounded-md px-3 py-2.5 text-sm border border-gray-200 focus:outline-none focus:border-blue-500"
             />

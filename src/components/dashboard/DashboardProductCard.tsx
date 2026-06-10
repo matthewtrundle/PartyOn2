@@ -145,14 +145,17 @@ export default function DashboardProductCard({
 
   return (
     <>
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col">
+      {/* Direction E: drop the gray border in favor of a warm-tinted shadow.
+          The card now pops against the cream page background without a hard
+          edge, and the shadow shifts warmer on hover for tactile feedback. */}
+      <div className="bg-white rounded-xl shadow-warm-sm hover:shadow-warm-md transition-shadow overflow-hidden flex flex-col relative">
         {/* Clickable area: image + title/price -> opens detail modal */}
         <button
           type="button"
           onClick={() => setShowDetail(true)}
           className="text-left cursor-pointer"
         >
-          <div className="relative aspect-square bg-gray-100">
+          <div className="relative aspect-square bg-cream">
             {imageUrl ? (
               <Image
                 src={imageUrl}
@@ -167,6 +170,15 @@ export default function DashboardProductCard({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </div>
+            )}
+            {/* Direction E Rec #3 bonus: when this item is in the cart, render
+                a gold qty badge over the image so the user can glance at the
+                grid and see what's already in their cart without scrolling to
+                the sidebar. */}
+            {qty > 0 && (
+              <span className="absolute top-2 left-2 bg-gold text-gray-900 text-xs font-bold px-2 py-0.5 rounded-full shadow-warm-sm">
+                ×{qty}
+              </span>
             )}
             {!available && (
               <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
@@ -198,11 +210,14 @@ export default function DashboardProductCard({
               </div>
             ) : null
           ) : qty > 0 ? (
-            <div className="flex items-center bg-brand-yellow rounded-full shadow-sm">
+            // Direction E Rec #3: tap targets bumped to 44x44 (Apple HIG) and
+            // shape changed from rounded-full to rounded-xl per the system
+            // rule that buttons are never pill-shaped.
+            <div className="flex items-center bg-brand-yellow rounded-xl shadow-warm-sm">
               <button
                 onClick={handleDecrement}
                 disabled={busy}
-                className="w-8 h-8 flex items-center justify-center text-gray-900 hover:bg-yellow-400 rounded-l-full transition-colors disabled:opacity-50"
+                className="w-11 h-11 flex items-center justify-center text-gray-900 hover:bg-yellow-400 rounded-l-xl transition-colors disabled:opacity-50"
               >
                 {qty === 1 ? (
                   <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -236,7 +251,7 @@ export default function DashboardProductCard({
                     }
                     setEditing(false);
                   }}
-                  className="w-8 text-center text-sm font-bold text-gray-900 bg-white border border-gray-900 rounded outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  className="w-10 text-center text-sm font-bold text-gray-900 bg-white border border-gray-900 rounded outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 />
               ) : (
                 <button
@@ -247,7 +262,7 @@ export default function DashboardProductCard({
                     setEditValue(String(qty));
                     setTimeout(() => editInputRef.current?.select(), 0);
                   }}
-                  className="text-sm font-bold text-gray-900 min-w-[24px] text-center cursor-text hover:bg-yellow-300 rounded transition-colors"
+                  className="text-sm font-bold text-gray-900 min-w-[32px] text-center cursor-text hover:bg-yellow-300 rounded transition-colors"
                 >
                   {busy ? (
                     <span className="inline-block w-3 h-3 border-2 border-gray-900 border-t-transparent rounded-full animate-spin" />
@@ -259,16 +274,18 @@ export default function DashboardProductCard({
               <button
                 onClick={handleIncrement}
                 disabled={busy}
-                className="w-8 h-8 flex items-center justify-center text-gray-900 hover:bg-yellow-400 rounded-r-full transition-colors disabled:opacity-50"
+                className="w-11 h-11 flex items-center justify-center text-gray-900 hover:bg-yellow-400 rounded-r-xl transition-colors disabled:opacity-50"
               >
                 <span className="text-base font-bold leading-none">+</span>
               </button>
             </div>
           ) : available ? (
+            // Direction E Rec #3: empty-state add button matches the stepper
+            // -- 44x44 tap target, rounded-xl, warm shadow.
             <button
               onClick={handleAdd}
               disabled={busy}
-              className="w-8 h-8 flex items-center justify-center bg-brand-yellow text-gray-900 rounded-full shadow-sm hover:bg-yellow-400 active:bg-yellow-500 transition-colors disabled:opacity-50"
+              className="w-11 h-11 flex items-center justify-center bg-brand-yellow text-gray-900 rounded-xl shadow-warm-sm hover:bg-yellow-400 active:bg-yellow-500 transition-colors disabled:opacity-50"
             >
               {busy ? (
                 <span className="inline-block w-3 h-3 border-2 border-gray-900 border-t-transparent rounded-full animate-spin" />

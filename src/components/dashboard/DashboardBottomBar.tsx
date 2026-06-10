@@ -75,16 +75,20 @@ export default function DashboardBottomBar({
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
         <button
           onClick={scrollToCart}
-          className="flex items-center gap-2 text-sm font-semibold text-gray-700 bg-gray-100 rounded-lg px-3 py-2.5 hover:bg-gray-200 transition-colors"
+          className="flex items-center gap-2 text-sm font-semibold text-gray-700 bg-gray-100 rounded-xl px-3 min-h-[48px] hover:bg-gray-200 transition-colors"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17M17 13v4m0 0a2 2 0 11-4 0m4 0a2 2 0 10-4 0m-5-4a2 2 0 11-4 0 2 2 0 014 0z" />
           </svg>
           {totalQty} item{totalQty !== 1 ? 's' : ''}
         </button>
+        {/* Direction E Rec #2 (highest-ROI fix): the mobile checkout button is
+            the most-tapped surface in the app. It MUST be yellow (cart color
+            per the design system), >=48px tall (Material), and read at a
+            glance. Blue / py-2.5 / text-sm was wrong on all three counts. */}
         <button
           onClick={onCheckout}
-          className="flex-1 py-2.5 bg-brand-blue text-white font-semibold tracking-[0.08em] rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-colors text-sm text-center"
+          className="flex-1 py-3.5 min-h-[48px] bg-brand-yellow text-gray-900 font-semibold tracking-[0.08em] rounded-xl hover:bg-yellow-400 active:bg-yellow-500 transition-colors text-base text-center shadow-warm-md"
         >
           Checkout - ${totalPrice.toFixed(2)}
         </button>

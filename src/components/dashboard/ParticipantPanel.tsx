@@ -6,7 +6,6 @@ import {
   removeParticipantV2,
   updateTabV2,
   transferHostV2,
-  generateHostClaimTokenV2,
   updateParticipantNameV2,
 } from '@/lib/group-orders-v2/api-client';
 
@@ -34,8 +33,6 @@ export default function ParticipantPanel({
   const [confirmMakeHostId, setConfirmMakeHostId] = useState<string | null>(null);
   const [transferring, setTransferring] = useState(false);
   const [locking, setLocking] = useState(false);
-  const [copyingLink, setCopyingLink] = useState(false);
-  const [copiedLink, setCopiedLink] = useState(false);
   const [editingNameId, setEditingNameId] = useState<string | null>(null);
   const [editNameValue, setEditNameValue] = useState('');
   const [savingName, setSavingName] = useState(false);
@@ -80,21 +77,6 @@ export default function ParticipantPanel({
       console.error('Failed to transfer host:', err);
     } finally {
       setTransferring(false);
-    }
-  }
-
-  async function handleCopyHostLink() {
-    setCopyingLink(true);
-    try {
-      const { token } = await generateHostClaimTokenV2(shareCode, participantId);
-      const url = `${window.location.origin}/dashboard/${shareCode}?claim=${token}`;
-      await navigator.clipboard.writeText(url);
-      setCopiedLink(true);
-      setTimeout(() => setCopiedLink(false), 2000);
-    } catch (err) {
-      console.error('Failed to generate host link:', err);
-    } finally {
-      setCopyingLink(false);
     }
   }
 
@@ -266,14 +248,6 @@ export default function ParticipantPanel({
               : isLocked
               ? 'Unlock Order'
               : 'Lock Order'}
-          </button>
-          <button
-            data-tour="add-host"
-            onClick={handleCopyHostLink}
-            disabled={copyingLink}
-            className="w-full py-2 text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 bg-gray-100 text-gray-700 hover:bg-gray-200"
-          >
-            {copiedLink ? 'Copied!' : copyingLink ? 'Generating...' : 'Add Another Host'}
           </button>
         </div>
       )}

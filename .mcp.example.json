@@ -1,0 +1,22 @@
+{
+  "$schema": "https://raw.githubusercontent.com/anthropics/claude-code/main/schemas/mcp-config.json",
+  "//": "Copy this file to .mcp.json (gitignored) and adjust as needed. Requires env vars from .env.local: POSTGRES_URL.",
+  "mcpServers": {
+    "postgres": {
+      "//": "Read-only Neon queries. RECOMMENDED: create a separate read-only Postgres role for MCP use and put that connection string in POSTGRES_URL_READONLY.",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-postgres@0.6.2"],
+      "env": {
+        "DATABASE_URL": "${POSTGRES_URL}"
+      }
+    },
+    "//stripe": {
+      "//": "Stripe MCP — DISABLED by default. To enable: create a RESTRICTED API key (rk_*, not sk_*) at https://dashboard.stripe.com/apikeys with read-only permissions for the resources you need (customers, charges, payment_intents, etc.). Store as STRIPE_RESTRICTED_KEY in .env.local. Then uncomment by renaming this key to 'stripe' (drop the //) and removing the //api-key value below.",
+      "command": "npx",
+      "args": ["-y", "@stripe/mcp"],
+      "env": {
+        "STRIPE_SECRET_KEY": "${STRIPE_RESTRICTED_KEY}"
+      }
+    }
+  }
+}

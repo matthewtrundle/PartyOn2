@@ -1,0 +1,74 @@
+name: SEO · SEMrush daily scrape
+
+# Runs the full 8-surface SEMrush capture for partyondelivery.com.
+# Daily cron at 12:00 UTC (= 7:00 AM Central, when fresh data lands
+# before Brian/Allan check the SEO dashboard). Also dispatchable from
+# the Run Now button in /admin/brians-stuff?tab=seo.
+
+on:
+  schedule:
+    # Every day at 7:00 AM Central (12:00 UTC during daylight savings,
+    # 13:00 UTC during winter — cron is in UTC so this drifts ±1 hour
+    # twice a year. Acceptable for an SEO daily report.)
+    - cron: '0 12 * * *'
+  workflow_dispatch:
+    inputs:
+      surfaces:
+        description: 'Comma-separated surfaces to run (blank = all)'
+        required: false
+        default: ''
+
+# Only one scrape at a time — protects against double-runs from a
+# manual dispatch landing on top of the cron.
+concurrency:
+  group: seo-scrape
+  cancel-in-progress: false
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+
+    env:
+      # Pulled from repository secrets. Refresh ritual lives in
+      # /admin/brians-stuff?tab=seo (RunScrapePanel runbook).
+      SEMRUSH_COOKIE_JSON: ${{ secrets.SEMRUSH_COOKIE_JSON }}
+      GHL_DASHBOARD_WEBHOOK_URL: ${{ secrets.GHL_DASHBOARD_WEBHOOK_URL }}
+      POSTGRES_URL: ${{ secrets.POSTGRES_URL }}
+      DATABASE_URL: ${{ secrets.POSTGRES_URL }}
+      # Optional per-run override of which surfaces to capture.
+      SCRAPE_SURFACES: ${{ inputs.surfaces }}
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        # `npm ci` runs the postinstall (prisma generate) for us.
+        run: npm ci
+
+      - name: Install Playwright browsers (Chromium only)
+        # Skip Firefox + WebKit — we only drive Chromium for this job.
+        run: npx playwright install --with-deps chromium
+
+      - name: Run SEMrush scrape
+        id: scrape
+        run: npx tsx scripts/seo/scrape-semrush.ts
+
+      - name: Upload Playwright traces on failure (debug)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces-${{ github.run_id }}
+          path: |
+            data/seo/semrush/_traces/**
+          if-no-files-found: ignore
+          retention-days: 7

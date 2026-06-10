@@ -4,13 +4,24 @@ import { useState, useRef, useEffect, type ReactElement } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import type { GroupOrderV2Full } from '@/lib/group-orders-v2/types';
-import { updateGroupOrderV2 } from '@/lib/group-orders-v2/api-client';
-import { parseTitleMarkup } from '@/lib/dashboard/parse-title-markup';
 import ParticipantPanel from './ParticipantPanel';
+
+/**
+ * Dashboard header -- the sticky strip at the top of every dashboard page.
+ *
+ * After the WelcomeHero rewrite this is just nav: logo on the left, share
+ * + participants on the right. The editable dashboard title that used to
+ * live here is gone -- it moved into the hero where it earns its space.
+ * The `Locked` badge that used to render here also moved into the hero's
+ * eyebrow line so the header stays nav-only.
+ */
 
 interface Props {
   groupOrder: GroupOrderV2Full;
   participantId: string;
+  // isLocked is still accepted from the parent for backwards compatibility,
+  // but no longer rendered here. Kept on the interface so the parent doesn't
+  // need a one-off conditional. The hero handles the locked-state badge now.
   isLocked: boolean;
   onRefresh: () => void;
   onShareClick: () => void;
@@ -24,10 +35,6 @@ export default function DashboardHeader({
   onShareClick,
 }: Props): ReactElement {
   const [showParticipants, setShowParticipants] = useState(false);
-  const [editingName, setEditingName] = useState(false);
-  const [nameValue, setNameValue] = useState('');
-  const [savingName, setSavingName] = useState(false);
-  const nameInputRef = useRef<HTMLInputElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
 
   const activeParticipants = groupOrder.participants.filter(
@@ -36,44 +43,6 @@ export default function DashboardHeader({
   const otherNames = activeParticipants
     .filter((p) => p.id !== participantId)
     .map((p) => p.name);
-
-  const tab = groupOrder.tabs[0];
-  const hostLabel = groupOrder.hostName === 'Party Host' ? 'Host' : groupOrder.hostName;
-  const rawName = groupOrder.name;
-  const displayName = (!rawName || rawName === "Party Host's Order")
-    ? `${hostLabel}'s Party`
-    : rawName;
-
-  // Focus name input when entering edit mode
-  useEffect(() => {
-    if (editingName && nameInputRef.current) {
-      nameInputRef.current.focus();
-      nameInputRef.current.select();
-    }
-  }, [editingName]);
-
-  function startEditingName() {
-    setNameValue(displayName);
-    setEditingName(true);
-  }
-
-  async function saveOrderName() {
-    const trimmed = nameValue.trim();
-    if (!trimmed || trimmed === displayName) {
-      setEditingName(false);
-      return;
-    }
-    setSavingName(true);
-    try {
-      await updateGroupOrderV2(groupOrder.shareCode, { name: trimmed });
-      onRefresh();
-    } catch {
-      // Silently fail
-    } finally {
-      setSavingName(false);
-      setEditingName(false);
-    }
-  }
 
   // Close panel on outside click
   useEffect(() => {
@@ -88,9 +57,12 @@ export default function DashboardHeader({
   }, [showParticipants]);
 
   return (
-    <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
+    // Direction E: translucent cream + soft black border instead of solid
+    // white + hard gray-200. The blur lets a hint of the photo hero peek
+    // through as the user scrolls.
+    <header className="bg-cream/85 backdrop-blur-md border-b border-black/5 sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 py-3">
-        {/* Top row: logo, title, actions */}
+        {/* logo | flex spacer | share + people */}
         <div className="flex items-center justify-between gap-3">
           <Link href="/" className="flex-shrink-0">
             <Image
@@ -102,41 +74,8 @@ export default function DashboardHeader({
             />
           </Link>
 
-          {/* Title -- truncates on mobile to avoid overlapping buttons */}
-          <div className="flex-1 min-w-0 flex items-center justify-center gap-2">
-            {editingName ? (
-              <input
-                ref={nameInputRef}
-                value={nameValue}
-                onChange={(e) => setNameValue(e.target.value)}
-                onBlur={() => saveOrderName()}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') saveOrderName();
-                  if (e.key === 'Escape') setEditingName(false);
-                }}
-                maxLength={100}
-                disabled={savingName}
-                className="text-xl md:text-3xl font-heading font-bold tracking-[0.06em] text-gray-900 bg-transparent border-b-2 border-brand-blue outline-none text-center w-full"
-              />
-            ) : (
-              <button
-                onClick={startEditingName}
-                className="group flex items-center gap-2 cursor-pointer hover:opacity-80 min-w-0"
-              >
-                <h1 className="text-xl md:text-3xl font-heading font-bold tracking-[0.06em] text-gray-900 truncate">
-                  {parseTitleMarkup(displayName)}
-                </h1>
-                <svg className="w-4 h-4 text-gray-400 group-hover:text-brand-blue transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                </svg>
-              </button>
-            )}
-            {isLocked && (
-              <span className="text-xs font-semibold uppercase tracking-wider text-red-600 bg-red-50 px-1.5 py-0.5 rounded flex-shrink-0">
-                Locked
-              </span>
-            )}
-          </div>
+          {/* Empty flex spacer pushes actions to the right edge. */}
+          <div className="flex-1" aria-hidden />
 
           <div className="flex items-center gap-3">
             {/* Share button */}
@@ -155,7 +94,7 @@ export default function DashboardHeader({
             <div className="relative" ref={panelRef} data-tour="participants">
               <button
                 onClick={() => setShowParticipants(!showParticipants)}
-                className="flex items-center gap-1.5 text-sm font-medium text-gray-700 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-100 transition-colors"
+                className="flex items-center gap-1.5 text-sm font-medium text-gray-700 border border-black/10 rounded-lg px-3 py-1.5 hover:bg-gray-100 transition-colors"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -163,23 +102,23 @@ export default function DashboardHeader({
                 <span className="hidden md:inline">
                   {activeParticipants.length === 1
                     ? 'Just you'
-                    : `You + ${otherNames.slice(0, 2).join(', ')}${otherNames.length > 2 ? ` +${otherNames.length - 2}` : ''}`}
+                    : otherNames.length === 0
+                      ? `${activeParticipants.length} people`
+                      : `You + ${otherNames.slice(0, 2).join(', ')}${otherNames.length > 2 ? ` +${otherNames.length - 2}` : ''}`
+                  }
                 </span>
-                <span className="md:hidden flex items-center justify-center w-5 h-5 bg-brand-blue text-white text-xs font-bold rounded-full">{activeParticipants.length}</span>
+                <span className="md:hidden font-semibold">{activeParticipants.length}</span>
               </button>
 
-              {showParticipants && tab && (
+              {showParticipants && (
                 <ParticipantPanel
                   shareCode={groupOrder.shareCode}
-                  tabId={tab.id}
+                  tabId={groupOrder.tabs[0]?.id ?? ''}
                   participantId={participantId}
                   participants={groupOrder.participants}
                   isLocked={isLocked}
-                  onRefresh={() => {
-                    onRefresh();
-                    setShowParticipants(false);
-                  }}
                   onClose={() => setShowParticipants(false)}
+                  onRefresh={onRefresh}
                 />
               )}
             </div>

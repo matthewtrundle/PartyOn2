@@ -7,6 +7,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import { useLeadCapture } from '@/lib/leads/client';
+import { trackFunnelStep } from '@/lib/experiments/funnelTrack';
+import type { FunnelStep } from '@/lib/experiments/funnelSteps';
 import type {
   LandingConfig,
   BuilderProduct,
@@ -28,7 +30,19 @@ type Props = {
   open: boolean;
   onClose: () => void;
   config: LandingConfig;
+  /**
+   * Already-resolved catalog — either the curated catalog or the
+   * last-minute catalog depending on `lastMinuteMode` controlled by
+   * the parent template.
+   */
   catalog: Catalog;
+  /** True when the parent has a last-minute catalog pre-fetched. */
+  hasLastMinuteCatalog?: boolean;
+  /** Parent's state — used to drive the banner + product pool. */
+  lastMinuteMode?: boolean;
+  /** Called when the chosen delivery date crosses the today/tomorrow
+   *  threshold so the parent can swap the catalog. */
+  onLastMinuteModeChange?: (next: boolean) => void;
   upsellProducts?: UpsellProducts;
 };
 
@@ -45,6 +59,9 @@ export default function PackageBuilderModal({
   onClose,
   config,
   catalog,
+  hasLastMinuteCatalog,
+  lastMinuteMode,
+  onLastMinuteModeChange,
   upsellProducts,
 }: Props) {
   const T = config.theme;
@@ -57,6 +74,29 @@ export default function PackageBuilderModal({
   const [deliveryDate, setDeliveryDate] = useState<Date | null>(null);
   const [selection, setSelection] = useState<Selection>({});
   const [extraSelection, setExtraSelection] = useState<string[]>([]);
+
+  // Whenever the customer picks a date, check whether it's today or
+  // tomorrow and tell the parent to swap to the last-minute catalog.
+  // Cleared selections are kept — the user re-confirms anything missing.
+  useEffect(() => {
+    if (!onLastMinuteModeChange || !hasLastMinuteCatalog) return;
+    if (!deliveryDate) {
+      onLastMinuteModeChange(false);
+      return;
+    }
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    const picked = new Date(
+      deliveryDate.getFullYear(),
+      deliveryDate.getMonth(),
+      deliveryDate.getDate(),
+    );
+    const isToday = picked.getTime() === today.getTime();
+    const isTomorrow = picked.getTime() === tomorrow.getTime();
+    onLastMinuteModeChange(isToday || isTomorrow);
+  }, [deliveryDate, hasLastMinuteCatalog, onLastMinuteModeChange]);
 
   const [contactName, setContactName] = useState('');
   const [contactEmail, setContactEmail] = useState('');
@@ -122,14 +162,44 @@ export default function PackageBuilderModal({
   // Fire STEP_COMPLETE every time we advance steps so we can see drop-off.
   useEffect(() => {
     if (!open) return;
+    const stepKey = STEPS[stepIndex]?.key;
     lead.onStepComplete(`step_${stepIndex}_view`, {
-      stepKey: STEPS[stepIndex]?.key,
+      stepKey,
       people,
       itemCount: Object.values(selection).reduce((s, n) => s + (n || 0), 0),
     });
+    // Also fire the canonical funnel step for the Experiments dashboard.
+    // Map modal step keys → FunnelStep names.
+    const funnelMap: Record<string, FunnelStep> = {
+      basics: 'builder_step_basics',
+      beer: 'builder_step_beer',
+      liquor: 'builder_step_liquor',
+      mixers: 'builder_step_mixers',
+      review: 'builder_step_review',
+    };
+    const funnelStep = stepKey ? funnelMap[stepKey] : undefined;
+    if (funnelStep) {
+      trackFunnelStep({
+        step: funnelStep,
+        widget: 'PACKAGE_BUILDER',
+        metadata: { stepIndex, people },
+      });
+    }
     // We only care about stepIndex changing; ignore lead/STEPS in deps.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stepIndex, open]);
+
+  // Fire contact_filled funnel step once when at least one of name/email/phone
+  // has a value. Deduped via trackFunnelStep's session-scoped set.
+  useEffect(() => {
+    if (!open) return;
+    if (contactName || contactEmail || contactPhone) {
+      trackFunnelStep({
+        step: 'contact_filled',
+        widget: 'PACKAGE_BUILDER',
+      });
+    }
+  }, [open, contactName, contactEmail, contactPhone]);
 
   // Trigger upsell as soon as the user scrolls the review step toward the
   // contact/payment form. We attach an IntersectionObserver to the contact-
@@ -329,6 +399,12 @@ export default function PackageBuilderModal({
     } else {
       lead.onFormSubmit(leadIdentify, leadMeta, items);
     }
+    // Canonical funnel step for the Experiments dashboard.
+    trackFunnelStep({
+      step: 'checkout_start',
+      widget: 'PACKAGE_BUILDER',
+      metadata: { mode: submitMode, itemCount: items.length },
+    });
 
     try {
       const res = await fetch('/api/v1/landing/quote', {
@@ -483,6 +559,19 @@ export default function PackageBuilderModal({
               />
             ))}
           </div>
+          {/* Last-minute mode banner — pops the moment the customer picks
+              today/tomorrow as their delivery date. Tells them the menu
+              narrowed + why. */}
+          {lastMinuteMode && hasLastMinuteCatalog && (
+            <div
+              className="mt-3 rounded-md px-3 py-2 text-xs font-bold leading-snug"
+              style={{ background: T.primary, color: T.primaryText }}
+            >
+              ⚡ <span className="tracking-wider">LAST-MINUTE MENU ACTIVE</span> —
+              showing only deep-stock items we can deliver in 24h. Pick a date
+              further out to see the full catalog.
+            </div>
+          )}
         </div>
 
         <div className="flex-1 overflow-y-auto px-5 sm:px-7 py-5">

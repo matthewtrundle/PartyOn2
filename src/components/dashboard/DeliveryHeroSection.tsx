@@ -3,16 +3,21 @@
 import { useState, useRef, useEffect, type ReactElement } from 'react';
 import type { GroupOrderV2Full, SubOrderFull } from '@/lib/group-orders-v2/types';
 import { updateTabV2, deleteTabV2 } from '@/lib/group-orders-v2/api-client';
+import WelcomeHero from './WelcomeHero';
 
 interface Props {
   groupOrder: GroupOrderV2Full;
   activeTabIndex: number;
   activeTab: SubOrderFull;
   participantId: string;
+  /** Whether the active tab's deadline has passed. Disables inline edits in the hero. */
+  isLocked: boolean;
   onTabChange: (index: number) => void;
   onAddDelivery: () => void;
   onEditDelivery: () => void;
   onRefresh: () => void;
+  /** Called when the WelcomeHero's "Change vibe" button is tapped. */
+  onVibePickerOpen: () => void;
 }
 
 function formatDeliveryDate(dateStr: string): string {
@@ -53,10 +58,12 @@ export default function DeliveryHeroSection({
   activeTabIndex,
   activeTab,
   participantId,
+  isLocked,
   onTabChange,
   onAddDelivery,
   onEditDelivery,
   onRefresh,
+  onVibePickerOpen,
 }: Props): ReactElement {
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleValue, setTitleValue] = useState('');
@@ -209,8 +216,11 @@ export default function DeliveryHeroSection({
                     onClick={() => onTabChange(i)}
                     onDoubleClick={() => startEditingTab(tab, i)}
                     className={`px-6 py-3.5 text-base font-bold transition-all rounded-t-2xl border-2 border-b-0 ${
+                      // Direction E: active tab is white with a 3px gold top
+                      // border (premium, lighter) instead of solid blue. The
+                      // tab now visually "lifts" off the cream surface.
                       i === activeTabIndex
-                        ? 'bg-brand-blue text-white border-brand-blue relative z-10 -mb-px shadow-md'
+                        ? 'bg-white text-gray-900 border-transparent border-t-[3px] border-t-gold relative z-10 -mb-px shadow-warm-sm'
                         : 'bg-gray-100 text-gray-500 hover:text-gray-700 hover:bg-gray-200 border-transparent'
                     } ${canDeleteTabs && tab.status !== 'CANCELLED' && tab.status !== 'FULFILLED' ? 'pr-8' : ''}`}
                     title="Double-click to rename"
@@ -220,9 +230,11 @@ export default function DeliveryHeroSection({
                   {canDeleteTabs && tab.status !== 'CANCELLED' && tab.status !== 'FULFILLED' && (
                     <button
                       onClick={(e) => { e.stopPropagation(); handleDeleteTab(tab, i); }}
+                      // Active tab is now white -- close icon needs dark color
+                      // for legibility, matching the inactive treatment.
                       className={`absolute top-1 right-1 w-5 h-5 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-opacity ${
                         i === activeTabIndex
-                          ? 'text-white/60 hover:text-white hover:bg-white/20'
+                          ? 'text-gray-400 hover:text-red-500 hover:bg-red-50'
                           : 'text-gray-400 hover:text-red-500 hover:bg-red-50'
                       }`}
                       title={`Delete ${getTabLabel(tab, i)}`}
@@ -239,7 +251,7 @@ export default function DeliveryHeroSection({
               <button
                 data-tour="add-tab"
                 onClick={onAddDelivery}
-                className="w-11 h-11 flex items-center justify-center rounded-t-2xl text-gray-400 hover:text-brand-blue hover:bg-gray-100 transition-colors ml-1 mb-0.5"
+                className="w-11 h-11 flex items-center justify-center rounded-t-2xl text-gray-400 hover:text-gold hover:bg-gray-100 transition-colors ml-1 mb-0.5"
                 title="Add another location"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -250,22 +262,53 @@ export default function DeliveryHeroSection({
           </div>
         )}
 
-        {/* Content card -- collapsible order details */}
-        <div data-tour="delivery-details" className={`bg-white/70 backdrop-blur-md shadow-sm border border-white/50 ${
-          showTabs ? 'rounded-2xl rounded-tl-none' : 'rounded-2xl'
-        }`}>
-          {/* Collapsed bar -- just a chevron toggle */}
+        {/* Direction E Component 2b: the "Opening Moment".
+            Full-bleed gradient hero with editable title/subtitle and a
+            paintbrush button to open the vibe picker. Edits are gated on
+            the viewer being a host -- guests see the same hero but with
+            no click affordances. (Multiple participants can be hosts at
+            once via "Add Another Host" in the participant panel.) */}
+        <WelcomeHero
+          groupOrder={groupOrder}
+          activeTab={activeTab}
+          participantId={participantId}
+          isHost={isHost}
+          isLocked={isLocked}
+          hasTabsAbove={showTabs}
+          onChanged={onRefresh}
+          onVibePickerOpen={onVibePickerOpen}
+        />
+
+        {/* Order-details card -- the single element below the hero. Just the
+            chevron-expandable delivery details. The Boat Kit filter chip
+            that used to live on the left got removed because customers
+            couldn't tell that tapping it would change the product grid
+            below -- the connection was invisible. Get Recommendations
+            (right below this section) already covers the "I don't know what
+            to buy" path more clearly. */}
+        <div data-tour="delivery-details" className="mt-3 mx-0 md:mx-2 bg-white shadow-warm-md rounded-2xl overflow-hidden">
           <button
             onClick={() => setDetailsOpen(!detailsOpen)}
-            className="w-full flex items-center justify-between px-5 py-3 hover:bg-white/50 transition-colors rounded-2xl"
+            className="w-full flex items-center justify-between px-5 py-3 hover:bg-cream transition-colors"
           >
-            <span className="text-sm text-gray-500">
-              {hasDetails
-                ? `${deliveryDate}${deliveryTime ? ` at ${deliveryTime}` : ''}${addr?.address1 ? ` \u00B7 ${addr.address1}${addr.city ? ', ' + addr.city : ''}` : ''}`
-                : 'Order details'}
+            <span className="text-sm text-gray-700 flex items-center gap-2 min-w-0">
+              {hasDetails ? (
+                <>
+                  <svg className="w-4 h-4 text-gold flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <span className="truncate">
+                    {deliveryDate}
+                    {deliveryTime ? ` at ${deliveryTime}` : ''}
+                    {addr?.address1 ? ` \u2022 ${addr.address1}${addr.city ? ', ' + addr.city : ''}` : ''}
+                  </span>
+                </>
+              ) : (
+                <span className="text-gray-500">Order details</span>
+              )}
             </span>
             <svg
-              className={`w-5 h-5 text-gray-500 transition-transform duration-200 ${detailsOpen ? 'rotate-180' : ''}`}
+              className={`w-5 h-5 text-gray-500 transition-transform duration-200 flex-shrink-0 ml-2 ${detailsOpen ? 'rotate-180' : ''}`}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"

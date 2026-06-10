@@ -17,9 +17,11 @@
 
 import { useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
+import TabErrorBoundary from '@/components/admin/TabErrorBoundary';
 
 type TabKey =
   | 'playbook'
+  | 'experiments'
   | 'upsell'
   | 'leads'
   | 'events'
@@ -29,6 +31,7 @@ type TabKey =
 
 export default function BriansStuffTabs({
   playbook,
+  experiments,
   tracker,
   leads,
   events,
@@ -38,6 +41,7 @@ export default function BriansStuffTabs({
   initialTab = 'playbook',
 }: {
   playbook: ReactNode;
+  experiments: ReactNode;
   tracker: ReactNode;
   leads: ReactNode;
   events: ReactNode;
@@ -62,6 +66,9 @@ export default function BriansStuffTabs({
           <TabButton active={tab === 'playbook'} onClick={() => setTab('playbook')}>
             📘 Landing Page Playbook
           </TabButton>
+          <TabButton active={tab === 'experiments'} onClick={() => setTab('experiments')}>
+            🧪 Experiments &amp; Funnels
+          </TabButton>
           <TabButton active={tab === 'upsell'} onClick={() => setTab('upsell')}>
             ★ Upsell A/B Tracker
           </TabButton>
@@ -84,25 +91,31 @@ export default function BriansStuffTabs({
       </div>
 
       {/* Mount all panels but hide inactive — keeps server-rendered content
-          warm when toggling tabs. */}
-      <div hidden={tab !== 'playbook'}>{playbook}</div>
+          warm when toggling tabs. Each panel wrapped in its own error
+          boundary so a single tab crash doesn't take the whole page down. */}
+      <div hidden={tab !== 'playbook'}>
+        <TabErrorBoundary tabName="Landing Page Playbook">{playbook}</TabErrorBoundary>
+      </div>
+      <div hidden={tab !== 'experiments'} className="px-6 md:px-10 py-8">
+        <TabErrorBoundary tabName="Experiments & Funnels">{experiments}</TabErrorBoundary>
+      </div>
       <div hidden={tab !== 'upsell'} className="px-6 md:px-10 py-8">
-        {tracker}
+        <TabErrorBoundary tabName="Upsell A/B Tracker">{tracker}</TabErrorBoundary>
       </div>
       <div hidden={tab !== 'leads'} className="px-6 md:px-10 py-8">
-        {leads}
+        <TabErrorBoundary tabName="Leads">{leads}</TabErrorBoundary>
       </div>
       <div hidden={tab !== 'events'} className="px-6 md:px-10 py-8">
-        {events}
+        <TabErrorBoundary tabName="Event Invites">{events}</TabErrorBoundary>
       </div>
       <div hidden={tab !== 'magnets'} className="px-6 md:px-10 py-8">
-        {magnets}
+        <TabErrorBoundary tabName="Lead Magnets">{magnets}</TabErrorBoundary>
       </div>
       <div hidden={tab !== 'seo'} className="px-6 md:px-10 py-8">
-        {seo}
+        <TabErrorBoundary tabName="SEO Intelligence">{seo}</TabErrorBoundary>
       </div>
       <div hidden={tab !== 'docs'} className="px-6 md:px-10 py-8">
-        {docs}
+        <TabErrorBoundary tabName="Enrichment Docs">{docs}</TabErrorBoundary>
       </div>
     </div>
   );

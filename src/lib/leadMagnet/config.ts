@@ -99,6 +99,7 @@ export const LEAD_MAGNETS: LeadMagnet[] = [
       '/partners/*',
       '/affiliate/*',
       '/wedding-drink-calculator',
+      '/event-quiz',
     ],
     triggers: [
       { type: 'time', seconds: 25 },

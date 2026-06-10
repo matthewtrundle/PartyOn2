@@ -24,8 +24,14 @@ const QUICK_GUEST_VALUES = [50, 75, 100, 125, 150, 200];
 const QUICK_HOUR_VALUES = [3, 4, 5, 6];
 
 /**
- * Interactive wedding drink calculator. Wraps `calculateWeddingPlan` and
- * renders inline results as the user adjusts inputs.
+ * Interactive wedding drink calculator. Editorial-pragmatic treatment:
+ * each input group sits in a subtle bordered card so visitors get clear
+ * visual containment (the previous all-hairline-no-chrome version was
+ * pretty but cost usability for cold paid traffic). Inputs themselves
+ * still use the editorial hairline-underline style — the card chrome
+ * groups them, the input chrome stays minimal.
+ *
+ * Inputs left, results right on desktop. Single column on mobile.
  */
 export default function CalculatorClient({ onResultsComputed }: Props = {}): ReactElement {
   const [guests, setGuests] = useState(100);
@@ -46,14 +52,17 @@ export default function CalculatorClient({ onResultsComputed }: Props = {}): Rea
   };
 
   return (
-    <div className="grid lg:grid-cols-5 gap-8">
-      {/* Inputs */}
-      <div className="lg:col-span-2 space-y-6">
-        <div className="card">
-          <label htmlFor="guests" className="block text-base font-semibold text-gray-900 mb-2">
-            Guest count
-          </label>
-          <p className="text-sm text-gray-600 mb-3">Drinking-age guests only.</p>
+    <div className="grid lg:grid-cols-5 gap-5 lg:gap-8">
+      {/* Inputs column */}
+      <div className="lg:col-span-2 space-y-3">
+        {/* Guest count */}
+        <fieldset className="bg-white border border-[#2A2218]/12 rounded-lg p-4 md:p-5 shadow-[0_1px_0_rgba(42,34,24,0.04)]">
+          <legend className="block text-sm tracking-[0.25em] text-[#7E5A40] uppercase mb-1 font-medium">
+            Guest Count
+          </legend>
+          <p className="text-xs text-gray-500 mb-2 font-light">
+            Drinking-age guests only.
+          </p>
           <input
             id="guests"
             type="number"
@@ -62,31 +71,35 @@ export default function CalculatorClient({ onResultsComputed }: Props = {}): Rea
             step={5}
             value={guests}
             onChange={(e) => setGuests(Number(e.target.value))}
-            className="input-premium w-full"
+            className="w-full bg-transparent border-0 border-b border-[#2A2218]/20 px-0 py-1.5 font-heading text-2xl text-[#2A2218] focus:border-[#C8A96A] focus:outline-none focus:ring-0 transition-colors font-light"
+            aria-label="Guest count"
           />
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-3 flex flex-wrap gap-1.5">
             {QUICK_GUEST_VALUES.map((v) => (
               <button
                 key={v}
                 type="button"
                 onClick={() => setGuests(v)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium tracking-[0.05em] transition-colors ${
+                className={`px-3 py-1.5 rounded-lg text-xs tracking-[0.2em] uppercase transition-colors font-light ${
                   guests === v
-                    ? 'bg-brand-blue text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    ? 'bg-[#2A2218] text-[#C8A96A]'
+                    : 'border border-[#2A2218]/15 text-[#7E5A40] hover:border-[#C8A96A] hover:text-[#2A2218]'
                 }`}
               >
                 {v}
               </button>
             ))}
           </div>
-        </div>
+        </fieldset>
 
-        <div className="card">
-          <label htmlFor="hours" className="block text-base font-semibold text-gray-900 mb-2">
-            Reception length (hours)
-          </label>
-          <p className="text-sm text-gray-600 mb-3">Cocktail hour through last call.</p>
+        {/* Reception length */}
+        <fieldset className="bg-white border border-[#2A2218]/12 rounded-lg p-4 md:p-5 shadow-[0_1px_0_rgba(42,34,24,0.04)]">
+          <legend className="block text-sm tracking-[0.25em] text-[#7E5A40] uppercase mb-1 font-medium">
+            Reception Length
+          </legend>
+          <p className="text-xs text-gray-500 mb-2 font-light">
+            Cocktail hour through last call.
+          </p>
           <input
             id="hours"
             type="number"
@@ -95,28 +108,32 @@ export default function CalculatorClient({ onResultsComputed }: Props = {}): Rea
             step={1}
             value={hours}
             onChange={(e) => setHours(Number(e.target.value))}
-            className="input-premium w-full"
+            className="w-full bg-transparent border-0 border-b border-[#2A2218]/20 px-0 py-1.5 font-heading text-2xl text-[#2A2218] focus:border-[#C8A96A] focus:outline-none focus:ring-0 transition-colors font-light"
+            aria-label="Reception length in hours"
           />
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-3 flex flex-wrap gap-1.5">
             {QUICK_HOUR_VALUES.map((v) => (
               <button
                 key={v}
                 type="button"
                 onClick={() => setHours(v)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium tracking-[0.05em] transition-colors ${
+                className={`px-3 py-1.5 rounded-lg text-xs tracking-[0.2em] uppercase transition-colors font-light ${
                   hours === v
-                    ? 'bg-brand-blue text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    ? 'bg-[#2A2218] text-[#C8A96A]'
+                    : 'border border-[#2A2218]/15 text-[#7E5A40] hover:border-[#C8A96A] hover:text-[#2A2218]'
                 }`}
               >
                 {v}h
               </button>
             ))}
           </div>
-        </div>
+        </fieldset>
 
-        <div className="card">
-          <p className="block text-base font-semibold text-gray-900 mb-3">Bar style</p>
+        {/* Bar style */}
+        <fieldset className="bg-white border border-[#2A2218]/12 rounded-lg p-4 md:p-5 shadow-[0_1px_0_rgba(42,34,24,0.04)]">
+          <legend className="block text-sm tracking-[0.25em] text-[#7E5A40] uppercase mb-3 font-medium">
+            Bar Style
+          </legend>
           <div className="grid grid-cols-2 gap-2">
             {CATEGORY_OPTIONS.map((opt) => {
               const selected = categories.includes(opt.id);
@@ -125,25 +142,33 @@ export default function CalculatorClient({ onResultsComputed }: Props = {}): Rea
                   key={opt.id}
                   type="button"
                   onClick={() => toggleCategory(opt.id)}
-                  className={`text-left p-3 rounded-lg border-2 transition-colors ${
+                  className={`text-left p-3 rounded-lg border transition-colors ${
                     selected
-                      ? 'border-brand-blue bg-brand-blue/5'
-                      : 'border-gray-200 hover:border-gray-300'
+                      ? 'border-[#C8A96A] bg-[#FBF6EC]'
+                      : 'border-[#2A2218]/15 hover:border-[#7E5A40] bg-white'
                   }`}
                   aria-pressed={selected}
                 >
-                  <span className="block text-base font-semibold text-gray-900">{opt.label}</span>
-                  <span className="block text-sm text-gray-600 mt-0.5">{opt.hint}</span>
+                  <span className="block text-base font-medium text-[#2A2218] mb-0.5">
+                    {opt.label}
+                  </span>
+                  <span className="block text-xs text-gray-500 font-light tracking-wide">
+                    {opt.hint}
+                  </span>
                 </button>
               );
             })}
           </div>
-        </div>
+        </fieldset>
       </div>
 
-      {/* Results */}
+      {/* Results column — sits in a cream card so it reads as the natural
+          counterpart to the input cards, but the cream tint quietly
+          signals "this is the output side." */}
       <div className="lg:col-span-3">
-        <CalculatorResults plan={plan} />
+        <div className="bg-[#FBF6EC]/60 border border-[#2A2218]/12 rounded-lg p-5 md:p-6 shadow-[0_1px_0_rgba(42,34,24,0.04)]">
+          <CalculatorResults plan={plan} />
+        </div>
       </div>
     </div>
   );

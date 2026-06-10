@@ -122,6 +122,11 @@ module.exports = {
       boxShadow: {
         'premium': '0 4px 20px rgba(0, 0, 0, 0.08)',
         'premium-hover': '0 8px 30px rgba(0, 0, 0, 0.15)',
+        // Direction E warm-tinted shadows -- use on cream surfaces in place of
+        // the cool gray shadows that read as washed-out on warm backgrounds.
+        'warm-sm': '0 2px 8px rgba(80,40,10,0.08)',
+        'warm-md': '0 4px 14px rgba(80,40,10,0.12)',
+        'warm-lg': '0 8px 24px rgba(80,40,10,0.18)',
       },
       borderRadius: {
         'lg': '8px',

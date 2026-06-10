@@ -699,6 +699,21 @@
   }
 }
 
+/* Staggered fade-up entrance — used by the wedding calculator hero and
+   anywhere else we want composed, premium-feeling reveals. Apply with
+   `animate-[fadeUp_0.6s_cubic-bezier(0.22,1,0.36,1)_forwards]` and an
+   optional delay slot. 14px translate so it feels lift-not-jump. */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .animate-shimmer {
   animation: shimmer 2.5s ease-in-out infinite;
 }

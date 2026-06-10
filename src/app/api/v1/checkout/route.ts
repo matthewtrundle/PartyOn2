@@ -99,16 +99,22 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Validate minimum order
-    const validation = validateCartMinimum(cart);
-    if (!validation.valid) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: `Minimum order is $${validation.minimum}. Your cart is $${validation.current.toFixed(2)}`,
-        },
-        { status: 400 }
-      );
+    // Validate minimum order — waived for in-store pickup
+    const pickupFromAddress =
+      cart.deliveryAddress && typeof cart.deliveryAddress === 'object'
+        ? (cart.deliveryAddress as { isPickup?: boolean }).isPickup === true
+        : false;
+    if (!pickupFromAddress) {
+      const validation = validateCartMinimum(cart);
+      if (!validation.valid) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: `Minimum order is $${validation.minimum}. Your cart is $${validation.current.toFixed(2)}`,
+          },
+          { status: 400 }
+        );
+      }
     }
 
     // Validate delivery info
