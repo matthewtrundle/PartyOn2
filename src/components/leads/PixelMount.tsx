@@ -16,6 +16,7 @@ import VisitorPixel from './VisitorPixel';
 import ReturningVisitorBubble from './ReturningVisitorBubble';
 import FormCaptureWatcher from './FormCaptureWatcher';
 import LeadMagnetController from '@/components/leadMagnet/LeadMagnetController';
+import PartyChatMount from '@/components/chat/PartyChatMount';
 
 export default function PixelMount() {
   return (
@@ -35,6 +36,11 @@ export default function PixelMount() {
       {/* Lead-magnet trigger controller — watches the current path and
           fires the matching magnet's triggers (time/scroll/exit-intent). */}
       <LeadMagnetController />
+      {/* Floating chat bubble — appears on the homepage + landing pages.
+          Hidden on admin/ops/dashboard/checkout/event-quiz. */}
+      <Suspense fallback={null}>
+        <PartyChatMount />
+      </Suspense>
     </>
   );
 }
