@@ -89,7 +89,8 @@ export default function HeroSection({ variant, experimentId }: HeroSectionProps)
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10 items-stretch">
           {/* Left Column: Text Content */}
           <div className="order-1 text-center lg:text-left flex flex-col justify-center">
-            {/* Animated Headline */}
+            <h1 className="sr-only">Alcohol Delivery in Austin — Beer, Wine, Liquor & Kegs</h1>
+            {/* Animated Headline (visual; semantic <h1> above is the SEO target) */}
             <motion.div
               {...heroFadeUp}
               transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}

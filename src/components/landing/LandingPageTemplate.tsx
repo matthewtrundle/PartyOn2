@@ -250,18 +250,20 @@ export default function LandingPageTemplate({
             }}
           >
             {/*
-              Rendered as <h2> rather than <p> so the target keyword phrase
-              (e.g. "AUSTIN BACHELOR PARTY ALCOHOL DELIVERY") is in a
-              semantic heading element. Visual rendering is unchanged.
+              The keyword-rich eyebrow (e.g. "AUSTIN BACHELOR PARTY ALCOHOL
+              DELIVERY") is the page's <h1>. The big lifestyle line below it
+              is <h2>. Visual rendering is unchanged — only the semantic tags
+              swap. Google reads the H1 as the page's primary topic, so it
+              needs to carry the head term, not the lifestyle copy.
             */}
-            <h2
+            <h1
               className="inline-block text-xs sm:text-sm font-bold tracking-[0.15em] px-3 py-1.5 rounded mb-6 shadow-lg"
               style={{ background: T.primary, color: T.primaryText }}
             >
               {heroEyebrow}
-            </h2>
+            </h1>
 
-            <h1
+            <h2
               className="font-heading font-bold text-white text-4xl sm:text-5xl md:text-7xl leading-[1.05] tracking-tight mb-5"
               style={{ textShadow: '0 2px 12px rgba(0,0,0,0.55)' }}
             >
@@ -269,7 +271,7 @@ export default function LandingPageTemplate({
               <span className="block" style={{ color: T.primary }}>
                 {heroHeadlineAccent}
               </span>
-            </h1>
+            </h2>
 
             {config.heroBullets && config.heroBullets.length > 0 ? (
               <ul

@@ -2,6 +2,11 @@ import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
 
+export interface MDXBlogFAQ {
+  q: string;
+  a: string;
+}
+
 export interface MDXBlogPost {
   slug: string;
   title: string;
@@ -12,6 +17,7 @@ export interface MDXBlogPost {
   keywords: string[];
   author: string;
   content: string;
+  faq?: MDXBlogFAQ[];
 }
 
 const POSTS_DIRECTORY = path.join(process.cwd(), 'content', 'blog', 'posts');
@@ -49,6 +55,13 @@ export function getMDXPost(slug: string): MDXBlogPost | null {
     const fileContents = fs.readFileSync(fullPath, 'utf8');
     const { data, content } = matter(fileContents);
 
+    const faq = Array.isArray(data.faq)
+      ? data.faq
+          .filter((item: unknown): item is MDXBlogFAQ =>
+            !!item && typeof item === 'object' && typeof (item as MDXBlogFAQ).q === 'string' && typeof (item as MDXBlogFAQ).a === 'string'
+          )
+      : undefined;
+
     return {
       slug,
       title: data.title || '',
@@ -59,6 +72,7 @@ export function getMDXPost(slug: string): MDXBlogPost | null {
       keywords: data.keywords || [],
       author: data.author || 'Party On Delivery Team',
       content,
+      faq,
     };
   } catch (error) {
     console.error(`Error reading MDX post ${slug}:`, error);

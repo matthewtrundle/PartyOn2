@@ -156,10 +156,11 @@ export default function BoatPartiesPage() {
         </div>
 
         <div className="hero-fade-in relative text-center text-white z-10 max-w-4xl mx-auto px-8 mt-[120px] mb-[80px] md:mt-0 md:mb-0">
-          <h1 className="font-heading font-light text-5xl md:text-7xl mb-6 tracking-[0.08em]">
+          <h1 className="sr-only">Lake Travis Boat Party Alcohol Delivery</h1>
+          <h2 className="font-heading font-light text-5xl md:text-7xl mb-6 tracking-[0.08em]">
             Cold Drinks to Your
             <span className="block text-brand-yellow mt-2">BOAT—ON TIME</span>
-          </h1>
+          </h2>
           <div className="w-24 h-px bg-brand-yellow mx-auto mb-6" />
           <p className="text-lg md:text-xl font-light tracking-[0.1em] text-gray-200 mb-8">
             Dock and boat delivery with captain coordination—everything cold, stocked, and ready to pour.
