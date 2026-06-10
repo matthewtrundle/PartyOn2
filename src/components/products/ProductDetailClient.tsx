@@ -91,6 +91,8 @@ export default function ProductDetailClient({ product }: Props) {
                 <img
                   src={product.images.edges[selectedImageIndex]?.node.url}
                   alt={product.title}
+                  width={600}
+                  height={800}
                   className="w-full h-full object-cover"
                 />
               ) : (
@@ -116,6 +118,8 @@ export default function ProductDetailClient({ product }: Props) {
                     <img
                       src={image.node.url}
                       alt={`${product.title} ${index + 1}`}
+                      width={200}
+                      height={200}
                       className="w-full h-full object-cover"
                     />
                   </button>

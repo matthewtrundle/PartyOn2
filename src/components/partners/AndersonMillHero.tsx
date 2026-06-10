@@ -48,6 +48,7 @@ export default function AndersonMillHero(): ReactElement {
         src="/images/partners/anderson-mill-marina-hero.png"
         alt="Anderson Mill Marina on Lake Travis"
         fill
+        sizes="100vw"
         className="object-cover"
         priority
       />

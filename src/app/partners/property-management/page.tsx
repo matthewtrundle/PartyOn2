@@ -99,6 +99,7 @@ export default function PropertyManagementPartnerPage() {
           src="/images/backgrounds/rooftop-terrace-elegant-2.webp"
           alt="Luxury Property Management"
           fill
+          sizes="100vw"
           className="object-cover"
           priority
         />

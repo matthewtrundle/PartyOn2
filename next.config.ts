@@ -347,6 +347,51 @@ const nextConfig: NextConfig = {
         destination: '/blog/wedding-photography-austin-lakes-hills',
         permanent: true,
       },
+
+      // Blog slug consolidation (2026-05). The source slugs were auto-generated
+      // junk content (legacy posts.json entries) with hostile URLs and low-
+      // quality content. The JSON entries are removed; redirects send any
+      // residual organic traffic to the canonical landing/cluster pages we
+      // built in the WS1-3 wedding cluster work.
+      {
+        source: '/blog/austin-party-houses-wedding-alcohol-delivery-unique-venues-for-austin-celebrations',
+        destination: '/austin-wedding-venue-boats',
+        permanent: true,
+      },
+      {
+        source: '/blog/outdoor-wedding-alcohol-logistics-hill-country-and-austin-party-houses-coordination',
+        destination: '/austin-wedding-venue-boats',
+        permanent: true,
+      },
+      {
+        source: '/blog/austin-wedding-venue-alcohol-policies-delivery-solutions-for-every-location',
+        destination: '/blog/ultimate-guide-austin-wedding-bar-service',
+        permanent: true,
+      },
+      {
+        source: '/blog/wedding-anniversary-celebration-ideas-recreating-your-special-day-with-boat-and-alcohol-packages',
+        destination: '/austin-wedding-venue-boats',
+        permanent: true,
+      },
+      {
+        source: '/blog/wedding-party-alcohol-coordination-getting-ready-bachelor-bachelorette-and-reception',
+        destination: '/wedding-drink-calculator',
+        permanent: true,
+      },
+      {
+        source: '/blog/rehearsal-dinner-boat-alcohol-delivery-unique-wedding-weekend-experiences',
+        destination: '/austin-wedding-venue-boats',
+        permanent: true,
+      },
+
+      // Audit-missed near-dupe (the rustic-modern-wedding-decor pair). The
+      // MDX with the unusual "-d-cor-" slug is deleted in this PR; canonical
+      // lives at /blog/rustic-modern-wedding-decor-texas.
+      {
+        source: '/blog/how-to-blend-rustic-and-modern-wedding-d-cor-in-texas',
+        destination: '/blog/rustic-modern-wedding-decor-texas',
+        permanent: true,
+      },
     ];
   },
 

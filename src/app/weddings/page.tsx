@@ -419,6 +419,61 @@ export default function WeddingsPage() {
         </div>
       </section>
 
+      {/* Wedding Venue Options — cross-link to boats-as-venue */}
+      <section className="py-24 bg-white">
+        <div className="max-w-6xl mx-auto px-8">
+          <ScrollRevealCSS duration={800} y={20} className="text-center mb-12">
+            <p className="text-sm font-heading uppercase tracking-[0.08em] text-brand-yellow mb-3">
+              Need A Venue Too?
+            </p>
+            <h2 className="font-heading font-light text-4xl md:text-5xl text-gray-900 mb-4 tracking-[0.1em]">
+              Wedding Venue Options
+            </h2>
+            <div className="w-16 h-px bg-brand-yellow mx-auto mb-6" />
+            <p className="text-base text-gray-700 max-w-2xl mx-auto">
+              Already have a venue? Skip ahead. If you&apos;re still looking, Premier
+              Party Cruises boats double as a small, intimate Austin wedding venue —
+              ceremony on the deck, reception on the water, brunch the next morning.
+            </p>
+          </ScrollRevealCSS>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <ScrollRevealCSS duration={800} y={20} className="card flex flex-col">
+              <h3 className="font-heading text-2xl text-gray-900 mb-3 tracking-[0.05em]">
+                Boats As Wedding Venue
+              </h3>
+              <p className="text-sm text-gray-700 mb-4 flex-1">
+                Lake Travis boats for ceremony, rehearsal dinner, or the morning-after
+                brunch cruise. 20-80 guests. Starts around $1,500 for the venue itself.
+              </p>
+              <Link
+                href="/austin-wedding-venue-boats"
+                className="inline-flex items-center text-sm font-semibold tracking-[0.08em] text-brand-blue hover:underline"
+              >
+                See boat venue packages →
+              </Link>
+            </ScrollRevealCSS>
+
+            <ScrollRevealCSS duration={800} y={20} delay={100} className="card flex flex-col">
+              <h3 className="font-heading text-2xl text-gray-900 mb-3 tracking-[0.05em]">
+                Already Booked Premier?
+              </h3>
+              <p className="text-sm text-gray-700 mb-4 flex-1">
+                If your wedding cruise is already on the books with Premier Party
+                Cruises, we deliver and stock the boat — free marina delivery, ice,
+                glassware, the works.
+              </p>
+              <Link
+                href="/partners/premier-party-cruises"
+                className="inline-flex items-center text-sm font-semibold tracking-[0.08em] text-brand-blue hover:underline"
+              >
+                Premier partner page →
+              </Link>
+            </ScrollRevealCSS>
+          </div>
+        </div>
+      </section>
+
       {/* Benefits */}
       <section className="py-24">
         <div className="max-w-7xl mx-auto px-8 md:px-12">
@@ -616,6 +671,7 @@ export default function WeddingsPage() {
                   src={image.src}
                   alt={image.alt}
                   fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   className="object-cover transition-transform duration-500 group-hover:scale-110"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-gray-900/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />

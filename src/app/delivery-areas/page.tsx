@@ -93,6 +93,7 @@ export default function DeliveryAreasPage() {
           src="/images/hero/austin-skyline-golden-hour.webp"
           alt="Austin Aerial View"
           fill
+          sizes="100vw"
           className="object-cover"
           priority
         />

@@ -1,8 +1,26 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, startTransition } from 'react';
 import Image from 'next/image';
 import { CELL_MEDIA as SCANNED_MEDIA, type CollageMedia } from '@/generated/hero-media-manifest';
+
+/**
+ * Listens to the user's prefers-reduced-motion setting and returns true if
+ * they've asked for less animation. Used to skip the collage's rotation
+ * loop entirely for that audience (significant share of mobile users).
+ */
+function usePrefersReducedMotion(): boolean {
+  const [prefers, setPrefers] = useState(false);
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setPrefers(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setPrefers(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+  return prefers;
+}
 
 /**
  * Interleave images across folders, then distribute across 3 cells so each
@@ -57,33 +75,37 @@ function CollageCell({ media, interval, className, priority = false }: CollageCe
   const nextImageIndex = useRef(media.length > 1 ? 2 % media.length : 0);
   const videoRef = useRef<HTMLVideoElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout>>(null);
+  const prefersReducedMotion = usePrefersReducedMotion();
 
   const advanceToNext = useCallback(() => {
     if (transitioning || media.length <= 1) return;
     setTransitioning(true);
 
-    // Flip to the other layer (it already has the next image loaded)
+    // Flip to the other layer (it already has the next image loaded).
+    // Wrapped in startTransition so React can yield to input events if one
+    // arrives at the same instant the rotation timer fires.
     const newActive = activeLayer === 'a' ? 'b' : 'a';
-    setActiveLayer(newActive);
+    startTransition(() => setActiveLayer(newActive));
 
     // After crossfade completes, preload the NEXT image into the now-hidden layer
     setTimeout(() => {
       const upcoming = nextImageIndex.current;
-      if (activeLayer === 'a') {
-        // We just faded to B, so A is now hidden — load next image into A
-        setLayerAIndex(upcoming);
-      } else {
-        // We just faded to A, so B is now hidden — load next image into B
-        setLayerBIndex(upcoming);
-      }
+      startTransition(() => {
+        if (activeLayer === 'a') {
+          setLayerAIndex(upcoming);
+        } else {
+          setLayerBIndex(upcoming);
+        }
+        setTransitioning(false);
+      });
       nextImageIndex.current = (upcoming + 1) % media.length;
-      setTransitioning(false);
     }, CROSSFADE_MS);
   }, [transitioning, activeLayer, media.length]);
 
-  // Schedule the next advance
+  // Schedule the next advance. Skipped entirely when the user prefers
+  // reduced motion — first image of the cell stays frozen.
   useEffect(() => {
-    if (media.length <= 1) return;
+    if (media.length <= 1 || prefersReducedMotion) return;
     const currentIndex = activeLayer === 'a' ? layerAIndex : layerBIndex;
     const current = media[currentIndex];
 
@@ -96,7 +118,7 @@ function CollageCell({ media, interval, className, priority = false }: CollageCe
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [activeLayer, layerAIndex, layerBIndex, media, interval, advanceToNext]);
+  }, [activeLayer, layerAIndex, layerBIndex, media, interval, advanceToNext, prefersReducedMotion]);
 
   // When a video becomes active, play it
   useEffect(() => {
@@ -119,6 +141,7 @@ function CollageCell({ media, interval, className, priority = false }: CollageCe
           opacity: activeLayer === 'a' ? 1 : 0,
           transition: `opacity ${CROSSFADE_MS}ms ease-in-out`,
           zIndex: activeLayer === 'a' ? 2 : 1,
+          willChange: transitioning ? 'opacity' : 'auto',
         }}
       >
         {mediaA.type === 'video' ? (

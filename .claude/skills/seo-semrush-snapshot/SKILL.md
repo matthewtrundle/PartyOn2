@@ -11,6 +11,16 @@ The original Phase 1 contract below assumed Playwright. As of 2026-05 we run the
 - No 2FA detection branch (operator handles it interactively before kickoff)
 - Per-surface scrape blueprint lives in the admin UI at `/admin/brians-stuff?tab=seo` ("Chrome-extension scrape blueprint" section)
 
+### Parser pipeline (added 2026-05)
+
+The Chrome capture step is now strictly "drive the browser + dump raw text". Structured JSON is produced by a **separate deterministic parser**, not by the model. This eliminates the LLM-transcription brittleness that the content-integrity hook used to reject:
+
+- Capture: `/scrape-semrush-pod` writes one stub JSON per surface containing `raw_body_text` (the `document.body.innerText` from the dashboard).
+- Parse: `node scripts/seo/parse-semrush-snapshot.mjs data/seo/semrush/<date>/` runs deterministic regex extractors and fills in the `extracted` field on each stub. Parser source: `scripts/seo/parse-semrush-snapshot.mjs`.
+- Test: `node scripts/seo/parse-semrush-snapshot.mjs --test` diffs the parser output against the committed May 13 fixture in the sibling `PartyOn2-seo-snapshots` repo. Must pass before any parser changes ship.
+
+The parser owns the per-dashboard schema — do NOT duplicate schema definitions in this skill or the slash command. If you need to add a new captured field, add it to the parser's sub-parser for that dashboard, add a fixture for it, and update the test.
+
 ### Eight surfaces (was five)
 
 | # | Surface | Tier | Notes |
