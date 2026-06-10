@@ -7,6 +7,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import { useLeadCapture } from '@/lib/leads/client';
+import { fireLeadConversion } from '@/lib/leads/fireLeadConversion';
 import { trackFunnelStep } from '@/lib/experiments/funnelTrack';
 import type { FunnelStep } from '@/lib/experiments/funnelSteps';
 import type {
@@ -444,6 +445,12 @@ export default function PackageBuilderModal({
       if (!res.ok || !json.ok) {
         throw new Error(json.error || 'Failed to create your order. Try again.');
       }
+
+      // Fire the lead conversion (Meta + GA4 generate_lead + Ads) BEFORE
+      // the redirect — tagged with this page's occasion so each landing
+      // campaign optimizes toward its own leads. Synchronous; the gtag/fbq
+      // beacons are queued before navigation.
+      fireLeadConversion({ occasion, placement: 'package-builder', value: people });
 
       // Stash host participant id so the dashboard recognizes the
       // visitor as the order owner.
