@@ -1,5 +1,5 @@
 import type { WeddingPlan } from '@/lib/weddingDrinkCalculator';
-import { trackMetaEvent } from '@/components/MetaPixel';
+import { fireLeadConversion } from '@/lib/leads/fireLeadConversion';
 
 /**
  * Where on the page a wedding-bar quote was submitted. Sent as the
@@ -116,37 +116,13 @@ export async function submitWeddingQuote({
     throw new Error(body.error || 'Submit failed');
   }
 
-  fireQuoteConversion(plan, placement);
-  return { invoiceUrl: body.invoiceUrl ?? null };
-}
-
-/**
- * Conversion firing — Meta + GA4 + Google Ads. All gated so missing
- * pixels / env vars are silent no-ops. The `placement` flows into the
- * GA4 generate_lead event so conversion rate can be split by entry point.
- */
-function fireQuoteConversion(plan: WeddingPlan | null, placement: QuotePlacement): void {
-  trackMetaEvent('Lead', {
-    content_name: 'Wedding Bar Quote',
-    content_category: 'wedding-drink-calculator',
+  // Centralized lead-conversion firing (Meta + GA4 generate_lead + Ads).
+  // occasion="wedding" + placement let GA4 split conversion by occasion
+  // and by entry point within the page.
+  fireLeadConversion({
+    occasion: 'wedding',
     placement,
+    value: plan?.totalDrinks ?? 0,
   });
-
-  if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
-    window.gtag('event', 'generate_lead', {
-      form_id: 'wedding-bar-quote',
-      placement,
-      page_location: window.location.href,
-      value: plan?.totalDrinks ?? 0,
-    });
-
-    const conversionId = process.env.NEXT_PUBLIC_GADS_QUOTE_CONVERSION_ID;
-    if (conversionId) {
-      window.gtag('event', 'conversion', {
-        send_to: conversionId,
-        value: 0,
-        currency: 'USD',
-      });
-    }
-  }
+  return { invoiceUrl: body.invoiceUrl ?? null };
 }
