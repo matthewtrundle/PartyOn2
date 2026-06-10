@@ -274,41 +274,57 @@ export default function PartyChat() {
       {/* Body — scrollable */}
       <div className="flex-1 overflow-y-auto px-4 py-4">
         {step === 'party' && (
-          <ChatBubble
-            from="bot"
-            content={
-              <>
-                <div className="mb-3">
-                  Hey 👋 — what kind of party are you planning?
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  {PARTY_OPTIONS.map((p) => (
-                    <button
-                      key={p}
-                      onClick={() => choosePartyType(p)}
-                      className="text-left px-3 py-2 rounded-md text-xs font-bold transition-transform hover:scale-[1.02]"
-                      style={{
-                        background:
-                          p === 'just-deliver' ? GOLD : '#FFFFFF',
-                        color: NAVY,
-                        border:
-                          p === 'just-deliver'
-                            ? `2px solid ${NAVY}`
-                            : `1.5px solid #E5E7EB`,
-                        boxShadow:
-                          p === 'just-deliver'
-                            ? `0 3px 0 ${NAVY}`
-                            : '0 1px 2px rgba(0,0,0,0.04)',
-                      }}
-                    >
-                      {p === 'just-deliver' ? '⚡ ' : ''}
-                      {PARTY_TYPE_LABEL[p]}
-                    </button>
-                  ))}
-                </div>
-              </>
-            }
-          />
+          // Step 1 escapes the ChatBubble wrapper so the buttons can
+          // fill the full chat width — feels less like a chat dropdown
+          // and more like a real selection screen.
+          <div className="flex flex-col h-full">
+            <div className="text-sm text-gray-700 mb-3 leading-snug">
+              Hey 👋 — what kind of party are you planning?
+            </div>
+
+            {/* Primary CTA — big yellow "ORDER DRINKS NOW" headline. */}
+            <button
+              type="button"
+              onClick={() => choosePartyType('just-deliver')}
+              className="w-full rounded-lg py-4 px-3 font-heading font-bold tracking-wider transition-transform hover:scale-[1.01]"
+              style={{
+                background: GOLD,
+                color: NAVY,
+                border: `3px solid ${NAVY}`,
+                boxShadow: `0 5px 0 ${NAVY}, 0 8px 18px rgba(10,15,25,0.2)`,
+                fontSize: '1.25rem',
+              }}
+            >
+              ⚡ ORDER DRINKS NOW
+            </button>
+
+            <div className="text-center text-[10px] uppercase tracking-widest text-gray-500 my-3 font-bold">
+              — or pick your occasion —
+            </div>
+
+            {/* 7 occasion buttons, single column, each tall enough to
+                feel tappable on mobile. The chat panel is ~420px wide
+                so a single column keeps the labels readable. */}
+            <div className="flex flex-col gap-2 flex-1">
+              {PARTY_OPTIONS.filter((p) => p !== 'just-deliver').map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => choosePartyType(p)}
+                  className="w-full text-left px-4 py-3 rounded-lg font-bold transition-transform hover:scale-[1.01]"
+                  style={{
+                    background: '#FFFFFF',
+                    color: NAVY,
+                    border: `2px solid ${NAVY}`,
+                    boxShadow: `0 3px 0 ${NAVY}`,
+                    fontSize: '0.95rem',
+                  }}
+                >
+                  {PARTY_TYPE_LABEL[p]}
+                </button>
+              ))}
+            </div>
+          </div>
         )}
 
         {step === 'date' && (

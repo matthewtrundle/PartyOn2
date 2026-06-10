@@ -37,7 +37,7 @@ export type EventNeed =
 
 /** Display labels — used by the modal UI + the email template. */
 export const PARTY_TYPE_LABEL: Record<PartyType, string> = {
-  'just-deliver': 'Just deliver drinks now',
+  'just-deliver': 'Order drinks now',
   bachelor: 'Bachelor party',
   bachelorette: 'Bachelorette party',
   corporate: 'Corporate event',

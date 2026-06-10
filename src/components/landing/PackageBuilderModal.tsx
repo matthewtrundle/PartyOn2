@@ -113,7 +113,10 @@ export default function PackageBuilderModal({
   // swaps to the inline checkout panel — no navigation.
   const [checkoutSecret, setCheckoutSecret] = useState<string | null>(null);
   // Used as a hard fallback if Stripe.js can't load client-side.
-  const [invoiceFallbackUrl, setInvoiceFallbackUrl] = useState<string | null>(null);
+  // Legacy state — kept null now that submit redirects to the dashboard
+  // instead of the invoice/embedded-checkout flow. The JSX branch that
+  // reads it is unreachable but left in place to keep this diff focused.
+  const [invoiceFallbackUrl] = useState<string | null>(null);
 
   // Upsell overlay — fires once when the user reaches the review step.
   const [upsellOpen, setUpsellOpen] = useState(false);
@@ -352,12 +355,8 @@ export default function PackageBuilderModal({
       return;
     }
 
-    // Pay-now requires a delivery address (Stripe checkout will demand it).
-    if (submitMode === 'checkout' && (!deliveryAddress || !deliveryZip)) {
-      setSubmitError('Please enter a delivery address and zip to continue to payment.');
-      setSubmitting(false);
-      return;
-    }
+    // Address fields are optional from this surface — the dashboard
+    // collects delivery address on its own checkout step.
 
     // Sundays are closed. Block submit and recommend Saturday evening.
     if (deliveryDate && isSunday(deliveryDate.toISOString().slice(0, 10))) {
@@ -407,69 +406,63 @@ export default function PackageBuilderModal({
     });
 
     try {
-      const res = await fetch('/api/v1/landing/quote', {
+      // Map the landing-page `occasion` ('bachelor' / 'bachelorette' /
+      // 'corporate' / 'wedding') to the quote-start endpoint's partyType
+      // enum. The four occasions match 1:1; the endpoint accepts the
+      // others too if we ever wire up a non-landing-page entry.
+      const partyType = occasion as
+        | 'bachelor' | 'bachelorette' | 'corporate' | 'wedding';
+      // Split full name on first space — most customers enter "First Last".
+      const [firstName, ...rest] = contactName.trim().split(/\s+/);
+      const lastName = rest.join(' ') || null;
+
+      const deliveryDateIso = deliveryDate
+        ? deliveryDate.toISOString().slice(0, 10)
+        : new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+
+      const res = await fetch('/api/v1/quote/start', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          mode: submitMode === 'checkout' ? 'pay-now' : 'quote',
-          occasion,
-          customerName: contactName,
-          customerEmail: contactEmail,
-          customerPhone: contactPhone,
-          groupSize: people,
-          deliveryDate: deliveryDate
-            ? deliveryDate.toISOString().slice(0, 10)
-            : new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10),
-          deliveryTime,
-          deliveryAddress,
-          deliveryCity,
-          deliveryZip,
-          items,
-          deliveryNotes:
-            M.extraQuestion && extraSelection.length
-              ? `${M.extraQuestion.label} ${extraSelection
-                  .map((v) => M.extraQuestion!.options.find((o) => o.value === v)?.label)
-                  .filter(Boolean)
-                  .join(', ')}`
-              : undefined,
-          upsellVariantId: upsellProducts?.variantId,
+          firstName,
+          lastName,
+          email: contactEmail,
+          phone: contactPhone,
+          partyType,
+          headcount: people,
+          deliveryDate: deliveryDateIso,
+          // Items selected in the modal — already in the
+          // [{ handle, qty }] shape the endpoint speaks.
+          recommendedItems: items.map((it) => ({
+            handle: it.handle,
+            qty: it.qty,
+          })),
+          source: 'package-builder',
         }),
       });
       const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.error || 'Failed to send quote');
+      if (!res.ok || !json.ok) {
+        throw new Error(json.error || 'Failed to create your order. Try again.');
       }
 
-      if (submitMode === 'checkout' && json.token) {
-        // Try embedded checkout first, fall back to the redirect-mode
-        // invoice page if Stripe.js can't be loaded client-side (e.g.
-        // missing NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY in the build).
-        const hasPublishableKey = !!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
-        if (hasPublishableKey) {
-          try {
-            const co = await fetch(`/api/v1/invoice/${json.token}/checkout`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ embedded: true }),
-            });
-            const cj = await co.json();
-            if (co.ok && cj.success && cj.clientSecret) {
-              setInvoiceFallbackUrl(json.invoiceUrl ?? null);
-              setCheckoutSecret(cj.clientSecret);
-              return;
-            }
-          } catch {
-            /* fall through to redirect flow */
-          }
-        }
-        // Fallback — same behavior as before this embed work landed.
-        if (json.invoiceUrl) {
-          window.location.href = json.invoiceUrl;
-          return;
+      // Stash host participant id so the dashboard recognizes the
+      // visitor as the order owner.
+      if (json.hostParticipantId && json.shareCode) {
+        try {
+          localStorage.setItem(
+            `dashboard_participant_${json.shareCode}`,
+            json.hostParticipantId,
+          );
+        } catch {
+          /* localStorage disabled — dashboard will still work, the
+             user just won't be auto-recognized on this device */
         }
       }
 
-      setSubmitted(true);
+      // Hard redirect to the dashboard — the cart is already
+      // populated server-side, and the welcome email with this URL is
+      // already on its way.
+      window.location.href = json.redirectTo;
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Something went wrong. Try again.');
     } finally {
