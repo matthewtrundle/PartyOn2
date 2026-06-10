@@ -182,6 +182,24 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
 
+      // Legacy Shopify blog URL space (/blogs/news/<slug>) → canonical /blog/<slug>.
+      // The parallel route at src/app/blogs/news/[slug]/ was serving the same
+      // JSON-backed posts as /blog/<slug>, creating duplicate content (143
+      // indexed queries on /blogs/news/partyon-delivery-... alone per GSC
+      // 2026-06). The /blog/[slug] route already handles JSON-legacy posts,
+      // so consolidating is safe. The legacy parallel route is deleted in
+      // the same commit.
+      {
+        source: '/blogs/news',
+        destination: '/blog',
+        permanent: true,
+      },
+      {
+        source: '/blogs/news/:slug',
+        destination: '/blog/:slug',
+        permanent: true,
+      },
+
       // Product slug rename: ping pong balls 10pcs → 6pcs (pack size changed)
       {
         source: '/products/ping-pong-balls-10pcs',
