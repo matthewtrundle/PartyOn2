@@ -68,12 +68,17 @@ export default function AustinWeddingDjPage(): ReactElement {
         />
         <div className="absolute inset-0 bg-gradient-to-b from-gray-900/60 via-gray-900/40 to-gray-900/70" />
         <div className="relative text-center text-white z-10 max-w-4xl mx-auto px-8">
-          <p className="text-sm font-heading uppercase tracking-[0.1em] text-gold-400 mb-3">
+          {/*
+            The keyword phrase ("Austin Wedding DJ + Bar Service") is the
+            <h1> so it matches <title>. The DJ name below it is <h2>.
+            Visual rendering is unchanged.
+          */}
+          <h1 className="text-sm font-heading uppercase tracking-[0.1em] text-gold-400 mb-3">
             Austin Wedding DJ + Bar Service
-          </p>
-          <h1 className="font-heading text-4xl md:text-5xl lg:text-6xl tracking-[0.1em] mb-6">
-            [DJ_NAME]
           </h1>
+          <h2 className="font-heading text-4xl md:text-5xl lg:text-6xl tracking-[0.1em] mb-6">
+            [DJ_NAME]
+          </h2>
           <p className="text-base md:text-lg text-white/90 max-w-2xl mx-auto mb-8">
             Austin wedding DJ for ceremony, cocktail hour, and reception. Bundle with
             Party On bar service for one coordinated wedding weekend.

@@ -311,9 +311,10 @@ export default function CorporateLandingPage() {
           {/* Option 1: "Corporate Events, Simplified." */}
           {/* Option 3: "Cold Drinks. Zero Stress. Perfect for Every Office Event." */}
 
-          <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl mb-6 tracking-tight sm:tracking-[0.05em] max-w-4xl leading-snug sm:leading-tight">
+          <h1 className="sr-only">Austin Corporate Event Alcohol Delivery</h1>
+          <h2 className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl mb-6 tracking-tight sm:tracking-[0.05em] max-w-4xl leading-snug sm:leading-tight">
             Austin&apos;s Easiest Way to Stock the Bar for Company Parties.
-          </h1>
+          </h2>
           <p className="text-lg sm:text-xl md:text-2xl max-w-3xl leading-relaxed mb-8">
             From 20 to 500+ guests—beer, wine, spirits, mixers, and ice delivered cold and on time. Simple planning, zero stress.
           </p>

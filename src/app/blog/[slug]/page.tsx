@@ -9,9 +9,10 @@ import { notFound } from 'next/navigation'
 import { getMDXPost, getAllMDXPosts } from '@/lib/blog-mdx'
 import MDXContentRSC from '@/components/blog/MDXContentRSC'
 import BlogTopicCTA from '@/components/blog/BlogTopicCTA'
+import BlogFAQ from '@/components/blog/BlogFAQ'
 import blogPostsData from '@/data/blog-posts/posts.json'
 import { seoConfig } from '@/lib/seo/config'
-import { generateArticleSchema } from '@/lib/seo/schemas'
+import { generateArticleSchema, generateFAQSchema } from '@/lib/seo/schemas'
 import { buildBlogMetadata } from '@/lib/seo/build-metadata'
 
 interface BlogPost {
@@ -1059,12 +1060,22 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
       url: `${seoConfig.siteUrl}/blog/${resolvedParams.slug}`,
     })
 
+    const faqSchema = mdxPost.faq?.length
+      ? generateFAQSchema(mdxPost.faq.map(({ q, a }) => ({ question: q, answer: a })))
+      : null
+
     return (
       <div className="bg-white min-h-screen">
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(articleSchema) }}
         />
+        {faqSchema && (
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+          />
+        )}
         <Navigation />
 
         {/* Hero Section with Image */}
@@ -1106,6 +1117,8 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
         <article className="py-16 px-8">
           <div className="max-w-4xl mx-auto">
             <MDXContentRSC source={mdxPost.content} />
+
+            {mdxPost.faq?.length ? <BlogFAQ items={mdxPost.faq} /> : null}
 
             {/* Topic-aware CTA card (routes to landing page for the post's category) */}
             <BlogTopicCTA slug={mdxPost.slug} />

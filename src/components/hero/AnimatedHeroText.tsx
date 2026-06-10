@@ -41,7 +41,10 @@ export default function AnimatedHeroText({
   const slotStyle = { '--hero-word-duration': `${transitionMs}ms` } as CSSProperties;
 
   return (
-    <h1 className="font-heading text-4xl sm:text-5xl md:text-7xl font-bold tracking-[0.02em] text-center lg:text-left leading-[1.15]">
+    <div
+      aria-hidden="true"
+      className="font-heading text-4xl sm:text-5xl md:text-7xl font-bold tracking-[0.02em] text-center lg:text-left leading-[1.15]"
+    >
       <span className="block">
         <span className={styles.slot} style={slotStyle}>
           <span className={styles.sizer} aria-hidden="true">{longestDrink}</span>
@@ -68,6 +71,6 @@ export default function AnimatedHeroText({
           </span>
         </span>
       </span>
-    </h1>
+    </div>
   );
 }
