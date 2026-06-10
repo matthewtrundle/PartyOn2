@@ -118,7 +118,9 @@ export default function PartyChat() {
     setError(null);
     setSubmitting(true);
     try {
-      const res = await fetch('/api/v1/chat/submit', {
+      // First call: build the recommendation so we can show the user
+      // what's about to land in their dashboard.
+      const recRes = await fetch('/api/v1/chat/submit', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         credentials: 'same-origin',
@@ -132,19 +134,72 @@ export default function PartyChat() {
           deliveryDate,
         }),
       });
-      const json = await res.json();
-      if (!res.ok || !json.ok) {
-        throw new Error(json.error || 'Could not save your info.');
+      const recJson = await recRes.json();
+      if (!recRes.ok || !recJson.ok) {
+        throw new Error(recJson.error || 'Could not save your info.');
       }
-      setRecommendation(json.recommendation ?? null);
-      setIsLastMinute(!!json.isLastMinute);
-      setRedirectTo(json.redirectTo ?? null);
+      setRecommendation(recJson.recommendation ?? null);
+      setIsLastMinute(!!recJson.isLastMinute);
+      setRedirectTo(recJson.redirectTo ?? null);
       setStep('results');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.');
       setSubmitting(false);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  /**
+   * Fires when the user clicks the final CTA on the results step.
+   * Calls /api/v1/quote/start to create a real dashboard with the
+   * recommended items pre-loaded, stashes the host's participantId in
+   * localStorage (so the dashboard recognizes them as host), and
+   * hard-redirects to /dashboard/<shareCode>.
+   */
+  const [openingDashboard, setOpeningDashboard] = useState(false);
+  const openDashboard = async () => {
+    if (!partyType || !firstName || !email) return;
+    setOpeningDashboard(true);
+    try {
+      const res = await fetch('/api/v1/quote/start', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          firstName,
+          lastName: lastName || null,
+          email,
+          phone: phone || null,
+          partyType,
+          headcount,
+          deliveryDate,
+          source: 'chat',
+          recommendedItems:
+            recommendation?.items.map((it) => ({ handle: it.handle, qty: it.qty })) ?? [],
+        }),
+      });
+      const json = await res.json();
+      if (!json.ok || !json.shareCode) {
+        // Fallback: just take them to the matching landing page.
+        window.location.href = json.redirectTo ?? '/';
+        return;
+      }
+      // Mark host so the dashboard treats them as the order owner.
+      try {
+        if (json.hostParticipantId) {
+          localStorage.setItem(
+            `dashboard_participant_${json.shareCode}`,
+            json.hostParticipantId,
+          );
+        }
+      } catch {
+        /* localStorage disabled */
+      }
+      window.location.href = json.redirectTo;
+    } catch (err) {
+      console.warn('[chat] quote/start failed', err);
+      setOpeningDashboard(false);
     }
   };
 
@@ -433,6 +488,8 @@ export default function PartyChat() {
             redirectTo={redirectTo ?? '/'}
             headcount={headcount}
             deliveryDate={deliveryDate}
+            onOpenDashboard={openDashboard}
+            opening={openingDashboard}
           />
         )}
 
@@ -477,19 +534,21 @@ function ResultsView({
   firstName,
   recommendation,
   isLastMinute,
-  redirectTo,
   headcount,
   deliveryDate,
+  onOpenDashboard,
+  opening,
 }: {
   firstName: string;
   recommendation: Recommendation;
   isLastMinute: boolean;
+  /** Kept for backwards compat; not used now that the CTA creates a dashboard. */
   redirectTo: string;
   headcount: number;
   deliveryDate: string;
+  onOpenDashboard: () => void;
+  opening: boolean;
 }) {
-  const fullMenuUrl = `${redirectTo}&date=${deliveryDate}&people=${headcount}`;
-
   return (
     <div className="space-y-3">
       <ChatBubble
@@ -573,10 +632,14 @@ function ResultsView({
         </div>
       </div>
 
-      {/* CTAs */}
-      <a
-        href={fullMenuUrl}
-        className="block w-full text-center py-3 rounded-md font-bold text-sm tracking-widest"
+      {/* CTA — creates a real dashboard with these items pre-loaded and
+          redirects there. From the dashboard the customer can browse the
+          full menu, add more, share with their group, split-pay, etc. */}
+      <button
+        type="button"
+        onClick={onOpenDashboard}
+        disabled={opening}
+        className="block w-full text-center py-3 rounded-md font-bold text-sm tracking-widest disabled:opacity-60"
         style={{
           background: GOLD,
           color: NAVY,
@@ -584,10 +647,13 @@ function ResultsView({
           boxShadow: `0 4px 0 ${NAVY}`,
         }}
       >
-        START MY ORDER ON THE FULL MENU →
-      </a>
+        {opening
+          ? 'BUILDING YOUR ORDER…'
+          : 'OPEN MY ORDER + ADD MORE ITEMS →'}
+      </button>
       <p className="text-[10px] text-gray-500 text-center">
-        We sent the recommendation + full menu link to your inbox too.
+        These items will be in your cart. You can edit, add more from the full
+        menu, or share with your group from the order page.
       </p>
     </div>
   );
