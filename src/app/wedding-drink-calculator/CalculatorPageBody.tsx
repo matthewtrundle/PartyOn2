@@ -12,7 +12,6 @@ import GuaranteeRow from './sections/GuaranteeRow';
 import EditorialReviews from './sections/EditorialReviews';
 import HowMathWorks from './sections/HowMathWorks';
 import FaqColumn from './sections/FaqColumn';
-import QuoteFormCard from './sections/QuoteFormCard';
 import QuoteFormSection from './sections/QuoteFormSection';
 import MobileStickyCta from './sections/MobileStickyCta';
 import type { Faq } from '@/components/landing/types';
@@ -51,21 +50,19 @@ export default function CalculatorPageBody({ faqs }: Props): ReactElement {
       {/* B. Calculator tool — get to it FAST. No duplicate H2 header
           (the hero already says "Wedding drink calculator."). The
           two-column desktop layout is self-evident so the instruction
-          line only renders on mobile where columns stack. */}
+          line only renders on mobile where columns stack.
+
+          The primary in-calculator conversion is the email-first capture
+          attached to the results (inside CalculatorClient → CalculatorResults,
+          placement="results") — it sits at the peak-intent moment instead of
+          a separate full form below. The bottom-of-page QuoteFormSection
+          remains the scroll-to-end catch-all. */}
       <section id="calculator" className="bg-white py-5 md:py-7">
         <div className="max-w-6xl mx-auto px-6">
           <p className="md:hidden text-center text-sm text-gray-600 font-light mb-4">
             Inputs first. Shopping list updates as you go.
           </p>
           <CalculatorClient onResultsComputed={setPlan} />
-
-          {/* Inline quote form — same component / same endpoint as the
-              bottom-of-page form, kept inside the calculator section so it
-              reads as the natural next step. Editorial hairline divider
-              keeps the visual rhythm consistent with the section above. */}
-          <div className="mt-16 md:mt-20 pt-12 md:pt-16 border-t border-[#2A2218]/10 max-w-3xl mx-auto">
-            <QuoteFormCard plan={plan} placement="inline" />
-          </div>
         </div>
       </section>
 

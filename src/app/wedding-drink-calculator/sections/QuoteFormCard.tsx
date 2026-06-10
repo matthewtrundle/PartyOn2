@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent, type ReactElement } from 'react';
 import type { WeddingPlan } from '@/lib/weddingDrinkCalculator';
-import { trackMetaEvent } from '@/components/MetaPixel';
+import { submitWeddingQuote } from './submitWeddingQuote';
 
 type Props = {
   /** Latest computed plan from the calculator above; null until first render. */
@@ -17,28 +17,6 @@ type Props = {
   heading?: string;
   /** Optional subhead override. */
   subhead?: string;
-};
-
-/**
- * Maps a calculator output item name to the underlying product handle in
- * Postgres. Items not in this map fall through — admin reviews the draft
- * order and adds them manually. We always send `bag-of-ice-7-lbs` as the
- * fallback so the API's `items.min(1)` validation always passes.
- */
-const ITEM_NAME_TO_HANDLE: Record<string, string> = {
-  'Miller Lite (24-pack)': 'miller-lite-24-pack-12oz-can',
-  'Modelo Especial (24-pack)': 'modelo-especial-24pack-12oz-cans',
-  'Austin Beerworks Variety (12-pack)': 'austin-beerworks-variety-pack-12-pack-12oz-can',
-  'High Noon Variety (12-pack)':
-    'high-noon-vodka-soda-combo-3-each-grapefruit-9-pineapple-9-black-cherry-9-watermelon-9-355ml-12-pack',
-  'White Claw Variety (24-pack)': 'white-claw-variety-24-pack-12oz-can',
-  'Dark Horse Pinot Grigio (750ml)': 'dark-horse-pinot-grigio-750ml-bottle',
-  '14 Hands Cabernet Sauvignon (750ml)': '14-hands-cabernet-sauvignon',
-  'Espolon Tequila Blanco (750ml)': 'espolon-tequila-blanco-80-1l',
-  "Tito's Handmade Vodka (1L)": 'titos-handmade-vodka-80-1lt',
-  'Still Austin Bourbon (750ml)': 'jameson-irish-whiskey-1',
-  'Champagne / Prosecco (750ml)': 'chandon-california-brut-750ml',
-  'Ice Bags': 'bag-of-ice-7-lbs',
 };
 
 /**
@@ -72,83 +50,16 @@ export default function QuoteFormCard({
     setStatus('submitting');
     setErrorMsg('');
 
-    const items: { handle: string; qty: number }[] = [];
-    const unmappedNames: string[] = [];
-    if (plan) {
-      for (const item of plan.items) {
-        const handle = ITEM_NAME_TO_HANDLE[item.name];
-        if (handle) items.push({ handle, qty: item.quantity });
-        else unmappedNames.push(`${item.quantity}× ${item.name}`);
-      }
-    }
-    if (items.length === 0) {
-      items.push({ handle: 'bag-of-ice-7-lbs', qty: 4 });
-    }
-
-    const deliveryDate = new Date();
-    deliveryDate.setDate(deliveryDate.getDate() + 30);
-
-    const summary = plan
-      ? [
-          `Calculator state: ${plan.summary.guests} guests × ${plan.summary.hours} hours = ${plan.totalDrinks} drinks.`,
-          `Categories: ${plan.summary.categories.join(', ')}.`,
-          `Submitted from: ${placement === 'inline' ? 'calculator inline form' : 'bottom-of-page form'}.`,
-          unmappedNames.length > 0
-            ? `Unmapped items (operator to add): ${unmappedNames.join('; ')}.`
-            : '',
-        ]
-          .filter(Boolean)
-          .join(' ')
-      : `No calculator state captured. Submitted from ${placement === 'inline' ? 'calculator inline form' : 'bottom-of-page form'}.`;
-
     try {
-      const res = await fetch('/api/v1/landing/quote', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          mode: 'quote',
-          occasion: 'wedding',
-          customerName: name,
-          customerEmail: email,
-          customerPhone: phone,
-          groupSize: plan?.summary.guests ?? 100,
-          deliveryDate: deliveryDate.toISOString().slice(0, 10),
-          items,
-          deliveryNotes: summary,
-        }),
-      });
-      const body = await res.json();
-      if (!res.ok || !body.success) {
-        throw new Error(body.error || 'Submit failed');
-      }
-      setInvoiceUrl(body.invoiceUrl ?? null);
-      setStatus('success');
-
-      // Conversion firing — Meta + GA4 + Google Ads. All gated so missing
-      // pixels / env vars are silent no-ops.
-      trackMetaEvent('Lead', {
-        content_name: 'Wedding Bar Quote',
-        content_category: 'wedding-drink-calculator',
+      const { invoiceUrl: url } = await submitWeddingQuote({
+        plan,
+        customerName: name,
+        customerEmail: email,
+        customerPhone: phone,
         placement,
       });
-
-      if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
-        window.gtag('event', 'generate_lead', {
-          form_id: 'wedding-bar-quote',
-          placement,
-          page_location: window.location.href,
-          value: plan?.totalDrinks ?? 0,
-        });
-
-        const conversionId = process.env.NEXT_PUBLIC_GADS_QUOTE_CONVERSION_ID;
-        if (conversionId) {
-          window.gtag('event', 'conversion', {
-            send_to: conversionId,
-            value: 0,
-            currency: 'USD',
-          });
-        }
-      }
+      setInvoiceUrl(url);
+      setStatus('success');
     } catch (err) {
       setStatus('error');
       setErrorMsg(err instanceof Error ? err.message : 'Submit failed');
