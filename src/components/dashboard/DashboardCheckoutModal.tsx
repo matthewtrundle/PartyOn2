@@ -54,6 +54,7 @@ export default function DashboardCheckoutModal({
   const [tipPercent, setTipPercent] = useState<number | null>(null);
   const [customTip, setCustomTip] = useState('');
 
+  const isPickup = tab.deliveryAddress?.isPickup === true;
   const hasAddress = !!tab.deliveryAddress?.address1?.trim();
 
   const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
@@ -86,7 +87,7 @@ export default function DashboardCheckoutModal({
     setError('');
 
     if (!hasAddress) {
-      setError('Delivery address is required');
+      setError(isPickup ? 'Pickup details are required' : 'Delivery address is required');
       return;
     }
 
@@ -284,10 +285,12 @@ export default function DashboardCheckoutModal({
             )}
           </div>
 
-          {/* Delivery details section */}
+          {/* Delivery / Pickup details section */}
           {hasAddress ? (
             <div className="bg-gray-50 rounded-lg px-4 py-3 space-y-1.5">
-              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Delivery</p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+                {isPickup ? 'Pickup' : 'Delivery'}
+              </p>
               {(deliveryDate || deliveryTime) && (
                 <p className="text-sm text-gray-700">
                   {deliveryDate}{deliveryTime ? ` at ${deliveryTime}` : ''}
@@ -336,8 +339,10 @@ export default function DashboardCheckoutModal({
               </div>
             )}
             <div className="flex justify-between text-sm mb-1">
-              <span className="text-gray-600">Delivery Fee</span>
-              {appliedPromo?.freeDelivery ? (
+              <span className="text-gray-600">{isPickup ? 'Store Pickup' : 'Delivery Fee'}</span>
+              {isPickup ? (
+                <span className="text-green-600 font-semibold">FREE</span>
+              ) : appliedPromo?.freeDelivery ? (
                 <span className="flex items-center gap-1.5">
                   <span className="text-gray-400 line-through">${Number(tab.deliveryFee || 40).toFixed(2)}</span>
                   <span className="text-green-600 font-semibold">FREE</span>
