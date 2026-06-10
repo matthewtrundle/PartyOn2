@@ -41,6 +41,7 @@ export default function PremierHero(): ReactElement {
         src="/images/partners/premierpartycruises-hero-bg3.webp.png"
         alt="Premier Party Cruises boat party on Lake Travis"
         fill
+        sizes="100vw"
         className="object-cover"
         priority
       />

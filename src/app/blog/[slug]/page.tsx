@@ -12,6 +12,7 @@ import BlogTopicCTA from '@/components/blog/BlogTopicCTA'
 import blogPostsData from '@/data/blog-posts/posts.json'
 import { seoConfig } from '@/lib/seo/config'
 import { generateArticleSchema } from '@/lib/seo/schemas'
+import { buildBlogMetadata } from '@/lib/seo/build-metadata'
 
 interface BlogPost {
   id: string
@@ -996,40 +997,31 @@ export async function generateMetadata({ params }: BlogPostPageProps): Promise<M
   const jsonPost = blogPosts.find(p => p.slug === slug)
 
   if (jsonPost) {
-    return {
-      title: jsonPost.seo?.title || jsonPost.title,
-      description: jsonPost.seo?.description || jsonPost.excerpt,
-      keywords: jsonPost.seo?.keywords || jsonPost.tags,
-      alternates: { canonical: canonicalUrl },
-      openGraph: {
-        title: jsonPost.seo?.title || jsonPost.title,
-        description: jsonPost.seo?.description || jsonPost.excerpt,
-        url: canonicalUrl,
-        type: 'article',
-        publishedTime: jsonPost.publishedAt || jsonPost.date,
-        authors: [jsonPost.author],
-        images: jsonPost.image?.url ? [{ url: jsonPost.image.url, alt: jsonPost.image.alt }] : [],
-      },
-    }
+    return buildBlogMetadata({
+      slug,
+      title: jsonPost.title,
+      excerpt: jsonPost.excerpt,
+      seo: jsonPost.seo,
+      tags: jsonPost.tags,
+      category: jsonPost.category,
+      image: jsonPost.image,
+      author: jsonPost.author,
+      publishedAt: jsonPost.publishedAt || jsonPost.date,
+    })
   }
 
   const mdxPost = getMDXPost(slug)
   if (mdxPost) {
-    return {
+    return buildBlogMetadata({
+      slug,
       title: mdxPost.title,
-      description: mdxPost.excerpt,
-      keywords: [mdxPost.category, ...mdxPost.keywords].filter(Boolean),
-      alternates: { canonical: canonicalUrl },
-      openGraph: {
-        title: mdxPost.title,
-        description: mdxPost.excerpt,
-        url: canonicalUrl,
-        type: 'article',
-        publishedTime: mdxPost.date,
-        authors: [mdxPost.author],
-        images: mdxPost.image ? [{ url: mdxPost.image, alt: mdxPost.title }] : [],
-      },
-    }
+      excerpt: mdxPost.excerpt,
+      tags: mdxPost.keywords,
+      category: mdxPost.category,
+      image: mdxPost.image ? { url: mdxPost.image, alt: mdxPost.title } : null,
+      author: mdxPost.author,
+      publishedAt: mdxPost.date,
+    })
   }
 
   return {
@@ -1396,6 +1388,7 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
                       src={relatedPost.image?.url || '/images/hero/lake-travis-yacht-sunset.webp'}
                       alt={relatedPost.image?.alt || relatedPost.title}
                       fill
+                      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                       className="object-cover group-hover:scale-105 transition-transform duration-700"
                     />
                     {relatedPost.category && (

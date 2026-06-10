@@ -136,6 +136,7 @@ export default function WeddingProductsPage() {
           src="/images/services/weddings/outdoor-bar-setup.webp"
           alt="Wedding Bar Setup"
           fill
+          sizes="100vw"
           className="object-cover"
           priority
         />

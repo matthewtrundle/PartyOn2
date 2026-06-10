@@ -12,8 +12,8 @@ import PinthouseElectricJellyfishFAQ from '@/components/products/PinthouseElectr
 import CoronaExtraKegFAQ from '@/components/products/CoronaExtraKegFAQ';
 import BorrascaBrutCavaFAQ from '@/components/products/BorrascaBrutCavaFAQ';
 import ProductBreadcrumbs from '@/components/products/ProductBreadcrumbs';
-import { formatPrice } from '@/lib/utils';
 import { getProductRobotsMeta } from '@/lib/noindex-products';
+import { buildProductMetadata } from '@/lib/seo/build-metadata';
 
 interface Props {
   params: Promise<{ handle: string }>;
@@ -57,11 +57,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!product) {
     return { title: 'Product Not Found', robots };
   }
-
-  const price = formatPrice(
-    product.priceRange.minVariantPrice.amount,
-    product.priceRange.minVariantPrice.currencyCode
-  );
 
   const image = product.images.edges[0]?.node.url || '/images/pod-logo-2025.svg';
   const plainDescription = product.description?.replace(/<[^>]*>/g, '') || '';
@@ -289,27 +284,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }
 
-  // Default metadata for all other products
-  return {
-    title: `${product.title} - ${price} | Party On Delivery Austin`,
-    description: truncatedDescription || `Buy ${product.title} for delivery in Austin. Premium alcohol delivery for weddings, parties, and events.`,
-    keywords: `${product.title}, austin alcohol delivery, ${product.productType}, party supplies austin`,
-    robots,
-    openGraph: {
-      title: product.title,
-      description: truncatedDescription || `Premium ${product.title} delivered in Austin`,
-      type: 'website',
-      url: `https://partyondelivery.com/products/${handle}`,
-      images: [{ url: image, width: 1200, height: 1200, alt: product.title }],
-    },
-    twitter: {
-      card: 'summary_large_image',
-      title: product.title,
-      description: truncatedDescription,
-      images: [image],
-    },
-    alternates: { canonical: `/products/${handle}` },
-  };
+  // Default metadata via centralized helper.
+  // The helper enforces divergent <title> vs <h1> (the H1 renders raw
+  // product.title), title/description length clamps, and a canonical URL.
+  const baseMetadata = buildProductMetadata({
+    handle,
+    title: product.title,
+    description: truncatedDescription || plainDescription,
+    productType: product.productType,
+    image: { url: image, alt: product.title },
+  });
+
+  return { ...baseMetadata, robots };
 }
 
 // Generate static params from PostgreSQL for pre-rendering

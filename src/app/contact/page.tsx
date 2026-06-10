@@ -84,6 +84,7 @@ export default function ContactPage() {
           src="/images/hero/contact-hero-austin.webp"
           alt="Austin Downtown"
           fill
+          sizes="100vw"
           className="object-cover"
           priority
         />

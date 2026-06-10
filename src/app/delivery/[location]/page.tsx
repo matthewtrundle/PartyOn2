@@ -123,6 +123,7 @@ export default async function LocationDeliveryPage({ params }: { params: Promise
           src="/images/services/corporate/penthouse-suite-setup.webp"
           alt={`${locationData.name} Alcohol Delivery`}
           fill
+          sizes="100vw"
           className="object-cover"
           priority
         />

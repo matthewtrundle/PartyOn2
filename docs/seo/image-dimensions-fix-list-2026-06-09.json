@@ -1,0 +1,1225 @@
+{
+  "generatedAt": "2026-06-09T16:17:41.674Z",
+  "totals": {
+    "imgFixesTotal": 58,
+    "imgFixesResolved": 26,
+    "imgFixesUnresolvable": 32,
+    "fillFixesTotal": 53,
+    "filesAffected": 76
+  },
+  "byFile": {
+    "src/components/Navigation.tsx": {
+      "img": [
+        {
+          "file": "src/components/Navigation.tsx",
+          "src": "/images/pod-logo-2025.svg",
+          "severity": "error",
+          "suggested": {
+            "width": 2160,
+            "height": 2160,
+            "resolved": "/images/pod-logo-2025.svg"
+          },
+          "snippet": "<img\n                src=\"/images/pod-logo-2025.svg\"\n                alt=\"Party On Delivery\"\n       ..."
+        },
+        {
+          "file": "src/components/Navigation.tsx",
+          "src": "/images/pod-logo-2025.svg",
+          "severity": "error",
+          "suggested": {
+            "width": 2160,
+            "height": 2160,
+            "resolved": "/images/pod-logo-2025.svg"
+          },
+          "snippet": "<img\n                src=\"/images/pod-logo-2025.svg\"\n                alt=\"Party On Delivery\"\n       ..."
+        },
+        {
+          "file": "src/components/Navigation.tsx",
+          "src": "/images/pod-logo-2025.svg",
+          "severity": "error",
+          "suggested": {
+            "width": 2160,
+            "height": 2160,
+            "resolved": "/images/pod-logo-2025.svg"
+          },
+          "snippet": "<img\n                src=\"/images/pod-logo-2025.svg\"\n                alt=\"Party On Delivery\"\n       ..."
+        }
+      ],
+      "fill": []
+    },
+    "src/components/shopify/ProductCard.tsx": {
+      "img": [
+        {
+          "file": "src/components/shopify/ProductCard.tsx",
+          "src": null,
+          "severity": "error",
+          "suggested": null,
+          "snippet": "<img\n                src={imageUrl}\n                alt={product.title}\n                className=\"w..."
+        }
+      ],
+      "fill": []
+    },
+    "src/components/shopify/MobileProductCard.tsx": {
+      "img": [
+        {
+          "file": "src/components/shopify/MobileProductCard.tsx",
+          "src": null,
+          "severity": "error",
+          "suggested": null,
+          "snippet": "<img\n                src={imageUrl}\n                alt={product.title}\n                className=\"w..."
+        }
+      ],
+      "fill": []
+    },
+    "src/components/shopify/CompactProductCard.tsx": {
+      "img": [
+        {
+          "file": "src/components/shopify/CompactProductCard.tsx",
+          "src": null,
+          "severity": "error",
+          "suggested": null,
+          "snippet": "<img\n                src={imageUrl}\n                alt={product.title}\n                className=\"w..."
+        }
+      ],
+      "fill": []
+    },
+    "src/components/shopify/CartItem.tsx": {
+      "img": [
+        {
+          "file": "src/components/shopify/CartItem.tsx",
+          "src": null,
+          "severity": "error",
+          "suggested": null,
+          "snippet": "<img\n            src={imageUrl}\n            alt={item.merchandise.product.title}\n            classNa..."
+        }
+      ],
+      "fill": []
+    },
+    "src/components/quick-order/QuickOrderSearch.tsx": {
+      "img": [
+        {
+          "file": "src/components/quick-order/QuickOrderSearch.tsx",
+          "src": null,
+          "severity": "error",
+          "suggested": null,
+          "snippet": "<img\n                            src={getProductImageUrl(product)}\n                            alt={..."
+        }
+      ],
+      "fill": []
+    },
+    "src/components/partners/DrinkCalculator.tsx": {
+      "img": [
+        {
+          "file": "src/components/partners/DrinkCalculator.tsx",
+          "src": null,
+          "severity": "error",
+          "suggested": null,
+          "snippet": "<img\n            src={product.imageUrl}\n            alt={product.productTitle ?? product.name}\n     ..."
+        }
+      ],
+      "fill": []
+    },
+    "src/components/mobile/MobileSearchModal.tsx": {
+      "img": [
+        {
+          "file": "src/components/mobile/MobileSearchModal.tsx",
+          "src": null,
+          "severity": "error",
+          "suggested": null,
+          "snippet": "<img\n                            src={product.images.edges[0].node.url}\n                            ..."
+        }
+      ],
+      "fill": []
+    },
+    "src/components/kegs/EquipmentRentals.tsx": {
+      "img": [
+        {
+          "file": "src/components/kegs/EquipmentRentals.tsx",
+          "src": null,
+          "severity": "error",
+          "suggested": null,
+          "snippet": "<img\n                    src={imageUrl}\n                    alt={product.title}\n                    ..."
+        },
+        {
+          "file": "src/components/kegs/EquipmentRentals.tsx",
+          "src": null,
+          "severity": "error",
+          "suggested": null,
+          "snippet": "<img\n                src={imageUrl}\n                alt={product.title}\n                className=\"w..."
+        }
+      ],
+      "fill": []
+    },
+    "src/components/group-v2/GroupProductCatalog.tsx": {
+      "img": [
+        {
+          "file": "src/components/group-v2/GroupProductCatalog.tsx",
+          "src": null,
+          "severity": "error",
+          "suggested": null,
+          "snippet": "<img\n                      src={imgUrl}\n                      alt={product.title}\n                  ..."
+        }
+      ],
+      "fill": []
+    },
+    "src/components/group-v2/DraftCartItemRow.tsx": {
+      "img": [
+        {
+          "file": "src/components/group-v2/DraftCartItemRow.tsx",
+          "src": null,
+          "severity": "error",
+          "suggested": null,
+          "snippet": "<img\n          src={item.imageUrl}\n          alt={item.title}\n          className=\"w-24 h-24 rounded..."
+        }
+      ],
+      "fill": []
+    },
+    "src/components/drink-planner/DrinkPlannerQuiz.tsx": {
+      "img": [
+        {
+          "file": "src/components/drink-planner/DrinkPlannerQuiz.tsx",
+          "src": "/images/pod-logo-2025.svg",
+          "severity": "error",
+          "suggested": {
+            "width": 2160,
+            "height": 2160,
+            "resolved": "/images/pod-logo-2025.svg"
+          },
+          "snippet": "<img\n                  src=\"/images/pod-logo-2025.svg\"\n                  alt=\"Party On Delivery\"\n   ..."
+        }
+      ],
+      "fill": []
+    },
+    "src/components/blog/MDXContentRSC.tsx": {
+      "img": [
+        {
+          "file": "src/components/blog/MDXContentRSC.tsx",
+          "src": null,
+          "severity": "error",
+          "suggested": null,
+          "snippet": "<img\n          src={props.src}\n          alt={props.alt || ''}\n          className=\"w-full h-auto ro..."
+        }
+      ],
+      "fill": []
+    },
+    "src/components/blog/MDXContent.tsx": {
+      "img": [
+        {
+          "file": "src/components/blog/MDXContent.tsx",
+          "src": null,
+          "severity": "error",
+          "suggested": null,
+          "snippet": "<img\n          src={props.src}\n          alt={props.alt || ''}\n          className=\"w-full h-auto ro..."
+        }
+      ],
+      "fill": []
+    },
+    "src/components/account/AccountLayout.tsx": {
+      "img": [
+        {
+          "file": "src/components/account/AccountLayout.tsx",
+          "src": null,
+          "severity": "error",
+          "suggested": null,
+          "snippet": "<img \n                      src={profileImage} \n                      alt=\"Profile\" \n               ..."
+        }
+      ],
+      "fill": []
+    },
+    "src/app/weddings/page.tsx": {
+      "img": [
+        {
+          "file": "src/app/weddings/page.tsx",
+          "src": "/images/pod-logo-2025.svg",
+          "severity": "error",
+          "suggested": {
+            "width": 2160,
+            "height": 2160,
+            "resolved": "/images/pod-logo-2025.svg"
+          },
+          "snippet": "<img \n                src=\"/images/pod-logo-2025.svg\" \n                alt=\"Party On Delivery\"\n     ..."
+        }
+      ],
+      "fill": [
+        {
+          "file": "src/app/weddings/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "(max-width: 768px) 100vw, 50vw",
+          "snippet": "<Image\n                  src={image.src}\n                  alt={image.alt}\n                  fill\n  ..."
+        }
+      ]
+    },
+    "src/app/terms/page.tsx": {
+      "img": [
+        {
+          "file": "src/app/terms/page.tsx",
+          "src": "/images/pod-logo-2025.svg",
+          "severity": "error",
+          "suggested": {
+            "width": 2160,
+            "height": 2160,
+            "resolved": "/images/pod-logo-2025.svg"
+          },
+          "snippet": "<img \n                src=\"/images/pod-logo-2025.svg\" \n                alt=\"Party On Delivery\"\n     ..."
+        }
+      ],
+      "fill": []
+    },
+    "src/app/privacy/page.tsx": {
+      "img": [
+        {
+          "file": "src/app/privacy/page.tsx",
+          "src": "/images/pod-logo-2025.svg",
+          "severity": "error",
+          "suggested": {
+            "width": 2160,
+            "height": 2160,
+            "resolved": "/images/pod-logo-2025.svg"
+          },
+          "snippet": "<img \n                src=\"/images/pod-logo-2025.svg\" \n                alt=\"Party On Delivery\"\n     ..."
+        }
+      ],
+      "fill": []
+    },
+    "src/app/products/page.tsx": {
+      "img": [
+        {
+          "file": "src/app/products/page.tsx",
+          "src": "/images/pod-logo-2025.svg",
+          "severity": "error",
+          "suggested": {
+            "width": 2160,
+            "height": 2160,
+            "resolved": "/images/pod-logo-2025.svg"
+          },
+          "snippet": "<img \n                src=\"/images/pod-logo-2025.svg\" \n                alt=\"Party On Delivery\"\n     ..."
+        }
+      ],
+      "fill": [
+        {
+          "file": "src/app/products/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "(max-width: 768px) 100vw, 50vw",
+          "snippet": "<Image\n          src=\"/images/products/premium-spirits-wall.webp\"\n          alt=\"Premium Spirits Col..."
+        }
+      ]
+    },
+    "src/app/order/page.tsx": {
+      "img": [
+        {
+          "file": "src/app/order/page.tsx",
+          "src": "/images/pod-logo-2025.svg",
+          "severity": "error",
+          "suggested": {
+            "width": 2160,
+            "height": 2160,
+            "resolved": "/images/pod-logo-2025.svg"
+          },
+          "snippet": "<img src=\"/images/pod-logo-2025.svg\" alt=\"Party On\" className=\"h-40 w-auto mx-auto mb-8\" />..."
+        }
+      ],
+      "fill": []
+    },
+    "src/app/payment/page.tsx": {
+      "img": [
+        {
+          "file": "src/app/payment/page.tsx",
+          "src": null,
+          "severity": "error",
+          "suggested": null,
+          "snippet": "<img\n                            src={node.merchandise.product.images?.edges?.[0]?.node.url}\n       ..."
+        }
+      ],
+      "fill": []
+    },
+    "src/app/kegs/page.tsx": {
+      "img": [
+        {
+          "file": "src/app/kegs/page.tsx",
+          "src": "/images/pod-logo-2025.svg",
+          "severity": "error",
+          "suggested": {
+            "width": 2160,
+            "height": 2160,
+            "resolved": "/images/pod-logo-2025.svg"
+          },
+          "snippet": "<img\n                src=\"/images/pod-logo-2025.svg\"\n                alt=\"Party On Delivery\"\n       ..."
+        }
+      ],
+      "fill": []
+    },
+    "src/app/faqs/page.tsx": {
+      "img": [
+        {
+          "file": "src/app/faqs/page.tsx",
+          "src": "/images/pod-logo-2025.svg",
+          "severity": "error",
+          "suggested": {
+            "width": 2160,
+            "height": 2160,
+            "resolved": "/images/pod-logo-2025.svg"
+          },
+          "snippet": "<img\n                src=\"/images/pod-logo-2025.svg\"\n                alt=\"Party On Delivery\"\n       ..."
+        }
+      ],
+      "fill": []
+    },
+    "src/app/delivery-areas/page.tsx": {
+      "img": [
+        {
+          "file": "src/app/delivery-areas/page.tsx",
+          "src": "/images/pod-logo-2025.svg",
+          "severity": "error",
+          "suggested": {
+            "width": 2160,
+            "height": 2160,
+            "resolved": "/images/pod-logo-2025.svg"
+          },
+          "snippet": "<img \n                src=\"/images/pod-logo-2025.svg\" \n                alt=\"Party On Delivery\"\n     ..."
+        }
+      ],
+      "fill": [
+        {
+          "file": "src/app/delivery-areas/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "100vw",
+          "snippet": "<Image\n          src=\"/images/hero/austin-skyline-golden-hour.webp\"\n          alt=\"Austin Aerial Vie..."
+        }
+      ]
+    },
+    "src/app/corporate-events-guide/page.tsx": {
+      "img": [
+        {
+          "file": "src/app/corporate-events-guide/page.tsx",
+          "src": null,
+          "severity": "error",
+          "suggested": null,
+          "snippet": "<img\n          src={frontmatter.image || '/images/hero/lake-travis-yacht-sunset.webp'}\n          alt..."
+        }
+      ],
+      "fill": []
+    },
+    "src/app/contact/page.tsx": {
+      "img": [
+        {
+          "file": "src/app/contact/page.tsx",
+          "src": "/images/pod-logo-2025.svg",
+          "severity": "error",
+          "suggested": {
+            "width": 2160,
+            "height": 2160,
+            "resolved": "/images/pod-logo-2025.svg"
+          },
+          "snippet": "<img \n                src=\"/images/pod-logo-2025.svg\" \n                alt=\"Party On Delivery\"\n     ..."
+        }
+      ],
+      "fill": [
+        {
+          "file": "src/app/contact/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "100vw",
+          "snippet": "<Image\n          src=\"/images/hero/contact-hero-austin.webp\"\n          alt=\"Austin Downtown\"\n       ..."
+        }
+      ]
+    },
+    "src/app/corporate/page.tsx": {
+      "img": [
+        {
+          "file": "src/app/corporate/page.tsx",
+          "src": "/images/pod-logo-2025.svg",
+          "severity": "error",
+          "suggested": {
+            "width": 2160,
+            "height": 2160,
+            "resolved": "/images/pod-logo-2025.svg"
+          },
+          "snippet": "<img\n                src=\"/images/pod-logo-2025.svg\"\n                alt=\"Party On Delivery\"\n       ..."
+        }
+      ],
+      "fill": []
+    },
+    "src/app/boat-parties/page.tsx": {
+      "img": [
+        {
+          "file": "src/app/boat-parties/page.tsx",
+          "src": "/images/pod-logo-2025.svg",
+          "severity": "error",
+          "suggested": {
+            "width": 2160,
+            "height": 2160,
+            "resolved": "/images/pod-logo-2025.svg"
+          },
+          "snippet": "<img \n                src=\"/images/pod-logo-2025.svg\" \n                alt=\"Party On Delivery\"\n     ..."
+        }
+      ],
+      "fill": []
+    },
+    "src/app/about/page.tsx": {
+      "img": [
+        {
+          "file": "src/app/about/page.tsx",
+          "src": "/images/pod-logo-2025.svg",
+          "severity": "error",
+          "suggested": {
+            "width": 2160,
+            "height": 2160,
+            "resolved": "/images/pod-logo-2025.svg"
+          },
+          "snippet": "<img \n                src=\"/images/pod-logo-2025.svg\" \n                alt=\"Party On Delivery\"\n     ..."
+        }
+      ],
+      "fill": [
+        {
+          "file": "src/app/about/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "100vw",
+          "snippet": "<Image\n          src=\"/images/hero/austin-skyline-golden-hour.webp\"\n          alt=\"Austin Skyline\"\n ..."
+        },
+        {
+          "file": "src/app/about/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "(max-width: 768px) 100vw, 50vw",
+          "snippet": "<Image\n              src=\"/images/about/professional-bartender-team.webp\"\n              alt=\"Party O..."
+        },
+        {
+          "file": "src/app/about/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "(max-width: 768px) 100vw, 50vw",
+          "snippet": "<Image\n                src=\"/images/about/premium-warehouse-facility.webp\"\n                alt=\"Prem..."
+        }
+      ]
+    },
+    "src/app/weddings/order/page.tsx": {
+      "img": [
+        {
+          "file": "src/app/weddings/order/page.tsx",
+          "src": "/images/wedding-services/order-hero.png",
+          "severity": "error",
+          "suggested": {
+            "width": 2816,
+            "height": 1536,
+            "resolved": "/images/wedding-services/order-hero.png"
+          },
+          "snippet": "<img\n          src=\"/images/wedding-services/order-hero.png\"\n          alt=\"\"\n          className=\"a..."
+        }
+      ],
+      "fill": []
+    },
+    "src/app/products/[handle]/page.tsx": {
+      "img": [
+        {
+          "file": "src/app/products/[handle]/page.tsx",
+          "src": "/images/pod-logo-2025.svg",
+          "severity": "error",
+          "suggested": {
+            "width": 2160,
+            "height": 2160,
+            "resolved": "/images/pod-logo-2025.svg"
+          },
+          "snippet": "<img\n                src=\"/images/pod-logo-2025.svg\"\n                alt=\"Party On Delivery\"\n       ..."
+        }
+      ],
+      "fill": []
+    },
+    "src/app/order/last-minute/page.tsx": {
+      "img": [
+        {
+          "file": "src/app/order/last-minute/page.tsx",
+          "src": "/images/pod-logo-2025.svg",
+          "severity": "error",
+          "suggested": {
+            "width": 2160,
+            "height": 2160,
+            "resolved": "/images/pod-logo-2025.svg"
+          },
+          "snippet": "<img src=\"/images/pod-logo-2025.svg\" alt=\"Party On\" className=\"h-40 w-auto mx-auto mb-8\" />..."
+        }
+      ],
+      "fill": []
+    },
+    "src/app/ops/products/page.tsx": {
+      "img": [
+        {
+          "file": "src/app/ops/products/page.tsx",
+          "src": null,
+          "severity": "error",
+          "suggested": null,
+          "snippet": "<img\n                          src={product.image.url}\n                          alt={product.image...."
+        }
+      ],
+      "fill": []
+    },
+    "src/app/corporate/holiday-party/page.tsx": {
+      "img": [
+        {
+          "file": "src/app/corporate/holiday-party/page.tsx",
+          "src": "/images/pod-logo-2025.svg",
+          "severity": "error",
+          "suggested": {
+            "width": 2160,
+            "height": 2160,
+            "resolved": "/images/pod-logo-2025.svg"
+          },
+          "snippet": "<img\n                src=\"/images/pod-logo-2025.svg\"\n                alt=\"Party On Delivery\"\n       ..."
+        }
+      ],
+      "fill": []
+    },
+    "src/app/checkout/success/page.tsx": {
+      "img": [
+        {
+          "file": "src/app/checkout/success/page.tsx",
+          "src": "/images/checkout/thank-you-hero.png",
+          "severity": "error",
+          "suggested": {
+            "width": 1664,
+            "height": 640,
+            "resolved": "/images/checkout/thank-you-hero.png"
+          },
+          "snippet": "<img\r\n            src=\"/images/checkout/thank-you-hero.png\"\r\n            alt=\"Thank you for your ord..."
+        }
+      ],
+      "fill": []
+    },
+    "src/app/account/orders/page.tsx": {
+      "img": [
+        {
+          "file": "src/app/account/orders/page.tsx",
+          "src": null,
+          "severity": "error",
+          "suggested": null,
+          "snippet": "<img \n                            src={item.variant.image.url} \n                            alt={ite..."
+        }
+      ],
+      "fill": []
+    },
+    "src/app/(main)/fast-delivery/page.tsx": {
+      "img": [
+        {
+          "file": "src/app/(main)/fast-delivery/page.tsx",
+          "src": "/images/services/fast-delivery/speed-focused-delivery.webp",
+          "severity": "error",
+          "suggested": {
+            "width": 1456,
+            "height": 816,
+            "resolved": "/images/services/fast-delivery/speed-focused-delivery.webp"
+          },
+          "snippet": "<img\n                src=\"/images/services/fast-delivery/speed-focused-delivery.webp\"\n              ..."
+        },
+        {
+          "file": "src/app/(main)/fast-delivery/page.tsx",
+          "src": "/images/services/fast-delivery/motion-blur-delivery.webp",
+          "severity": "error",
+          "suggested": {
+            "width": 1456,
+            "height": 816,
+            "resolved": "/images/services/fast-delivery/motion-blur-delivery.webp"
+          },
+          "snippet": "<img\n                src=\"/images/services/fast-delivery/motion-blur-delivery.webp\"\n                ..."
+        }
+      ],
+      "fill": []
+    },
+    "src/app/weddings/packages/[tier]/page.tsx": {
+      "img": [
+        {
+          "file": "src/app/weddings/packages/[tier]/page.tsx",
+          "src": null,
+          "severity": "error",
+          "suggested": null,
+          "snippet": "<img\n                              src={item.product.images.edges[0].node.url}\n                     ..."
+        },
+        {
+          "file": "src/app/weddings/packages/[tier]/page.tsx",
+          "src": "/images/pod-logo-2025.svg",
+          "severity": "error",
+          "suggested": {
+            "width": 2160,
+            "height": 2160,
+            "resolved": "/images/pod-logo-2025.svg"
+          },
+          "snippet": "<img \n                src=\"/images/pod-logo-2025.svg\" \n                alt=\"Party On Delivery\"\n     ..."
+        }
+      ],
+      "fill": []
+    },
+    "src/app/ops/products/create/page.tsx": {
+      "img": [
+        {
+          "file": "src/app/ops/products/create/page.tsx",
+          "src": null,
+          "severity": "error",
+          "suggested": null,
+          "snippet": "<img src={img.url} alt={`Product ${idx + 1}`} className=\"w-full h-full object-cover\" />..."
+        }
+      ],
+      "fill": []
+    },
+    "src/app/ops/orders/[id]/page.tsx": {
+      "img": [
+        {
+          "file": "src/app/ops/orders/[id]/page.tsx",
+          "src": null,
+          "severity": "error",
+          "suggested": null,
+          "snippet": "<img src={item.imageUrl} alt=\"\" className=\"w-10 h-10 rounded-lg object-cover border border-gray-100 ..."
+        },
+        {
+          "file": "src/app/ops/orders/[id]/page.tsx",
+          "src": null,
+          "severity": "error",
+          "suggested": null,
+          "snippet": "<img src={item.imageUrl} alt=\"\" className=\"w-10 h-10 rounded-lg object-cover border border-gray-100 ..."
+        }
+      ],
+      "fill": []
+    },
+    "src/app/ops/orders/create/page.tsx": {
+      "img": [
+        {
+          "file": "src/app/ops/orders/create/page.tsx",
+          "src": null,
+          "severity": "error",
+          "suggested": null,
+          "snippet": "<img\n                          src={product.images[0].url}\n                          alt={product.ti..."
+        },
+        {
+          "file": "src/app/ops/orders/create/page.tsx",
+          "src": null,
+          "severity": "error",
+          "suggested": null,
+          "snippet": "<img src={item.imageUrl} alt={item.title} className=\"w-10 h-10 rounded-lg object-cover border border..."
+        }
+      ],
+      "fill": []
+    },
+    "src/app/ops/inventory/count/page.tsx": {
+      "img": [
+        {
+          "file": "src/app/ops/inventory/count/page.tsx",
+          "src": null,
+          "severity": "error",
+          "suggested": null,
+          "snippet": "<img\n                  src={image}\n                  alt={`Selected ${index + 1}`}\n                 ..."
+        }
+      ],
+      "fill": []
+    },
+    "src/app/ops/collections/[id]/page.tsx": {
+      "img": [
+        {
+          "file": "src/app/ops/collections/[id]/page.tsx",
+          "src": null,
+          "severity": "error",
+          "suggested": null,
+          "snippet": "<img src={p.image.url} alt={p.title} className=\"w-10 h-10 rounded-lg object-cover border border-gray..."
+        },
+        {
+          "file": "src/app/ops/collections/[id]/page.tsx",
+          "src": null,
+          "severity": "error",
+          "suggested": null,
+          "snippet": "<img src={p.imageUrl} alt={p.title} className=\"w-12 h-12 rounded-lg object-cover border border-gray-..."
+        }
+      ],
+      "fill": []
+    },
+    "src/app/boat-parties/packages/[tier]/page.tsx": {
+      "img": [
+        {
+          "file": "src/app/boat-parties/packages/[tier]/page.tsx",
+          "src": null,
+          "severity": "error",
+          "suggested": null,
+          "snippet": "<img\n                              src={item.product.images.edges[0].node.url}\n                     ..."
+        },
+        {
+          "file": "src/app/boat-parties/packages/[tier]/page.tsx",
+          "src": "/images/pod-logo-2025.svg",
+          "severity": "error",
+          "suggested": {
+            "width": 2160,
+            "height": 2160,
+            "resolved": "/images/pod-logo-2025.svg"
+          },
+          "snippet": "<img \n                src=\"/images/pod-logo-2025.svg\" \n                alt=\"Party On Delivery\"\n     ..."
+        }
+      ],
+      "fill": []
+    },
+    "src/app/affiliate/dashboard/components/AffiliateDashboardHeader.tsx": {
+      "img": [
+        {
+          "file": "src/app/affiliate/dashboard/components/AffiliateDashboardHeader.tsx",
+          "src": "/images/pod-logo-2025.png",
+          "severity": "error",
+          "suggested": {
+            "width": 1024,
+            "height": 1024,
+            "resolved": "/images/pod-logo-2025.png"
+          },
+          "snippet": "<img\n              src=\"/images/pod-logo-2025.png\"\n              alt=\"Party On Delivery\"\n           ..."
+        }
+      ],
+      "fill": []
+    },
+    "src/app/ops/orders/[id]/edit/page.tsx": {
+      "img": [
+        {
+          "file": "src/app/ops/orders/[id]/edit/page.tsx",
+          "src": null,
+          "severity": "error",
+          "suggested": null,
+          "snippet": "<img\n                          src={product.images[0].url}\n                          alt={product.ti..."
+        },
+        {
+          "file": "src/app/ops/orders/[id]/edit/page.tsx",
+          "src": null,
+          "severity": "error",
+          "suggested": null,
+          "snippet": "<img src={item.imageUrl} alt={item.title} className=\"w-10 h-10 rounded-lg object-cover border border..."
+        }
+      ],
+      "fill": []
+    },
+    "src/app/ops/inventory/receiving/new/page.tsx": {
+      "img": [
+        {
+          "file": "src/app/ops/inventory/receiving/new/page.tsx",
+          "src": null,
+          "severity": "error",
+          "suggested": null,
+          "snippet": "<img src={preview} alt=\"Invoice preview\" className=\"w-full rounded-lg border border-gray-200\" />..."
+        }
+      ],
+      "fill": []
+    },
+    "src/app/ops/inventory/receiving/[id]/page.tsx": {
+      "img": [
+        {
+          "file": "src/app/ops/inventory/receiving/[id]/page.tsx",
+          "src": null,
+          "severity": "error",
+          "suggested": null,
+          "snippet": "<img src={invoice.imageUrl} alt=\"Invoice\" className=\"w-full rounded-lg border border-gray-200\" />..."
+        }
+      ],
+      "fill": []
+    },
+    "src/components/partners/PremierHero.tsx": {
+      "img": [],
+      "fill": [
+        {
+          "file": "src/components/partners/PremierHero.tsx",
+          "severity": "warning",
+          "suggestedSizes": "100vw",
+          "snippet": "<Image\n        src=\"/images/partners/premierpartycruises-hero-bg3.webp.png\"\n        alt=\"Premier Par..."
+        }
+      ]
+    },
+    "src/components/partners/AndersonMillHero.tsx": {
+      "img": [],
+      "fill": [
+        {
+          "file": "src/components/partners/AndersonMillHero.tsx",
+          "severity": "warning",
+          "suggestedSizes": "100vw",
+          "snippet": "<Image\n        src=\"/images/partners/anderson-mill-marina-hero.png\"\n        alt=\"Anderson Mill Marin..."
+        }
+      ]
+    },
+    "src/components/group-v2/GroupHeader.tsx": {
+      "img": [],
+      "fill": [
+        {
+          "file": "src/components/group-v2/GroupHeader.tsx",
+          "severity": "warning",
+          "suggestedSizes": "(max-width: 768px) 100vw, 50vw",
+          "snippet": "<Image\n        src=\"/images/partners/group-dashboard-bg.png\"\n        alt=\"\"\n        fill\n        cla..."
+        }
+      ]
+    },
+    "src/app/plan-event/page.tsx": {
+      "img": [],
+      "fill": [
+        {
+          "file": "src/app/plan-event/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "100vw",
+          "snippet": "<Image\n          src=\"/images/hero/austin-skyline-hero.webp\"\n          alt=\"Austin skyline at sunset..."
+        },
+        {
+          "file": "src/app/plan-event/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "(max-width: 768px) 100vw, 50vw",
+          "snippet": "<Image\n                      src={event.image}\n                      alt={event.title}\n             ..."
+        }
+      ]
+    },
+    "src/app/old-fashioned/page.tsx": {
+      "img": [],
+      "fill": [
+        {
+          "file": "src/app/old-fashioned/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "100vw",
+          "snippet": "<Image\n          src=\"/images/hero/austin-skyline-golden-hour.webp\"\n          alt=\"Luxury Experience..."
+        },
+        {
+          "file": "src/app/old-fashioned/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "(max-width: 768px) 100vw, 50vw",
+          "snippet": "<Image\n                src=\"/images/services/corporate/penthouse-suite-setup.webp\"\n                a..."
+        },
+        {
+          "file": "src/app/old-fashioned/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "(max-width: 768px) 100vw, 50vw",
+          "snippet": "<Image\n                src=\"/images/services/weddings/boho-hill-country-1.webp\"\n                alt=..."
+        }
+      ]
+    },
+    "src/app/negroni/page.tsx": {
+      "img": [],
+      "fill": [
+        {
+          "file": "src/app/negroni/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "(max-width: 768px) 100vw, 50vw",
+          "snippet": "<Image\n                src=\"/images/services/corporate/penthouse-suite-setup.webp\"\n                a..."
+        },
+        {
+          "file": "src/app/negroni/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "(max-width: 768px) 100vw, 50vw",
+          "snippet": "<Image\n                src=\"/images/products/premium-spirits-wall.webp\"\n                alt=\"Premium..."
+        },
+        {
+          "file": "src/app/negroni/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "(max-width: 768px) 100vw, 50vw",
+          "snippet": "<Image\n          src=\"/images/backgrounds/rooftop-terrace-elegant-1.webp\"\n          alt=\"Luxury Expe..."
+        }
+      ]
+    },
+    "src/app/gin-martini/page.tsx": {
+      "img": [],
+      "fill": [
+        {
+          "file": "src/app/gin-martini/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "100vw",
+          "snippet": "<Image\n            src=\"/images/hero/austin-skyline-golden-hour.webp\"\n            alt=\"Austin Herita..."
+        },
+        {
+          "file": "src/app/gin-martini/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "(max-width: 768px) 100vw, 50vw",
+          "snippet": "<Image\n                  src=\"/images/gallery/headquarters-entrance.webp\"\n                  alt=\"Her..."
+        }
+      ]
+    },
+    "src/app/custom-package/page.tsx": {
+      "img": [],
+      "fill": [
+        {
+          "file": "src/app/custom-package/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "(max-width: 768px) 100vw, 50vw",
+          "snippet": "<Image\n                              src={product.images.edges[0].node.url}\n                        ..."
+        }
+      ]
+    },
+    "src/app/cocktail-kits/page.tsx": {
+      "img": [],
+      "fill": [
+        {
+          "file": "src/app/cocktail-kits/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "(max-width: 768px) 100vw, 50vw",
+          "snippet": "<Image\n                  src=\"/images/products/fresh-victor-cocktails/cocktail-kits-grid.png\"\n      ..."
+        }
+      ]
+    },
+    "src/app/blog/page-old.tsx": {
+      "img": [],
+      "fill": [
+        {
+          "file": "src/app/blog/page-old.tsx",
+          "severity": "warning",
+          "suggestedSizes": "(max-width: 768px) 100vw, 50vw",
+          "snippet": "<Image\n                        src={imageUrl}\n                        alt={post.image?.alt || post.t..."
+        }
+      ]
+    },
+    "src/app/blog/BlogSearchFilter.tsx": {
+      "img": [],
+      "fill": [
+        {
+          "file": "src/app/blog/BlogSearchFilter.tsx",
+          "severity": "warning",
+          "suggestedSizes": "(max-width: 768px) 100vw, 50vw",
+          "snippet": "<Image\n                          src={imageUrl}\n                          alt={post.image?.alt || po..."
+        }
+      ]
+    },
+    "src/app/austin-partners/page.tsx": {
+      "img": [],
+      "fill": [
+        {
+          "file": "src/app/austin-partners/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "(max-width: 768px) 100vw, 50vw",
+          "snippet": "<Image\n          src=\"/images/gallery/headquarters-entrance.webp\"\n          alt=\"Partner with Party ..."
+        },
+        {
+          "file": "src/app/austin-partners/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "(max-width: 768px) 100vw, 50vw",
+          "snippet": "<Image\n                  src=\"/images/gallery/ai-recommended-setup.webp\"\n                  alt=\"Cust..."
+        }
+      ]
+    },
+    "src/app/austin-byob-venues/page.tsx": {
+      "img": [],
+      "fill": [
+        {
+          "file": "src/app/austin-byob-venues/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "(max-width: 768px) 100vw, 50vw",
+          "snippet": "<Image\n                          src={venue.image || '/images/venues/default-venue.webp'}\n          ..."
+        },
+        {
+          "file": "src/app/austin-byob-venues/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "(max-width: 768px) 100vw, 50vw",
+          "snippet": "<Image\n                          src={venue.image || '/images/venues/default-venue.webp'}\n          ..."
+        }
+      ]
+    },
+    "src/app/atx-delivery-info/page.tsx": {
+      "img": [],
+      "fill": [
+        {
+          "file": "src/app/atx-delivery-info/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "100vw",
+          "snippet": "<Image\n            src=\"/images/hero/lake-travis-yacht-sunset.webp\"\n            alt=\"Austin Alcohol ..."
+        }
+      ]
+    },
+    "src/app/aperol-spritz/page.tsx": {
+      "img": [],
+      "fill": [
+        {
+          "file": "src/app/aperol-spritz/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "(max-width: 768px) 100vw, 50vw",
+          "snippet": "<Image\n                src=\"/images/services/corporate/penthouse-suite-setup.webp\"\n                a..."
+        },
+        {
+          "file": "src/app/aperol-spritz/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "(max-width: 768px) 100vw, 50vw",
+          "snippet": "<Image\n                  src={`/images/gallery/${image}.webp`}\n                  alt={`Portfolio ${i..."
+        }
+      ]
+    },
+    "src/components/drink-planner/steps/WelcomeStep.tsx": {
+      "img": [],
+      "fill": [
+        {
+          "file": "src/components/drink-planner/steps/WelcomeStep.tsx",
+          "severity": "warning",
+          "suggestedSizes": "100vw",
+          "snippet": "<Image\n        src=\"/images/order/order-hero.png\"\n        alt=\"Premium Bar Setup at Austin Pool Part..."
+        }
+      ]
+    },
+    "src/app/weddings/products/page.tsx": {
+      "img": [],
+      "fill": [
+        {
+          "file": "src/app/weddings/products/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "(max-width: 768px) 100vw, 50vw",
+          "snippet": "<Image\n          src=\"/images/services/weddings/outdoor-bar-setup.webp\"\n          alt=\"Wedding Bar S..."
+        },
+        {
+          "file": "src/app/weddings/products/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "(max-width: 768px) 100vw, 50vw",
+          "snippet": "<Image\n                      src={product.image}\n                      alt={product.title}\n         ..."
+        }
+      ]
+    },
+    "src/app/partners/property-management/page.tsx": {
+      "img": [],
+      "fill": [
+        {
+          "file": "src/app/partners/property-management/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "(max-width: 768px) 100vw, 50vw",
+          "snippet": "<Image\n          src=\"/images/backgrounds/rooftop-terrace-elegant-2.webp\"\n          alt=\"Luxury Prop..."
+        },
+        {
+          "file": "src/app/partners/property-management/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "(max-width: 768px) 100vw, 50vw",
+          "snippet": "<Image\n                    src={amenity.image}\n                    alt={amenity.title}\n             ..."
+        }
+      ]
+    },
+    "src/app/partners/mobile-bartenders/page.tsx": {
+      "img": [],
+      "fill": [
+        {
+          "file": "src/app/partners/mobile-bartenders/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "(max-width: 768px) 100vw, 50vw",
+          "snippet": "<Image\n                  src={useCase.image}\n                  alt={useCase.title}\n                 ..."
+        },
+        {
+          "file": "src/app/partners/mobile-bartenders/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "(max-width: 768px) 100vw, 50vw",
+          "snippet": "<Image\n                      src={testimonial.image}\n                      alt={testimonial.author}\n..."
+        },
+        {
+          "file": "src/app/partners/mobile-bartenders/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "100vw",
+          "snippet": "<Image\n                    src=\"/images/partners/pourtwentyfour-hero.jpg\"\n                    alt=\"\"..."
+        },
+        {
+          "file": "src/app/partners/mobile-bartenders/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "100vw",
+          "snippet": "<Image\n                    src=\"/images/partners/dtr-bartending-hero.jpg\"\n                    alt=\"\"..."
+        },
+        {
+          "file": "src/app/partners/mobile-bartenders/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "100vw",
+          "snippet": "<Image\n                    src=\"/images/partners/taptruckaustin-hero.jpg\"\n                    alt=\"\"..."
+        }
+      ]
+    },
+    "src/app/partners/hotels-resorts/page.tsx": {
+      "img": [],
+      "fill": [
+        {
+          "file": "src/app/partners/hotels-resorts/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "(max-width: 768px) 100vw, 50vw",
+          "snippet": "<Image\n          src=\"/images/backgrounds/rooftop-terrace-elegant-1.webp\"\n          alt=\"Luxury Hote..."
+        },
+        {
+          "file": "src/app/partners/hotels-resorts/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "(max-width: 768px) 100vw, 50vw",
+          "snippet": "<Image\n                src=\"/images/gallery/sunset-champagne-pontoon.webp\"\n                alt=\"Hote..."
+        }
+      ]
+    },
+    "src/app/partners/austin-wedding-dj/page.tsx": {
+      "img": [],
+      "fill": [
+        {
+          "file": "src/app/partners/austin-wedding-dj/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "100vw",
+          "snippet": "<Image\n          src={HERO_IMAGE}\n          alt=\"[DJ_PHOTO] — Austin wedding DJ at a Lake Travis rec..."
+        },
+        {
+          "file": "src/app/partners/austin-wedding-dj/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "100vw",
+          "snippet": "<Image\n              src={HERO_IMAGE}\n              alt=\"[DJ_PHOTO] — portrait\"\n              fill\n ..."
+        }
+      ]
+    },
+    "src/app/gifts/cocktail-kits/page.tsx": {
+      "img": [],
+      "fill": [
+        {
+          "file": "src/app/gifts/cocktail-kits/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "(max-width: 768px) 100vw, 50vw",
+          "snippet": "<Image\n                  src={austinRitaKit?.images.edges[0]?.node.url || 'https://cdn.shopify.com/s..."
+        }
+      ]
+    },
+    "src/app/delivery/[location]/page.tsx": {
+      "img": [],
+      "fill": [
+        {
+          "file": "src/app/delivery/[location]/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "(max-width: 768px) 100vw, 50vw",
+          "snippet": "<Image\n          src=\"/images/services/corporate/penthouse-suite-setup.webp\"\n          alt={`${locat..."
+        }
+      ]
+    },
+    "src/app/corporate/products/page.tsx": {
+      "img": [],
+      "fill": [
+        {
+          "file": "src/app/corporate/products/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "(max-width: 768px) 100vw, 50vw",
+          "snippet": "<Image\n          src=\"/images/services/corporate/penthouse-suite-setup.webp\"\n          alt=\"Corporat..."
+        },
+        {
+          "file": "src/app/corporate/products/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "(max-width: 768px) 100vw, 50vw",
+          "snippet": "<Image\n                      src={product.image}\n                      alt={product.title}\n         ..."
+        }
+      ]
+    },
+    "src/app/blog/[slug]/page.tsx": {
+      "img": [],
+      "fill": [
+        {
+          "file": "src/app/blog/[slug]/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "100vw",
+          "snippet": "<Image\n                      src={relatedPost.image?.url || '/images/hero/lake-travis-yacht-sunset.w..."
+        }
+      ]
+    },
+    "src/app/blog/[slug]/page-mdx.tsx": {
+      "img": [],
+      "fill": [
+        {
+          "file": "src/app/blog/[slug]/page-mdx.tsx",
+          "severity": "warning",
+          "suggestedSizes": "(max-width: 768px) 100vw, 50vw",
+          "snippet": "<Image\n          src={post.image}\n          alt={post.title}\n          fill\n          className=\"obj..."
+        }
+      ]
+    },
+    "src/app/(main)/team/page.tsx": {
+      "img": [],
+      "fill": [
+        {
+          "file": "src/app/(main)/team/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "(max-width: 768px) 100vw, 50vw",
+          "snippet": "<Image\n                        src={member.image}\n                        alt={member.name}\n        ..."
+        }
+      ]
+    },
+    "src/app/(main)/ai-party-planner/page.tsx": {
+      "img": [],
+      "fill": [
+        {
+          "file": "src/app/(main)/ai-party-planner/page.tsx",
+          "severity": "warning",
+          "suggestedSizes": "(max-width: 768px) 100vw, 50vw",
+          "snippet": "<Image\n                      src={mode === 'wild' \n                        ? \"/images/ai-assistant/b..."
+        }
+      ]
+    }
+  }
+}

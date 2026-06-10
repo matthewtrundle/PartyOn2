@@ -136,6 +136,7 @@ export default function CorporateProductsPage() {
           src="/images/services/corporate/penthouse-suite-setup.webp"
           alt="Corporate Bar Setup"
           fill
+          sizes="100vw"
           className="object-cover"
           priority
         />

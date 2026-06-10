@@ -216,6 +216,7 @@ export default function CustomPackagePage() {
                               src={product.images.edges[0].node.url}
                               alt={product.title}
                               fill
+                              sizes="(max-width: 768px) 50vw, 25vw"
                               className="object-contain"
                             />
                           )}
