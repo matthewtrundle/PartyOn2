@@ -44,6 +44,7 @@ export default function GroupHeader({ groupOrder, isHost }: Props): ReactElement
         src="/images/partners/group-dashboard-bg.png"
         alt=""
         fill
+        sizes="100vw"
         className="object-cover"
         priority
       />

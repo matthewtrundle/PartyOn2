@@ -287,6 +287,9 @@ export default function ProductModal({ product, isOpen, onClose, ctaOverride }: 
                         <img
                           src={image.url}
                           alt={image.altText || `${displayProduct?.title || product.title} ${index + 1}`}
+                          width={80}
+                          height={80}
+                          loading="lazy"
                           className="w-full h-full object-cover"
                         />
                       </button>

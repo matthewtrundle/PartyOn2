@@ -14,6 +14,7 @@ export default function WelcomeStep({ onStart, onSkip }: WelcomeStepProps) {
         src="/images/order/order-hero.png"
         alt="Premium Bar Setup at Austin Pool Party"
         fill
+        sizes="100vw"
         className="object-cover"
         priority
       />

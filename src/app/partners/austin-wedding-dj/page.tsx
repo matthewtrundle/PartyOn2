@@ -63,6 +63,7 @@ export default function AustinWeddingDjPage(): ReactElement {
           alt="[DJ_PHOTO] — Austin wedding DJ at a Lake Travis reception"
           fill
           priority
+          sizes="100vw"
           className="object-cover opacity-60"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-gray-900/60 via-gray-900/40 to-gray-900/70" />

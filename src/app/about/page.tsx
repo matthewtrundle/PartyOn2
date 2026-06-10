@@ -49,6 +49,7 @@ export default function AboutPage() {
           src="/images/hero/austin-skyline-golden-hour.webp"
           alt="Austin Skyline"
           fill
+          sizes="100vw"
           className="object-cover"
           priority
         />
@@ -154,6 +155,7 @@ export default function AboutPage() {
               src="/images/about/professional-bartender-team.webp"
               alt="Party On Delivery Professional Team"
               fill
+              sizes="(max-width: 768px) 100vw, 1024px"
               className="object-cover"
               onError={(e) => {
                 // Fallback to hero image if team image doesn't exist yet
@@ -274,6 +276,7 @@ export default function AboutPage() {
                 src="/images/about/premium-warehouse-facility.webp"
                 alt="Premium Storage Facility"
                 fill
+                sizes="(max-width: 768px) 100vw, 50vw"
                 className="object-cover"
                 onError={(e) => {
                   // Fallback image

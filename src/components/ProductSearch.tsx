@@ -114,6 +114,9 @@ export default function ProductSearch({ isScrolled = true }: ProductSearchProps)
                           <img
                             src={product.images.edges[0].node.url}
                             alt={product.title}
+                            width={48}
+                            height={48}
+                            loading="lazy"
                             className="w-12 h-12 object-cover"
                           />
                         ) : (

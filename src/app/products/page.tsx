@@ -227,6 +227,7 @@ function ProductsContent() {
           src="/images/products/premium-spirits-wall.webp"
           alt="Premium Spirits Collection"
           fill
+          sizes="100vw"
           className="object-cover"
           priority
         />
