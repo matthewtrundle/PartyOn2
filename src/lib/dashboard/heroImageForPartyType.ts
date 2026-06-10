@@ -2,7 +2,7 @@
  * Map a party type to a hero photo URL for the WelcomeHero banner.
  *
  * Returns null when no production photo exists yet -- the consumer falls back
- * to a warm CSS gradient (see WelcomeHero's WarmGradient layer).
+ * to the default margarita-skyline photo (see WelcomeHero's DEFAULT_HERO_PHOTO).
  *
  * Photo specs (when authored):
  *   - Format: WebP or JPG
