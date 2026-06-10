@@ -39,6 +39,8 @@ export interface GhlOrderPayload {
   deliveryTime: string;
   deliveryAddress: string;
   deliveryType: string;
+  /** True when the customer chose in-store pickup instead of delivery */
+  isPickup: boolean;
   deliveryInstructions: string;
   createdAt: string;
   // Dashboard link for orders placed under a GroupOrderV2 (Premier cruise,
@@ -114,7 +116,8 @@ function buildItemsSummary(
  * Build a flat GHL webhook payload from an order object.
  */
 export function buildGhlPayload(order: OrderLike, orderType: string): GhlOrderPayload {
-  const addr = (order.deliveryAddress ?? {}) as Record<string, string>;
+  const addr = (order.deliveryAddress ?? {}) as Record<string, string> & { isPickup?: boolean };
+  const isPickup = addr.isPickup === true;
   const nameParts = order.customerName.trim().split(/\s+/);
   const firstName = nameParts[0] || '';
   const lastName = nameParts.slice(1).join(' ') || '';
@@ -148,7 +151,8 @@ export function buildGhlPayload(order: OrderLike, orderType: string): GhlOrderPa
     deliveryDate: order.deliveryDate.toISOString().split('T')[0],
     deliveryTime: order.deliveryTime,
     deliveryAddress: formatAddress(addr),
-    deliveryType: order.deliveryType || 'HOUSE',
+    deliveryType: isPickup ? 'PICKUP' : (order.deliveryType || 'HOUSE'),
+    isPickup,
     deliveryInstructions: order.deliveryInstructions || '',
     createdAt: order.createdAt.toISOString(),
     dashboard_url: dashboardUrl,

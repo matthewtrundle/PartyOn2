@@ -8,11 +8,25 @@ import { useCartContext } from '@/contexts/CartContext';
 import { useCustomerContext } from '@/contexts/CustomerContext';
 import CustomerAuth from '@/components/CustomerAuth';
 
+/** In-store pickup location — 7600 N. Lamar Blvd #A2, Austin TX 78752 */
+const STORE_PICKUP_ADDRESS = {
+  address1: '7600 N. Lamar Blvd',
+  address2: '#A2',
+  city: 'Austin',
+  province: 'TX',
+  zip: '78752',
+  country: 'US',
+} as const;
+
 export default function CheckoutPage() {
   const { cart, customCartData, loading: cartLoading, refetchCart, updateCartFromApiResponse } = useCartContext();
   const { customer, isAuthenticated } = useCustomerContext();
-  
+
   const [showAuthModal, setShowAuthModal] = useState(false);
+
+  // Fulfillment method — delivery (default) vs in-store pickup
+  const [fulfillmentMethod, setFulfillmentMethod] = useState<'delivery' | 'pickup'>('delivery');
+  const isPickup = fulfillmentMethod === 'pickup';
 
   // Delivery schedule state (inline picker)
   const [deliveryDate, setDeliveryDate] = useState<Date | null>(null);
@@ -133,7 +147,7 @@ export default function CheckoutPage() {
   const appliedDiscounts = customCartData?.appliedDiscounts ?? [];
   const hasFreeShipping = (affiliatePartner !== null && affiliatePerk === 'Free Delivery') || appliedDiscounts.some(d => d.type === 'FREE_SHIPPING' || d.freeShipping);
 
-  const effectiveDeliveryFee = hasFreeShipping ? 0 : deliveryFee;
+  const effectiveDeliveryFee = isPickup || hasFreeShipping ? 0 : deliveryFee;
 
   // Tip calculation
   const tipAmount = tipPercent !== null
@@ -218,15 +232,17 @@ export default function CheckoutPage() {
   };
 
   const handleProceedToPayment = async () => {
-    // Validate form
-    if (!billingAddress.firstName || !billingAddress.lastName || !billingAddress.email ||
-        !billingAddress.phone || !billingAddress.address1 || !billingAddress.zip) {
+    // Validate form — name/email/phone always required; street address only for delivery
+    const missingContact = !billingAddress.firstName || !billingAddress.lastName ||
+      !billingAddress.email || !billingAddress.phone;
+    const missingDeliveryAddress = !isPickup && (!billingAddress.address1 || !billingAddress.zip);
+    if (missingContact || missingDeliveryAddress) {
       alert('Please fill in all required fields');
       return;
     }
 
     if (!deliveryDate || !deliveryTime) {
-      alert('Please select a delivery date and time');
+      alert(isPickup ? 'Please select a pickup date and time' : 'Please select a delivery date and time');
       return;
     }
 
@@ -239,7 +255,17 @@ export default function CheckoutPage() {
     setCheckoutError(null);
 
     try {
-      // Save delivery info to cart
+      // Save delivery info to cart — store address + isPickup flag when picking up
+      const addressPayload = isPickup
+        ? { ...STORE_PICKUP_ADDRESS, isPickup: true }
+        : {
+            address1: billingAddress.address1,
+            address2: billingAddress.address2 || '',
+            city: billingAddress.city,
+            province: billingAddress.state,
+            zip: billingAddress.zip,
+            country: billingAddress.country,
+          };
       const deliveryResponse = await fetch('/api/v1/cart', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -247,14 +273,7 @@ export default function CheckoutPage() {
           operation: 'delivery',
           date: deliveryDate?.toISOString(),
           time: deliveryTime,
-          address: {
-            address1: billingAddress.address1,
-            address2: billingAddress.address2 || '',
-            city: billingAddress.city,
-            province: billingAddress.state,
-            zip: billingAddress.zip,
-            country: billingAddress.country,
-          },
+          address: addressPayload,
           phone: billingAddress.phone,
           instructions: deliveryInstructions,
         }),
@@ -434,7 +453,49 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* Delivery Schedule - Inline Picker */}
+              {/* Fulfillment Method Picker */}
+              <div>
+                <h2 className="font-cormorant text-2xl mb-4">How would you like your order?</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setFulfillmentMethod('delivery')}
+                    className={`text-left p-5 border-2 rounded transition-colors ${
+                      !isPickup
+                        ? 'border-brand-yellow bg-yellow-50'
+                        : 'border-gray-200 bg-white hover:border-brand-yellow'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-semibold text-gray-900">Deliver to me</span>
+                      <span className="text-sm text-gray-600">${deliveryFee.toFixed(2)}</span>
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      We&apos;ll bring it to your door. Austin-area zip codes only.
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFulfillmentMethod('pickup')}
+                    className={`text-left p-5 border-2 rounded transition-colors ${
+                      isPickup
+                        ? 'border-brand-yellow bg-yellow-50'
+                        : 'border-gray-200 bg-white hover:border-brand-yellow'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-semibold text-gray-900">Pick up in store</span>
+                      <span className="text-sm font-semibold text-green-700">FREE</span>
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      Grab it at our shop on N. Lamar. No delivery fee, no order minimum.
+                    </p>
+                  </button>
+                </div>
+              </div>
+
+              {/* Delivery / Pickup Schedule - Inline Picker */}
               <DeliveryDateTimePicker
                 selectedDate={deliveryDate}
                 selectedTime={deliveryTime}
@@ -442,9 +503,30 @@ export default function CheckoutPage() {
                 onDateChange={setDeliveryDate}
                 onTimeChange={setDeliveryTime}
                 onInstructionsChange={setDeliveryInstructions}
+                mode={isPickup ? 'pickup' : 'delivery'}
               />
 
-              {/* Delivery Address */}
+              {isPickup ? (
+                <div className="bg-white p-6 border border-gray-200">
+                  <h2 className="font-cormorant text-2xl mb-4">Pickup Location</h2>
+                  <div className="flex items-start gap-3">
+                    <svg className="w-6 h-6 text-brand-yellow flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <div>
+                      <p className="font-semibold text-gray-900">Party On Delivery</p>
+                      <p className="text-gray-700">
+                        7600 N. Lamar Blvd #A2<br />
+                        Austin, TX 78752
+                      </p>
+                      <p className="text-sm text-gray-500 mt-2">
+                        Bring a photo ID. We&apos;ll have your order ready at the time you select above.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : (
               <div className="bg-white p-6 border border-gray-200">
                 <h2 className="font-cormorant text-2xl mb-6">Delivery Address</h2>
 
@@ -515,6 +597,7 @@ export default function CheckoutPage() {
                   </div>
                 </div>
               </div>
+              )}
             </div>
 
             {/* Right Column - Order Summary */}
@@ -675,8 +758,10 @@ export default function CheckoutPage() {
                     <span>${subtotal.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span>Delivery Fee</span>
-                    {hasFreeShipping ? (
+                    <span>{isPickup ? 'Store Pickup' : 'Delivery Fee'}</span>
+                    {isPickup ? (
+                      <span className="text-green-600">FREE</span>
+                    ) : hasFreeShipping ? (
                       <span>
                         <span className="line-through text-gray-400 mr-1">${deliveryFee.toFixed(2)}</span>
                         <span className="text-green-600">$0.00</span>

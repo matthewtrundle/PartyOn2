@@ -37,6 +37,8 @@ interface DeliveryDateTimePickerProps {
   onTimeChange: (time: string) => void;
   /** Callback when instructions change */
   onInstructionsChange: (instructions: string) => void;
+  /** Whether this is for in-store pickup vs delivery (changes copy only) */
+  mode?: 'delivery' | 'pickup';
 }
 
 /** Available time slots - 10am to 9pm, every 30 minutes */
@@ -125,7 +127,11 @@ export default function DeliveryDateTimePicker({
   onDateChange,
   onTimeChange,
   onInstructionsChange,
+  mode = 'delivery',
 }: DeliveryDateTimePickerProps): ReactElement {
+  const isPickup = mode === 'pickup';
+  const noun = isPickup ? 'pickup' : 'delivery';
+  const Noun = isPickup ? 'Pickup' : 'Delivery';
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showTimeSlots, setShowTimeSlots] = useState(!!selectedDate);
@@ -213,10 +219,12 @@ export default function DeliveryDateTimePicker({
       {/* Header */}
       <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
         <h3 className="font-heading text-xl text-gray-900 tracking-[0.1em]">
-          Delivery Schedule
+          {Noun} Schedule
         </h3>
         <p className="text-sm text-gray-600 mt-1">
-          Available Monday - Saturday, 10AM - 9PM
+          {isPickup
+            ? 'Store hours: Monday - Saturday, 10AM - 9PM'
+            : 'Available Monday - Saturday, 10AM - 9PM'}
         </p>
       </div>
 
@@ -244,7 +252,7 @@ export default function DeliveryDateTimePicker({
               <span className={selectedDate ? 'text-gray-900' : 'text-gray-500'}>
                 {selectedDate
                   ? format(selectedDate, 'EEEE, MMMM d, yyyy')
-                  : 'Click to select a delivery date'
+                  : `Click to select a ${noun} date`
                 }
               </span>
               <svg
@@ -357,7 +365,7 @@ export default function DeliveryDateTimePicker({
               )
             ) : (
               <div className="text-center py-6 text-gray-500 bg-gray-50 rounded">
-                Please select a delivery date first
+                Please select a {noun} date first
               </div>
             )}
           </div>
@@ -366,14 +374,19 @@ export default function DeliveryDateTimePicker({
         {/* Special Instructions */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2 tracking-[0.1em]">
-            DELIVERY INSTRUCTIONS <span className="font-normal text-gray-500">(optional)</span>
+            {isPickup ? 'PICKUP NOTES' : 'DELIVERY INSTRUCTIONS'}{' '}
+            <span className="font-normal text-gray-500">(optional)</span>
           </label>
           <textarea
             value={instructions}
             onChange={(e) => onInstructionsChange(e.target.value)}
             rows={2}
             className="w-full px-4 py-3 border border-gray-200 rounded focus:border-brand-yellow focus:ring-1 focus:ring-brand-yellow focus:outline-none transition-colors text-sm"
-            placeholder="Gate code, building entrance, special instructions..."
+            placeholder={
+              isPickup
+                ? 'Name on the order, vehicle description, anything else we should know...'
+                : 'Gate code, building entrance, special instructions...'
+            }
           />
         </div>
 
@@ -384,7 +397,7 @@ export default function DeliveryDateTimePicker({
               <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
-              <span className="text-green-800 font-medium">Delivery scheduled</span>
+              <span className="text-green-800 font-medium">{Noun} scheduled</span>
             </div>
             <p className="text-sm text-green-700 mt-1">
               {format(selectedDate, 'EEEE, MMMM d, yyyy')} &bull; {selectedTime}

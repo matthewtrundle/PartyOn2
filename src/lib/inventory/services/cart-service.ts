@@ -455,11 +455,13 @@ async function recalculateCart(cartId: string): Promise<CartWithItems> {
     return sum + (parseFloat(item.price.toString()) * item.quantity);
   }, 0);
 
-  // Get zip code from delivery address if available
+  // Get zip code + pickup flag from delivery address if available
   let zipCode: string | undefined;
+  let isPickup = false;
   if (cart.deliveryAddress && typeof cart.deliveryAddress === 'object') {
-    const addr = cart.deliveryAddress as { zip?: string };
+    const addr = cart.deliveryAddress as { zip?: string; isPickup?: boolean };
     zipCode = addr.zip;
+    isPickup = addr.isPickup === true;
   }
 
   // Calculate tax using configurable rates
@@ -477,7 +479,7 @@ async function recalculateCart(cartId: string): Promise<CartWithItems> {
 
   // Calculate delivery fee based on zip code (if delivery address is set)
   let deliveryFee = parseFloat(cart.deliveryFee.toString());
-  if (hasFreeShipping) {
+  if (isPickup || hasFreeShipping) {
     deliveryFee = 0;
   } else if (zipCode && cart.deliveryAddress) {
     // Calculate delivery fee based on zone - use existing fee if manually set
