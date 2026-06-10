@@ -78,30 +78,10 @@ function smartSubtitleFor(
 }
 
 /**
- * A warm CSS gradient stand-in used when no vibe is selected and no
- * party-type photo is authored. "Saturday morning sunlight" mood.
+ * Default hero photo used when no vibe is selected and no party-type photo
+ * is authored. Lives at /public/images/dashboards/margarita-skyline.jpg.
  */
-function WarmGradient(): ReactElement {
-  return (
-    <div className="absolute inset-0">
-      <div
-        className="absolute inset-0"
-        style={{
-          background:
-            'linear-gradient(180deg, #FAF6EE 0%, #F2D34F 55%, #D4AF37 85%, #B8941E 100%)',
-        }}
-      />
-      <div
-        className="absolute right-[18%] top-[35%] w-32 h-32 rounded-full opacity-40 blur-2xl"
-        style={{ background: 'radial-gradient(circle, #FFF8DC 0%, transparent 70%)' }}
-      />
-      <div
-        className="absolute left-0 right-0 bottom-[35%] h-px opacity-30"
-        style={{ background: 'linear-gradient(90deg, transparent, #8B6914, transparent)' }}
-      />
-    </div>
-  );
-}
+const DEFAULT_HERO_PHOTO = '/images/dashboards/margarita-skyline.jpg';
 
 export default function WelcomeHero({
   groupOrder,
@@ -119,11 +99,15 @@ export default function WelcomeHero({
   const canEdit = isHost && !isLocked;
 
   // --- Background selection ---
-  // Priority: customer-picked vibe -> party-type photo -> warm gradient.
+  // Priority: customer-picked vibe photo -> party-type photo -> vibe gradient
+  // (only when the customer explicitly picked a gradient vibe) -> default
+  // margarita-skyline photo.
   const vibe = heroVibeByKey(groupOrder.heroVibeKey);
   const partyTypePhoto = heroImageForPartyType(groupOrder.partyType);
-  const photoUrl = vibe?.photoUrl ?? partyTypePhoto ?? null;
   const vibeGradient = vibe && !vibe.photoUrl ? vibe.gradient : null;
+  // Use the default photo only if no other photo OR gradient applies.
+  const photoUrl =
+    vibe?.photoUrl ?? partyTypePhoto ?? (vibeGradient ? null : DEFAULT_HERO_PHOTO);
 
   // --- Inline edit: title (groupOrder.name) ---
   const [editingName, setEditingName] = useState(false);
@@ -219,9 +203,7 @@ export default function WelcomeHero({
           />
         ) : vibeGradient ? (
           <div className="absolute inset-0" style={{ background: vibeGradient }} />
-        ) : (
-          <WarmGradient />
-        )}
+        ) : null}
         {/* Dark scrim for legible white type at the bottom */}
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/55" />
 
