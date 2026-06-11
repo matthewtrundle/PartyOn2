@@ -14,6 +14,7 @@ import { useCustomCollectionProducts } from '@/lib/cart/hooks/useCustomProducts'
 import { Product } from '@/lib/types';
 import AIConcierge from '@/components/AIConcierge';
 import AgeVerificationModal from '@/components/AgeVerificationModal';
+import { isAgeVerified as readAgeVerified, setAgeVerified } from '@/lib/utils/age-verification';
 import ProductModal from '@/components/ProductModal';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { getProductCategory, FILTER_OPTIONS, SHOPIFY_COLLECTIONS, getUniqueTags } from '@/lib/products/categories';
@@ -53,8 +54,7 @@ function ProductsContent() {
 
   // Check age verification on mount
   useEffect(() => {
-    const ageVerified = localStorage.getItem('age_verified') === 'true';
-    setIsAgeVerified(ageVerified);
+    setIsAgeVerified(readAgeVerified());
   }, []);
 
   // Set default collection to favorites-home-page on initial load
@@ -68,7 +68,7 @@ function ProductsContent() {
   const handleAgeVerified = () => {
     setShowAgeVerification(false);
     setIsAgeVerified(true);
-    localStorage.setItem('age_verified', 'true');
+    setAgeVerified();
   };
 
   const handleUnlock = () => {

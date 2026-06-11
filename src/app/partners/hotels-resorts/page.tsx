@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import Navigation from "@/components/Navigation"
 import Footer from '@/components/Footer'
+import { setAgeVerified } from "@/lib/utils/age-verification";
 
 export default function HotelsResortsPartnerPage() {
   const [activeTab, setActiveTab] = useState('overview')
@@ -23,7 +24,7 @@ export default function HotelsResortsPartnerPage() {
 
   // Auto-verify age for B2B partner pages
   useEffect(() => {
-    localStorage.setItem('age_verified', 'true')
+    setAgeVerified()
   }, [])
 
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {

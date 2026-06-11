@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock'
+import { setAgeVerified } from '@/lib/utils/age-verification'
 
 interface AgeVerificationModalProps {
   isOpen: boolean
@@ -15,7 +16,7 @@ export default function AgeVerificationModal({ isOpen, onClose, onVerify }: AgeV
   // Lock body scroll when modal is open
   useBodyScrollLock(isOpen);
   const handleYes = () => {
-    localStorage.setItem('age_verified', 'true')
+    setAgeVerified()
     onVerify()
     onClose()
   }

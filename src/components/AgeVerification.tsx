@@ -2,14 +2,14 @@
 
 import { useState, useEffect } from 'react'
 import AgeVerificationModal from './AgeVerificationModal'
+import { isAgeVerified } from '@/lib/utils/age-verification'
 
 export default function AgeVerification() {
   const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
     // Check if user has already verified age
-    const ageVerified = localStorage.getItem('age_verified')
-    if (!ageVerified) {
+    if (!isAgeVerified()) {
       setIsVisible(true)
     }
   }, [])

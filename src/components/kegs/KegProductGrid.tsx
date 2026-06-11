@@ -8,6 +8,7 @@ import AgeVerificationModal from '@/components/AgeVerificationModal';
 import { Product } from '@/lib/types';
 import { useCartContext } from '@/contexts/CartContext';
 import { canPurchaseAlcohol } from '@/lib/utils';
+import { setAgeVerified } from "@/lib/utils/age-verification";
 
 /**
  * Keg product grid with category tabs
@@ -157,7 +158,7 @@ export default function KegProductGrid() {
   // Handle age verification success
   const handleAgeVerified = async () => {
     setShowAgeVerification(false);
-    localStorage.setItem('age_verified', 'true');
+    setAgeVerified();
 
     if (pendingCartAdd) {
       await addProductToCart(pendingCartAdd);

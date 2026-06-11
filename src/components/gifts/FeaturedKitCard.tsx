@@ -7,6 +7,7 @@ import { Product } from '@/lib/types';
 import { formatPrice, getProductImageUrl, getFirstAvailableVariant, canPurchaseAlcohol } from '@/lib/utils';
 import { useCartContext } from '@/contexts/CartContext';
 import AgeVerificationModal from '../AgeVerificationModal';
+import { setAgeVerified } from "@/lib/utils/age-verification";
 
 // What's included for each kit type
 const kitIngredients: Record<string, string[]> = {
@@ -122,7 +123,7 @@ export default function FeaturedKitCard({
 
   const handleAgeVerified = async () => {
     setShowAgeVerification(false);
-    localStorage.setItem('age_verified', 'true');
+    setAgeVerified();
 
     if (variant?.id && variant.availableForSale) {
       setIsAdding(true);

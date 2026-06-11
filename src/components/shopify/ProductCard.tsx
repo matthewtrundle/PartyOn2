@@ -6,6 +6,7 @@ import { Product } from '@/lib/types';
 import { formatPrice, getProductImageUrl, getFirstAvailableVariant, canPurchaseAlcohol } from '@/lib/utils';
 import { useCartContext } from '@/contexts/CartContext';
 import AgeVerificationModal from '../AgeVerificationModal';
+import { setAgeVerified } from "@/lib/utils/age-verification";
 
 interface ProductCardProps {
   product: Product;
@@ -53,7 +54,7 @@ export default function ProductCard({ product, index = 0, onProductClick }: Prod
 
   const handleAgeVerified = async () => {
     setShowAgeVerification(false);
-    localStorage.setItem('age_verified', 'true');
+    setAgeVerified();
 
     // Now add to cart
     if (variant?.id && variant.availableForSale) {

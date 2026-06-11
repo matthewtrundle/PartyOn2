@@ -2,6 +2,7 @@
 
 import type { Product, ProductVariant } from '@/lib/types';
 import { getProductCardImage } from '@/lib/utils/image';
+import { isAgeVerified } from '@/lib/utils/age-verification';
 
 export function getFirstAvailableVariant(product: Product): ProductVariant | null {
   const availableVariant = product.variants.edges.find(
@@ -39,6 +40,5 @@ export function getProductABV(product: Product): string | null {
 }
 
 export function canPurchaseAlcohol(): boolean {
-  const ageVerified = localStorage.getItem('age_verified');
-  return ageVerified === 'true';
+  return isAgeVerified();
 }

@@ -7,6 +7,7 @@ import { Product } from '@/lib/types';
 import { formatPrice, getProductImageUrl, getFirstAvailableVariant, canPurchaseAlcohol } from '@/lib/utils';
 import { useCartContext } from '@/contexts/CartContext';
 import AgeVerificationModal from '@/components/AgeVerificationModal';
+import { setAgeVerified } from "@/lib/utils/age-verification";
 
 /**
  * Equipment rentals and party supplies section for keg page
@@ -63,7 +64,7 @@ function EquipmentCard({ product, featured = false }: EquipmentCardProps) {
 
   const handleAgeVerified = async () => {
     setShowAgeVerification(false);
-    localStorage.setItem('age_verified', 'true');
+    setAgeVerified();
 
     if (variant?.id && variant.availableForSale) {
       setIsAdding(true);

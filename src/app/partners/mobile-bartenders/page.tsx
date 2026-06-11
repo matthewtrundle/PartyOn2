@@ -7,6 +7,7 @@ import Navigation from "@/components/Navigation";
 import Footer from '@/components/Footer';
 import ScrollRevealCSS from '@/components/ui/ScrollRevealCSS';
 import YouTubeEmbed from '@/components/YouTubeEmbed';
+import { setAgeVerified } from "@/lib/utils/age-verification";
 
 export default function MobileBartenderPartnerPage() {
   // Commission configuration
@@ -40,7 +41,7 @@ export default function MobileBartenderPartnerPage() {
 
   // Auto-verify age for B2B partner pages
   useEffect(() => {
-    localStorage.setItem('age_verified', 'true');
+    setAgeVerified();
   }, []);
 
   // Capture UTM parameters on mount

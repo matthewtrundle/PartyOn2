@@ -6,6 +6,7 @@ import type { Cart } from '@/lib/types';
 import { trackMetaEvent } from '@/components/MetaPixel';
 import { trackCartAction, trackEvent, ANALYTICS_EVENTS } from '@/lib/analytics/track';
 import { completePendingGroupOrderJoin } from '@/lib/group-orders/hooks';
+import { isAgeVerified, clearAgeVerified } from '@/lib/utils/age-verification';
 
 interface AppliedDiscountEntry {
   code: string;
@@ -70,15 +71,9 @@ export function CartProvider({ children }: { children: React.ReactNode }): React
 
   const [isCartOpen, setIsCartOpen] = useState(false);
 
-  const checkAgeVerification = (): boolean => {
-    const ageVerified = localStorage.getItem('age_verified') || localStorage.getItem('ageVerified');
-    return ageVerified === 'true';
-  };
-
   const openCart = (): void => {
-    if (!checkAgeVerification()) {
-      localStorage.removeItem('age_verified');
-      localStorage.removeItem('ageVerified');
+    if (!isAgeVerified()) {
+      clearAgeVerified();
       window.location.reload();
       return;
     }
@@ -95,9 +90,8 @@ export function CartProvider({ children }: { children: React.ReactNode }): React
   const closeCart = (): void => setIsCartOpen(false);
 
   const toggleCart = (): void => {
-    if (!checkAgeVerification()) {
-      localStorage.removeItem('age_verified');
-      localStorage.removeItem('ageVerified');
+    if (!isAgeVerified()) {
+      clearAgeVerified();
       window.location.reload();
       return;
     }
@@ -105,11 +99,8 @@ export function CartProvider({ children }: { children: React.ReactNode }): React
   };
 
   const addToCart = async (variantId: string, quantity: number = 1): Promise<Cart> => {
-    const isAgeVerified = checkAgeVerification();
-
-    if (!isAgeVerified) {
-      localStorage.removeItem('age_verified');
-      localStorage.removeItem('ageVerified');
+    if (!isAgeVerified()) {
+      clearAgeVerified();
       window.location.reload();
       throw new Error('Age verification required');
     }

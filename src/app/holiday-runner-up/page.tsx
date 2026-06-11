@@ -7,6 +7,7 @@ import ScrollRevealCSS from '@/components/ui/ScrollRevealCSS';
 import Footer from '@/components/Footer';
 import { trackMetaEvent } from '@/components/MetaPixel';
 import HolidayProductsCarousel from '@/components/holiday/HolidayProductsCarousel';
+import { setAgeVerified } from "@/lib/utils/age-verification";
 
 // TODO: Confirm Shopify discount code "RUNNERUP" is configured for free delivery on $250+
 // TODO: Update offer expiration date if needed
@@ -48,7 +49,7 @@ export default function HolidayRunnerUpPage() {
 
   // Auto-verify age for this landing page and track page view
   useEffect(() => {
-    localStorage.setItem('age_verified', 'true');
+    setAgeVerified();
 
     // Fire Meta Pixel ViewContent event
     trackMetaEvent('ViewContent', {

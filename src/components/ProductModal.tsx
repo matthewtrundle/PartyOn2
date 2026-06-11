@@ -8,6 +8,7 @@ import { formatPrice, getProductImageUrl, getFirstAvailableVariant, canPurchaseA
 import { useCartContext } from '@/contexts/CartContext';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
 import AgeVerificationModal from './AgeVerificationModal';
+import { setAgeVerified } from "@/lib/utils/age-verification";
 
 interface ProductModalProps {
   product: Product | null;
@@ -142,7 +143,7 @@ export default function ProductModal({ product, isOpen, onClose, ctaOverride }: 
 
   const handleAgeVerified = async () => {
     setShowAgeVerification(false);
-    localStorage.setItem('age_verified', 'true');
+    setAgeVerified();
 
     // Now add to cart
     if (variant?.id && variant.availableForSale) {

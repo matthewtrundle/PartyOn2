@@ -407,11 +407,16 @@ export async function verifyAge(
   success: boolean;
   error?: string;
 }> {
-  // Calculate age
+  // Must have turned 21 on or before today. Compare against the date
+  // exactly 21 years ago so the day of month is accounted for, not just
+  // the year/month.
   const today = new Date();
-  const age = today.getFullYear() - dateOfBirth.getFullYear();
-  const monthDiff = today.getMonth() - dateOfBirth.getMonth();
-  const isUnder21 = age < 21 || (age === 21 && monthDiff < 0);
+  const twentyFirstBirthday = new Date(
+    dateOfBirth.getFullYear() + 21,
+    dateOfBirth.getMonth(),
+    dateOfBirth.getDate()
+  );
+  const isUnder21 = twentyFirstBirthday > today;
 
   if (isUnder21) {
     return { success: false, error: 'Must be 21 or older to purchase alcohol' };

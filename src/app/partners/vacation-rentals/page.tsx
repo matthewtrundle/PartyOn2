@@ -9,6 +9,7 @@ import VacationRentalLeadCapture from '@/components/partners/VacationRentalLeadC
 import HorizontalImageCarousel from '@/components/partners/HorizontalImageCarousel';
 import PartnerDashboardMock from '@/components/partners/PartnerDashboardMock';
 import { vacationRentalHeroMedia } from '@/generated/vacation-rental-hero-media';
+import { setAgeVerified } from "@/lib/utils/age-verification";
 
 // Auto-loaded from public/images/partners/vacation-rental-hero/ — drop or delete
 // images in that folder, then `npm run hero:refresh` (build does it automatically).
@@ -183,7 +184,7 @@ export default function VacationRentalsPartnerPage() {
 
   // Auto-verify age for B2B partner pages
   useEffect(() => {
-    localStorage.setItem('age_verified', 'true');
+    setAgeVerified();
   }, []);
 
   // Capture UTM params on mount

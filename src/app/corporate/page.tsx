@@ -8,6 +8,7 @@ import CorporateEventCalculatorLanding from '@/components/CorporateEventCalculat
 import ScrollRevealCSS from '@/components/ui/ScrollRevealCSS';
 import { trackMetaEvent } from '@/components/MetaPixel';
 import { trackPageView, ANALYTICS_EVENTS } from '@/lib/analytics/track';
+import { setAgeVerified } from "@/lib/utils/age-verification";
 
 export default function CorporateLandingPage() {
   const [formData, setFormData] = useState({
@@ -29,7 +30,7 @@ export default function CorporateLandingPage() {
 
   // Auto-verify age for B2B corporate page and capture UTM parameters
   useEffect(() => {
-    localStorage.setItem('age_verified', 'true');
+    setAgeVerified();
 
     // Track page view
     trackPageView(ANALYTICS_EVENTS.VIEW_CORPORATE, '/corporate', 'Corporate Events');
