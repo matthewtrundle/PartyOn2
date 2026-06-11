@@ -35,7 +35,49 @@ export type LeadContext = {
   utmCampaign?: string | null;
   utmContent?: string | null;
   utmTerm?: string | null;
+  /** Ad-platform click ids (gclid/gbraid/wbraid = Google, fbclid = Meta,
+      msclkid = Bing). Persisted into Lead.metadata.attribution +
+      VisitorSession.metadata — no dedicated columns. */
+  gclid?: string | null;
+  gbraid?: string | null;
+  wbraid?: string | null;
+  fbclid?: string | null;
+  msclkid?: string | null;
 };
+
+const CLICK_ID_FIELDS = ['gclid', 'gbraid', 'wbraid', 'fbclid', 'msclkid'] as const;
+
+/** Compact `{gclid: "..."}` object of the click ids present in ctx, or null. */
+function clickIdsFrom(ctx: LeadContext): Record<string, string> | null {
+  const out: Record<string, string> = {};
+  for (const key of CLICK_ID_FIELDS) {
+    const value = nonEmpty(ctx[key]);
+    if (value) out[key] = truncate(value, 200);
+  }
+  return Object.keys(out).length > 0 ? out : null;
+}
+
+/**
+ * Merge click ids into a Json metadata bag under `attribution`, preserving
+ * everything else already stored there (e.g. unifiedQuote from /quote/start).
+ */
+function mergeAttributionMetadata(
+  existing: unknown,
+  clickIds: Record<string, string>,
+): Record<string, unknown> {
+  const base =
+    existing && typeof existing === 'object' && !Array.isArray(existing)
+      ? { ...(existing as Record<string, unknown>) }
+      : {};
+  const prev =
+    base.attribution &&
+    typeof base.attribution === 'object' &&
+    !Array.isArray(base.attribution)
+      ? { ...(base.attribution as Record<string, unknown>) }
+      : {};
+  base.attribution = { ...prev, ...clickIds };
+  return base;
+}
 
 const MAX_FIELD_VALUE_LEN = 1000;
 
@@ -85,6 +127,7 @@ export async function getOrCreateSession(opts: {
       },
     });
   }
+  const clickIds = opts.utm ? clickIdsFrom(opts.utm) : null;
   return prisma.visitorSession.create({
     data: {
       cookieId: opts.cookieId,
@@ -97,6 +140,7 @@ export async function getOrCreateSession(opts: {
       utmCampaign: nonEmpty(opts.utm?.utmCampaign),
       utmContent: nonEmpty(opts.utm?.utmContent),
       utmTerm: nonEmpty(opts.utm?.utmTerm),
+      ...(clickIds ? { metadata: { attribution: clickIds } as never } : {}),
       eventCount: 1,
     },
   });
@@ -147,6 +191,7 @@ export async function upsertLead(
   }
 
   const status: LeadStatus = 'PARTIAL';
+  const clickIds = clickIdsFrom(ctx);
 
   if (!lead) {
     lead = await prisma.lead.create({
@@ -164,10 +209,14 @@ export async function upsertLead(
         utmCampaign: nonEmpty(ctx.utmCampaign),
         utmContent: nonEmpty(ctx.utmContent),
         utmTerm: nonEmpty(ctx.utmTerm),
+        ...(clickIds
+          ? { metadata: { attribution: clickIds } as never }
+          : {}),
       },
     });
   } else {
-    // Only fill in blanks — never blow away existing data.
+    // Only fill in blanks — never blow away existing data. Click ids are
+    // the exception: latest ad click wins (merged under metadata.attribution).
     lead = await prisma.lead.update({
       where: { id: lead.id },
       data: {
@@ -177,6 +226,19 @@ export async function upsertLead(
         lastName: lead.lastName ?? lastName,
         lastPage: nonEmpty(ctx.sourcePage) ?? lead.lastPage,
         sourceWidget: lead.sourceWidget ?? ctx.sourceWidget ?? null,
+        utmSource: lead.utmSource ?? nonEmpty(ctx.utmSource),
+        utmMedium: lead.utmMedium ?? nonEmpty(ctx.utmMedium),
+        utmCampaign: lead.utmCampaign ?? nonEmpty(ctx.utmCampaign),
+        utmContent: lead.utmContent ?? nonEmpty(ctx.utmContent),
+        utmTerm: lead.utmTerm ?? nonEmpty(ctx.utmTerm),
+        ...(clickIds
+          ? {
+              metadata: mergeAttributionMetadata(
+                lead.metadata,
+                clickIds,
+              ) as never,
+            }
+          : {}),
       },
     });
   }

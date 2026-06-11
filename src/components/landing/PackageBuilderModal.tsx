@@ -7,7 +7,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import { useLeadCapture } from '@/lib/leads/client';
-import { fireLeadConversion } from '@/lib/leads/fireLeadConversion';
+import { fireLeadConversionAndFlush } from '@/lib/leads/fireLeadConversion';
+import { getAttribution } from '@/lib/analytics/attribution';
+import { trackContactClick } from '@/lib/analytics/ga4-events';
 import { trackFunnelStep } from '@/lib/experiments/funnelTrack';
 import type { FunnelStep } from '@/lib/experiments/funnelSteps';
 import type {
@@ -439,6 +441,9 @@ export default function PackageBuilderModal({
             qty: it.qty,
           })),
           source: 'package-builder',
+          // First-touch UTM + ad click ids (gclid etc.) so the Lead row
+          // can be joined back to the ad click that produced it.
+          attribution: getAttribution(),
         }),
       });
       const json = await res.json();
@@ -446,11 +451,16 @@ export default function PackageBuilderModal({
         throw new Error(json.error || 'Failed to create your order. Try again.');
       }
 
-      // Fire the lead conversion (Meta + GA4 generate_lead + Ads) BEFORE
-      // the redirect — tagged with this page's occasion so each landing
-      // campaign optimizes toward its own leads. Synchronous; the gtag/fbq
-      // beacons are queued before navigation.
-      fireLeadConversion({ occasion, placement: 'package-builder', value: people });
+      // Fire the lead conversion (Meta + GA4 generate_lead + Ads) and wait
+      // (≤400ms) for gtag to flush — the hard redirect below would otherwise
+      // race the hit out of existence (gtag loads lazyOnload). Tagged with
+      // this page's occasion so each campaign optimizes toward its own
+      // leads; value is the order subtotal in USD for value-based bidding.
+      await fireLeadConversionAndFlush({
+        occasion,
+        placement: 'package-builder',
+        value: total,
+      });
 
       // Stash host participant id so the dashboard recognizes the
       // visitor as the order owner.
@@ -579,6 +589,7 @@ export default function PackageBuilderModal({
             <SuccessPanel
               mode={submitMode}
               phone={config.phoneDisplay}
+              occasion={occasion}
               theme={T}
               modal={M}
               onReset={reset}
@@ -1574,6 +1585,7 @@ function FormField({
 function SuccessPanel({
   mode,
   phone,
+  occasion,
   theme,
   modal,
   onReset,
@@ -1581,6 +1593,7 @@ function SuccessPanel({
 }: {
   mode: 'quote' | 'checkout';
   phone: string;
+  occasion: string;
   theme: LandingConfig['theme'];
   modal: LandingConfig['modal'];
   onReset: () => void;
@@ -1603,6 +1616,14 @@ function SuccessPanel({
         </p>
         <a
           href={`tel:${phone.replace(/\D/g, '')}`}
+          onClick={() =>
+            trackContactClick(
+              'phone',
+              'builder_success',
+              occasion,
+              `tel:${phone.replace(/\D/g, '')}`,
+            )
+          }
           className="font-heading text-xl font-bold"
           style={{ color: theme.blue }}
         >

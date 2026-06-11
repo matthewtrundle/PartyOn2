@@ -28,6 +28,12 @@ const schema = z.object({
       utmCampaign: z.string().max(200).optional().nullable(),
       utmContent: z.string().max(200).optional().nullable(),
       utmTerm: z.string().max(200).optional().nullable(),
+      // Ad-platform click ids — persisted to VisitorSession metadata on create.
+      gclid: z.string().max(200).optional().nullable(),
+      gbraid: z.string().max(200).optional().nullable(),
+      wbraid: z.string().max(200).optional().nullable(),
+      fbclid: z.string().max(200).optional().nullable(),
+      msclkid: z.string().max(200).optional().nullable(),
     })
     .optional(),
 });

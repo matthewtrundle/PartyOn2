@@ -19,6 +19,8 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLeadCapture } from '@/lib/leads/client';
+import { fireLeadConversionAndFlush } from '@/lib/leads/fireLeadConversion';
+import { getAttribution } from '@/lib/analytics/attribution';
 import { trackFunnelStep } from '@/lib/experiments/funnelTrack';
 import type { LandingConfig, Package } from './types';
 import type { UpsellProducts, UpsellProduct } from '@/lib/landing/getUpsellProducts';
@@ -293,6 +295,9 @@ export default function QuickBuyModal({
           items,
           deliveryNotes: `Quick-Buy from ${pkg.name} (${occasion} landing page)`,
           upsellVariantId: upsellProducts?.variantId,
+          // First-touch UTM + ad click ids — lands in DraftOrder.adminNotes
+          // so ops can join the order back to the ad click.
+          attribution: getAttribution(),
         }),
       });
       const json = await res.json();
@@ -302,6 +307,17 @@ export default function QuickBuyModal({
       if (!json.token) {
         throw new Error('No invoice token returned.');
       }
+
+      // A draft order now exists — that's a lead by any definition. Fire the
+      // cross-network conversion (Meta Lead + GA4 generate_lead) and wait
+      // ≤400ms for gtag to flush, since the fallback path below hard-redirects
+      // to the invoice page. This was previously missing entirely: quick-buy
+      // (the highest-intent CTA) was invisible to Google Ads.
+      await fireLeadConversionAndFlush({
+        occasion,
+        placement: 'quick-buy',
+        value: subtotal,
+      });
 
       // Try embedded Stripe Checkout first — keeps the customer in the
       // popup. Only attempt if the publishable key is exposed at build time;

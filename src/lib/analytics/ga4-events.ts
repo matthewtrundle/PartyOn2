@@ -241,6 +241,56 @@ export function trackBlogCtaClick(
   });
 }
 
+/** Where on the page a contact CTA lives. */
+export type ContactClickPlacement =
+  | 'header'
+  | 'hero'
+  | 'packages_custom_line'
+  | 'final_cta'
+  | 'builder_success';
+
+/**
+ * Track clicks on direct-contact CTAs: tel: links, sms: links, and the
+ * external planning-call booking page. ONE event name (`contact_click`)
+ * sliced by `contact_method` so a single GA4 key event / Google Ads
+ * conversion action ("Contact – click") can cover all three.
+ *
+ * @param method - 'phone' | 'sms' | 'planning_call'
+ * @param placement - Which section's CTA was clicked
+ * @param occasion - Landing occasion (bachelor, wedding, …) when known
+ * @param linkUrl - The tel:/sms:/https: target of the link
+ */
+export function trackContactClick(
+  method: 'phone' | 'sms' | 'planning_call',
+  placement: ContactClickPlacement,
+  occasion?: string,
+  linkUrl?: string
+): void {
+  trackPodEvent('contact_click', {
+    contact_method: method,
+    placement,
+    ...(occasion && { occasion }),
+    ...(linkUrl && { link_url: linkUrl }),
+  });
+
+  if (!isGtagAvailable()) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[GA4 Dev] contact_click:', { method, placement, occasion, linkUrl });
+    }
+    return;
+  }
+
+  window.gtag?.('event', 'contact_click', {
+    contact_method: method,
+    placement,
+    ...(occasion && { occasion }),
+    ...(linkUrl && { link_url: linkUrl }),
+    page_location: window.location.href,
+    // tel:/sms: handlers can unload the page on desktop — don't lose the hit.
+    transport_type: 'beacon',
+  });
+}
+
 /**
  * Track outbound link clicks
  * @param url - The external URL clicked

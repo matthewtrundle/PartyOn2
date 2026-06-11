@@ -24,6 +24,7 @@ import { createDraftOrder, calculateDraftOrderAmounts } from '@/lib/draft-orders
 import { generateInvoiceEmail, generateInvoiceSubject } from '@/lib/email/templates/invoice';
 import { getInvoiceTextOverrides } from '@/lib/email/template-content';
 import { sendEmail } from '@/lib/email/resend-client';
+import { attributionSchema, attributionNoteLine } from '@/lib/leads/attribution-schema';
 import { EmailType, DraftOrderStatus } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
@@ -51,6 +52,9 @@ const BodySchema = z.object({
   items: z.array(ItemSchema).min(1),
   /** Upsell A/B variant shown to this customer. Persisted to the draft order. */
   upsellVariantId: z.string().optional(),
+  /** First-touch UTM + ad click ids captured client-side. DraftOrder has no
+      metadata column, so this lands as a line in adminNotes (ops-only). */
+  attribution: attributionSchema,
 });
 
 export async function POST(request: NextRequest) {
@@ -142,7 +146,12 @@ export async function POST(request: NextRequest) {
       deliveryFee: amounts.deliveryFee,
       discountAmount: amounts.discountAmount,
       createdBy: `landing:${body.occasion}`,
-      adminNotes: `Auto-generated from /austin-${body.occasion}-* landing page. Group size: ${body.groupSize}.`,
+      adminNotes: [
+        `Auto-generated from /austin-${body.occasion}-* landing page. Group size: ${body.groupSize}.`,
+        attributionNoteLine(body.attribution),
+      ]
+        .filter(Boolean)
+        .join('\n'),
     });
 
     // Tag the draft order with the upsell A/B variant the customer saw — the

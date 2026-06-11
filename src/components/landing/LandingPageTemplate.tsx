@@ -12,6 +12,7 @@ import HeroSlideshow from './HeroSlideshow';
 import type { LandingConfig, Catalog, Package, ThemeColors } from './types';
 import type { UpsellProducts } from '@/lib/landing/getUpsellProducts';
 import { generateFAQSchema } from '@/lib/seo/schemas';
+import { trackContactClick } from '@/lib/analytics/ga4-events';
 import { experimentsForPath, type BachelorHeroPayload, type CtaCopyPayload } from '@/lib/experiments/registry';
 import { useVariant } from '@/lib/experiments/clientAssign';
 import { useFunnelTracker } from '@/lib/experiments/funnelTrack';
@@ -217,6 +218,7 @@ export default function LandingPageTemplate({
           </Link>
           <a
             href={config.phoneTel}
+            onClick={() => trackContactClick('phone', 'header', occasion, config.phoneTel)}
             className="text-sm sm:text-base font-semibold"
             style={{ color: T.blue }}
           >
@@ -313,6 +315,9 @@ export default function LandingPageTemplate({
                   href={config.planningCallUrl}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() =>
+                    trackContactClick('planning_call', 'hero', occasion, config.planningCallUrl)
+                  }
                   className="inline-flex items-center justify-center border-2 border-white text-white font-semibold text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 rounded-md transition-transform hover:scale-[1.02] hover:bg-white/15 whitespace-nowrap"
                 >
                   {config.secondaryCtaText ?? 'SCHEDULE A 10-MIN CALL →'}
@@ -324,12 +329,21 @@ export default function LandingPageTemplate({
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-white/90 mb-4">
               <a
                 href={config.phoneTel}
+                onClick={() => trackContactClick('phone', 'hero', occasion, config.phoneTel)}
                 className="inline-flex items-center gap-1.5 font-semibold hover:text-white"
               >
                 📞 Call {config.phoneDisplay}
               </a>
               <a
                 href={`sms:${config.phoneTel.replace('tel:', '')}`}
+                onClick={() =>
+                  trackContactClick(
+                    'sms',
+                    'hero',
+                    occasion,
+                    `sms:${config.phoneTel.replace('tel:', '')}`,
+                  )
+                }
                 className="inline-flex items-center gap-1.5 font-semibold hover:text-white"
               >
                 💬 Text us
@@ -427,7 +441,14 @@ export default function LandingPageTemplate({
 
           <p className="text-center text-gray-600 mt-16">
             {config.customLine.split('—')[0]}
-            <a href={config.phoneTel} className="font-bold underline" style={{ color: T.blue }}>
+            <a
+              href={config.phoneTel}
+              onClick={() =>
+                trackContactClick('phone', 'packages_custom_line', occasion, config.phoneTel)
+              }
+              className="font-bold underline"
+              style={{ color: T.blue }}
+            >
               {' '}
               {config.phoneDisplay}
             </a>
@@ -750,6 +771,14 @@ export default function LandingPageTemplate({
                   href={config.planningCallUrl}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() =>
+                    trackContactClick(
+                      'planning_call',
+                      'final_cta',
+                      occasion,
+                      config.planningCallUrl,
+                    )
+                  }
                   className="inline-flex items-center justify-center border-2 border-white text-white font-semibold text-base sm:text-lg px-5 sm:px-8 py-4 sm:py-5 rounded-md transition-transform hover:scale-[1.02] hover:bg-white/15 whitespace-nowrap"
                 >
                   {config.secondaryCtaText ?? 'SCHEDULE A 10-MIN CALL →'}
@@ -757,11 +786,23 @@ export default function LandingPageTemplate({
               )}
             </div>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-white/90 font-semibold">
-              <a href={config.phoneTel} className="hover:text-white">
+              <a
+                href={config.phoneTel}
+                onClick={() => trackContactClick('phone', 'final_cta', occasion, config.phoneTel)}
+                className="hover:text-white"
+              >
                 📞 Call {config.phoneDisplay}
               </a>
               <a
                 href={`sms:${config.phoneTel.replace('tel:', '')}`}
+                onClick={() =>
+                  trackContactClick(
+                    'sms',
+                    'final_cta',
+                    occasion,
+                    `sms:${config.phoneTel.replace('tel:', '')}`,
+                  )
+                }
                 className="hover:text-white"
               >
                 💬 Text us

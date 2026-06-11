@@ -30,6 +30,7 @@ import { z } from 'zod';
 import { sendEmail } from '@/lib/email/resend-client';
 import { eventQuizWelcomeEmail } from '@/lib/email/templates/event-quiz-welcome';
 import { upsertLead, recordEvent } from '@/lib/leads/leadCapture';
+import { attributionSchema, compactAttribution } from '@/lib/leads/attribution-schema';
 import { targetUrlFor } from '@/lib/eventQuiz/routing';
 import { createDashboardOrder, addDraftItem } from '@/lib/group-orders-v2/service';
 import { prisma } from '@/lib/database/client';
@@ -67,6 +68,8 @@ const schema = z.object({
   recommendedItems: z.array(recommendedItemSchema).default([]),
   /** Where the user came from (for analytics + Lead metadata). */
   source: z.enum(['chat', 'package-builder', 'event-quiz', 'landing-quote']).default('chat'),
+  /** First-touch UTM + ad click ids captured client-side. */
+  attribution: attributionSchema,
 });
 
 // Quiz party types → dashboard PartyType enum. Anything outside the
@@ -129,26 +132,52 @@ export async function POST(req: NextRequest) {
       {
         sourcePage: `/${body.source}`,
         sourceWidget: 'CONTACT_FORM',
+        // UTM columns blank-fill + click ids merge into metadata.attribution.
+        utmSource: body.attribution?.utmSource,
+        utmMedium: body.attribution?.utmMedium,
+        utmCampaign: body.attribution?.utmCampaign,
+        utmContent: body.attribution?.utmContent,
+        utmTerm: body.attribution?.utmTerm,
+        gclid: body.attribution?.gclid,
+        gbraid: body.attribution?.gbraid,
+        wbraid: body.attribution?.wbraid,
+        fbclid: body.attribution?.fbclid,
+        msclkid: body.attribution?.msclkid,
       },
     );
     if (lead) {
       leadId = lead.id;
+      // upsertLead returned the freshly-updated row, so prevMeta already
+      // includes metadata.attribution — spreading it preserves the merge.
       const prevMeta = (lead.metadata as Record<string, unknown> | null) ?? {};
+      const prevAttribution =
+        prevMeta.attribution &&
+        typeof prevMeta.attribution === 'object' &&
+        !Array.isArray(prevMeta.attribution)
+          ? (prevMeta.attribution as Record<string, unknown>)
+          : {};
+      const nextMeta: Record<string, unknown> = {
+        ...prevMeta,
+        unifiedQuote: {
+          source: body.source,
+          partyType: body.partyType,
+          headcount: body.headcount,
+          deliveryDate: body.deliveryDate,
+          recommendedHandles: body.recommendedItems.map((r) => r.handle),
+          submittedAt: new Date().toISOString(),
+        },
+      };
+      if (body.attribution) {
+        nextMeta.attribution = {
+          ...prevAttribution,
+          ...compactAttribution(body.attribution),
+        };
+      }
       await prisma.lead.update({
         where: { id: lead.id },
         data: {
           status: 'SUBMITTED',
-          metadata: {
-            ...prevMeta,
-            unifiedQuote: {
-              source: body.source,
-              partyType: body.partyType,
-              headcount: body.headcount,
-              deliveryDate: body.deliveryDate,
-              recommendedHandles: body.recommendedItems.map((r) => r.handle),
-              submittedAt: new Date().toISOString(),
-            },
-          },
+          metadata: nextMeta as never,
         },
       });
       await recordEvent({
@@ -162,6 +191,10 @@ export async function POST(req: NextRequest) {
           partyType: body.partyType,
           headcount: body.headcount,
           deliveryDate: body.deliveryDate,
+          ...(body.attribution?.gclid && { gclid: body.attribution.gclid }),
+          ...(body.attribution?.utmCampaign && {
+            utmCampaign: body.attribution.utmCampaign,
+          }),
         },
       });
     }
