@@ -1,118 +1,46 @@
 'use client';
 
-import { useState, type ReactElement, type ReactNode } from 'react';
+/**
+ * Package card with itemized "what's inside" dropdown — extracted from
+ * LandingPageTemplate so the template stays readable. One card per
+ * occasion package; the featured card scales up with a "MOST BOOKED" tag.
+ */
+
+import { useState } from 'react';
 import Image from 'next/image';
 import type { Package, PackageLineItem, ThemeColors } from '../types';
+import { CheckIcon, StarIcon, ChevronDownIcon } from './icons';
 
-type Props = {
-  packages: Package[];
-  theme: ThemeColors;
-  /** Eyebrow shown above the grid. Optional. */
-  eyebrow?: string;
-  /** Headline shown above the grid. Optional. */
-  headline?: string;
-  /** Subhead shown above the grid. Optional. */
-  blurb?: string;
-  /** Optional content rendered below the grid (e.g. the "Need something custom?" line). */
-  footer?: ReactNode;
-  /**
-   * Primary CTA shown on every card. Defaults to "BUY THIS PACKAGE NOW →".
-   * Wes-template pages pass an `onBuyNow` that opens QuickBuyModal; the
-   * wedding calculator passes a scroll-to-quote-form handler with a custom
-   * label.
-   */
-  primaryCtaLabel?: string;
-  onPrimaryCta: (pkg: Package) => void;
-  /**
-   * Optional secondary CTA (e.g. "Build my own") shown below the primary.
-   * If `onSecondaryCta` is omitted the secondary button is not rendered.
-   */
-  secondaryCtaLabel?: string;
-  onSecondaryCta?: () => void;
-};
-
-export default function PackageCardGrid({
-  packages,
-  theme: T,
-  eyebrow,
-  headline,
-  blurb,
-  primaryCtaLabel = 'BUY THIS PACKAGE NOW →',
-  onPrimaryCta,
-  secondaryCtaLabel,
-  onSecondaryCta,
-  footer,
-}: Props): ReactElement {
-  return (
-    <section id="packages" className="py-24 md:py-28 bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        {(eyebrow || headline || blurb) && (
-          <div className="text-center mb-20 max-w-3xl mx-auto">
-            {eyebrow && (
-              <p
-                className="font-bold tracking-[0.15em] text-sm mb-4"
-                style={{ color: T.blue }}
-              >
-                {eyebrow}
-              </p>
-            )}
-            {headline && (
-              <h2
-                className="font-heading text-4xl md:text-5xl font-bold mb-6 leading-tight"
-                style={{ color: T.navy }}
-              >
-                {headline}
-              </h2>
-            )}
-            {blurb && (
-              <p className="text-lg text-gray-600 leading-relaxed">{blurb}</p>
-            )}
-          </div>
-        )}
-
-        <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
-          {packages.map((pkg) => (
-            <PackageCard
-              key={pkg.name}
-              pkg={pkg}
-              theme={T}
-              primaryCtaLabel={primaryCtaLabel}
-              onPrimaryCta={onPrimaryCta}
-              secondaryCtaLabel={secondaryCtaLabel}
-              onSecondaryCta={onSecondaryCta}
-            />
-          ))}
-        </div>
-
-        {footer}
-      </div>
-    </section>
-  );
-}
-
-function PackageCard({
+export default function PackageCard({
   pkg,
   theme: T,
-  primaryCtaLabel,
-  onPrimaryCta,
-  secondaryCtaLabel,
-  onSecondaryCta,
+  onCta,
+  onBuyNow,
 }: {
   pkg: Package;
   theme: ThemeColors;
-  primaryCtaLabel: string;
-  onPrimaryCta: (pkg: Package) => void;
-  secondaryCtaLabel?: string;
-  onSecondaryCta?: () => void;
-}): ReactElement {
+  /** Opens the "Build my own" Package Builder modal. */
+  onCta: () => void;
+  /** Opens the Quick-Buy modal pre-loaded with this package. */
+  onBuyNow: (pkg: Package) => void;
+}) {
   const [open, setOpen] = useState(false);
 
+  // Modern packages use lineItems + packagePrice + freebiesValue.
+  // Legacy/static packages use items + price + save (string).
   const isLive = !!pkg.lineItems && pkg.packagePrice != null;
 
   const priceLabel = isLive ? `$${pkg.packagePrice}` : pkg.price ?? '';
+  // Frame the freebie value as an included bundle, not an abstract discount.
   const saveLabel = isLive
-    ? `Save $${pkg.freebiesValue ?? 0}`
+    ? pkg.freebiesValue
+      ? `$${pkg.freebiesValue} bundle FREE`
+      : ''
     : pkg.save ?? '';
+  const perPerson =
+    isLive && pkg.defaultPeople && pkg.defaultPeople > 0
+      ? Math.round((pkg.packagePrice ?? 0) / pkg.defaultPeople)
+      : null;
 
   const alcoholItems = (pkg.lineItems ?? []).filter((i) => !i.freebie);
   const freebieItems = (pkg.lineItems ?? []).filter((i) => i.freebie);
@@ -130,7 +58,7 @@ function PackageCard({
     >
       {pkg.featured && (
         <div
-          className="absolute top-4 right-4 z-10 text-xs font-bold tracking-widest px-3 py-1 rounded-full"
+          className="absolute top-4 right-4 z-10 text-xs font-bold tracking-widest px-3 py-1 rounded-lg"
           style={{ background: T.primary, color: T.primaryText }}
         >
           MOST BOOKED
@@ -159,28 +87,36 @@ function PackageCard({
             </span>
           )}
         </div>
-        <div className="flex items-baseline gap-2 mb-3">
+        <div className="flex items-baseline gap-2 mb-1 flex-wrap">
           <span className="font-heading text-4xl font-bold" style={{ color: T.blue }}>
             {priceLabel}
           </span>
-          <span className="text-sm text-gray-500">{pkg.serves}</span>
+          {perPerson != null && (
+            <span className="text-sm font-semibold" style={{ color: T.navy }}>
+              ≈ ${perPerson}/person
+            </span>
+          )}
         </div>
+        <div className="text-sm text-gray-500 mb-3">{pkg.serves}</div>
         <p className="text-gray-600 mb-4 leading-relaxed">{pkg.blurb}</p>
 
+        {/* Summary bullets — category roll-ups, not item names. The detailed
+            list lives in the "See what's inside" dropdown below. */}
         {isLive && pkg.lineItems && pkg.lineItems.length > 0 && (
           <ul className="mb-4 space-y-1.5 text-sm text-gray-700">
             {summarizeAlcohol(alcoholItems).map((line, i) => (
               <li key={`sum-${i}`} className="flex items-start gap-2">
-                <span className="mt-0.5 font-bold" style={{ color: T.primary }}>
-                  ✓
+                {/* Brand blue, not theme yellow — yellow-on-white fails contrast. */}
+                <span className="mt-0.5 flex-shrink-0" style={{ color: T.blue }}>
+                  <CheckIcon className="w-4 h-4" />
                 </span>
                 <span>{line}</span>
               </li>
             ))}
             {freebieItems.length > 0 && (
               <li className="flex items-start gap-2">
-                <span className="mt-0.5 font-bold" style={{ color: '#047857' }}>
-                  ★
+                <span className="mt-0.5 flex-shrink-0" style={{ color: '#047857' }}>
+                  <StarIcon className="w-4 h-4" />
                 </span>
                 <span style={{ color: '#047857' }}>
                   <strong>Free party bundle:</strong>{' '}
@@ -195,6 +131,7 @@ function PackageCard({
           </ul>
         )}
 
+        {/* Itemized dropdown */}
         {isLive ? (
           <div className="mb-5 flex-1">
             <button
@@ -207,14 +144,14 @@ function PackageCard({
               <span>
                 {open ? 'Hide' : 'See'} what&apos;s inside ({pkg.lineItems!.length} items)
               </span>
-              <span className="text-xs" style={{ color: T.blue }}>
-                {open ? '▲' : '▼'}
-              </span>
+              <ChevronDownIcon
+                className={`w-4 h-4 transition-transform ${open ? 'rotate-180' : ''}`}
+              />
             </button>
             {open && (
               <div className="mt-3 space-y-3 text-sm">
                 <div>
-                  <div className="text-[10px] font-bold tracking-widest text-gray-500 mb-1.5">
+                  <div className="text-xs font-bold tracking-widest text-gray-500 mb-1.5">
                     INCLUDED ALCOHOL
                   </div>
                   <ul className="space-y-1.5">
@@ -239,7 +176,7 @@ function PackageCard({
                 {freebieItems.length > 0 && (
                   <div className="pt-2 border-t" style={{ borderColor: '#E5E7EB' }}>
                     <div
-                      className="text-[10px] font-bold tracking-widest mb-1.5"
+                      className="text-xs font-bold tracking-widest mb-1.5"
                       style={{ color: '#047857' }}
                     >
                       FREE PARTY SUPPLIES (BUNDLED IN)
@@ -271,8 +208,8 @@ function PackageCard({
           <ul className="space-y-2 mb-7 text-sm text-gray-700 flex-1">
             {pkg.items.map((item) => (
               <li key={item} className="flex items-start gap-2">
-                <span className="mt-0.5 font-bold" style={{ color: T.primary }}>
-                  ✓
+                <span className="mt-0.5 flex-shrink-0" style={{ color: T.blue }}>
+                  <CheckIcon className="w-4 h-4" />
                 </span>
                 <span>{item}</span>
               </li>
@@ -283,33 +220,41 @@ function PackageCard({
         <div className="flex flex-col gap-2">
           <button
             type="button"
-            onClick={() => onPrimaryCta(pkg)}
-            className="block text-center font-bold py-4 px-6 rounded-md tracking-wide transition-all w-full hover:scale-[1.01] shadow-md"
+            onClick={() => onBuyNow(pkg)}
+            className="block text-center font-bold py-4 px-6 rounded-lg tracking-[0.08em] transition-all w-full hover:scale-[1.01] shadow-md"
             style={{ background: T.primary, color: T.primaryText }}
           >
-            {primaryCtaLabel}
+            BUY THIS PACKAGE NOW →
           </button>
-          {secondaryCtaLabel && onSecondaryCta && (
-            <button
-              type="button"
-              onClick={onSecondaryCta}
-              className="block text-center font-bold py-3 px-6 rounded-md tracking-wide transition-colors w-full"
-              style={{
-                background: '#FFFFFF',
-                color: T.navy,
-                border: `2px solid ${T.navy}`,
-              }}
-            >
-              {secondaryCtaLabel}
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={onCta}
+            className="block text-center font-bold py-3 px-6 rounded-lg tracking-[0.08em] transition-colors w-full"
+            style={{
+              background: '#FFFFFF',
+              color: T.navy,
+              border: `2px solid ${T.navy}`,
+            }}
+          >
+            Build my own
+          </button>
         </div>
       </div>
     </div>
   );
 }
 
-function summarizeAlcohol(items: PackageLineItem[]): string[] {
+// ----- summarizeAlcohol: roll line items up into category-level bullets ----
+
+/**
+ * Reads the package's alcohol line items and returns 3–4 punchy summary
+ * bullets the customer can scan in a second, e.g. "5 beer + seltzer packs
+ * (108 cans)" / "3 premium spirit bottles" / "Wine & champagne for toasts".
+ *
+ * Heuristic-only — uses title patterns rather than productType so it works
+ * for any future recipe additions.
+ */
+export function summarizeAlcohol(items: PackageLineItem[]): string[] {
   const out: string[] = [];
   type Bucket = { qty: number; cans: number; bottles: number };
   const buckets: Record<string, Bucket> = {

@@ -130,6 +130,13 @@ export type LandingConfig = {
    */
   heroBullets?: string[];
   heroImage: string;
+  /**
+   * Optional set of hero backdrop photos (1–4). One image renders static;
+   * several crossfade slowly (8s). Falls back to `heroImage` when unset —
+   * see HeroBackdrop. Keep it occasion-specific: this is the first visual
+   * a paid click sees.
+   */
+  heroImages?: { src: string; alt: string }[];
   heroTrustBadges: string[];
 
   // Trust stats (4 cards strip)
