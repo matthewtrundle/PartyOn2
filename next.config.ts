@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { ARCHIVED_PRODUCT_REDIRECTS } from "./src/lib/seo/archived-product-redirects";
 
 const nextConfig: NextConfig = {
   images: {
@@ -175,6 +176,11 @@ const nextConfig: NextConfig = {
   // 301 Redirects for SEO (from SEMrush audit - January 2025)
   async redirects() {
     return [
+      // 2026-06-10 archived + orphaned product URL sweep — see
+      // src/lib/seo/archived-product-redirects.ts and the rationale in
+      // docs/seo/recommendations/product-page-editorial-sprint-2026-06.md
+      ...ARCHIVED_PRODUCT_REDIRECTS,
+
       // Group order v2 slug rename
       {
         source: '/group-v2/:path*',
