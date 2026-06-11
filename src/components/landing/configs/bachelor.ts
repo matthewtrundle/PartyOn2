@@ -25,31 +25,45 @@ export const bachelorConfig: LandingConfig = {
   heroHeadline: 'Stocked & Ice-Cold',
   heroHeadlineAccent: 'Before The Groom Lands.',
   heroSubhead:
-    "Beer, liquor, mixers and ice delivered cold to your Airbnb, hotel, party bus, or Lake Travis dock. Skip the store run. Order in 30 seconds — we'll handle the rest.",
+    'Beer, liquor, cocktail kits and ice delivered cold to your Airbnb, hotel, party bus, or Lake Travis boat dock. Order in 30 seconds. Reschedule free up to 6 hours out.',
   heroBullets: [
-    'Beer, liquor, seltzers & cocktail kits — delivered ice-cold',
-    'Group ordering & split pay — no Venmo chaser',
-    'Airbnb, hotel, boat dock, party bus — wherever you land',
-    'Order in 30 seconds. 48-hour notice = guaranteed pricing.',
+    'Delivered ice-cold to your Airbnb, hotel, party bus, or boat dock',
+    'Cocktail kits pre-batched for the boat — nobody plays bartender',
+    'One link, the whole crew orders, split pay — no Venmo chasing',
+    'Order in 30 seconds · 48-hour notice locks guaranteed pricing',
   ],
-  heroImage: '/images/services/bach-parties/bachelor-party-epic.webp',
+  heroImage: '/images/ppc/ppc-ccs-238.jpg',
+  heroImages: [
+    {
+      src: '/images/ppc/ppc-ccs-238.jpg',
+      alt: 'Bachelor party group on a Lake Travis boat stocked by Party On Delivery',
+    },
+    {
+      src: '/images/hero/hero-boat-party.webp',
+      alt: 'Lake Travis boat party with cold drinks delivered to the dock',
+    },
+    {
+      src: '/images/gallery/sunset-champagne-pontoon.webp',
+      alt: 'Sunset toast on a Lake Travis pontoon',
+    },
+  ],
   heroTrustBadges: ['✓ TABC-licensed', '✓ 500+ Austin bach groups', '★ 5.0 on Google', '✓ Split pay built-in'],
 
   trustStats: [
-    { stat: 'Group ordering', label: 'Whole crew adds to one cart' },
-    { stat: 'Split pay', label: 'Each person pays their share' },
-    { stat: 'Cocktail kits', label: 'Pre-mixed for the boat' },
-    { stat: '500+', label: 'Groups served' },
+    { stat: '500+', label: 'Austin bach & boat groups served' },
+    { stat: '5.0★', label: 'Google rating — see reviews below' },
+    { stat: '$0', label: 'Split-pay fees — each guy pays his share' },
+    { stat: '48-hr', label: 'Notice locks guaranteed pricing' },
   ],
 
   painHeadline: "You didn't fly to Austin to babysit a Costco run.",
   painBody:
-    'Drop one link in the group chat — everyone adds what they want, splits the tab, and we deliver it cold. Cocktail kits for the boat. Ice already in the cooler. Done.',
+    'Drop one link in the group chat — everyone adds what they want, splits the tab, and we deliver it cold to every stop. Cocktail kits for the boat. Ice already in the cooler. Your only job is to show up.',
 
   packagesEyebrow: 'CURATED FOR AUSTIN BACH GROUPS',
   packagesHeadline: "Pick a package. We'll do the rest.",
   packagesBlurb:
-    'Built around the trips groups actually take in Austin — Lake Travis, Rainey Street, downtown hotels.',
+    'Built around the trips Austin groups actually take — Lake Travis boat days, Rainey Street nights, downtown hotels. Every package scales to your headcount with a live per-person price.',
   packages: [
     {
       name: 'Austin Bach Starter',
@@ -150,24 +164,26 @@ export const bachelorConfig: LandingConfig = {
 
   reviewsEyebrow: '★★★★★ 5.0 ON GOOGLE',
   reviewsHeadline: 'The crew gets the credit. We just deliver.',
+  // Real Google reviews (synced GBP pool) — picked for bachelor-page
+  // message match: boat day, Airbnb drop, big-group quantities.
   reviews: [
     {
       quote:
         "I would recommend this service to anyone who is going on a boat cruise! It was so nice to just show up to the boat and have all our cocktail ingredients and seltzers there. The recipes are on the pitcher and are easy for anyone to make! Prices are very reasonable, and anything you have left over you can take home!",
       author: 'Perla Albiter',
-      detail: '★★★★★ via Google',
+      detail: '★★★★★ via Google · Lake Travis boat day',
     },
     {
       quote:
-        "Party On Delivery was amazing to work with! They had ample availability for delivery time slots, were communicative throughout the whole process, and got us everything we needed right to our door. It's great that they have mixers, alcohol, hydration packets, and food — all in one spot. Can't recommend enough!",
-      author: 'Jodi Hiller',
-      detail: '★★★★★ via Google',
+        'They brought all our alcohol right to our Airbnb! No stress, no running around, just pure convenience. We added the Skinnyrita drink package and it even came with a dispenser so our group could keep the drinks flowing. Pool, lake, backyard, you name it — this is the team to call!',
+      author: 'Austin Bach Babes',
+      detail: '★★★★★ via Google · Airbnb bach weekend',
     },
     {
       quote:
         "Party on Delivery is a fantastic treasure! They truly made our UT tailgate happen — delivered all our liquor and kegs and brought tables and chairs for our guests. Communication was easy and they helped me decide on how much alcohol we would need. I highly recommend Party on Delivery to save you time and stress. Very reasonably priced too! You guys rock!",
       author: 'Shannon Crim',
-      detail: '★★★★★ via Google',
+      detail: '★★★★★ via Google · company UT tailgate',
     },
   ],
 
@@ -181,8 +197,12 @@ export const bachelorConfig: LandingConfig = {
         ' to check.',
     },
     {
-      q: 'Do you deliver to Lake Travis docks and boats?',
-      a: "Yes — Volente, Lakeway, Hurst Harbor, Emerald Point, Rough Hollow, all of them. We'll coordinate with your captain or marina.",
+      q: 'How does Lake Travis boat-dock delivery work?',
+      a: "Tell us your marina and departure time — Volente, Lakeway, Hurst Harbor, Emerald Point, Rough Hollow, all of them. We coordinate with your captain and have the cooler loaded dockside before you push off. Lake runs carry a $250 minimum.",
+    },
+    {
+      q: 'How does group ordering and split pay work?',
+      a: 'One link in the group chat. Everyone adds their own drinks to the same cart, then each person pays for exactly what they added — separate cards, separate receipts, zero IOUs. We bundle it and deliver everything together.',
     },
     {
       q: 'What is the order minimum?',
@@ -205,7 +225,7 @@ export const bachelorConfig: LandingConfig = {
   finalCtaHeadline: 'Lock it in.',
   finalCtaHeadlineAccent: 'Then go enjoy the trip you planned.',
   finalCtaSubhead:
-    'Most groups book 1–3 weeks out. Lake Travis weekends fill up fast — get on the calendar now.',
+    'Most groups book 1–3 weeks out and Lake Travis weekends sell out first. Reschedule free up to 6 hours before delivery — so lock the date now and tweak later.',
   finalCtaImage: '/images/hero/bach-hero-brewery.webp',
 
   phoneDisplay: PHONE_DISPLAY,

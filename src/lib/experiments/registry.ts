@@ -65,7 +65,11 @@ export const EXPERIMENTS: ExperimentDef[] = [
       'the tongue-in-cheek control by 10%+ on package-card-click rate.',
     primaryMetric: 'modal_open',
     pages: ['/austin-bachelor-party-delivery'],
-    status: 'running',
+    // Completed 2026-06-11 ahead of the paid-traffic launch: the campaign
+    // needs 100% ad→page message match, and near-zero traffic had accrued.
+    // Relaunch a fresh test on top of the new config copy once paid
+    // traffic produces a baseline.
+    status: 'completed',
     createdAt: '2026-05-14',
     variants: [
       {
@@ -100,7 +104,8 @@ export const EXPERIMENTS: ExperimentDef[] = [
       "control ('Build your bach package') because it shifts the verb to first-person.",
     primaryMetric: 'cta_click',
     pages: ['/austin-bachelor-party-delivery'],
-    status: 'running',
+    // Completed 2026-06-11 — see bachelor-hero-headline-v1 note above.
+    status: 'completed',
     createdAt: '2026-05-14',
     variants: [
       {
