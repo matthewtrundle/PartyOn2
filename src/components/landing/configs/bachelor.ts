@@ -158,7 +158,10 @@ export const bachelorConfig: LandingConfig = {
     { area: 'Lake Travis Docks', detail: 'Loaded straight onto your boat or pontoon' },
     { area: 'Party Buses & Limos', detail: 'Coordinate with your driver, we time it perfectly' },
     { area: 'East Austin Breweries', detail: 'Add bottles to your brewery hop' },
-    { area: 'Bachelor Houses & Ranches', detail: 'Wimberley, Dripping Springs, Spicewood' },
+    // Footprint note: keep this row inside the confirmed delivery footprint
+    // (Westlake / Bee Cave / Lakeway) — do NOT name Dripping Springs,
+    // Wimberley, or Spicewood on this paid landing page.
+    { area: 'Bachelor Houses & Estates', detail: 'Westlake, Bee Cave, Lakeway — straight to the big house' },
   ],
   venuesImage: '/images/hero/bach-hero-party-bus.webp',
 
