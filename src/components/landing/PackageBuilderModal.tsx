@@ -112,6 +112,22 @@ export default function PackageBuilderModal({
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  // Age compliance — required checkbox on the review step. The landing
+  // pages skip the site-wide entrance gate (see AgeVerification.tsx), so
+  // this is where 21+ gets confirmed. Never pre-checked.
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
+  const handleAgeConfirmedChange = (checked: boolean) => {
+    setAgeConfirmed(checked);
+    if (checked) {
+      try {
+        // Same flag the site-wide gate reads — checking the box here means
+        // the rest of the site won't re-prompt on this device.
+        localStorage.setItem('age_verified', 'true');
+      } catch {
+        /* localStorage disabled — checkbox state alone still gates submit */
+      }
+    }
+  };
   // Embedded Stripe Checkout session client_secret. When set, modal body
   // swaps to the inline checkout panel — no navigation.
   const [checkoutSecret, setCheckoutSecret] = useState<string | null>(null);
@@ -358,6 +374,14 @@ export default function PackageBuilderModal({
       return;
     }
 
+    // Age compliance — the landing pages skip the entrance gate, so the
+    // 21+ confirmation is required here before anything is created.
+    if (!ageConfirmed) {
+      setSubmitError('Please confirm everyone receiving this delivery is 21 or older.');
+      setSubmitting(false);
+      return;
+    }
+
     // Address fields are optional from this surface — the dashboard
     // collects delivery address on its own checkout step.
 
@@ -497,6 +521,7 @@ export default function PackageBuilderModal({
     setDeliveryDate(null);
     setPeople(M.defaultPeople);
     setExtraSelection([]);
+    setAgeConfirmed(false);
   };
 
   if (!open) return null;
@@ -683,6 +708,8 @@ export default function PackageBuilderModal({
                   setName={setContactName}
                   setEmail={setContactEmail}
                   setPhone={setContactPhone}
+                  ageConfirmed={ageConfirmed}
+                  onAgeConfirmedChange={handleAgeConfirmedChange}
                   deliveryAddress={deliveryAddress}
                   deliveryCity={deliveryCity}
                   deliveryZip={deliveryZip}
@@ -775,8 +802,9 @@ export default function PackageBuilderModal({
                   type="submit"
                   form="quote-form"
                   onClick={() => setSubmitMode('quote')}
-                  disabled={submitting}
-                  className="px-3 py-2 text-xs sm:text-sm font-bold rounded-md tracking-wide transition-all hover:scale-[1.03] shadow-md whitespace-nowrap disabled:opacity-60"
+                  disabled={submitting || !ageConfirmed}
+                  title={!ageConfirmed ? 'Check the 21+ confirmation above to continue' : undefined}
+                  className="px-3 py-2 text-xs sm:text-sm font-bold rounded-md tracking-wide transition-all hover:scale-[1.03] shadow-md whitespace-nowrap disabled:opacity-60 disabled:hover:scale-100"
                   style={{
                     background: '#FFFFFF',
                     color: T.navy,
@@ -789,8 +817,9 @@ export default function PackageBuilderModal({
                   type="submit"
                   form="quote-form"
                   onClick={() => setSubmitMode('checkout')}
-                  disabled={submitting}
-                  className="px-4 py-2 text-xs sm:text-sm font-bold rounded-md tracking-wide transition-all hover:scale-[1.03] shadow-md whitespace-nowrap disabled:opacity-60"
+                  disabled={submitting || !ageConfirmed}
+                  title={!ageConfirmed ? 'Check the 21+ confirmation above to continue' : undefined}
+                  className="px-4 py-2 text-xs sm:text-sm font-bold rounded-md tracking-wide transition-all hover:scale-[1.03] shadow-md whitespace-nowrap disabled:opacity-60 disabled:hover:scale-100"
                   style={{ background: T.primary, color: T.primaryText }}
                 >
                   {submitting ? '…' : 'Pay Now →'}
@@ -1316,6 +1345,8 @@ function ReviewStep({
   setName,
   setEmail,
   setPhone,
+  ageConfirmed,
+  onAgeConfirmedChange,
   deliveryAddress,
   deliveryCity,
   deliveryZip,
@@ -1342,6 +1373,8 @@ function ReviewStep({
   setName: (s: string) => void;
   setEmail: (s: string) => void;
   setPhone: (s: string) => void;
+  ageConfirmed: boolean;
+  onAgeConfirmedChange: (checked: boolean) => void;
   deliveryAddress: string;
   deliveryCity: string;
   deliveryZip: string;
@@ -1542,6 +1575,30 @@ function ReviewStep({
             </div>
           )}
         </div>
+
+        {/* Age compliance — required. The landing pages skip the site-wide
+            entrance gate, so 21+ gets confirmed here instead. */}
+        <label
+          className="mt-3 flex items-start gap-3 rounded-md p-3 cursor-pointer select-none transition-colors"
+          style={{
+            background: '#FFFFFF',
+            border: `1.5px solid ${ageConfirmed ? theme.blue : '#E5E7EB'}`,
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={ageConfirmed}
+            onChange={(e) => onAgeConfirmedChange(e.target.checked)}
+            className="mt-0.5 h-5 w-5 flex-shrink-0 cursor-pointer"
+            style={{ accentColor: theme.blue }}
+          />
+          <span className="text-base leading-snug" style={{ color: theme.navy }}>
+            <strong>Yes — everyone receiving this delivery is 21+.</strong>{' '}
+            <span className="text-sm text-gray-600">
+              TABC-licensed retailer. Valid ID checked at the door, no exceptions.
+            </span>
+          </span>
+        </label>
 
         {submitError && (
           <div

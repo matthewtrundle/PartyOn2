@@ -103,6 +103,21 @@ export default function QuickBuyModal({
   const sundaySelected = isSunday(deliveryDate);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Age compliance — required checkbox before Pay Now. The landing pages
+  // skip the site-wide entrance gate (see AgeVerification.tsx), so this
+  // is where 21+ gets confirmed. Never pre-checked.
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
+  const handleAgeConfirmedChange = (checked: boolean) => {
+    setAgeConfirmed(checked);
+    if (checked) {
+      try {
+        // Same flag the site-wide gate reads — no re-prompt on this device.
+        localStorage.setItem('age_verified', 'true');
+      } catch {
+        /* localStorage disabled — checkbox state alone still gates submit */
+      }
+    }
+  };
   // When set, swap the form view for the embedded Stripe Checkout panel.
   const [checkoutSecret, setCheckoutSecret] = useState<string | null>(null);
   // URL we redirect to if Stripe.js can't load in-page (fallback to the
@@ -239,6 +254,7 @@ export default function QuickBuyModal({
     zip &&
     deliveryDate &&
     !sundaySelected &&
+    ageConfirmed &&
     paidLines.length > 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -720,6 +736,27 @@ export default function QuickBuyModal({
                 {SUNDAY_CLOSED_NOTE}
               </div>
             )}
+
+            {/* Age compliance — required. The landing pages skip the
+                site-wide entrance gate, so 21+ gets confirmed here. */}
+            <label
+              className="flex items-start gap-3 rounded-md p-3 cursor-pointer select-none bg-white transition-colors"
+              style={{ border: `1.5px solid ${ageConfirmed ? T.blue : '#E5E7EB'}` }}
+            >
+              <input
+                type="checkbox"
+                checked={ageConfirmed}
+                onChange={(e) => handleAgeConfirmedChange(e.target.checked)}
+                className="mt-0.5 h-5 w-5 flex-shrink-0 cursor-pointer"
+                style={{ accentColor: T.blue }}
+              />
+              <span className="text-base leading-snug" style={{ color: T.navy }}>
+                <strong>Yes — everyone receiving this delivery is 21+.</strong>{' '}
+                <span className="text-sm text-gray-600">
+                  TABC-licensed retailer. Valid ID checked at the door, no exceptions.
+                </span>
+              </span>
+            </label>
 
             {error && (
               <div

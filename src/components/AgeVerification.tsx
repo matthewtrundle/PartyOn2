@@ -1,7 +1,27 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import AgeVerificationModal from './AgeVerificationModal'
+
+/**
+ * Paid-landing pages where the entrance gate is intentionally skipped.
+ *
+ * These are lead-gen pages (no on-page purchase): cold ad traffic bounces
+ * hard when a modal blocks the page before a single word is read. Age
+ * compliance moves to an explicit, required "21+" checkbox inside the
+ * package-builder / quick-buy checkout steps (see PackageBuilderModal /
+ * QuickBuyModal), and the legal control remains carding at the door.
+ * Every other route keeps the standard first-visit gate.
+ */
+const AGE_GATE_EXEMPT_PATHS = [
+  '/austin-bachelor-party-delivery',
+  '/austin-bachelorette-party-delivery',
+  '/austin-corporate-event-delivery',
+  '/austin-wedding-weekend-delivery',
+  '/austin-wedding-venue-boats',
+  '/event-quiz',
+]
 
 /**
  * Detect whether the page is being embedded on another site.
@@ -46,8 +66,17 @@ function isEmbeddedContext(): boolean {
 
 export default function AgeVerification() {
   const [isVisible, setIsVisible] = useState(false)
+  const pathname = usePathname()
 
   useEffect(() => {
+    // Paid landing pages defer the gate to the in-modal 21+ checkbox.
+    // No localStorage stamp here — if the visitor navigates to the rest
+    // of the site without checking out, the standard gate still applies.
+    if (pathname && AGE_GATE_EXEMPT_PATHS.includes(pathname)) {
+      setIsVisible(false)
+      return
+    }
+
     // Partner embeds skip the gate entirely. The partner site (Premier
     // Party Cruises, etc.) has already filtered for 21+ traffic, and
     // popping our modal on top of their UX is friction we don't want.
@@ -66,7 +95,7 @@ export default function AgeVerification() {
     if (!ageVerified) {
       setIsVisible(true)
     }
-  }, [])
+  }, [pathname])
 
   const handleVerify = () => {
     setIsVisible(false)
