@@ -79,15 +79,7 @@ export const LEAD_MAGNETS: LeadMagnet[] = [
     cta: 'Get the playbook →',
     askPhone: true,
     accent: { primary: '#D4AF37', primaryText: '#0A1F33', navy: '#0A1F33' },
-    pages: [
-      '/',
-      '/austin-bachelor-party-delivery',
-      '/austin-bachelorette-party-delivery',
-      '/austin-corporate-event-delivery',
-      '/austin-wedding-weekend-delivery',
-      '/services/*',
-      '/flyer',
-    ],
+    pages: ['/', '/services/*', '/flyer'],
     excludePages: [
       '/admin/*',
       '/ops/*',
@@ -100,6 +92,15 @@ export const LEAD_MAGNETS: LeadMagnet[] = [
       '/affiliate/*',
       '/wedding-drink-calculator',
       '/event-quiz',
+      // Paid-traffic landing pages — same reasoning as the two excludes
+      // above: the popup fires (25s / 55% scroll) right as ad visitors
+      // reach the packages section and competes with the page's own
+      // higher-value builder/quick-buy conversion. The flyer stays
+      // available on the homepage, /services, and /flyer.
+      '/austin-bachelor-party-delivery',
+      '/austin-bachelorette-party-delivery',
+      '/austin-corporate-event-delivery',
+      '/austin-wedding-weekend-delivery',
     ],
     triggers: [
       { type: 'time', seconds: 25 },

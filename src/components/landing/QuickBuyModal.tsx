@@ -19,6 +19,8 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLeadCapture } from '@/lib/leads/client';
+import { fireLeadConversionAndFlush } from '@/lib/leads/fireLeadConversion';
+import { getAttribution } from '@/lib/analytics/attribution';
 import { trackFunnelStep } from '@/lib/experiments/funnelTrack';
 import type { LandingConfig, Package } from './types';
 import type { UpsellProducts, UpsellProduct } from '@/lib/landing/getUpsellProducts';
@@ -101,6 +103,21 @@ export default function QuickBuyModal({
   const sundaySelected = isSunday(deliveryDate);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Age compliance — required checkbox before Pay Now. The landing pages
+  // skip the site-wide entrance gate (see AgeVerification.tsx), so this
+  // is where 21+ gets confirmed. Never pre-checked.
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
+  const handleAgeConfirmedChange = (checked: boolean) => {
+    setAgeConfirmed(checked);
+    if (checked) {
+      try {
+        // Same flag the site-wide gate reads — no re-prompt on this device.
+        localStorage.setItem('age_verified', 'true');
+      } catch {
+        /* localStorage disabled — checkbox state alone still gates submit */
+      }
+    }
+  };
   // When set, swap the form view for the embedded Stripe Checkout panel.
   const [checkoutSecret, setCheckoutSecret] = useState<string | null>(null);
   // URL we redirect to if Stripe.js can't load in-page (fallback to the
@@ -237,6 +254,7 @@ export default function QuickBuyModal({
     zip &&
     deliveryDate &&
     !sundaySelected &&
+    ageConfirmed &&
     paidLines.length > 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -293,6 +311,9 @@ export default function QuickBuyModal({
           items,
           deliveryNotes: `Quick-Buy from ${pkg.name} (${occasion} landing page)`,
           upsellVariantId: upsellProducts?.variantId,
+          // First-touch UTM + ad click ids — lands in DraftOrder.adminNotes
+          // so ops can join the order back to the ad click.
+          attribution: getAttribution(),
         }),
       });
       const json = await res.json();
@@ -302,6 +323,17 @@ export default function QuickBuyModal({
       if (!json.token) {
         throw new Error('No invoice token returned.');
       }
+
+      // A draft order now exists — that's a lead by any definition. Fire the
+      // cross-network conversion (Meta Lead + GA4 generate_lead) and wait
+      // ≤400ms for gtag to flush, since the fallback path below hard-redirects
+      // to the invoice page. This was previously missing entirely: quick-buy
+      // (the highest-intent CTA) was invisible to Google Ads.
+      await fireLeadConversionAndFlush({
+        occasion,
+        placement: 'quick-buy',
+        value: subtotal,
+      });
 
       // Try embedded Stripe Checkout first — keeps the customer in the
       // popup. Only attempt if the publishable key is exposed at build time;
@@ -362,7 +394,7 @@ export default function QuickBuyModal({
         >
           <div>
             <p
-              className="text-[10px] font-bold tracking-[0.2em] mb-0.5"
+              className="text-xs font-bold tracking-[0.2em] mb-0.5"
               style={{ color: T.primary }}
             >
               QUICK BUY
@@ -373,7 +405,7 @@ export default function QuickBuyModal({
           </div>
           <button
             onClick={onClose}
-            className="rounded-full w-9 h-9 flex items-center justify-center text-2xl leading-none hover:bg-white/10 transition-colors"
+            className="rounded-lg w-9 h-9 flex items-center justify-center text-2xl leading-none hover:bg-white/10 transition-colors"
             aria-label="Close"
           >
             ×
@@ -386,7 +418,7 @@ export default function QuickBuyModal({
             <div>
               <div className="mb-3 text-center">
                 <p
-                  className="text-[10px] font-bold tracking-[0.22em] mb-1"
+                  className="text-xs font-bold tracking-[0.22em] mb-1"
                   style={{ color: T.primary }}
                 >
                   SECURE CHECKOUT · STRIPE
@@ -445,7 +477,7 @@ export default function QuickBuyModal({
                   >
                     {people}
                   </div>
-                  <div className="text-[10px] uppercase tracking-widest text-gray-500 -mt-0.5">
+                  <div className="text-xs uppercase tracking-widest text-gray-500 -mt-0.5">
                     people
                   </div>
                 </div>
@@ -472,7 +504,7 @@ export default function QuickBuyModal({
               className="w-full"
               style={{ accentColor: T.primary }}
             />
-            <div className="flex justify-between text-[10px] text-gray-500 mt-1">
+            <div className="flex justify-between text-xs text-gray-500 mt-1">
               <span>{MIN_PEOPLE}</span>
               <span>{MAX_PEOPLE}</span>
             </div>
@@ -481,7 +513,7 @@ export default function QuickBuyModal({
           {/* Line items with qty controls */}
           <div className="mb-5 rounded-xl bg-white border border-gray-200 overflow-hidden">
             <div
-              className="px-4 py-2 text-[10px] font-bold tracking-widest"
+              className="px-4 py-2 text-xs font-bold tracking-widest"
               style={{ background: '#F9FAFB', color: T.navy }}
             >
               IN YOUR PACKAGE
@@ -506,7 +538,7 @@ export default function QuickBuyModal({
                   >
                     {l.name}
                   </div>
-                  <div className="text-[11px] text-gray-500 mt-0.5 mb-2">
+                  <div className="text-sm text-gray-500 mt-0.5 mb-2">
                     {l.freebie ? (
                       <span style={{ color: '#047857' }}>FREE · party bundle</span>
                     ) : (
@@ -533,7 +565,7 @@ export default function QuickBuyModal({
                           return n;
                         })
                       }
-                      className="text-[11px] font-semibold underline whitespace-nowrap px-1 py-0.5 rounded transition-colors hover:bg-red-50"
+                      className="text-sm font-semibold underline whitespace-nowrap px-1 py-0.5 rounded transition-colors hover:bg-red-50"
                       style={{ color: '#B91C1C' }}
                       aria-label={`Remove ${l.name} from package`}
                     >
@@ -608,7 +640,7 @@ export default function QuickBuyModal({
             data-lead-widget="QUICK_BUY"
             className="space-y-2.5"
           >
-            <div ref={contactRef} className="text-[10px] font-bold tracking-widest text-gray-500">
+            <div ref={contactRef} className="text-xs font-bold tracking-widest text-gray-500">
               CONTACT
             </div>
             <div className="grid grid-cols-2 gap-2.5">
@@ -620,7 +652,7 @@ export default function QuickBuyModal({
                   lead.onBlurField('name', e.target.value, { firstName: e.target.value })
                 }
                 placeholder="Full name"
-                className="bg-white rounded-md px-3 py-2.5 text-sm border border-gray-200 focus:outline-none focus:border-blue-500"
+                className="bg-white rounded-md px-3 py-2.5 text-base border border-gray-200 focus:outline-none focus:border-blue-500"
               />
               <input
                 required
@@ -631,7 +663,7 @@ export default function QuickBuyModal({
                   lead.onBlurField('phone', e.target.value, { phone: e.target.value })
                 }
                 placeholder="Phone"
-                className="bg-white rounded-md px-3 py-2.5 text-sm border border-gray-200 focus:outline-none focus:border-blue-500"
+                className="bg-white rounded-md px-3 py-2.5 text-base border border-gray-200 focus:outline-none focus:border-blue-500"
               />
             </div>
             <input
@@ -644,30 +676,30 @@ export default function QuickBuyModal({
                 lead.onBlurField('email', e.target.value, { email: e.target.value });
               }}
               placeholder="Email"
-              className="w-full bg-white rounded-md px-3 py-2.5 text-sm border border-gray-200 focus:outline-none focus:border-blue-500"
+              className="w-full bg-white rounded-md px-3 py-2.5 text-base border border-gray-200 focus:outline-none focus:border-blue-500"
             />
 
-            <div className="text-[10px] font-bold tracking-widest text-gray-500 pt-2">DELIVERY</div>
+            <div className="text-xs font-bold tracking-widest text-gray-500 pt-2">DELIVERY</div>
             <input
               required
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               placeholder="Street address"
-              className="w-full bg-white rounded-md px-3 py-2.5 text-sm border border-gray-200 focus:outline-none focus:border-blue-500"
+              className="w-full bg-white rounded-md px-3 py-2.5 text-base border border-gray-200 focus:outline-none focus:border-blue-500"
             />
             <div className="grid grid-cols-2 gap-2.5">
               <input
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
                 placeholder="City"
-                className="bg-white rounded-md px-3 py-2.5 text-sm border border-gray-200 focus:outline-none focus:border-blue-500"
+                className="bg-white rounded-md px-3 py-2.5 text-base border border-gray-200 focus:outline-none focus:border-blue-500"
               />
               <input
                 required
                 value={zip}
                 onChange={(e) => setZip(e.target.value)}
                 placeholder="ZIP"
-                className="bg-white rounded-md px-3 py-2.5 text-sm border border-gray-200 focus:outline-none focus:border-blue-500"
+                className="bg-white rounded-md px-3 py-2.5 text-base border border-gray-200 focus:outline-none focus:border-blue-500"
               />
             </div>
             <div className="grid grid-cols-2 gap-2.5">
@@ -677,12 +709,12 @@ export default function QuickBuyModal({
                 value={deliveryDate}
                 onChange={(e) => setDeliveryDate(e.target.value)}
                 min={new Date(Date.now() + 86400000).toISOString().slice(0, 10)}
-                className="bg-white rounded-md px-3 py-2.5 text-sm border border-gray-200 focus:outline-none focus:border-blue-500"
+                className="bg-white rounded-md px-3 py-2.5 text-base border border-gray-200 focus:outline-none focus:border-blue-500"
               />
               <select
                 value={deliveryTime}
                 onChange={(e) => setDeliveryTime(e.target.value)}
-                className="bg-white rounded-md px-3 py-2.5 text-sm border border-gray-200 focus:outline-none focus:border-blue-500"
+                className="bg-white rounded-md px-3 py-2.5 text-base border border-gray-200 focus:outline-none focus:border-blue-500"
                 disabled={sundaySelected}
               >
                 {deliveryWindows.map((w) => (
@@ -694,7 +726,7 @@ export default function QuickBuyModal({
             </div>
             {sundaySelected && (
               <div
-                className="rounded-md p-2.5 text-[11px] leading-snug"
+                className="rounded-md p-2.5 text-sm leading-snug"
                 style={{
                   background: '#FEF3C7',
                   color: '#92400E',
@@ -705,6 +737,27 @@ export default function QuickBuyModal({
               </div>
             )}
 
+            {/* Age compliance — required. The landing pages skip the
+                site-wide entrance gate, so 21+ gets confirmed here. */}
+            <label
+              className="flex items-start gap-3 rounded-md p-3 cursor-pointer select-none bg-white transition-colors"
+              style={{ border: `1.5px solid ${ageConfirmed ? T.blue : '#E5E7EB'}` }}
+            >
+              <input
+                type="checkbox"
+                checked={ageConfirmed}
+                onChange={(e) => handleAgeConfirmedChange(e.target.checked)}
+                className="mt-0.5 h-5 w-5 flex-shrink-0 cursor-pointer"
+                style={{ accentColor: T.blue }}
+              />
+              <span className="text-base leading-snug" style={{ color: T.navy }}>
+                <strong>Yes — everyone receiving this delivery is 21+.</strong>{' '}
+                <span className="text-sm text-gray-600">
+                  TABC-licensed retailer. Valid ID checked at the door, no exceptions.
+                </span>
+              </span>
+            </label>
+
             {error && (
               <div
                 className="rounded-md p-3 text-sm"
@@ -714,7 +767,7 @@ export default function QuickBuyModal({
               </div>
             )}
 
-            <p className="text-[11px] text-gray-500 text-center pt-1">
+            <p className="text-sm text-gray-500 text-center pt-1">
               Next step: secure Stripe checkout. No payment is captured until you confirm.
             </p>
           </form>
@@ -736,11 +789,11 @@ export default function QuickBuyModal({
           <button
             type="button"
             onClick={onClose}
-            className="flex flex-col items-center justify-center px-2 rounded-md hover:bg-white/10 transition-colors flex-shrink-0"
+            className="flex flex-col items-center justify-center px-2 rounded-lg hover:bg-white/10 transition-colors flex-shrink-0"
             style={{ color: '#FFFFFF', opacity: 0.85 }}
             aria-label="Back to packages"
           >
-            <span className="text-[10px] sm:text-xs font-semibold leading-none">Back</span>
+            <span className="text-xs font-semibold leading-none">Back</span>
             <span className="text-base leading-none mt-0.5">←</span>
           </button>
 
@@ -748,7 +801,7 @@ export default function QuickBuyModal({
           <div className="flex-1 flex items-center justify-center gap-3 sm:gap-4 min-w-0">
             <div className="text-center">
               <div
-                className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.18em]"
+                className="text-xs font-bold uppercase tracking-[0.18em]"
                 style={{ color: T.primary, opacity: 0.9 }}
               >
                 Per person
@@ -761,7 +814,7 @@ export default function QuickBuyModal({
               </div>
             </div>
             <div className="text-center pl-3 border-l border-white/15">
-              <div className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.18em] opacity-75">
+              <div className="text-xs font-bold uppercase tracking-[0.18em] opacity-75">
                 Total
               </div>
               <div
@@ -777,7 +830,7 @@ export default function QuickBuyModal({
             type="submit"
             form="qb-form"
             disabled={!canSubmit}
-            className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold rounded-md transition-all disabled:opacity-60 disabled:cursor-not-allowed shadow-md whitespace-nowrap flex-shrink-0"
+            className="px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold rounded-lg transition-all disabled:opacity-60 disabled:cursor-not-allowed shadow-md whitespace-nowrap flex-shrink-0"
             style={{ background: T.primary, color: T.primaryText }}
           >
             {submitting ? '…' : 'Pay now →'}

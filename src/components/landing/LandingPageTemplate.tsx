@@ -8,10 +8,13 @@ import Image from 'next/image';
 import Link from 'next/link';
 import PackageBuilderModal from './PackageBuilderModal';
 import QuickBuyModal from './QuickBuyModal';
-import HeroSlideshow from './HeroSlideshow';
-import type { LandingConfig, Catalog, Package, ThemeColors } from './types';
+import HeroBackdrop from './sections/HeroBackdrop';
+import PackageCard from './sections/PackageCard';
+import { PhoneIcon, ChatIcon, CheckIcon } from './sections/icons';
+import type { LandingConfig, Catalog, Package } from './types';
 import type { UpsellProducts } from '@/lib/landing/getUpsellProducts';
 import { generateFAQSchema } from '@/lib/seo/schemas';
+import { trackContactClick } from '@/lib/analytics/ga4-events';
 import { experimentsForPath, type BachelorHeroPayload, type CtaCopyPayload } from '@/lib/experiments/registry';
 import { useVariant } from '@/lib/experiments/clientAssign';
 import { useFunnelTracker } from '@/lib/experiments/funnelTrack';
@@ -217,6 +220,7 @@ export default function LandingPageTemplate({
           </Link>
           <a
             href={config.phoneTel}
+            onClick={() => trackContactClick('phone', 'header', occasion, config.phoneTel)}
             className="text-sm sm:text-base font-semibold"
             style={{ color: T.blue }}
           >
@@ -226,21 +230,32 @@ export default function LandingPageTemplate({
         </div>
       </header>
 
-      {/* HERO */}
+      {/* HERO — one cinematic photo (or slow crossfade), navy glass panel */}
       <section className="relative min-h-[88vh] flex items-center overflow-hidden">
         <div className="absolute inset-0">
-          <HeroSlideshow />
+          <HeroBackdrop
+            images={
+              config.heroImages && config.heroImages.length > 0
+                ? config.heroImages
+                : [
+                    {
+                      src: config.heroImage,
+                      alt: `${config.eventLabel} — Party On Delivery, Austin TX`,
+                    },
+                  ]
+            }
+          />
           <div
             className="absolute inset-0"
             style={{
-              background: `linear-gradient(105deg, ${T.navy}EB 0%, ${T.navy}D9 45%, ${T.navy}8C 100%)`,
+              background: `linear-gradient(105deg, ${T.navy}E6 0%, ${T.navy}CC 45%, ${T.navy}66 100%)`,
             }}
           />
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-20 md:py-28 w-full">
           <div
-            className="max-w-3xl rounded-2xl p-6 sm:p-8 md:p-10"
+            className="max-w-3xl rounded-2xl p-6 sm:p-8 md:p-10 animate-fade-up"
             style={{
               background: `${T.navy}B8`,
               boxShadow: '0 25px 60px -15px rgba(0,0,0,0.6)',
@@ -281,10 +296,10 @@ export default function LandingPageTemplate({
                 {config.heroBullets.map((b) => (
                   <li key={b} className="flex items-start gap-2 leading-snug">
                     <span
-                      className="flex-shrink-0 font-bold"
+                      className="flex-shrink-0 mt-0.5"
                       style={{ color: T.primary }}
                     >
-                      ✓
+                      <CheckIcon className="w-5 h-5" />
                     </span>
                     <span>{b}</span>
                   </li>
@@ -303,7 +318,7 @@ export default function LandingPageTemplate({
               <button
                 type="button"
                 onClick={openBuilder}
-                className="inline-flex items-center justify-center font-bold text-base sm:text-lg px-8 py-5 rounded-md tracking-wide transition-colors shadow-xl"
+                className="inline-flex items-center justify-center font-bold text-base sm:text-lg px-8 py-5 rounded-lg tracking-[0.08em] transition-colors shadow-xl"
                 style={{ background: T.primary, color: T.primaryText }}
               >
                 {primaryCtaText}
@@ -313,7 +328,10 @@ export default function LandingPageTemplate({
                   href={config.planningCallUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center border-2 border-white text-white font-semibold text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 rounded-md transition-transform hover:scale-[1.02] hover:bg-white/15 whitespace-nowrap"
+                  onClick={() =>
+                    trackContactClick('planning_call', 'hero', occasion, config.planningCallUrl)
+                  }
+                  className="inline-flex items-center justify-center border-2 border-white text-white font-semibold text-sm sm:text-base px-4 sm:px-6 py-4 sm:py-5 rounded-lg tracking-[0.08em] transition-transform hover:scale-[1.02] hover:bg-white/15 whitespace-nowrap"
                 >
                   {config.secondaryCtaText ?? 'SCHEDULE A 10-MIN CALL →'}
                 </a>
@@ -324,15 +342,24 @@ export default function LandingPageTemplate({
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-white/90 mb-4">
               <a
                 href={config.phoneTel}
+                onClick={() => trackContactClick('phone', 'hero', occasion, config.phoneTel)}
                 className="inline-flex items-center gap-1.5 font-semibold hover:text-white"
               >
-                📞 Call {config.phoneDisplay}
+                <PhoneIcon className="w-4 h-4" /> Call {config.phoneDisplay}
               </a>
               <a
                 href={`sms:${config.phoneTel.replace('tel:', '')}`}
+                onClick={() =>
+                  trackContactClick(
+                    'sms',
+                    'hero',
+                    occasion,
+                    `sms:${config.phoneTel.replace('tel:', '')}`,
+                  )
+                }
                 className="inline-flex items-center gap-1.5 font-semibold hover:text-white"
               >
-                💬 Text us
+                <ChatIcon className="w-4 h-4" /> Text us
               </a>
             </div>
 
@@ -427,7 +454,14 @@ export default function LandingPageTemplate({
 
           <p className="text-center text-gray-600 mt-16">
             {config.customLine.split('—')[0]}
-            <a href={config.phoneTel} className="font-bold underline" style={{ color: T.blue }}>
+            <a
+              href={config.phoneTel}
+              onClick={() =>
+                trackContactClick('phone', 'packages_custom_line', occasion, config.phoneTel)
+              }
+              className="font-bold underline"
+              style={{ color: T.blue }}
+            >
               {' '}
               {config.phoneDisplay}
             </a>
@@ -491,7 +525,7 @@ export default function LandingPageTemplate({
                         {s.title}
                       </h3>
                       {s.teaser && (
-                        <p className="text-xs sm:text-sm md:text-base text-gray-600 mt-1 italic leading-snug">
+                        <p className="editorial text-sm md:text-base text-gray-600 mt-1 leading-snug">
                           {s.teaser}
                         </p>
                       )}
@@ -572,8 +606,9 @@ export default function LandingPageTemplate({
               <ul className="space-y-3">
                 {config.venues.map((v) => (
                   <li key={v.area} className="flex gap-3">
-                    <span className="text-xl mt-0.5" style={{ color: T.primary }}>
-                      ✓
+                    {/* Brand blue, not theme yellow — yellow-on-white fails contrast. */}
+                    <span className="mt-1 flex-shrink-0" style={{ color: T.blue }}>
+                      <CheckIcon className="w-5 h-5" />
                     </span>
                     <div>
                       <span className="font-bold" style={{ color: T.navy }}>
@@ -613,7 +648,9 @@ export default function LandingPageTemplate({
                 <div className="text-lg mb-3" style={{ color: T.primary }}>
                   ★★★★★
                 </div>
-                <p className="text-gray-100 leading-relaxed mb-5">&ldquo;{r.quote}&rdquo;</p>
+                <p className="editorial text-lg text-gray-100 leading-relaxed mb-5">
+                  &ldquo;{r.quote}&rdquo;
+                </p>
                 <div className="text-sm">
                   <div className="font-bold text-white">{r.author}</div>
                   <div className="opacity-70">{r.detail}</div>
@@ -740,7 +777,7 @@ export default function LandingPageTemplate({
               <button
                 type="button"
                 onClick={openBuilder}
-                className="inline-flex items-center justify-center font-bold text-lg px-10 py-5 rounded-md tracking-wide transition-colors shadow-xl"
+                className="inline-flex items-center justify-center font-bold text-lg px-10 py-5 rounded-lg tracking-[0.08em] transition-colors shadow-xl"
                 style={{ background: T.primary, color: T.primaryText }}
               >
                 {config.ctaText}
@@ -750,21 +787,41 @@ export default function LandingPageTemplate({
                   href={config.planningCallUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center border-2 border-white text-white font-semibold text-base sm:text-lg px-5 sm:px-8 py-4 sm:py-5 rounded-md transition-transform hover:scale-[1.02] hover:bg-white/15 whitespace-nowrap"
+                  onClick={() =>
+                    trackContactClick(
+                      'planning_call',
+                      'final_cta',
+                      occasion,
+                      config.planningCallUrl,
+                    )
+                  }
+                  className="inline-flex items-center justify-center border-2 border-white text-white font-semibold text-base sm:text-lg px-5 sm:px-8 py-4 sm:py-5 rounded-lg tracking-[0.08em] transition-transform hover:scale-[1.02] hover:bg-white/15 whitespace-nowrap"
                 >
                   {config.secondaryCtaText ?? 'SCHEDULE A 10-MIN CALL →'}
                 </a>
               )}
             </div>
             <div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-white/90 font-semibold">
-              <a href={config.phoneTel} className="hover:text-white">
-                📞 Call {config.phoneDisplay}
+              <a
+                href={config.phoneTel}
+                onClick={() => trackContactClick('phone', 'final_cta', occasion, config.phoneTel)}
+                className="inline-flex items-center gap-1.5 hover:text-white"
+              >
+                <PhoneIcon className="w-4 h-4" /> Call {config.phoneDisplay}
               </a>
               <a
                 href={`sms:${config.phoneTel.replace('tel:', '')}`}
-                className="hover:text-white"
+                onClick={() =>
+                  trackContactClick(
+                    'sms',
+                    'final_cta',
+                    occasion,
+                    `sms:${config.phoneTel.replace('tel:', '')}`,
+                  )
+                }
+                className="inline-flex items-center gap-1.5 hover:text-white"
               >
-                💬 Text us
+                <ChatIcon className="w-4 h-4" /> Text us
               </a>
             </div>
           </div>
@@ -788,7 +845,7 @@ export default function LandingPageTemplate({
         <button
           type="button"
           onClick={openBuilder}
-          className="flex-1 inline-flex items-center justify-center border-2 font-bold py-3 rounded-md text-xs whitespace-nowrap"
+          className="flex-1 inline-flex items-center justify-center border-2 font-bold py-3 rounded-lg text-sm whitespace-nowrap"
           style={{ borderColor: T.navy, color: T.navy }}
         >
           Build my package
@@ -796,7 +853,7 @@ export default function LandingPageTemplate({
         <button
           type="button"
           onClick={openBuilder}
-          className="flex-1 inline-flex items-center justify-center font-bold py-3 rounded-md text-xs whitespace-nowrap"
+          className="flex-1 inline-flex items-center justify-center font-bold py-3 rounded-lg text-sm whitespace-nowrap"
           style={{ background: T.primary, color: T.primaryText }}
         >
           Checkout now →
@@ -831,301 +888,3 @@ export default function LandingPageTemplate({
 
 // Helper export to get a typed ReactNode where needed
 export type { ReactNode };
-
-// ----- Package card with itemized dropdown ---------------------------------
-
-function PackageCard({
-  pkg,
-  theme: T,
-  onCta,
-  onBuyNow,
-}: {
-  pkg: Package;
-  theme: ThemeColors;
-  /** Opens the "Build my own" Package Builder modal. */
-  onCta: () => void;
-  /** Opens the Quick-Buy modal pre-loaded with this package. */
-  onBuyNow: (pkg: Package) => void;
-}) {
-  const [open, setOpen] = useState(false);
-
-  // Modern packages use lineItems + packagePrice + freebiesValue.
-  // Legacy/static packages use items + price + save (string).
-  const isLive = !!pkg.lineItems && pkg.packagePrice != null;
-
-  const priceLabel = isLive ? `$${pkg.packagePrice}` : pkg.price ?? '';
-  const saveLabel = isLive
-    ? `Save $${pkg.freebiesValue ?? 0}`
-    : pkg.save ?? '';
-
-  const alcoholItems = (pkg.lineItems ?? []).filter((i) => !i.freebie);
-  const freebieItems = (pkg.lineItems ?? []).filter((i) => i.freebie);
-
-  return (
-    <div
-      className="relative rounded-2xl overflow-hidden flex flex-col bg-white border-2 transition-all"
-      style={{
-        borderColor: pkg.featured ? T.primary : '#E5E7EB',
-        boxShadow: pkg.featured
-          ? '0 25px 50px -12px rgba(0,0,0,0.18)'
-          : '0 1px 3px rgba(0,0,0,0.05)',
-        transform: pkg.featured ? 'scale(1.03)' : 'none',
-      }}
-    >
-      {pkg.featured && (
-        <div
-          className="absolute top-4 right-4 z-10 text-xs font-bold tracking-widest px-3 py-1 rounded-full"
-          style={{ background: T.primary, color: T.primaryText }}
-        >
-          MOST BOOKED
-        </div>
-      )}
-      <div className="relative w-full flex-shrink-0" style={{ height: '208px' }}>
-        <Image
-          src={pkg.image}
-          alt={pkg.name}
-          fill
-          sizes="(min-width: 768px) 33vw, 100vw"
-          className="object-cover"
-        />
-      </div>
-      <div className="p-6 flex flex-col flex-1">
-        <div className="flex items-start justify-between gap-3 mb-2">
-          <h3 className="font-heading text-2xl font-bold leading-tight" style={{ color: T.navy }}>
-            {pkg.name}
-          </h3>
-          {saveLabel && (
-            <span
-              className="text-xs font-bold px-2 py-1 rounded whitespace-nowrap"
-              style={{ background: '#10B98119', color: '#047857' }}
-            >
-              {saveLabel}
-            </span>
-          )}
-        </div>
-        <div className="flex items-baseline gap-2 mb-3">
-          <span className="font-heading text-4xl font-bold" style={{ color: T.blue }}>
-            {priceLabel}
-          </span>
-          <span className="text-sm text-gray-500">{pkg.serves}</span>
-        </div>
-        <p className="text-gray-600 mb-4 leading-relaxed">{pkg.blurb}</p>
-
-        {/* Summary bullets — category roll-ups, not item names. The detailed
-            list lives in the "See what's inside" dropdown below. */}
-        {isLive && pkg.lineItems && pkg.lineItems.length > 0 && (
-          <ul className="mb-4 space-y-1.5 text-sm text-gray-700">
-            {summarizeAlcohol(alcoholItems).map((line, i) => (
-              <li key={`sum-${i}`} className="flex items-start gap-2">
-                <span className="mt-0.5 font-bold" style={{ color: T.primary }}>
-                  ✓
-                </span>
-                <span>{line}</span>
-              </li>
-            ))}
-            {freebieItems.length > 0 && (
-              <li className="flex items-start gap-2">
-                <span className="mt-0.5 font-bold" style={{ color: '#047857' }}>
-                  ★
-                </span>
-                <span style={{ color: '#047857' }}>
-                  <strong>Free party bundle:</strong>{' '}
-                  {freebieItems
-                    .map((f) => f.name.split(' • ')[0].replace(/^\d+\s*/, ''))
-                    .slice(0, 4)
-                    .join(', ')}
-                  {freebieItems.length > 4 ? '…' : ''}
-                </span>
-              </li>
-            )}
-          </ul>
-        )}
-
-        {/* Itemized dropdown */}
-        {isLive ? (
-          <div className="mb-5 flex-1">
-            <button
-              type="button"
-              onClick={() => setOpen((o) => !o)}
-              className="w-full flex items-center justify-between text-left font-bold text-sm py-2 border-b transition-colors"
-              style={{ color: T.navy, borderColor: '#E5E7EB' }}
-              aria-expanded={open}
-            >
-              <span>
-                {open ? 'Hide' : 'See'} what&apos;s inside ({pkg.lineItems!.length} items)
-              </span>
-              <span className="text-xs" style={{ color: T.blue }}>
-                {open ? '▲' : '▼'}
-              </span>
-            </button>
-            {open && (
-              <div className="mt-3 space-y-3 text-sm">
-                <div>
-                  <div className="text-[10px] font-bold tracking-widest text-gray-500 mb-1.5">
-                    INCLUDED ALCOHOL
-                  </div>
-                  <ul className="space-y-1.5">
-                    {alcoholItems.map((it, i) => (
-                      <li
-                        key={`a-${i}`}
-                        className="flex justify-between gap-3 text-gray-700"
-                      >
-                        <span className="flex-1">
-                          <span className="font-semibold" style={{ color: T.navy }}>
-                            {it.qty}×
-                          </span>{' '}
-                          {it.name}
-                        </span>
-                        <span className="text-gray-500 whitespace-nowrap">
-                          ${(it.unitPrice * it.qty).toFixed(2)}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                {freebieItems.length > 0 && (
-                  <div className="pt-2 border-t" style={{ borderColor: '#E5E7EB' }}>
-                    <div
-                      className="text-[10px] font-bold tracking-widest mb-1.5"
-                      style={{ color: '#047857' }}
-                    >
-                      FREE PARTY SUPPLIES (BUNDLED IN)
-                    </div>
-                    <ul className="space-y-1.5">
-                      {freebieItems.map((it, i) => (
-                        <li
-                          key={`f-${i}`}
-                          className="flex justify-between gap-3 text-gray-700"
-                        >
-                          <span className="flex-1">
-                            <span className="font-semibold" style={{ color: T.navy }}>
-                              {it.qty}×
-                            </span>{' '}
-                            {it.name}
-                          </span>
-                          <span className="whitespace-nowrap font-semibold" style={{ color: '#047857' }}>
-                            FREE (${(it.unitPrice * it.qty).toFixed(2)})
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        ) : pkg.items ? (
-          <ul className="space-y-2 mb-7 text-sm text-gray-700 flex-1">
-            {pkg.items.map((item) => (
-              <li key={item} className="flex items-start gap-2">
-                <span className="mt-0.5 font-bold" style={{ color: T.primary }}>
-                  ✓
-                </span>
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
-        ) : null}
-
-        <div className="flex flex-col gap-2">
-          <button
-            type="button"
-            onClick={() => onBuyNow(pkg)}
-            className="block text-center font-bold py-4 px-6 rounded-md tracking-wide transition-all w-full hover:scale-[1.01] shadow-md"
-            style={{ background: T.primary, color: T.primaryText }}
-          >
-            BUY THIS PACKAGE NOW →
-          </button>
-          <button
-            type="button"
-            onClick={onCta}
-            className="block text-center font-bold py-3 px-6 rounded-md tracking-wide transition-colors w-full"
-            style={{
-              background: '#FFFFFF',
-              color: T.navy,
-              border: `2px solid ${T.navy}`,
-            }}
-          >
-            Build my own
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ----- summarizeAlcohol: roll line items up into category-level bullets ----
-
-import type { PackageLineItem } from './types';
-
-/**
- * Reads the package's alcohol line items and returns 3–4 punchy summary
- * bullets the customer can scan in a second, e.g. "5 beer + seltzer packs
- * (108 cans)" / "3 premium spirit bottles" / "Wine & champagne for toasts".
- *
- * Heuristic-only — uses title patterns rather than productType so it works
- * for any future recipe additions.
- */
-function summarizeAlcohol(items: PackageLineItem[]): string[] {
-  const out: string[] = [];
-  type Bucket = { qty: number; cans: number; bottles: number };
-  const buckets: Record<string, Bucket> = {
-    beer: { qty: 0, cans: 0, bottles: 0 },
-    seltzer: { qty: 0, cans: 0, bottles: 0 },
-    spirits: { qty: 0, cans: 0, bottles: 0 },
-    wine: { qty: 0, cans: 0, bottles: 0 },
-    mixer: { qty: 0, cans: 0, bottles: 0 },
-  };
-
-  for (const it of items) {
-    const t = it.name.toLowerCase();
-    const packMatch = it.name.match(/(\d+)\s*pack/i);
-    const cans = packMatch ? parseInt(packMatch[1], 10) * it.qty : 0;
-    if (
-      /\b(beer|ipa|lager|hefe|pilsner|modelo|miller|coors|corona|michelob|lone star)\b/.test(t)
-    ) {
-      buckets.beer.qty += it.qty;
-      buckets.beer.cans += cans;
-    } else if (/\b(seltzer|high noon|white claw|truly|surfside)\b/.test(t)) {
-      buckets.seltzer.qty += it.qty;
-      buckets.seltzer.cans += cans;
-    } else if (
-      /\b(vodka|tequila|whiskey|whisky|bourbon|gin|rum|jameson|tito|espolon|casamigos|jack daniels|bulleit)\b/.test(t)
-    ) {
-      buckets.spirits.qty += it.qty;
-      buckets.spirits.bottles += it.qty;
-    } else if (
-      /\b(wine|champagne|prosecco|rosé|rose|sauv|cab|pinot|veuve|chandon|whispering angel|josh cellars|14 hands|bogle|oyster bay|dark horse)\b/.test(t)
-    ) {
-      buckets.wine.qty += it.qty;
-      buckets.wine.bottles += it.qty;
-    } else {
-      buckets.mixer.qty += it.qty;
-    }
-  }
-
-  if (buckets.beer.qty + buckets.seltzer.qty > 0) {
-    const totalPacks = buckets.beer.qty + buckets.seltzer.qty;
-    const totalCans = buckets.beer.cans + buckets.seltzer.cans;
-    const label = buckets.seltzer.qty > 0 && buckets.beer.qty > 0
-      ? 'beer + seltzer packs'
-      : buckets.seltzer.qty > 0
-        ? 'hard-seltzer packs'
-        : 'beer packs';
-    out.push(
-      totalCans > 0
-        ? `${totalPacks} ${label} (${totalCans} cans)`
-        : `${totalPacks} ${label}`,
-    );
-  }
-  if (buckets.spirits.qty > 0) {
-    out.push(`${buckets.spirits.qty} premium spirit bottle${buckets.spirits.qty !== 1 ? 's' : ''}`);
-  }
-  if (buckets.wine.qty > 0) {
-    out.push(`${buckets.wine.qty} bottle${buckets.wine.qty !== 1 ? 's' : ''} of wine + champagne`);
-  }
-  if (buckets.mixer.qty > 0) {
-    out.push('Mixers, juices, and chasers');
-  }
-  return out.slice(0, 4);
-}

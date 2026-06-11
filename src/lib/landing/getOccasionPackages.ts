@@ -91,7 +91,7 @@ const BACHELOR: Recipe[] = [
     name: 'Lake Travis Pack',
     defaultPeople: 11,
     serves: 'Boat party for 10–12',
-    blurb: 'Built for sun, dock, and 8 hours on the water.',
+    blurb: 'Loaded onto your boat at the dock — built for 8 hours of sun on the water.',
     image: '/images/gallery/sunset-champagne-pontoon.webp',
     featured: true,
     alcohol: [

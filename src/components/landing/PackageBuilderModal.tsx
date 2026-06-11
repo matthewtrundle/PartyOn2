@@ -7,7 +7,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import { useLeadCapture } from '@/lib/leads/client';
-import { fireLeadConversion } from '@/lib/leads/fireLeadConversion';
+import { fireLeadConversionAndFlush } from '@/lib/leads/fireLeadConversion';
+import { getAttribution } from '@/lib/analytics/attribution';
+import { trackContactClick } from '@/lib/analytics/ga4-events';
 import { trackFunnelStep } from '@/lib/experiments/funnelTrack';
 import type { FunnelStep } from '@/lib/experiments/funnelSteps';
 import type {
@@ -20,6 +22,13 @@ import type {
 import type { UpsellProducts, UpsellProduct } from '@/lib/landing/getUpsellProducts';
 import UpsellOverlay from './UpsellOverlay';
 import EmbeddedCheckoutPanel from './EmbeddedCheckoutPanel';
+import {
+  BoltIcon,
+  CheckCircleIcon,
+  UsersIcon,
+  CalendarIcon,
+  BoxIcon,
+} from './sections/icons';
 import {
   getDeliveryWindows,
   isSunday,
@@ -110,6 +119,22 @@ export default function PackageBuilderModal({
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  // Age compliance — required checkbox on the review step. The landing
+  // pages skip the site-wide entrance gate (see AgeVerification.tsx), so
+  // this is where 21+ gets confirmed. Never pre-checked.
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
+  const handleAgeConfirmedChange = (checked: boolean) => {
+    setAgeConfirmed(checked);
+    if (checked) {
+      try {
+        // Same flag the site-wide gate reads — checking the box here means
+        // the rest of the site won't re-prompt on this device.
+        localStorage.setItem('age_verified', 'true');
+      } catch {
+        /* localStorage disabled — checkbox state alone still gates submit */
+      }
+    }
+  };
   // Embedded Stripe Checkout session client_secret. When set, modal body
   // swaps to the inline checkout panel — no navigation.
   const [checkoutSecret, setCheckoutSecret] = useState<string | null>(null);
@@ -356,6 +381,14 @@ export default function PackageBuilderModal({
       return;
     }
 
+    // Age compliance — the landing pages skip the entrance gate, so the
+    // 21+ confirmation is required here before anything is created.
+    if (!ageConfirmed) {
+      setSubmitError('Please confirm everyone receiving this delivery is 21 or older.');
+      setSubmitting(false);
+      return;
+    }
+
     // Address fields are optional from this surface — the dashboard
     // collects delivery address on its own checkout step.
 
@@ -439,6 +472,9 @@ export default function PackageBuilderModal({
             qty: it.qty,
           })),
           source: 'package-builder',
+          // First-touch UTM + ad click ids (gclid etc.) so the Lead row
+          // can be joined back to the ad click that produced it.
+          attribution: getAttribution(),
         }),
       });
       const json = await res.json();
@@ -446,11 +482,16 @@ export default function PackageBuilderModal({
         throw new Error(json.error || 'Failed to create your order. Try again.');
       }
 
-      // Fire the lead conversion (Meta + GA4 generate_lead + Ads) BEFORE
-      // the redirect — tagged with this page's occasion so each landing
-      // campaign optimizes toward its own leads. Synchronous; the gtag/fbq
-      // beacons are queued before navigation.
-      fireLeadConversion({ occasion, placement: 'package-builder', value: people });
+      // Fire the lead conversion (Meta + GA4 generate_lead + Ads) and wait
+      // (≤400ms) for gtag to flush — the hard redirect below would otherwise
+      // race the hit out of existence (gtag loads lazyOnload). Tagged with
+      // this page's occasion so each campaign optimizes toward its own
+      // leads; value is the order subtotal in USD for value-based bidding.
+      await fireLeadConversionAndFlush({
+        occasion,
+        placement: 'package-builder',
+        value: total,
+      });
 
       // Stash host participant id so the dashboard recognizes the
       // visitor as the order owner.
@@ -487,6 +528,7 @@ export default function PackageBuilderModal({
     setDeliveryDate(null);
     setPeople(M.defaultPeople);
     setExtraSelection([]);
+    setAgeConfirmed(false);
   };
 
   if (!open) return null;
@@ -522,7 +564,7 @@ export default function PackageBuilderModal({
         <button
           onClick={onClose}
           aria-label="Close"
-          className="absolute top-3 right-3 z-20 w-9 h-9 rounded-full flex items-center justify-center text-white text-xl font-bold transition-all hover:scale-105"
+          className="absolute top-3 right-3 z-20 w-9 h-9 rounded-lg flex items-center justify-center text-white text-xl font-bold transition-all hover:scale-105"
           style={{ background: `${T.navy}D9`, boxShadow: '0 4px 12px rgba(0,0,0,0.25)' }}
         >
           ×
@@ -564,12 +606,15 @@ export default function PackageBuilderModal({
               narrowed + why. */}
           {lastMinuteMode && hasLastMinuteCatalog && (
             <div
-              className="mt-3 rounded-md px-3 py-2 text-xs font-bold leading-snug"
+              className="mt-3 rounded-md px-3 py-2 text-xs font-bold leading-snug flex items-start gap-1.5"
               style={{ background: T.primary, color: T.primaryText }}
             >
-              ⚡ <span className="tracking-wider">LAST-MINUTE MENU ACTIVE</span> —
-              showing only deep-stock items we can deliver in 24h. Pick a date
-              further out to see the full catalog.
+              <BoltIcon className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+              <span>
+                <span className="tracking-wider">LAST-MINUTE MENU ACTIVE</span> —
+                showing only deep-stock items we can deliver in 24h. Pick a date
+                further out to see the full catalog.
+              </span>
             </div>
           )}
         </div>
@@ -579,6 +624,7 @@ export default function PackageBuilderModal({
             <SuccessPanel
               mode={submitMode}
               phone={config.phoneDisplay}
+              occasion={occasion}
               theme={T}
               modal={M}
               onReset={reset}
@@ -588,7 +634,7 @@ export default function PackageBuilderModal({
             <div>
               <div className="mb-3 text-center">
                 <p
-                  className="text-[10px] font-bold tracking-[0.22em] mb-1"
+                  className="text-xs font-bold tracking-[0.22em] mb-1"
                   style={{ color: T.primary }}
                 >
                   SECURE CHECKOUT · STRIPE
@@ -672,6 +718,8 @@ export default function PackageBuilderModal({
                   setName={setContactName}
                   setEmail={setContactEmail}
                   setPhone={setContactPhone}
+                  ageConfirmed={ageConfirmed}
+                  onAgeConfirmedChange={handleAgeConfirmedChange}
                   deliveryAddress={deliveryAddress}
                   deliveryCity={deliveryCity}
                   deliveryZip={deliveryZip}
@@ -711,7 +759,7 @@ export default function PackageBuilderModal({
             <button
               onClick={prev}
               disabled={stepIndex === 0}
-              className="px-3 py-2 text-xs sm:text-sm font-semibold rounded-md disabled:opacity-30 disabled:cursor-not-allowed transition-colors hover:bg-white/10 whitespace-nowrap"
+              className="px-3 py-2 text-xs sm:text-sm font-semibold rounded-lg disabled:opacity-30 disabled:cursor-not-allowed transition-colors hover:bg-white/10 whitespace-nowrap"
               style={{ color: '#FFFFFF' }}
             >
               ← Back
@@ -720,7 +768,7 @@ export default function PackageBuilderModal({
             <div className="flex items-center gap-3 sm:gap-4 flex-1 justify-center min-w-0">
               <div className="text-center">
                 <div
-                  className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.18em]"
+                  className="text-xs font-bold uppercase tracking-[0.18em]"
                   style={{ color: T.primary, opacity: 0.95 }}
                 >
                   Total
@@ -733,7 +781,7 @@ export default function PackageBuilderModal({
                 </div>
               </div>
               <div className="text-center pl-3 border-l border-white/15">
-                <div className="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.18em] opacity-75">
+                <div className="text-xs font-bold uppercase tracking-[0.18em] opacity-75">
                   Per {M.groupSizeUnit === 'people' ? 'person' : M.groupSizeUnit.replace(/s$/, '')} ({people})
                 </div>
                 <div
@@ -748,7 +796,7 @@ export default function PackageBuilderModal({
             {!isLastStep ? (
               <button
                 onClick={next}
-                className="px-4 py-2 text-xs sm:text-sm font-bold rounded-md tracking-wide transition-all hover:scale-[1.03] shadow-md whitespace-nowrap"
+                className="px-4 py-2 text-xs sm:text-sm font-bold rounded-lg tracking-wide transition-all hover:scale-[1.03] shadow-md whitespace-nowrap"
                 style={{ background: T.primary, color: T.primaryText }}
               >
                 {stepIndex === 0 ? 'Start →' : 'Next →'}
@@ -764,8 +812,9 @@ export default function PackageBuilderModal({
                   type="submit"
                   form="quote-form"
                   onClick={() => setSubmitMode('quote')}
-                  disabled={submitting}
-                  className="px-3 py-2 text-xs sm:text-sm font-bold rounded-md tracking-wide transition-all hover:scale-[1.03] shadow-md whitespace-nowrap disabled:opacity-60"
+                  disabled={submitting || !ageConfirmed}
+                  title={!ageConfirmed ? 'Check the 21+ confirmation above to continue' : undefined}
+                  className="px-3 py-2 text-xs sm:text-sm font-bold rounded-lg tracking-wide transition-all hover:scale-[1.03] shadow-md whitespace-nowrap disabled:opacity-60 disabled:hover:scale-100"
                   style={{
                     background: '#FFFFFF',
                     color: T.navy,
@@ -778,8 +827,9 @@ export default function PackageBuilderModal({
                   type="submit"
                   form="quote-form"
                   onClick={() => setSubmitMode('checkout')}
-                  disabled={submitting}
-                  className="px-4 py-2 text-xs sm:text-sm font-bold rounded-md tracking-wide transition-all hover:scale-[1.03] shadow-md whitespace-nowrap disabled:opacity-60"
+                  disabled={submitting || !ageConfirmed}
+                  title={!ageConfirmed ? 'Check the 21+ confirmation above to continue' : undefined}
+                  className="px-4 py-2 text-xs sm:text-sm font-bold rounded-lg tracking-wide transition-all hover:scale-[1.03] shadow-md whitespace-nowrap disabled:opacity-60 disabled:hover:scale-100"
                   style={{ background: T.primary, color: T.primaryText }}
                 >
                   {submitting ? '…' : 'Pay Now →'}
@@ -863,7 +913,7 @@ function InlineCalendar({
           type="button"
           onClick={goPrev}
           aria-label="Previous month"
-          className="w-8 h-8 rounded-md hover:bg-gray-100 text-gray-600 flex items-center justify-center transition-colors"
+          className="w-8 h-8 rounded-lg hover:bg-gray-100 text-gray-600 flex items-center justify-center transition-colors"
         >
           ‹
         </button>
@@ -874,12 +924,12 @@ function InlineCalendar({
           type="button"
           onClick={goNext}
           aria-label="Next month"
-          className="w-8 h-8 rounded-md hover:bg-gray-100 text-gray-600 flex items-center justify-center transition-colors"
+          className="w-8 h-8 rounded-lg hover:bg-gray-100 text-gray-600 flex items-center justify-center transition-colors"
         >
           ›
         </button>
       </div>
-      <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-1">
+      <div className="grid grid-cols-7 gap-1 text-center text-xs font-bold uppercase tracking-wider text-gray-400 mb-1">
         {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
           <div key={i}>{d}</div>
         ))}
@@ -978,12 +1028,12 @@ function BasicsStep({
           <div className="rounded-lg border bg-white p-3 flex items-center gap-3" style={{ borderColor: '#E5E7EB' }}>
             <div className="flex-shrink-0">
               <div
-                className="text-[10px] font-bold uppercase tracking-wider leading-tight"
+                className="text-xs font-bold uppercase tracking-wider leading-tight"
                 style={{ color: theme.navy }}
               >
                 {modal.groupSizeLabel}
               </div>
-              <div className="text-[10px] text-gray-500 leading-tight">
+              <div className="text-xs text-gray-500 leading-tight">
                 {modal.groupSizeUnit}
               </div>
             </div>
@@ -1115,7 +1165,7 @@ function ProductGridStep({
               >
                 {cat.label}{' '}
                 <span
-                  className="ml-1 text-[10px] opacity-70"
+                  className="ml-1 text-xs opacity-70"
                   style={{ color: active ? theme.primaryText : '#9CA3AF' }}
                 >
                   {count}
@@ -1144,7 +1194,7 @@ function ProductGridStep({
                   <h3 className="font-heading font-bold text-sm uppercase tracking-widest" style={{ color: theme.navy }}>
                     {cat.label}
                   </h3>
-                  <span className="text-[10px] text-gray-400">
+                  <span className="text-xs text-gray-400">
                     ({cat.products.length + extraCount})
                   </span>
                 </div>
@@ -1247,7 +1297,7 @@ function ProductCard({
         </div>
 
         <div className="flex items-center justify-between mb-2 px-0.5">
-          <span className="text-[10px] text-gray-500 truncate">
+          <span className="text-xs text-gray-500 truncate">
             {product.detail || ' '}
           </span>
           <span className="font-bold text-sm whitespace-nowrap" style={{ color: theme.blue }}>
@@ -1305,6 +1355,8 @@ function ReviewStep({
   setName,
   setEmail,
   setPhone,
+  ageConfirmed,
+  onAgeConfirmedChange,
   deliveryAddress,
   deliveryCity,
   deliveryZip,
@@ -1331,6 +1383,8 @@ function ReviewStep({
   setName: (s: string) => void;
   setEmail: (s: string) => void;
   setPhone: (s: string) => void;
+  ageConfirmed: boolean;
+  onAgeConfirmedChange: (checked: boolean) => void;
   deliveryAddress: string;
   deliveryCity: string;
   deliveryZip: string;
@@ -1373,10 +1427,20 @@ function ReviewStep({
 
       {/* Compact event summary — totals live in the modal's sticky footer */}
       <div className="rounded-md px-3 py-2 mb-3 flex items-center justify-between gap-3 flex-wrap text-sm" style={{ background: '#F9FAFB', border: '1px solid #E5E7EB' }}>
-        <span style={{ color: theme.navy }}>
-          👥 <strong>{people}</strong> {modal.groupSizeUnit} · 📅{' '}
-          <strong>{deliveryDate ? formatDate(deliveryDate) : 'TBD'}</strong> · 📦{' '}
-          <strong>{lineItems.reduce((s, li) => s + li.qty, 0)}</strong> items
+        <span className="inline-flex items-center gap-x-2 flex-wrap" style={{ color: theme.navy }}>
+          <span className="inline-flex items-center gap-1">
+            <UsersIcon className="w-4 h-4" /> <strong>{people}</strong> {modal.groupSizeUnit}
+          </span>
+          <span aria-hidden>·</span>
+          <span className="inline-flex items-center gap-1">
+            <CalendarIcon className="w-4 h-4" />{' '}
+            <strong>{deliveryDate ? formatDate(deliveryDate) : 'TBD'}</strong>
+          </span>
+          <span aria-hidden>·</span>
+          <span className="inline-flex items-center gap-1">
+            <BoxIcon className="w-4 h-4" />{' '}
+            <strong>{lineItems.reduce((s, li) => s + li.qty, 0)}</strong> items
+          </span>
         </span>
       </div>
 
@@ -1422,7 +1486,7 @@ function ReviewStep({
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full bg-white rounded-md px-3 py-2.5 text-sm focus:outline-none transition-colors"
+              className="w-full bg-white rounded-md px-3 py-2.5 text-base focus:outline-none transition-colors"
               style={{ border: '1.5px solid #E5E7EB' }}
               onFocus={(e) => (e.target.style.borderColor = theme.blue)}
               onBlur={(e) => (e.target.style.borderColor = '#E5E7EB')}
@@ -1435,7 +1499,7 @@ function ReviewStep({
               type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              className="w-full bg-white rounded-md px-3 py-2.5 text-sm focus:outline-none transition-colors"
+              className="w-full bg-white rounded-md px-3 py-2.5 text-base focus:outline-none transition-colors"
               style={{ border: '1.5px solid #E5E7EB' }}
               onFocus={(e) => (e.target.style.borderColor = theme.blue)}
               onBlur={(e) => (e.target.style.borderColor = '#E5E7EB')}
@@ -1449,7 +1513,7 @@ function ReviewStep({
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full bg-white rounded-md px-3 py-2.5 text-sm focus:outline-none transition-colors"
+            className="w-full bg-white rounded-md px-3 py-2.5 text-base focus:outline-none transition-colors"
             style={{ border: '1.5px solid #E5E7EB' }}
             onFocus={(e) => (e.target.style.borderColor = theme.blue)}
             onBlur={(e) => (e.target.style.borderColor = '#E5E7EB')}
@@ -1462,7 +1526,7 @@ function ReviewStep({
           className="mt-3 pt-3 border-t"
           style={{ borderColor: '#E5E7EB' }}
         >
-          <div className="text-[10px] uppercase tracking-widest text-gray-500 font-bold mb-2">
+          <div className="text-xs uppercase tracking-widest text-gray-500 font-bold mb-2">
             Delivery {addressRequired ? '(required)' : '(optional — you can fill this in later)'}
           </div>
           <FormField label="Street address" required={addressRequired} theme={theme}>
@@ -1470,7 +1534,7 @@ function ReviewStep({
               required={addressRequired}
               value={deliveryAddress}
               onChange={(e) => setDeliveryAddress(e.target.value)}
-              className="w-full bg-white rounded-md px-3 py-2.5 text-sm focus:outline-none transition-colors"
+              className="w-full bg-white rounded-md px-3 py-2.5 text-base focus:outline-none transition-colors"
               style={{ border: '1.5px solid #E5E7EB' }}
               onFocus={(e) => (e.target.style.borderColor = theme.blue)}
               onBlur={(e) => (e.target.style.borderColor = '#E5E7EB')}
@@ -1482,7 +1546,7 @@ function ReviewStep({
               <input
                 value={deliveryCity}
                 onChange={(e) => setDeliveryCity(e.target.value)}
-                className="w-full bg-white rounded-md px-3 py-2.5 text-sm focus:outline-none transition-colors"
+                className="w-full bg-white rounded-md px-3 py-2.5 text-base focus:outline-none transition-colors"
                 style={{ border: '1.5px solid #E5E7EB' }}
                 onFocus={(e) => (e.target.style.borderColor = theme.blue)}
                 onBlur={(e) => (e.target.style.borderColor = '#E5E7EB')}
@@ -1494,7 +1558,7 @@ function ReviewStep({
                 required={addressRequired}
                 value={deliveryZip}
                 onChange={(e) => setDeliveryZip(e.target.value)}
-                className="w-full bg-white rounded-md px-3 py-2.5 text-sm focus:outline-none transition-colors"
+                className="w-full bg-white rounded-md px-3 py-2.5 text-base focus:outline-none transition-colors"
                 style={{ border: '1.5px solid #E5E7EB' }}
                 onFocus={(e) => (e.target.style.borderColor = theme.blue)}
                 onBlur={(e) => (e.target.style.borderColor = '#E5E7EB')}
@@ -1507,7 +1571,7 @@ function ReviewStep({
               <select
                 value={deliveryTime}
                 onChange={(e) => setDeliveryTime(e.target.value)}
-                className="w-full bg-white rounded-md px-3 py-2.5 text-sm focus:outline-none transition-colors"
+                className="w-full bg-white rounded-md px-3 py-2.5 text-base focus:outline-none transition-colors"
                 style={{ border: '1.5px solid #E5E7EB' }}
               >
                 {getDeliveryWindows().map((w) => (
@@ -1520,7 +1584,7 @@ function ReviewStep({
           </div>
           {deliveryDate && isSunday(deliveryDate.toISOString().slice(0, 10)) && (
             <div
-              className="mt-2.5 rounded-md p-2.5 text-[11px] leading-snug"
+              className="mt-2.5 rounded-md p-2.5 text-sm leading-snug"
               style={{
                 background: '#FEF3C7',
                 color: '#92400E',
@@ -1531,6 +1595,30 @@ function ReviewStep({
             </div>
           )}
         </div>
+
+        {/* Age compliance — required. The landing pages skip the site-wide
+            entrance gate, so 21+ gets confirmed here instead. */}
+        <label
+          className="mt-3 flex items-start gap-3 rounded-md p-3 cursor-pointer select-none transition-colors"
+          style={{
+            background: '#FFFFFF',
+            border: `1.5px solid ${ageConfirmed ? theme.blue : '#E5E7EB'}`,
+          }}
+        >
+          <input
+            type="checkbox"
+            checked={ageConfirmed}
+            onChange={(e) => onAgeConfirmedChange(e.target.checked)}
+            className="mt-0.5 h-5 w-5 flex-shrink-0 cursor-pointer"
+            style={{ accentColor: theme.blue }}
+          />
+          <span className="text-base leading-snug" style={{ color: theme.navy }}>
+            <strong>Yes — everyone receiving this delivery is 21+.</strong>{' '}
+            <span className="text-sm text-gray-600">
+              TABC-licensed retailer. Valid ID checked at the door, no exceptions.
+            </span>
+          </span>
+        </label>
 
         {submitError && (
           <div
@@ -1545,7 +1633,7 @@ function ReviewStep({
             shell. The form is wired via form="quote-form" attribute. */}
       </form>
 
-      <p className="text-[11px] text-gray-500 mt-3 leading-snug">{modal.emailNotice}</p>
+      <p className="text-sm text-gray-500 mt-3 leading-snug">{modal.emailNotice}</p>
     </div>
   );
 }
@@ -1563,7 +1651,7 @@ function FormField({
 }) {
   return (
     <div>
-      <label className="block text-[10px] font-bold mb-1 uppercase tracking-wider" style={{ color: theme.navy }}>
+      <label className="block text-xs font-bold mb-1 uppercase tracking-wider" style={{ color: theme.navy }}>
         {label} {required && <span style={{ color: '#DC2626' }}>*</span>}
       </label>
       {children}
@@ -1574,6 +1662,7 @@ function FormField({
 function SuccessPanel({
   mode,
   phone,
+  occasion,
   theme,
   modal,
   onReset,
@@ -1581,6 +1670,7 @@ function SuccessPanel({
 }: {
   mode: 'quote' | 'checkout';
   phone: string;
+  occasion: string;
   theme: LandingConfig['theme'];
   modal: LandingConfig['modal'];
   onReset: () => void;
@@ -1588,7 +1678,9 @@ function SuccessPanel({
 }) {
   return (
     <div className="max-w-md mx-auto text-center py-6">
-      <div className="text-5xl mb-3">🎉</div>
+      <div className="mb-3 flex justify-center" style={{ color: theme.blue }}>
+        <CheckCircleIcon className="w-14 h-14" />
+      </div>
       <h2 className="font-heading text-2xl md:text-3xl font-bold mb-2" style={{ color: theme.navy }}>
         {mode === 'checkout' ? modal.successCheckoutHeadline : modal.successQuoteHeadline}
       </h2>
@@ -1603,6 +1695,14 @@ function SuccessPanel({
         </p>
         <a
           href={`tel:${phone.replace(/\D/g, '')}`}
+          onClick={() =>
+            trackContactClick(
+              'phone',
+              'builder_success',
+              occasion,
+              `tel:${phone.replace(/\D/g, '')}`,
+            )
+          }
           className="font-heading text-xl font-bold"
           style={{ color: theme.blue }}
         >
@@ -1612,14 +1712,14 @@ function SuccessPanel({
       <div className="flex gap-2 justify-center">
         <button
           onClick={onReset}
-          className="px-4 py-2.5 text-sm bg-white font-bold rounded-md transition-colors"
+          className="px-4 py-2.5 text-sm bg-white font-bold rounded-lg transition-colors"
           style={{ border: '2px solid #E5E7EB', color: theme.navy }}
         >
           Build another
         </button>
         <button
           onClick={onClose}
-          className="px-5 py-2.5 text-sm font-bold rounded-md transition-all hover:scale-[1.02]"
+          className="px-5 py-2.5 text-sm font-bold rounded-lg transition-all hover:scale-[1.02]"
           style={{ background: theme.primary, color: theme.primaryText }}
         >
           Done

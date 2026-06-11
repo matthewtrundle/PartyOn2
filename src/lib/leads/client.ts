@@ -13,6 +13,8 @@
  */
 import { useCallback, useMemo } from 'react';
 
+import { getAttribution } from '@/lib/analytics/attribution';
+
 const LEAD_EVENT_URL = '/api/v1/landing/lead-event';
 const PIXEL_URL = '/api/v1/landing/visitor-pixel';
 
@@ -67,13 +69,40 @@ function readUtm(): Record<string, string | null> {
   if (typeof window === 'undefined') return {};
   try {
     const sp = new URLSearchParams(window.location.search);
-    return {
+    const fromUrl: Record<string, string | null> = {
       utmSource: sp.get('utm_source'),
       utmMedium: sp.get('utm_medium'),
       utmCampaign: sp.get('utm_campaign'),
       utmContent: sp.get('utm_content'),
       utmTerm: sp.get('utm_term'),
+      gclid: sp.get('gclid'),
+      gbraid: sp.get('gbraid'),
+      wbraid: sp.get('wbraid'),
+      fbclid: sp.get('fbclid'),
+      msclkid: sp.get('msclkid'),
     };
+    // Fall back to the stored first-touch payload for anything the current
+    // URL doesn't carry — UTM/click-id params drop off after the visitor
+    // navigates internally (e.g. landing page → event-quiz → builder).
+    const stored = getAttribution();
+    if (stored) {
+      const fallback: Record<string, string | null | undefined> = {
+        utmSource: stored.utmSource,
+        utmMedium: stored.utmMedium,
+        utmCampaign: stored.utmCampaign,
+        utmContent: stored.utmContent,
+        utmTerm: stored.utmTerm,
+        gclid: stored.gclid,
+        gbraid: stored.gbraid,
+        wbraid: stored.wbraid,
+        fbclid: stored.fbclid,
+        msclkid: stored.msclkid,
+      };
+      for (const [key, value] of Object.entries(fallback)) {
+        if (!fromUrl[key] && value) fromUrl[key] = value;
+      }
+    }
+    return fromUrl;
   } catch {
     return {};
   }
