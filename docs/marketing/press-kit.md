@@ -14,7 +14,7 @@
 | **Founders** | Allan Henslee, Brian Hill |
 | **Website** | partyondelivery.com |
 | **TABC license** | [license number — verify with operator] |
-| **Service area** | Austin metro: Austin, Cedar Park, Round Rock, Pflugerville, Leander, Westlake, Bee Cave, Lakeway, Lake Travis, Dripping Springs, Buda, Kyle, Hill Country |
+| **Service area** | Austin, Cedar Park, Westlake, Bee Cave, Lakeway, Lake Travis area, Gonzales & Caldwell Counties |
 | **What we deliver** | Beer, wine, liquor, kegs, mixers, ice, cups, decor, party rentals |
 | **What makes us different** | Same-day cold delivery, TABC-licensed end-to-end, group ordering with split-pay, optional bartender / setup, no markup on ice |
 | **Press contact** | [name] · [email] · [phone] |

@@ -5,6 +5,8 @@
 **Raw data:** [keyword-recovery-2026-06-raw.json](keyword-recovery-2026-06-raw.json) (regenerate with `node scripts/seo/pull-gsc-keyword-loss.mjs`).
 **Snapshot context:** SEMrush 2026-06-04 (`data/seo/semrush/2026-06-04/` on `seo-snapshots` branch).
 
+> **Addendum 2026-06-10 (post-investigation session):** Several findings below were revised by the operator-side follow-up. See "Addendum — what we learned and shipped after this doc" at the bottom. Most important: the **May 2026 Core Update (May 21 – ~June 1)** sits inside the analysis window and is the likely proximate trigger; the brand-SERP "erosion" (#2) turned out to be a measurement artifact, not competitor poaching; and the re-measurement date moves from 2026-06-24 to **2026-07-08**.
+
 ---
 
 ## TL;DR — what's actually broken
@@ -148,9 +150,35 @@ This is editorial + on-page. Code chip-worthy if it's done via a shared blog-pos
 - **Re-fix CWV or duplicate titles** — PR #112 handled those.
 - **Touch the wedding cluster** — wedding queries actually gained ground (+523 impressions, 81 → 187 indexed queries). Don't disturb.
 
+## Addendum — what we learned and shipped after this doc (2026-06-10)
+
+The same-day follow-up session (code + operator-side investigation) revised and extended the findings above:
+
+### Findings revised
+
+1. **May 2026 Core Update is the likely proximate trigger.** Google ran a core update May 21 – ~June 1 — entirely inside the "current" GSC window. The uniform homepage-cluster slide is consistent with a core-update re-rank amplified by our pre-existing weaknesses (H1 mismatch, 61% zombie catalog — see below). The H1 fix remains correct but is necessary-not-sufficient; core-update recoveries take 4–8 weeks.
+2. **Brand SERP (#2 in TL;DR) is NOT eroding.** Live SERP inspection showed partyondelivery.com holds positions 1–7 for "party on delivery" with a maximal 13-sitelink block and no competitor in the top 5. The GSC 2.2 → 4.5 average is an artifact of averaging across brand-adjacent queries (reviews/promo-code/comparison variants) plus sitelink CTR redistribution. **Action 4 (brand defense) is closed — no action needed.**
+3. **The "174 thin product pages" framing was wrong.** Full-catalog sweep found **325 of 535 indexed product URLs (61%) are ARCHIVED or orphaned**, leaking ~19,000 impressions/60d — a sitewide "unhelpful content" signal that core updates punish. The thin-content editorial problem is real but much smaller (13 active pages in the top-30).
+4. **H1 anti-pattern was not a regression** — `git blame` dates it to 2026-02-13 (~4 months old). It predates the drop; the Core Update is what made it start costing us.
+
+### Shipped
+
+- **PR #117** (merged 2026-06-10): H1↔title alignment on `/`, landing pages, boat/corporate; blog FAQPage schema plumbing + birthday post; `/blogs/news/*` → `/blog/*` consolidation; DJ partner H1.
+- **PR #119** (open): 326 redirects for archived/orphan product URLs → category pages.
+- **GBP** (operator, same day): added secondary categories (Beer store +, more saved and propagating) and service areas (Westlake, Bee Cave, Lakeway, Lake Travis). Primary category left as "Liquor store" to avoid re-verification.
+- **New docs:** [product-page-editorial-sprint-2026-06.md](product-page-editorial-sprint-2026-06.md), [archived-product-pages-2026-06.csv](archived-product-pages-2026-06.csv), [local-backlink-outreach-2026-06.md](local-backlink-outreach-2026-06.md), [press kit](../../marketing/press-kit.md).
+- **DR baseline captured:** partyondelivery.com **DR 12** vs do512 70 / drizly 76 / totalwine 78 / Eater Austin 90.
+
+### Revised monitoring plan
+
+- **Re-measure 2026-07-08** (not 2026-06-24 as stated above) — needs ≥4 weeks for Core Update + PR #117/#119 propagation. Run `node scripts/seo/pull-gsc-keyword-loss.mjs` with windows shifted forward.
+- Success criteria at re-measure: homepage cluster recovers ≥5 positions on the `[modifier] alcohol delivery austin` queries; archived-URL impressions decline (falling out of index) while total clicks hold or grow; FAQ rich result appears for the birthday post (check Rich Results Test ~1 week post-merge).
+- Next SEMrush weekly capture: duplicate-H1/title count should drop from 123 → ~0 (PR #112 + #117 combined).
+
 ## Provenance
 
 - GSC raw data pulled 2026-06-10 via [scripts/seo/pull-gsc-keyword-loss.mjs](scripts/seo/pull-gsc-keyword-loss.mjs), saved to [keyword-recovery-2026-06-raw.json](keyword-recovery-2026-06-raw.json).
 - SEMrush snapshot reference: `data/seo/semrush/2026-06-04/` on `seo-snapshots` orphan branch (5 dashboards, all `ok:true`).
-- PR #112: [partyondelivery/PartyOn2#112](https://github.com/partyondelivery/PartyOn2/pull/112) merged 2026-06-10T16:01Z. PR #114 (dev → main) merged 2026-06-10T16:53Z.
+- PR #112: [partyondelivery/PartyOn2#112](https://github.com/partyondelivery/PartyOn2/pull/112) merged 2026-06-10T16:01Z. PR #114 (dev → main) merged 2026-06-10T16:53Z. PR #117 merged 2026-06-10T18:02Z. PR #119 opened 2026-06-10.
 - Reference brief: SEMrush position-tracking 2026-05-06 vs 2026-06-04 (visibility 25.7% → 8.8% — distorted by tracked-basket sensitivity).
+- Core update: [Google Search Status Dashboard](https://status.search.google.com/products/rGHU1u87FJnkP6W2GwMi/history) — May 2026 core update, started 2026-05-21, completed ~12 days.
