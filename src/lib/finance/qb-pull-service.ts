@@ -82,59 +82,31 @@ export async function syncQbAccounts(): Promise<{
 }> {
   let upserted = 0;
   const perTypeErrors: string[] = [];
-  // QBO query language requires AccountType in a fixed enum. We pull the
-  // common expense-ish types plus a fallback that grabs every account if
-  // the typed filters fail (some sandbox companies reject 'OtherExpense'
-  // etc. — we still want SOMETHING in qb_accounts).
-  const types = ['Expense', 'OtherExpense', 'CostOfGoodsSold'];
 
-  for (const t of types) {
-    let position = 1;
-    try {
-      while (true) {
-        const q = `SELECT * FROM Account WHERE AccountType = '${t}' STARTPOSITION ${position} MAXRESULTS ${PAGE_SIZE}`;
-        const resp = await qboQuery(q);
-        const accounts = (resp?.Account ?? []) as QbAccountApi[];
-        if (accounts.length === 0) break;
-        for (const a of accounts) {
-          await upsertQbAccountRow(a);
-          upserted++;
-        }
-        if (accounts.length < PAGE_SIZE) break;
-        position += accounts.length;
+  // Pull EVERY account regardless of type. Phase 2A (OpEx) only consumes
+  // expense-type rows, but Phase 2B's journal mapping needs Income, Asset,
+  // and Liability accounts too — so we pull the full chart. This also
+  // dodges the per-type filter brittleness where some sandbox configs
+  // reject specific AccountType values (OtherExpense, CostOfGoodsSold)
+  // with a 400.
+  let position = 1;
+  try {
+    while (true) {
+      const q = `SELECT * FROM Account STARTPOSITION ${position} MAXRESULTS ${PAGE_SIZE}`;
+      const resp = await qboQuery(q);
+      const accounts = (resp?.Account ?? []) as QbAccountApi[];
+      if (accounts.length === 0) break;
+      for (const a of accounts) {
+        await upsertQbAccountRow(a);
+        upserted++;
       }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      console.warn(`[syncQbAccounts] type=${t} failed:`, message);
-      perTypeErrors.push(`${t}: ${message.slice(0, 200)}`);
-      // Continue to next type — one bad type shouldn't kill the whole sync.
+      if (accounts.length < PAGE_SIZE) break;
+      position += accounts.length;
     }
-  }
-
-  // Fallback sweep: if NOTHING came back from the typed queries, pull every
-  // account (regardless of type) so qb_accounts isn't empty. This lets the
-  // /admin/finance/journals/settings dropdowns work even when the typed
-  // filters all rejected.
-  if (upserted === 0) {
-    let position = 1;
-    try {
-      while (true) {
-        const q = `SELECT * FROM Account STARTPOSITION ${position} MAXRESULTS ${PAGE_SIZE}`;
-        const resp = await qboQuery(q);
-        const accounts = (resp?.Account ?? []) as QbAccountApi[];
-        if (accounts.length === 0) break;
-        for (const a of accounts) {
-          await upsertQbAccountRow(a);
-          upserted++;
-        }
-        if (accounts.length < PAGE_SIZE) break;
-        position += accounts.length;
-      }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      console.warn('[syncQbAccounts] fallback all-types pull failed:', message);
-      perTypeErrors.push(`fallback: ${message.slice(0, 200)}`);
-    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn('[syncQbAccounts] account pull failed:', message);
+    perTypeErrors.push(`all: ${message.slice(0, 200)}`);
   }
 
   return { upserted, perTypeErrors };
