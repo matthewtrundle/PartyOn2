@@ -6,116 +6,21 @@ import { useSearchParams } from 'next/navigation';
 import DraftOrdersTable from '@/components/ops/DraftOrdersTable';
 import UnpaidCartsTable from '@/components/ops/UnpaidCartsTable';
 import WeeklySummaryView from '@/components/ops/WeeklySummaryView';
-
-// --- In Stock / Packed / Short By state ---
-// Persisted server-side via /api/ops/orders/[id]/picks so checkbox state
-// syncs across devices/browsers/users. localStorage is kept as a
-// write-through cache so the row paints instantly with last-known state
-// while the network fetch resolves.
-interface ItemCheckEntry {
-  inStock: boolean;
-  packed: boolean;
-  shortBy?: number;
-}
-interface ItemChecks {
-  [itemKey: string]: ItemCheckEntry;
-}
-
-function loadCachedChecks(orderId: string): ItemChecks {
-  try {
-    const raw = localStorage.getItem(`ops_order_checks_${orderId}`);
-    return raw ? JSON.parse(raw) : {};
-  } catch {
-    return {};
-  }
-}
-
-function cacheChecks(orderId: string, data: ItemChecks): void {
-  try {
-    localStorage.setItem(`ops_order_checks_${orderId}`, JSON.stringify(data));
-  } catch {
-    // ignore quota / private-mode errors
-  }
-}
-
-async function fetchChecks(orderId: string): Promise<ItemChecks | null> {
-  try {
-    const res = await fetch(`/api/ops/orders/${orderId}/picks`, {
-      credentials: 'same-origin',
-      cache: 'no-store',
-    });
-    if (!res.ok) return null;
-    const data = (await res.json()) as { checks?: ItemChecks };
-    return data.checks ?? {};
-  } catch {
-    return null;
-  }
-}
-
-async function putCheck(
-  orderId: string,
-  itemKey: string,
-  patch: { inStock?: boolean; packed?: boolean; shortBy?: number },
-): Promise<void> {
-  try {
-    await fetch(`/api/ops/orders/${orderId}/picks`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'same-origin',
-      body: JSON.stringify({ itemKey, ...patch }),
-    });
-  } catch {
-    // swallow; UI is already optimistic + cached in localStorage
-  }
-}
-
-
-interface OrderCustomer {
-  id: string;
-  email: string;
-  name: string;
-}
-
-interface GroupOrderInfo {
-  id: string;
-  shareCode: string;
-  name: string;
-  status: string;
-}
-
-interface Order {
-  id: string;
-  orderNumber: number;
-  status: string;
-  financialStatus: string;
-  fulfillmentStatus: string;
-  customer: OrderCustomer;
-  customerName: string;
-  customerEmail: string;
-  customerPhone: string | null;
-  deliveryPhone: string | null;
-  deliveryInstructions: string | null;
-  customerNote: string | null;
-  internalNote: string | null;
-  subtotal: number;
-  discountCode: string | null;
-  discountAmount: number;
-  taxAmount: number;
-  deliveryFee: number;
-  total: number;
-  itemCount: number;
-  deliveryDate: string;
-  deliveryTime: string;
-  deliveryType: string;
-  createdAt: string;
-  groupOrderId: string | null;
-  groupOrder: GroupOrderInfo | null;
-  affiliate: { id: string; code: string; businessName: string; contactName: string; phone: string | null } | null;
-  dashboardSource: { id: string; shareCode: string; name: string; hostName: string } | null;
-  deliveryAddress: Record<string, string> | string | null;
-  items: { quantity: number; title: string; productId?: string; bundleComponents?: { title: string; variantTitle: string | null; quantity: number }[] }[];
-  reviewRequestSentAt: string | null;
-}
+import ReviewRequestModal from '@/components/ops/orders/ReviewRequestModal';
+import ShortageListModal from '@/components/ops/orders/ShortageListModal';
+import PickSheetPrint from '@/components/ops/orders/print/PickSheetPrint';
+import { buildShortageList } from '@/components/ops/orders/shortage';
+import { cacheChecks, fetchChecks, loadCachedChecks, usePickChecks } from '@/components/ops/orders/usePickChecks';
+import {
+  formatAddress,
+  formatCurrency,
+  formatDate,
+  formatDateTime,
+  getFulfillmentColor,
+  getGroupStatusColor,
+  getStatusColor,
+} from '@/components/ops/orders/format';
+import type { GroupOrderInfo, Order, OrdersData, ShortageRow } from '@/components/ops/orders/types';
 
 // Grouped order type for accordion display
 interface GroupedOrder {
@@ -130,31 +35,6 @@ interface GroupedOrder {
 type DisplayItem =
   | { type: 'individual'; order: Order }
   | { type: 'group'; group: GroupedOrder };
-
-interface OrdersData {
-  orders: Order[];
-  pagination: { page: number; limit: number; total: number; pages: number };
-  filters: {
-    statuses: string[];
-    financialStatuses: string[];
-    fulfillmentStatuses: string[];
-    deliveryTypes: string[];
-  };
-  summary: {
-    total: number;
-    /** Sum of paid, non-cancelled order totals over the last 30 calendar days. */
-    last30Revenue: number;
-    /** Same metric for the 30 days before that — used to compute the % delta. */
-    prior30Revenue: number;
-    /** Percent change vs prior 30 days. `null` means no comparable baseline (first month w/ revenue). */
-    revenueChangePct: number | null;
-    /** Count of paid orders in the last 30 days. */
-    last30Orders: number;
-    todayOrders: number;
-    todayRevenue: number;
-    pendingFulfillment: number;
-  };
-}
 
 // Stats card component for consistent styling
 function StatCard({
@@ -254,85 +134,6 @@ function FilterButton({
       {children}
     </button>
   );
-}
-
-// Helper functions for formatting
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(amount);
-}
-
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    timeZone: 'UTC',
-  });
-}
-
-function formatDateTime(dateStr: string): string {
-  return new Date(dateStr).toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-    timeZone: 'UTC',
-  });
-}
-
-function getStatusColor(status: string): string {
-  switch (status) {
-    case 'CONFIRMED':
-      return 'bg-gradient-to-r from-green-50 to-green-100 text-green-700 border border-green-200 shadow-sm';
-    case 'PENDING':
-      return 'bg-gradient-to-r from-yellow-50 to-yellow-100 text-yellow-700 border border-yellow-200 shadow-sm';
-    case 'CANCELLED':
-      return 'bg-gradient-to-r from-red-50 to-red-100 text-red-700 border border-red-200 shadow-sm';
-    case 'COMPLETED':
-    case 'DELIVERED':
-      return 'bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border border-blue-200 shadow-sm';
-    case 'PROCESSING':
-    case 'OUT_FOR_DELIVERY':
-      return 'bg-gradient-to-r from-purple-50 to-purple-100 text-purple-700 border border-purple-200 shadow-sm';
-    default:
-      return 'bg-gradient-to-r from-gray-50 to-gray-100 text-gray-700 border border-gray-200 shadow-sm';
-  }
-}
-
-function getFulfillmentColor(status: string): string {
-  switch (status) {
-    case 'FULFILLED':
-    case 'DELIVERED':
-      return 'bg-gradient-to-r from-green-50 to-green-100 text-green-700 border border-green-200 shadow-sm';
-    case 'UNFULFILLED':
-      return 'bg-gradient-to-r from-orange-50 to-orange-100 text-orange-700 border border-orange-200 shadow-sm';
-    case 'PARTIAL':
-    case 'IN_TRANSIT':
-    case 'OUT_FOR_DELIVERY':
-      return 'bg-gradient-to-r from-yellow-50 to-yellow-100 text-yellow-700 border border-yellow-200 shadow-sm';
-    default:
-      return 'bg-gradient-to-r from-gray-50 to-gray-100 text-gray-700 border border-gray-200 shadow-sm';
-  }
-}
-
-function getGroupStatusColor(status: string): string {
-  switch (status) {
-    case 'ACTIVE':
-      return 'bg-gradient-to-r from-green-50 to-green-100 text-green-700 border border-green-200 shadow-sm';
-    case 'LOCKED':
-      return 'bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border border-blue-200 shadow-sm';
-    case 'COMPLETED':
-      return 'bg-gradient-to-r from-purple-50 to-purple-100 text-purple-700 border border-purple-200 shadow-sm';
-    case 'CANCELLED':
-      return 'bg-gradient-to-r from-red-50 to-red-100 text-red-700 border border-red-200 shadow-sm';
-    case 'CLOSED':
-      return 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-600 border border-gray-300 shadow-sm';
-    default:
-      return 'bg-gradient-to-r from-gray-50 to-gray-100 text-gray-700 border border-gray-200 shadow-sm';
-  }
 }
 
 // Group Order Accordion Row Component
@@ -511,46 +312,10 @@ function GroupOrderRow({
 // Regular Order Row Component
 function OrderRow({ order, selected, onToggle, onPrint, onFilterByGroup }: { order: Order; selected: boolean; onToggle: () => void; onPrint?: (orderId: string) => void; onFilterByGroup?: (groupId: string) => void }): ReactElement {
   const [expanded, setExpanded] = useState(false);
-  const [checks, setChecks] = useState<ItemChecks>(() => loadCachedChecks(order.id));
+  // Refetches when the row is expanded so an open accordion reflects what
+  // other devices have updated.
+  const { checks, toggleCheck, setShortBy } = usePickChecks(order.id, expanded);
   const isPacked = order.items.length > 0 && order.items.every((item) => checks[item.title]?.packed);
-  const shortByTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
-
-  // Pull authoritative state from server. Refetches when the row is expanded
-  // so an open accordion reflects what other devices have updated.
-  useEffect(() => {
-    let cancelled = false;
-    fetchChecks(order.id).then((server) => {
-      if (cancelled || !server) return;
-      setChecks(server);
-      cacheChecks(order.id, server);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [order.id, expanded]);
-
-  const toggleCheck = (title: string, field: 'inStock' | 'packed') => {
-    setChecks((prev) => {
-      const nextEntry = { ...prev[title], [field]: !prev[title]?.[field] } as ItemCheckEntry;
-      const updated = { ...prev, [title]: nextEntry };
-      cacheChecks(order.id, updated);
-      void putCheck(order.id, title, { [field]: nextEntry[field] });
-      return updated;
-    });
-  };
-
-  const setShortBy = (title: string, value: number) => {
-    const clamped = Math.max(0, Math.floor(value) || 0);
-    setChecks((prev) => {
-      const updated = { ...prev, [title]: { ...prev[title], shortBy: clamped } };
-      cacheChecks(order.id, updated);
-      return updated;
-    });
-    if (shortByTimers.current[title]) clearTimeout(shortByTimers.current[title]);
-    shortByTimers.current[title] = setTimeout(() => {
-      void putCheck(order.id, title, { shortBy: clamped });
-    }, 400);
-  };
 
   return (
     <>
@@ -874,55 +639,11 @@ function processOrdersForDisplay(orders: Order[]): DisplayItem[] {
   return displayItems;
 }
 
-// Format delivery address from JSON object or plain string
-function formatAddress(addr: Record<string, string> | string | null): string {
-  if (!addr) return '';
-  if (typeof addr === 'string') return addr;
-  const parts = [addr.address1, addr.address2, addr.city, addr.state || addr.province, addr.zip].filter(Boolean);
-  return parts.join(', ');
-}
-
 // Compact Mobile Order Row (1-2 lines, expandable)
 function MobileOrderRow({ order, onFilterByGroup }: { order: Order; onFilterByGroup?: (groupId: string) => void }): ReactElement {
   const [expanded, setExpanded] = useState(false);
-  const [checks, setChecks] = useState<ItemChecks>(() => loadCachedChecks(order.id));
+  const { checks, toggleCheck, setShortBy } = usePickChecks(order.id, expanded);
   const address = formatAddress(order.deliveryAddress);
-  const shortByTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
-
-  useEffect(() => {
-    let cancelled = false;
-    fetchChecks(order.id).then((server) => {
-      if (cancelled || !server) return;
-      setChecks(server);
-      cacheChecks(order.id, server);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [order.id, expanded]);
-
-  const toggleCheck = (title: string, field: 'inStock' | 'packed') => {
-    setChecks((prev) => {
-      const nextEntry = { ...prev[title], [field]: !prev[title]?.[field] } as ItemCheckEntry;
-      const updated = { ...prev, [title]: nextEntry };
-      cacheChecks(order.id, updated);
-      void putCheck(order.id, title, { [field]: nextEntry[field] });
-      return updated;
-    });
-  };
-
-  const setShortBy = (title: string, value: number) => {
-    const clamped = Math.max(0, Math.floor(value) || 0);
-    setChecks((prev) => {
-      const updated = { ...prev, [title]: { ...prev[title], shortBy: clamped } };
-      cacheChecks(order.id, updated);
-      return updated;
-    });
-    if (shortByTimers.current[title]) clearTimeout(shortByTimers.current[title]);
-    shortByTimers.current[title] = setTimeout(() => {
-      void putCheck(order.id, title, { shortBy: clamped });
-    }, 400);
-  };
 
   const shortDate = new Date(order.deliveryDate).toLocaleDateString('en-US', {
     month: 'short',
@@ -1133,34 +854,9 @@ export default function OrdersPage(): ReactElement {
   const [reviewModalOrders, setReviewModalOrders] = useState<Order[] | null>(null);
   const [reviewChecked, setReviewChecked] = useState<Set<string>>(new Set());
   const [sendingReviews, setSendingReviews] = useState(false);
-  const [shortageList, setShortageList] = useState<{ title: string; quantity: number; orderNumbers: number[] }[] | null>(null);
-  const [emailingShortage, setEmailingShortage] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
-
-  const handleEmailShortageList = async () => {
-    if (!shortageList || shortageList.length === 0) return;
-    setEmailingShortage('sending');
-    try {
-      const res = await fetch('/api/v1/admin/shortage-list/email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items: shortageList }),
-      });
-      if (!res.ok) {
-        const { error } = await res.json().catch(() => ({ error: 'Send failed' }));
-        console.error('[Shortage Email]', error);
-        setEmailingShortage('error');
-        return;
-      }
-      setEmailingShortage('sent');
-      setTimeout(() => setEmailingShortage('idle'), 3000);
-    } catch (err) {
-      console.error('[Shortage Email]', err);
-      setEmailingShortage('error');
-    }
-  };
+  const [shortageList, setShortageList] = useState<ShortageRow[] | null>(null);
 
   const handleGenerateShortageList = async () => {
-    const aggregated = new Map<string, { title: string; quantity: number; orderNumbers: Set<number> }>();
     const selectedOrdersArray = (data?.orders || []).filter((o) => selectedOrders.has(o.id));
 
     // Prefetch authoritative pick state for all selected orders so the
@@ -1174,46 +870,7 @@ export default function OrdersPage(): ReactElement {
       ),
     );
 
-    for (const order of selectedOrdersArray) {
-      const orderChecks = loadCachedChecks(order.id);
-      for (const item of order.items) {
-        const hasBundle = item.bundleComponents && item.bundleComponents.length > 0;
-        if (hasBundle) {
-          for (const bc of item.bundleComponents!) {
-            const bcKey = `${item.title}::${bc.title}`;
-            const shortBy = orderChecks[bcKey]?.shortBy ?? 0;
-            if (shortBy > 0) {
-              const displayTitle = bc.variantTitle && bc.variantTitle !== 'Default Title'
-                ? `${bc.title} (${bc.variantTitle})`
-                : bc.title;
-              const existing = aggregated.get(displayTitle);
-              if (existing) {
-                existing.quantity += shortBy;
-                existing.orderNumbers.add(order.orderNumber);
-              } else {
-                aggregated.set(displayTitle, { title: displayTitle, quantity: shortBy, orderNumbers: new Set([order.orderNumber]) });
-              }
-            }
-          }
-        } else {
-          const shortBy = orderChecks[item.title]?.shortBy ?? 0;
-          if (shortBy > 0) {
-            const existing = aggregated.get(item.title);
-            if (existing) {
-              existing.quantity += shortBy;
-              existing.orderNumbers.add(order.orderNumber);
-            } else {
-              aggregated.set(item.title, { title: item.title, quantity: shortBy, orderNumbers: new Set([order.orderNumber]) });
-            }
-          }
-        }
-      }
-    }
-
-    const list = Array.from(aggregated.values())
-      .map((entry) => ({ title: entry.title, quantity: entry.quantity, orderNumbers: Array.from(entry.orderNumbers).sort((a, b) => a - b) }))
-      .sort((a, b) => b.quantity - a.quantity);
-    setShortageList(list);
+    setShortageList(buildShortageList(selectedOrdersArray, loadCachedChecks));
   };
 
   // Selection helpers
@@ -2084,401 +1741,43 @@ export default function OrdersPage(): ReactElement {
 
       {/* Print Pick Sheets (hidden on screen, shown on print) */}
       <div ref={printRef} className="hidden print:block">
-        {printOrderIds.length > 0 && data?.orders && printOrderIds.map((orderId, pageIdx) => {
-          const order = data.orders.find((o) => o.id === orderId);
-          if (!order) return null;
-          const addr = order.deliveryAddress;
-          const addrStr = addr ? formatAddress(addr) : '';
-          return (
-            <div key={orderId} className={`order-sheet ${pageIdx > 0 ? 'break-before-page' : ''}`} style={pageIdx > 0 ? { pageBreakBefore: 'always' } : undefined}>
-              {/* Color-coded banner */}
-              {(() => {
-                const isMarina = addrStr.toLowerCase().includes('13993 fm 2769') || addrStr.toLowerCase().includes('rocky hills');
-                const lastName = (order.customerName || 'Guest').trim().split(/\s+/).pop() || order.customerName;
-                const dayOfWeek = new Date(order.deliveryDate).toLocaleDateString('en-US', { weekday: 'long', timeZone: 'UTC' });
-                const printTime = (order.deliveryTime || '').replace(/:00\s*/g, ' ').trim();
-                return (
-                  <div className={`rounded-lg px-4 py-3 mb-3 overflow-hidden ${isMarina ? 'bg-blue-600 text-white' : 'bg-yellow-400 text-black'}`}>
-                    <div className="flex items-center gap-4 overflow-hidden">
-                      <span className="text-[60px] font-black leading-none tracking-tight whitespace-nowrap">#{order.orderNumber}</span>
-                      <span className="text-[48px] font-light leading-none opacity-50">|</span>
-                      <span className="text-[60px] font-black leading-none tracking-tight whitespace-nowrap">{lastName}</span>
-                      <span className="text-[48px] font-light leading-none opacity-50">|</span>
-                      <span className="text-[60px] font-black leading-none tracking-tight whitespace-nowrap">{dayOfWeek} {printTime}</span>
-                    </div>
-                    {order.affiliate && (
-                      <div className="flex justify-end mt-1">
-                        <span className="text-xl font-semibold opacity-85">{order.affiliate.businessName}</span>
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
-
-              {order.groupOrder && (
-                <div className="mb-3 px-2 py-1.5 border-2 border-blue-500 bg-blue-50 rounded text-sm font-bold">
-                  Group Order: {order.groupOrder.name || order.groupOrder.shareCode}
-                </div>
-              )}
-
-              {/* Info boxes: Customer | Delivery | Partner */}
-              <div className="flex gap-3 mb-3">
-                <div className="flex-1 border border-gray-400 rounded p-2">
-                  <div className="font-bold text-xs uppercase tracking-wide border-b border-gray-300 pb-1 mb-1">Customer</div>
-                  <div className="font-bold text-sm">{order.customerName}</div>
-                  <div className="text-sm">{order.customerEmail}</div>
-                  {order.customerPhone && (
-                    <div className="text-sm">Tel: {order.customerPhone}</div>
-                  )}
-                </div>
-                <div className="flex-1 border border-gray-400 rounded p-2">
-                  <div className="font-bold text-xs uppercase tracking-wide border-b border-gray-300 pb-1 mb-1">Delivery</div>
-                  <div className="font-bold text-sm">
-                    {new Date(order.deliveryDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' })}
-                    {' '}&middot;{' '}{order.deliveryTime}
-                  </div>
-                  {addrStr && <div className="text-sm mt-1">{addrStr}</div>}
-                  {order.deliveryPhone && (
-                    <div className="text-sm mt-1">Tel: {order.deliveryPhone}</div>
-                  )}
-                </div>
-                {order.affiliate && (
-                  <div className="flex-1 border border-gray-400 rounded p-2">
-                    <div className="font-bold text-xs uppercase tracking-wide border-b border-gray-300 pb-1 mb-1">Partner</div>
-                    <div className="font-bold text-sm">{order.affiliate.businessName}</div>
-                    <div className="text-sm">{order.affiliate.contactName}</div>
-                    {order.affiliate.phone && (
-                      <div className="text-sm">Tel: {order.affiliate.phone}</div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {order.deliveryInstructions && (
-                <div className="mb-3 px-2 py-1.5 border-2 border-yellow-500 bg-yellow-50 rounded text-sm">
-                  <span className="font-bold">Instructions: </span>{order.deliveryInstructions}
-                </div>
-              )}
-
-              {(order.customerNote || order.internalNote) && (
-                <div className="mb-3 space-y-1">
-                  {order.customerNote && (
-                    <div className="px-2 py-1 border border-gray-400 rounded text-sm">
-                      <span className="font-bold">Customer Note: </span>{order.customerNote}
-                    </div>
-                  )}
-                  {order.internalNote && (
-                    <div className="px-2 py-1 border border-gray-400 rounded text-sm">
-                      <span className="font-bold">Internal Note: </span>{order.internalNote}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {(() => {
-                const printChecks = loadCachedChecks(order.id);
-                return (
-                  <table className="w-full mb-3 border-collapse text-lg">
-                    <thead>
-                      <tr className="border-b-2 border-black">
-                        <th className="text-left py-1 px-2 font-bold">Item</th>
-                        <th className="text-center py-1 px-2 w-14 font-bold">Qty</th>
-                        <th className="text-center py-1 w-20 font-bold">In Stock?</th>
-                        <th className="text-center py-1 w-20 font-bold">Packed?</th>
-                        <th className="text-center py-1 w-20 font-bold">Short By</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {order.items.map((item, idx) => (
-                        <React.Fragment key={idx}>
-                          <tr className="border-b border-gray-300">
-                            <td className="py-1 px-2">
-                              <span className="font-medium">{item.title}</span>
-                            </td>
-                            <td className="text-center py-1 px-2 font-bold text-xl">{item.quantity}</td>
-                            <td className="text-center py-1">
-                              <span className={`inline-block w-5 h-5 border-2 border-black rounded-sm ${printChecks[item.title]?.inStock ? 'bg-black' : ''}`}>
-                                {printChecks[item.title]?.inStock && (
-                                  <svg className="w-full h-full text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={4}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                  </svg>
-                                )}
-                              </span>
-                            </td>
-                            <td className="text-center py-1">
-                              <span className={`inline-block w-5 h-5 border-2 border-black rounded-sm ${printChecks[item.title]?.packed ? 'bg-black' : ''}`}>
-                                {printChecks[item.title]?.packed && (
-                                  <svg className="w-full h-full text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={4}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                  </svg>
-                                )}
-                              </span>
-                            </td>
-                            <td className="text-center py-1 font-bold text-xl">
-                              {printChecks[item.title]?.shortBy ? printChecks[item.title]?.shortBy : ''}
-                            </td>
-                          </tr>
-                          {item.bundleComponents && item.bundleComponents.length > 0 && item.bundleComponents.map((bc, bcIdx) => {
-                            const bcKey = `${item.title}::${bc.title}`;
-                            return (
-                              <tr key={`${idx}-bc-${bcIdx}`} className="border-b border-gray-200">
-                                <td className="py-0.5 pl-6 pr-2 text-gray-500 text-[15px]">
-                                  |- {bc.title}
-                                  {bc.variantTitle && bc.variantTitle !== 'Default Title' && ` (${bc.variantTitle})`}
-                                </td>
-                                <td className="text-center py-0.5 text-base font-semibold text-gray-500">{item.quantity * bc.quantity}</td>
-                                <td className="text-center py-0.5">
-                                  <span className={`inline-block w-[18px] h-[18px] border-[1.5px] border-black rounded-sm ${printChecks[bcKey]?.inStock ? 'bg-black' : ''}`}>
-                                    {printChecks[bcKey]?.inStock && (
-                                      <svg className="w-full h-full text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={4}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                      </svg>
-                                    )}
-                                  </span>
-                                </td>
-                                <td className="text-center py-0.5">
-                                  <span className={`inline-block w-[18px] h-[18px] border-[1.5px] border-black rounded-sm ${printChecks[bcKey]?.packed ? 'bg-black' : ''}`}>
-                                    {printChecks[bcKey]?.packed && (
-                                      <svg className="w-full h-full text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={4}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                      </svg>
-                                    )}
-                                  </span>
-                                </td>
-                                <td className="text-center py-0.5 text-base font-semibold text-gray-500">
-                                  {printChecks[bcKey]?.shortBy ? printChecks[bcKey]?.shortBy : ''}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </React.Fragment>
-                      ))}
-                    </tbody>
-                    <tfoot>
-                      <tr className="border-t-2 border-black">
-                        <td className="py-1.5 px-2 font-bold">
-                          Total Items: {order.items.reduce((sum, item) => sum + item.quantity, 0)}
-                        </td>
-                        <td></td>
-                        <td colSpan={3} className="text-center py-1.5">
-                          <span className="font-bold text-sm mr-1">Order Complete?</span>
-                          <span className="inline-block w-6 h-6 border-2 border-black rounded-sm align-middle"></span>
-                        </td>
-                      </tr>
-                    </tfoot>
-                  </table>
-                );
-              })()}
-
-              <div className="w-48 border border-gray-400 rounded overflow-hidden text-sm ml-auto">
-                <div className="flex justify-between py-0.5 px-2 border-b border-gray-200">
-                  <span>Subtotal</span>
-                  <span>{formatCurrency(order.subtotal)}</span>
-                </div>
-                {order.discountAmount > 0 && (
-                  <div className="flex justify-between py-0.5 px-2 border-b border-gray-200">
-                    <span>Discount</span>
-                    <span>-{formatCurrency(order.discountAmount)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between py-0.5 px-2 border-b border-gray-200">
-                  <span>Delivery</span>
-                  <span>{formatCurrency(order.deliveryFee)}</span>
-                </div>
-                <div className="flex justify-between py-0.5 px-2 border-b border-gray-200">
-                  <span>Tax</span>
-                  <span>{formatCurrency(order.taxAmount)}</span>
-                </div>
-                <div className="flex justify-between py-1 px-2 bg-gray-100 font-bold text-base">
-                  <span>TOTAL</span>
-                  <span>{formatCurrency(order.total)}</span>
-                </div>
-              </div>
-            </div>
-          );
-        })}
+        {printOrderIds.length > 0 && data?.orders && (
+          <PickSheetPrint
+            orders={printOrderIds
+              .map((orderId) => data.orders.find((o) => o.id === orderId))
+              .filter((o): o is Order => !!o)}
+          />
+        )}
       </div>
 
       {/* Review Request Modal */}
       {reviewModalOrders && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[80vh] flex flex-col">
-            <div className="px-6 py-4 border-b border-gray-100">
-              <h3 className="text-lg font-bold text-gray-900">Send Review Requests</h3>
-              <p className="text-sm text-gray-500 mt-1">Select which customers should receive a review request text.</p>
-            </div>
-            <div className="flex-1 overflow-y-auto px-6 py-3 divide-y divide-gray-100">
-              {reviewModalOrders.map((order) => {
-                const phone = order.customerPhone || order.deliveryPhone;
-                const hasPhone = !!phone;
-                const alreadySent = !!order.reviewRequestSentAt;
-                const disabled = !hasPhone || alreadySent;
-                return (
-                  <label
-                    key={order.id}
-                    className={`flex items-center gap-3 py-3 ${disabled ? 'opacity-50' : 'cursor-pointer'}`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={reviewChecked.has(order.id)}
-                      disabled={disabled}
-                      onChange={() => {
-                        setReviewChecked(prev => {
-                          const next = new Set(prev);
-                          if (next.has(order.id)) next.delete(order.id);
-                          else next.add(order.id);
-                          return next;
-                        });
-                      }}
-                      className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-gray-900 text-sm">#{order.orderNumber}</span>
-                        <span className="text-sm text-gray-700 truncate">{order.customerName}</span>
-                      </div>
-                      <span className="text-xs text-gray-500">
-                        {alreadySent ? 'Already sent' : hasPhone ? phone : '(No phone)'}
-                      </span>
-                    </div>
-                  </label>
-                );
-              })}
-            </div>
-            <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between gap-3">
-              <button
-                onClick={handleSkipReviews}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                Skip All
-              </button>
-              <button
-                onClick={handleSendReviewRequests}
-                disabled={sendingReviews || reviewChecked.size === 0}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {sendingReviews ? 'Sending...' : `Send to ${reviewChecked.size} customer${reviewChecked.size !== 1 ? 's' : ''}`}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ReviewRequestModal
+          orders={reviewModalOrders}
+          checked={reviewChecked}
+          onToggle={(orderId) => {
+            setReviewChecked(prev => {
+              const next = new Set(prev);
+              if (next.has(orderId)) next.delete(orderId);
+              else next.add(orderId);
+              return next;
+            });
+          }}
+          onSkip={handleSkipReviews}
+          onSend={handleSendReviewRequests}
+          sending={sendingReviews}
+        />
       )}
 
       {/* Shortage List Modal */}
       {shortageList && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[85vh] flex flex-col">
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-bold text-gray-900">Shortage List</h3>
-                <p className="text-sm text-gray-500 mt-1">
-                  Aggregated across {selectedOrders.size} selected order{selectedOrders.size !== 1 ? 's' : ''}
-                </p>
-              </div>
-              <button
-                onClick={() => setShortageList(null)}
-                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
-                aria-label="Close"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto px-6 py-4">
-              {shortageList.length === 0 ? (
-                <p className="text-sm text-gray-600 py-8 text-center">
-                  No shortages recorded for the selected orders.
-                </p>
-              ) : (
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-gray-200 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      <th className="py-2 w-16 text-center">Qty</th>
-                      <th className="py-2">Item</th>
-                      <th className="py-2 text-right">Orders</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {shortageList.map((row) => (
-                      <tr key={row.title} className="border-b border-gray-100">
-                        <td className="py-2 text-center font-bold text-gray-900">{row.quantity}</td>
-                        <td className="py-2 text-gray-800">{row.title}</td>
-                        <td className="py-2 text-right text-xs text-gray-500">
-                          {row.orderNumbers.map((n) => `#${n}`).join(', ')}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                  <tfoot>
-                    <tr className="border-t-2 border-gray-300">
-                      <td className="py-2 text-center font-bold text-gray-900">
-                        {shortageList.reduce((sum, r) => sum + r.quantity, 0)}
-                      </td>
-                      <td className="py-2 font-semibold text-gray-700">Total units short</td>
-                      <td></td>
-                    </tr>
-                  </tfoot>
-                </table>
-              )}
-            </div>
-            <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-end gap-2">
-              <button
-                onClick={() => {
-                  const text = shortageList
-                    .map((r) => `${r.quantity}\t${r.title}\t${r.orderNumbers.map((n) => `#${n}`).join(', ')}`)
-                    .join('\n');
-                  navigator.clipboard.writeText(text);
-                }}
-                disabled={shortageList.length === 0}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
-              >
-                Copy as TSV
-              </button>
-              <button
-                onClick={() => {
-                  const csv = 'Quantity,Item,Orders\n' + shortageList
-                    .map((r) => `${r.quantity},"${r.title.replace(/"/g, '""')}","${r.orderNumbers.map((n) => `#${n}`).join('; ')}"`)
-                    .join('\n');
-                  const blob = new Blob([csv], { type: 'text/csv' });
-                  const url = URL.createObjectURL(blob);
-                  const a = document.createElement('a');
-                  a.href = url;
-                  a.download = `shortage-list-${new Date().toISOString().split('T')[0]}.csv`;
-                  a.click();
-                  URL.revokeObjectURL(url);
-                }}
-                disabled={shortageList.length === 0}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
-              >
-                Download CSV
-              </button>
-              <button
-                onClick={handleEmailShortageList}
-                disabled={shortageList.length === 0 || emailingShortage === 'sending' || emailingShortage === 'sent'}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
-                  emailingShortage === 'sent'
-                    ? 'bg-green-600 text-white'
-                    : emailingShortage === 'error'
-                    ? 'bg-red-600 text-white hover:bg-red-700'
-                    : 'bg-brand-blue text-white hover:bg-blue-700'
-                }`}
-              >
-                {emailingShortage === 'sending' && 'Sending...'}
-                {emailingShortage === 'sent' && 'Sent ✓'}
-                {emailingShortage === 'error' && 'Retry Email'}
-                {emailingShortage === 'idle' && 'Email to Allan'}
-              </button>
-              <button
-                onClick={() => setShortageList(null)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
+        <ShortageListModal
+          items={shortageList}
+          selectedCount={selectedOrders.size}
+          onClose={() => setShortageList(null)}
+        />
       )}
     </div>
   );
 }
+
