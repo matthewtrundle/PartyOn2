@@ -167,26 +167,28 @@ export const bachelorConfig: LandingConfig = {
 
   reviewsEyebrow: '★★★★★ 5.0 ON GOOGLE',
   reviewsHeadline: 'The crew gets the credit. We just deliver.',
-  // Real Google reviews (synced GBP pool) — picked for bachelor-page
-  // message match: boat day, Airbnb drop, big-group quantities.
+  // Real Google reviews — harvested 2026-06-12 from the Business Profile
+  // reviews manager (the API sync only mirrors 5; see gbp.ts). Picked for
+  // bachelor-page message match: Lake Travis boat day, weekend rental
+  // stock-up, fly-in groups.
   reviews: [
     {
       quote:
-        "I would recommend this service to anyone who is going on a boat cruise! It was so nice to just show up to the boat and have all our cocktail ingredients and seltzers there. The recipes are on the pitcher and are easy for anyone to make! Prices are very reasonable, and anything you have left over you can take home!",
-      author: 'Perla Albiter',
+        'Used for a boat day on Lake Travis and it made it SO easy! Just showed up and our cooler was stocked with ice and all of the drinks we ordered ahead of time. 10/10 would recommend',
+      author: 'Rivajoy Giannitsis',
       detail: '★★★★★ via Google · Lake Travis boat day',
     },
     {
       quote:
-        'They brought all our alcohol right to our Airbnb! No stress, no running around, just pure convenience. We added the Skinnyrita drink package and it even came with a dispenser so our group could keep the drinks flowing. Pool, lake, backyard, you name it — this is the team to call!',
-      author: 'Austin Bach Babes',
-      detail: '★★★★★ via Google · Airbnb bach weekend',
+        'Awesome delivery service! Drinks showed up cold and on time for stocking our rental for the weekend',
+      author: 'Bayne Pettinger',
+      detail: '★★★★★ via Google · weekend rental stock-up',
     },
     {
       quote:
-        "Party on Delivery is a fantastic treasure! They truly made our UT tailgate happen — delivered all our liquor and kegs and brought tables and chairs for our guests. Communication was easy and they helped me decide on how much alcohol we would need. I highly recommend Party on Delivery to save you time and stress. Very reasonably priced too! You guys rock!",
-      author: 'Shannon Crim',
-      detail: '★★★★★ via Google · company UT tailgate',
+        'Fast, fair and convenient. Very hard to get all 3 in any business. Will use again for our next visit to Austin!',
+      author: 'Tim Nappi',
+      detail: '★★★★★ via Google · visiting Austin',
     },
   ],
 
