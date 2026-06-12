@@ -19,8 +19,8 @@ import { useQueueMutations } from './_components/use-queue-mutations';
 
 type QueueResponse = {
   data: RecommendationCardData[];
-  counts: Record<'marketing' | 'seo' | 'operations', number>;
-  detectorRanAt: Record<'marketing' | 'seo' | 'operations', string | null>;
+  counts: Record<'marketing' | 'seo' | 'operations' | 'finance', number>;
+  detectorRanAt: Record<'marketing' | 'seo' | 'operations' | 'finance', string | null>;
 };
 
 const PAGE_SIZE = 50;
@@ -29,6 +29,7 @@ const CHIPS: DomainChip[] = [
   { value: 'all', label: 'All' },
   { value: 'marketing', label: 'Marketing' },
   { value: 'operations', label: 'Operations' },
+  { value: 'finance', label: 'Finance' },
   { value: 'seo', label: 'SEO' },
 ];
 

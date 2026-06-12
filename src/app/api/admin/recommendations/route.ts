@@ -22,7 +22,7 @@ import type { RecommendationStatus } from '@/lib/recommendations/lifecycle';
 
 export const dynamic = 'force-dynamic';
 
-const DOMAINS: DomainFilter[] = ['all', 'marketing', 'seo', 'operations'];
+const DOMAINS: DomainFilter[] = ['all', 'marketing', 'seo', 'operations', 'finance'];
 const STATUSES: RecommendationStatus[] = [
   'open', 'approved', 'shipped', 'rejected', 'invalidated', 'snoozed',
 ];

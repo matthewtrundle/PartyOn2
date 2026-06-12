@@ -15,6 +15,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { computeDailyPL, yesterdayWindow } from '@/lib/finance/pl-calculation';
 import { writeFinanceSnapshot } from '@/lib/finance/snapshot';
+import { generateAll as generateFinanceRecs } from '@/lib/finance/recommendations';
 
 export const maxDuration = 60;
 
@@ -44,11 +45,29 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   }
 
   const snapshot = await writeFinanceSnapshot(payload);
-  const durationMs = Date.now() - startedAt.getTime();
 
-  console.log('[finance-snapshot] wrote snapshot for', snapshot.snapshotDate, 'in', durationMs, 'ms');
+  // Phase 5 — generate Finance Director recommendations off the fresh snapshot.
+  // Failures here don't block the snapshot write; we log + surface in the response.
+  let recsResult: Awaited<ReturnType<typeof generateFinanceRecs>> | null = null;
+  let recsError: string | null = null;
+  try {
+    recsResult = await generateFinanceRecs(payload, startedAt);
+  } catch (err) {
+    recsError = err instanceof Error ? err.message : String(err);
+    console.error('[finance-snapshot] recommendation generation failed:', recsError);
+  }
+
+  const durationMs = Date.now() - startedAt.getTime();
+  console.log(
+    '[finance-snapshot] wrote snapshot for',
+    snapshot.snapshotDate,
+    'in',
+    durationMs,
+    'ms; recs:',
+    recsResult ? JSON.stringify(recsResult.upsert) : '(failed)'
+  );
   return NextResponse.json({
     success: true,
-    data: { snapshot, durationMs },
+    data: { snapshot, durationMs, recommendations: recsResult, recsError },
   });
 }
