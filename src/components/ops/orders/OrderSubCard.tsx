@@ -49,7 +49,7 @@ export default function OrderSubCard({
         />
         <div className="flex-1 min-w-0 text-sm font-bold text-gray-900">
           {showPayerLabel && (
-            <span className="text-[10px] font-semibold tracking-[0.1em] uppercase text-gray-400 mr-1.5">
+            <span className="text-xs font-semibold tracking-[0.1em] uppercase text-gray-400 mr-1.5">
               Paid by
             </span>
           )}

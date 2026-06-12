@@ -58,7 +58,7 @@ export default function OrdersFilterBar({
   }
 
   return (
-    <div className="print:hidden">
+    <div className="print:hidden sticky top-0 z-30 -mx-4 px-4 py-2 bg-gray-50/95 backdrop-blur supports-[backdrop-filter]:bg-gray-50/85 border-b border-gray-200 md:static md:mx-0 md:p-0 md:bg-transparent md:border-0 md:backdrop-blur-none">
       {/* Row 1: search */}
       <div className="relative">
         <svg className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
