@@ -5,6 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { requireOpsAuth } from '@/lib/auth/ops-session';
 import { getLastSyncTime, getSyncHistory, syncProductFromShopify } from '@/lib/sync/shopify-sync';
 
 // Shopify Storefront API client
@@ -168,6 +169,9 @@ async function fetchShopifyProducts(): Promise<ShopifyProduct[]> {
  * Get sync status and history
  */
 export async function GET(): Promise<NextResponse> {
+  const auth = await requireOpsAuth();
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const [lastProductSync, history] = await Promise.all([
       getLastSyncTime('product'),
@@ -198,6 +202,9 @@ export async function GET(): Promise<NextResponse> {
  * Trigger a sync from Shopify
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const auth = await requireOpsAuth();
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const body = await request.json();
     const { entityType = 'products' } = body as { entityType?: string };

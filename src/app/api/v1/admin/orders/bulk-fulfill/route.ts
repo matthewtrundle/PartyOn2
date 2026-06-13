@@ -5,12 +5,16 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { requireOpsAuth } from '@/lib/auth/ops-session';
 import { prisma } from '@/lib/database/client';
 import { FulfillmentStatus, OrderStatus } from '@prisma/client';
 import { markCommissionsDelivered } from '@/lib/affiliates/commission-engine';
 import { fulfillInventoryForOrder } from '@/lib/inventory/services/order-service';
 
 export async function PATCH(request: NextRequest): Promise<NextResponse> {
+  const auth = await requireOpsAuth();
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const body = await request.json();
     const { orderIds } = body as { orderIds: string[] };

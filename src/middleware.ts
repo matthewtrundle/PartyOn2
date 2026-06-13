@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { OPS_SESSION_COOKIE, verifyOpsSessionToken } from '@/lib/auth/ops-token';
 
 /**
  * Middleware:
  * 1. Enforce canonical non-www domain
- * 2. Set affiliate attribution cookie from ?ref= param OR /partners/<slug> path
+ * 2. Require a valid ops session for all /api/v1/admin/* routes
+ * 3. Set affiliate attribution cookie from ?ref= param OR /partners/<slug> path
  *    (per ADR M0001: partner-page visits must attribute even without ?ref=)
  */
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { hostname } = request.nextUrl;
 
   // Redirect www to non-www (canonical domain)
@@ -16,6 +18,22 @@ export function middleware(request: NextRequest) {
     // 301 Permanent Redirect for SEO
     // The redirected request will re-enter middleware with the same ?ref= param
     return NextResponse.redirect(url, { status: 301 });
+  }
+
+  // Ops auth gate for the entire admin API surface. The matcher below must
+  // keep matching /api/v1/admin/* for this to hold — destructive routes also
+  // carry their own requireOpsAuth as defense in depth.
+  if (request.nextUrl.pathname.startsWith('/api/v1/admin')) {
+    const token = request.cookies.get(OPS_SESSION_COOKIE)?.value;
+    const session = token ? await verifyOpsSessionToken(token) : null;
+    if (!session) {
+      // Same shape as requireOpsAuth() so ops-panel error handling sees one format
+      return NextResponse.json(
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+    return NextResponse.next();
   }
 
   // Redirect unauthenticated users away from affiliate dashboard

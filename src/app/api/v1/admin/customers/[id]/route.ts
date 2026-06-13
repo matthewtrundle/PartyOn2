@@ -5,6 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { requireOpsAuth } from '@/lib/auth/ops-session';
 import { prisma } from '@/lib/database/client';
 
 interface RouteParams {
@@ -15,6 +16,9 @@ export async function GET(
   request: NextRequest,
   { params }: RouteParams
 ): Promise<NextResponse> {
+  const auth = await requireOpsAuth();
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const { id } = await params;
 
@@ -119,6 +123,9 @@ export async function PUT(
   request: NextRequest,
   { params }: RouteParams
 ): Promise<NextResponse> {
+  const auth = await requireOpsAuth();
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const { id } = await params;
     const body = await request.json();

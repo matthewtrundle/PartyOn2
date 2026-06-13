@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireOpsAuth } from '@/lib/auth/ops-session';
 import { z } from 'zod';
 import { resend } from '@/lib/email/resend-client';
 
@@ -17,6 +18,9 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
+  const auth = await requireOpsAuth();
+  if (auth instanceof NextResponse) return auth;
+
   if (!resend) {
     return NextResponse.json({ error: 'Email service not configured' }, { status: 503 });
   }
