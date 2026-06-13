@@ -5,6 +5,7 @@
 
 import { prisma } from '@/lib/database/client';
 import { calculateDeliveryFee } from '@/lib/delivery/rates';
+import { isLastMinuteDate } from '@/lib/lastMinute/dates';
 import {
   generateShareCode,
   computeOrderDeadline,
@@ -504,7 +505,35 @@ export async function updateTab(
     },
   });
 
+  // ─── Bubble the date change up to the parent GroupOrderV2 ──────────
+  // If any tab on the order has a today/tomorrow delivery date, the
+  // group is flagged as last-minute so the dashboard's catalog
+  // restricts to the deep-stock pool. Recomputed after every tab edit
+  // so a date change inside the dashboard correctly flips the menu.
+  if (input.deliveryDate) {
+    await recomputeGroupLastMinute(tab.groupOrderId);
+  }
+
   return serializeTab(tab);
+}
+
+/**
+ * Recompute `GroupOrderV2.isLastMinute` based on the current set of
+ * SubOrder delivery dates. Set true if ANY tab is today/tomorrow.
+ *
+ * Idempotent — safe to call from anywhere that mutates a tab's date,
+ * or as a backfill if the flag drifts.
+ */
+export async function recomputeGroupLastMinute(groupId: string): Promise<void> {
+  const tabs = await prisma.subOrder.findMany({
+    where: { groupOrderId: groupId },
+    select: { deliveryDate: true },
+  });
+  const nextFlag = tabs.some((t) => isLastMinuteDate(t.deliveryDate));
+  await prisma.groupOrderV2.update({
+    where: { id: groupId },
+    data: { isLastMinute: nextFlag },
+  });
 }
 
 export async function deleteTab(tabId: string): Promise<void> {

@@ -12,6 +12,7 @@ import { getAttribution } from '@/lib/analytics/attribution';
 import { trackContactClick } from '@/lib/analytics/ga4-events';
 import { trackFunnelStep } from '@/lib/experiments/funnelTrack';
 import type { FunnelStep } from '@/lib/experiments/funnelSteps';
+import { isLastMinuteDate } from '@/lib/lastMinute/dates';
 import type {
   LandingConfig,
   BuilderProduct,
@@ -90,22 +91,7 @@ export default function PackageBuilderModal({
   // Cleared selections are kept — the user re-confirms anything missing.
   useEffect(() => {
     if (!onLastMinuteModeChange || !hasLastMinuteCatalog) return;
-    if (!deliveryDate) {
-      onLastMinuteModeChange(false);
-      return;
-    }
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1);
-    const picked = new Date(
-      deliveryDate.getFullYear(),
-      deliveryDate.getMonth(),
-      deliveryDate.getDate(),
-    );
-    const isToday = picked.getTime() === today.getTime();
-    const isTomorrow = picked.getTime() === tomorrow.getTime();
-    onLastMinuteModeChange(isToday || isTomorrow);
+    onLastMinuteModeChange(isLastMinuteDate(deliveryDate));
   }, [deliveryDate, hasLastMinuteCatalog, onLastMinuteModeChange]);
 
   const [contactName, setContactName] = useState('');

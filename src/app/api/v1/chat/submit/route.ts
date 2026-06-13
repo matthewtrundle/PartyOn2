@@ -21,6 +21,7 @@ import { eventQuizWelcomeEmail } from '@/lib/email/templates/event-quiz-welcome'
 import { upsertLead, recordEvent } from '@/lib/leads/leadCapture';
 import { targetUrlFor } from '@/lib/eventQuiz/routing';
 import { recommendForChat } from '@/lib/chat/recommendation';
+import { isLastMinuteDate } from '@/lib/lastMinute/dates';
 import { EmailType } from '@prisma/client';
 import { prisma } from '@/lib/database/client';
 
@@ -156,15 +157,8 @@ export async function POST(req: NextRequest) {
   }
 
   // Flag whether the destination landing page should auto-engage
-  // last-minute mode (delivery date is today or tomorrow).
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const tomorrow = new Date(today);
-  tomorrow.setDate(today.getDate() + 1);
-  const picked = new Date(`${body.deliveryDate}T00:00:00`);
-  const isLastMinute =
-    picked.getTime() === today.getTime() ||
-    picked.getTime() === tomorrow.getTime();
+  // last-minute mode (delivery date is today or tomorrow in Austin TZ).
+  const isLastMinute = isLastMinuteDate(body.deliveryDate);
 
   return NextResponse.json({
     ok: true,
