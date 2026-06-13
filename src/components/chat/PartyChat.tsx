@@ -30,6 +30,7 @@ import {
   type PartyType,
 } from '@/lib/eventQuiz/routing';
 import { sendLeadEvent } from '@/lib/leads/client';
+import { useDeliveryWindow } from '@/lib/deliveryWindow/window';
 
 type RecommendedItem = {
   handle: string;
@@ -69,15 +70,27 @@ export default function PartyChat() {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState<Step>('party');
   const [partyType, setPartyType] = useState<PartyType | null>(null);
-  // Default delivery date: 7 days out. Picker enforces today as the
-  // minimum (no past dates).
+  // Default delivery date depends on the entrance-gate choice:
+  //   • last-minute → today (deep-stock menu engages immediately)
+  //   • future / unset → 7 days out
+  // Picker enforces today as the minimum either way.
+  const { isLastMinute: gateIsLastMinute } = useDeliveryWindow();
   const defaultDate = (() => {
     const d = new Date();
-    d.setDate(d.getDate() + 7);
+    if (!gateIsLastMinute) d.setDate(d.getDate() + 7);
     return d.toISOString().slice(0, 10);
   })();
   const todayStr = new Date().toISOString().slice(0, 10);
   const [deliveryDate, setDeliveryDate] = useState<string>(defaultDate);
+  // If the gate's choice changes while the chat is mid-flow, snap the
+  // date forward so the user sees consistent defaults.
+  useEffect(() => {
+    const next = new Date();
+    if (!gateIsLastMinute) next.setDate(next.getDate() + 7);
+    setDeliveryDate(next.toISOString().slice(0, 10));
+    // We intentionally only react to the gate flag — manual date
+    // edits shouldn't trigger a reset.
+  }, [gateIsLastMinute]);
   const [headcount, setHeadcount] = useState<number>(12);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');

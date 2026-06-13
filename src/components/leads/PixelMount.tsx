@@ -17,6 +17,8 @@ import ReturningVisitorBubble from './ReturningVisitorBubble';
 import FormCaptureWatcher from './FormCaptureWatcher';
 import LeadMagnetController from '@/components/leadMagnet/LeadMagnetController';
 import PartyChatMount from '@/components/chat/PartyChatMount';
+import DeliveryWindowGate from '@/components/DeliveryWindowGate';
+import DeliveryWindowBadge from '@/components/DeliveryWindowBadge';
 
 export default function PixelMount() {
   return (
@@ -40,6 +42,18 @@ export default function PixelMount() {
           Hidden on admin/ops/dashboard/checkout/event-quiz. */}
       <Suspense fallback={null}>
         <PartyChatMount />
+      </Suspense>
+      {/* Delivery-window entrance gate — fires once per 24h after the
+          age gate clears. Captures today/tomorrow vs future so every
+          downstream flow (chat, builder modal, /quote/start) defaults
+          the menu + date picker correctly from the start. */}
+      <Suspense fallback={null}>
+        <DeliveryWindowGate />
+      </Suspense>
+      {/* Small chip showing the active delivery-window choice; tap to
+          reset (the gate re-pops). Hidden when no choice exists yet. */}
+      <Suspense fallback={null}>
+        <DeliveryWindowBadge />
       </Suspense>
     </>
   );

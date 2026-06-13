@@ -13,6 +13,7 @@ import { trackContactClick } from '@/lib/analytics/ga4-events';
 import { trackFunnelStep } from '@/lib/experiments/funnelTrack';
 import type { FunnelStep } from '@/lib/experiments/funnelSteps';
 import { isLastMinuteDate } from '@/lib/lastMinute/dates';
+import { useDeliveryWindow } from '@/lib/deliveryWindow/window';
 import type {
   LandingConfig,
   BuilderProduct,
@@ -82,17 +83,25 @@ export default function PackageBuilderModal({
 
   const [stepIndex, setStepIndex] = useState(0);
   const [people, setPeople] = useState(M.defaultPeople);
-  const [deliveryDate, setDeliveryDate] = useState<Date | null>(null);
+  // Pre-fill the date from the entrance-gate choice. If the visitor
+  // told us "Today or Tomorrow" up-front, default to today; otherwise
+  // leave the picker empty (user can still type or pick a date).
+  const { isLastMinute: gateIsLastMinute } = useDeliveryWindow();
+  const [deliveryDate, setDeliveryDate] = useState<Date | null>(() =>
+    gateIsLastMinute ? new Date() : null,
+  );
   const [selection, setSelection] = useState<Selection>({});
   const [extraSelection, setExtraSelection] = useState<string[]>([]);
 
-  // Whenever the customer picks a date, check whether it's today or
-  // tomorrow and tell the parent to swap to the last-minute catalog.
-  // Cleared selections are kept — the user re-confirms anything missing.
+  // Whenever the customer picks a date OR the entrance-gate choice
+  // flips, decide whether to engage last-minute mode. The picked date
+  // wins; if it's null, we fall back to the gate's signal so the
+  // catalog narrows immediately even before they hit the basics step.
   useEffect(() => {
     if (!onLastMinuteModeChange || !hasLastMinuteCatalog) return;
-    onLastMinuteModeChange(isLastMinuteDate(deliveryDate));
-  }, [deliveryDate, hasLastMinuteCatalog, onLastMinuteModeChange]);
+    const fromDate = isLastMinuteDate(deliveryDate);
+    onLastMinuteModeChange(fromDate || (deliveryDate === null && gateIsLastMinute));
+  }, [deliveryDate, gateIsLastMinute, hasLastMinuteCatalog, onLastMinuteModeChange]);
 
   const [contactName, setContactName] = useState('');
   const [contactEmail, setContactEmail] = useState('');
