@@ -44,6 +44,71 @@ export function formatAddress(addr: Record<string, string> | string | null): str
   return parts.join(', ');
 }
 
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const DAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/** "Wednesday, Jun 11" from a YYYY-MM-DD key (UTC-noon trick avoids tz shift). */
+export function fmtDateLong(iso: string): string {
+  const d = new Date(`${iso}T12:00:00Z`);
+  return `${DAY_NAMES[d.getUTCDay()]}, ${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}`;
+}
+
+/** "Wed 6/11" from a YYYY-MM-DD key. */
+export function fmtDateShort(iso: string): string {
+  const d = new Date(`${iso}T12:00:00Z`);
+  return `${DAY_SHORT[d.getUTCDay()]} ${d.getUTCMonth() + 1}/${d.getUTCDate()}`;
+}
+
+/** "$123.45" — compact money for cooler cards (matches weekly checklist). */
+export function fmtMoney(n: number): string {
+  return `$${n.toFixed(2)}`;
+}
+
+export interface TimePill {
+  label: 'AM' | 'PM' | 'EVE' | 'TBD' | '?';
+  cls: string;
+}
+
+/** AM/PM/EVE pill classification from a delivery-time string. */
+export function timeOfDayPill(timeStr: string): TimePill {
+  if (!timeStr || timeStr === 'TBD') {
+    return { label: 'TBD', cls: 'bg-gray-200 text-gray-700' };
+  }
+  const m = timeStr.match(/(\d{1,2})(?::(\d{2}))?\s*(AM|PM)/i);
+  if (!m) return { label: '?', cls: 'bg-gray-200 text-gray-700' };
+  let hour = parseInt(m[1], 10);
+  const isPM = m[3].toUpperCase() === 'PM';
+  if (isPM && hour !== 12) hour += 12;
+  if (!isPM && hour === 12) hour = 0;
+  if (hour < 12) return { label: 'AM', cls: 'bg-amber-200 text-amber-900' };
+  if (hour < 17) return { label: 'PM', cls: 'bg-sky-200 text-sky-900' };
+  return { label: 'EVE', cls: 'bg-indigo-900 text-white' };
+}
+
+/** Disco/Private/House tag colors (matches weekly checklist). */
+export function typeTagClasses(t: 'DISCO' | 'PRIVATE' | 'HOUSE'): { label: string; cls: string; labelCls: string } {
+  if (t === 'DISCO') {
+    return {
+      label: 'Disco',
+      cls: 'bg-orange-500 text-white ring-1 ring-inset ring-orange-700',
+      labelCls: 'text-orange-700',
+    };
+  }
+  if (t === 'PRIVATE') {
+    return {
+      label: 'Private',
+      cls: 'bg-teal-600 text-white ring-1 ring-inset ring-teal-800',
+      labelCls: 'text-teal-700',
+    };
+  }
+  return {
+    label: 'House',
+    cls: 'bg-emerald-800 text-white ring-1 ring-inset ring-emerald-900',
+    labelCls: 'text-emerald-800',
+  };
+}
+
 /** Badge classes for Order.status values. */
 export function getStatusColor(status: string): string {
   switch (status) {
