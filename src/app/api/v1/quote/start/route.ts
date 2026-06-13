@@ -33,6 +33,7 @@ import { upsertLead, recordEvent } from '@/lib/leads/leadCapture';
 import { attributionSchema, compactAttribution } from '@/lib/leads/attribution-schema';
 import { targetUrlFor } from '@/lib/eventQuiz/routing';
 import { createDashboardOrder, addDraftItem } from '@/lib/group-orders-v2/service';
+import { isLastMinuteDate } from '@/lib/lastMinute/dates';
 import { prisma } from '@/lib/database/client';
 import { EmailType } from '@prisma/client';
 import type { PartyType as DashboardPartyType, DeliveryContextType } from '@/lib/group-orders-v2/types';
@@ -110,14 +111,7 @@ export async function POST(req: NextRequest) {
   }
 
   // ─── Last-minute decision ──────────────────────────────────────────
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const tomorrow = new Date(today);
-  tomorrow.setDate(today.getDate() + 1);
-  const picked = new Date(`${body.deliveryDate}T00:00:00`);
-  const isLastMinute =
-    picked.getTime() === today.getTime() ||
-    picked.getTime() === tomorrow.getTime();
+  const isLastMinute = isLastMinuteDate(body.deliveryDate);
 
   // ─── Lead row + status promote ─────────────────────────────────────
   let leadId: string | null = null;
