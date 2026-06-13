@@ -5,6 +5,8 @@ const prismaMock = vi.hoisted(() => ({
   operationsRecommendation: { findMany: vi.fn(), findUnique: vi.fn() },
   operationsSnapshot: { findFirst: vi.fn() },
   analyticsSnapshot: { findFirst: vi.fn() },
+  financeRecommendation: { findMany: vi.fn(), findUnique: vi.fn() },
+  financeSnapshot: { findFirst: vi.fn() },
 }));
 
 vi.mock('@/lib/database/client', () => ({ prisma: prismaMock }));
@@ -69,6 +71,8 @@ beforeEach(() => {
   });
   prismaMock.operationsSnapshot.findFirst.mockResolvedValue({ capturedAt: new Date('2026-05-16T07:30:00Z') });
   prismaMock.analyticsSnapshot.findFirst.mockResolvedValue({ date: new Date('2026-05-16T00:00:00Z') });
+  prismaMock.financeSnapshot.findFirst.mockResolvedValue({ snapshotDate: new Date('2026-05-16T00:00:00Z') });
+  prismaMock.financeRecommendation.findMany.mockResolvedValue([]);
 });
 
 describe('listUnifiedRecommendations', () => {
@@ -89,7 +93,7 @@ describe('listUnifiedRecommendations', () => {
     ]);
     prismaMock.operationsRecommendation.findMany.mockResolvedValue([mkOpsRow()]);
     const result = await listUnifiedRecommendations({ domain: 'all' });
-    expect(result.counts).toEqual({ marketing: 1, seo: 1, operations: 1 });
+    expect(result.counts).toEqual({ marketing: 1, seo: 1, operations: 1, finance: 0 });
   });
 
   it('only queries ops table when domain=operations', async () => {

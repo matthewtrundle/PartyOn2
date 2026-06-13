@@ -9,7 +9,7 @@
 
 import type { ReactElement } from 'react';
 
-export type DomainChipValue = 'all' | 'marketing' | 'operations' | 'seo';
+export type DomainChipValue = 'all' | 'marketing' | 'operations' | 'finance' | 'seo';
 
 export interface DomainChip {
   value: DomainChipValue;
@@ -19,7 +19,7 @@ export interface DomainChip {
 export interface DomainChipsProps {
   chips: DomainChip[];
   current: DomainChipValue;
-  counts?: Record<'marketing' | 'seo' | 'operations', number>;
+  counts?: Record<'marketing' | 'seo' | 'operations' | 'finance', number>;
   onChange: (value: DomainChipValue) => void;
 }
 
@@ -39,7 +39,9 @@ export function DomainChips({
           const isActive = current === chip.value;
           const count =
             chip.value === 'all'
-              ? (counts ? counts.marketing + counts.seo + counts.operations : null)
+              ? counts
+                ? counts.marketing + counts.seo + counts.operations + counts.finance
+                : null
               : (counts?.[chip.value] ?? null);
           return (
             <button

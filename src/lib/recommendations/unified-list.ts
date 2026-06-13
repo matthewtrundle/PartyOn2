@@ -21,8 +21,9 @@ import type {
   RiskTier,
 } from './lifecycle';
 import type { ActionLogEntry, OpsEvidence, OpsSeverity } from '@/lib/operations/types';
+import type { FinanceEvidence, FinanceSeverity } from '@/lib/finance/types';
 
-export type DomainFilter = 'all' | 'marketing' | 'seo' | 'operations';
+export type DomainFilter = 'all' | 'marketing' | 'seo' | 'operations' | 'finance';
 
 export interface UnifiedListOpts {
   domain?: DomainFilter;
@@ -32,11 +33,12 @@ export interface UnifiedListOpts {
 
 export interface UnifiedListResult {
   data: RecommendationCardData[];
-  counts: Record<'marketing' | 'seo' | 'operations', number>;
+  counts: Record<'marketing' | 'seo' | 'operations' | 'finance', number>;
   detectorRanAt: {
     marketing: string | null;
     seo: string | null;
     operations: string | null;
+    finance: string | null;
   };
 }
 
@@ -49,6 +51,13 @@ const SEVERITY_RANK: Record<Severity, number> = {
 
 /** Ops 3-tier → shared 4-tier severity. */
 function mapOpsSeverity(s: OpsSeverity): Severity {
+  if (s === 'urgent') return 'critical';
+  if (s === 'high') return 'high';
+  return 'medium';
+}
+
+/** Finance uses the same 3-tier scale as Ops. */
+function mapFinanceSeverity(s: FinanceSeverity): Severity {
   if (s === 'urgent') return 'critical';
   if (s === 'high') return 'high';
   return 'medium';
@@ -197,6 +206,57 @@ function mapOperations(row: OperationsRow): RecommendationCardData {
   };
 }
 
+interface FinanceRow {
+  id: string;
+  signalKind: string;
+  severity: string;
+  title: string;
+  evidence: Prisma.JsonValue;
+  targetEntityType: string;
+  targetEntityId: string;
+  actionPayload: Prisma.JsonValue;
+  status: string;
+  source: string;
+  dismissReason: string | null;
+  shippedAt: Date | null;
+  createdAt: Date;
+}
+
+function mapFinance(row: FinanceRow): RecommendationCardData {
+  const sev: FinanceSeverity =
+    row.severity === 'urgent' || row.severity === 'high' ? row.severity : 'normal';
+  const status: RecommendationStatus = isRecommendationStatus(row.status) ? row.status : 'open';
+  const evidence = Array.isArray(row.evidence)
+    ? (row.evidence as unknown as FinanceEvidence[])
+    : [];
+  const action =
+    row.actionPayload && typeof row.actionPayload === 'object'
+      ? (row.actionPayload as unknown as ActionPayload)
+      : null;
+  return {
+    id: row.id,
+    domain: 'finance',
+    source: row.source,
+    generatedAt: row.createdAt.toISOString(),
+    title: row.title,
+    body: bodyFromEvidence(evidence as unknown as OpsEvidence[]),
+    segment: null,
+    metric: row.signalKind,
+    currentValue: null,
+    targetValue: null,
+    impactDollarsMonthly: null,
+    effortTier: null,
+    riskTier: 'recommend',
+    status,
+    shippedAt: row.shippedAt?.toISOString() ?? null,
+    notes: row.dismissReason,
+    resultMetricBefore: null,
+    resultMetricAfter: null,
+    actionPayload: action,
+    severity: mapFinanceSeverity(sev),
+  };
+}
+
 /**
  * Load merged recs across Marketing/SEO + Operations. The unified queue is
  * additive — Marketing's existing pipeline remains untouched.
@@ -212,13 +272,14 @@ export async function listUnifiedRecommendations(
 
   const includeOps = domain === 'all' || domain === 'operations';
   const includeMarketing = domain === 'all' || domain === 'marketing' || domain === 'seo';
+  const includeFinance = domain === 'all' || domain === 'finance';
 
   const marketingDomainFilter =
     domain === 'marketing' ? { domain: 'marketing' } :
     domain === 'seo' ? { domain: 'seo' } :
     {};
 
-  const [marketingRows, opsRows, latestOpsSnap, latestMarketingSnap] = await Promise.all([
+  const [marketingRows, opsRows, financeRows, latestOpsSnap, latestMarketingSnap, latestFinanceSnap] = await Promise.all([
     includeMarketing
       ? prisma.recommendationItem.findMany({
           where: { status: { in: statuses }, ...marketingDomainFilter },
@@ -233,13 +294,22 @@ export async function listUnifiedRecommendations(
           take: limit,
         })
       : Promise.resolve([] as OperationsRow[]),
+    includeFinance
+      ? prisma.financeRecommendation.findMany({
+          where: { status: { in: statuses } },
+          orderBy: [{ createdAt: 'desc' }],
+          take: limit,
+        })
+      : Promise.resolve([] as FinanceRow[]),
     prisma.operationsSnapshot.findFirst({ orderBy: { capturedAt: 'desc' }, select: { capturedAt: true } }),
     prisma.analyticsSnapshot.findFirst({ orderBy: { date: 'desc' }, select: { date: true } }),
+    prisma.financeSnapshot.findFirst({ orderBy: { snapshotDate: 'desc' }, select: { snapshotDate: true } }),
   ]);
 
   const mapped = [
     ...marketingRows.map(mapMarketing),
     ...opsRows.map(mapOperations),
+    ...financeRows.map(mapFinance),
   ];
 
   mapped.sort((a, b) => {
@@ -249,12 +319,13 @@ export async function listUnifiedRecommendations(
     return new Date(b.generatedAt).getTime() - new Date(a.generatedAt).getTime();
   });
 
-  const counts = { marketing: 0, seo: 0, operations: 0 };
+  const counts = { marketing: 0, seo: 0, operations: 0, finance: 0 };
   for (const r of mapped) {
     if (r.status !== 'open' && r.status !== 'approved') continue;
     if (r.domain === 'ops') counts.operations += 1;
     else if (r.domain === 'seo') counts.seo += 1;
     else if (r.domain === 'marketing') counts.marketing += 1;
+    else if (r.domain === 'finance') counts.finance += 1;
   }
 
   return {
@@ -264,6 +335,7 @@ export async function listUnifiedRecommendations(
       operations: latestOpsSnap?.capturedAt.toISOString() ?? null,
       marketing: latestMarketingSnap?.date.toISOString() ?? null,
       seo: latestMarketingSnap?.date.toISOString() ?? null,
+      finance: latestFinanceSnap?.snapshotDate.toISOString() ?? null,
     },
   };
 }
@@ -274,7 +346,7 @@ export async function listUnifiedRecommendations(
  */
 export async function findRecommendationLocation(
   id: string
-): Promise<{ domain: 'ops' | 'marketing-seo'; status: RecommendationStatus } | null> {
+): Promise<{ domain: 'ops' | 'marketing-seo' | 'finance'; status: RecommendationStatus } | null> {
   const ops = await prisma.operationsRecommendation.findUnique({
     where: { id },
     select: { status: true },
@@ -283,6 +355,16 @@ export async function findRecommendationLocation(
     return {
       domain: 'ops',
       status: isRecommendationStatus(ops.status) ? ops.status : 'open',
+    };
+  }
+  const fin = await prisma.financeRecommendation.findUnique({
+    where: { id },
+    select: { status: true },
+  });
+  if (fin) {
+    return {
+      domain: 'finance',
+      status: isRecommendationStatus(fin.status) ? fin.status : 'open',
     };
   }
   const mkt = await prisma.recommendationItem.findUnique({

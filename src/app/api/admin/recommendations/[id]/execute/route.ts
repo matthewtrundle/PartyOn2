@@ -165,10 +165,19 @@ export async function POST(
 
 async function loadActionPayload(
   id: string,
-  domain: 'ops' | 'marketing-seo'
+  domain: 'ops' | 'marketing-seo' | 'finance'
 ): Promise<ActionPayload | null> {
   if (domain === 'ops') {
     const row = await prisma.operationsRecommendation.findUnique({
+      where: { id },
+      select: { actionPayload: true },
+    });
+    const raw = row?.actionPayload;
+    if (!raw || typeof raw !== 'object') return null;
+    return raw as unknown as ActionPayload;
+  }
+  if (domain === 'finance') {
+    const row = await prisma.financeRecommendation.findUnique({
       where: { id },
       select: { actionPayload: true },
     });
