@@ -309,6 +309,20 @@ Originally scoped: add `invoice_total_cents` / `due_date` / `paid_at` / `paid_vi
 - Obsidian sync: `scripts/finance/sync-obsidian.mjs` + PreToolUse hook in `.claude/settings.json`
 - Vault shell: `Programs/Finance-Director.md` + `Memory/Finance/{Briefings,Recommendations,Decisions,MonthlyClose,Open-Questions.md,README.md}`
 
+### Phase 5A — Shopify all-time order archive (post-merge trajectory work)
+
+- Splits out from Phase 5 follow-up: the monthly close email needs multi-year
+  history that doesn't live in the Order table (which only goes back ~5 months).
+- New `ShopifyOrderArchive` table — thin financial snapshot of every Shopify
+  order ever processed (totals, refunds, line items, landing page, tags).
+- New `ShopifyArchiveSyncState` singleton tracks last full backfill + last
+  incremental cursor.
+- One-shot backfill script `scripts/finance/backfill-shopify-archive.ts` walks
+  the Admin GraphQL `orders` connection from inception.
+- Daily safety-net cron `/api/cron/finance-shopify-archive-sync` (07:00 UTC)
+  re-pulls anything Shopify updated in the last 36h.
+- Idempotent upsert keyed by Shopify order GID.
+
 ### Phase 6 — Auto-categorize graduation (post-trust)
 
 Only after the operator has reviewed Phase 5 briefings for 4+ weeks and feels confident, graduate the Director's auto-categorize behavior from "one-by-one with reversal button" to "batch auto-categorize with weekly audit summary." This is a config flag, not new code.

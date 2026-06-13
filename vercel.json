@@ -61,6 +61,10 @@
       "schedule": "15 7 * * *"
     },
     {
+      "path": "/api/cron/finance-shopify-archive-sync",
+      "schedule": "0 7 * * *"
+    },
+    {
       "path": "/api/cron/finance-snapshot",
       "schedule": "45 7 * * *"
     },

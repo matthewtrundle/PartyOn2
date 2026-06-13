@@ -2779,6 +2779,62 @@ model QbExpense {
   @@map("qb_expenses")
 }
 
+/// Thin financial snapshot of every Shopify order ever processed (Phase 5A).
+/// Powers multi-year monthly rollups for the Finance Director trajectory
+/// briefing. NOT a replacement for Order — Order is still the system of
+/// record for fulfillment / picking / refunds. This holds only the fields
+/// needed for trajectory math + segment classification.
+model ShopifyOrderArchive {
+  id                    String   @id @default(cuid())
+  shopifyOrderId        String   @unique @map("shopify_order_id")
+  shopifyOrderName      String?  @map("shopify_order_name")
+  processedAt           DateTime @map("processed_at")
+  shopifyCreatedAt      DateTime @map("shopify_created_at")
+  totalPriceCents       Int      @map("total_price_cents")
+  subtotalPriceCents    Int      @map("subtotal_price_cents")
+  totalTaxCents         Int      @default(0) @map("total_tax_cents")
+  totalShippingCents    Int      @default(0) @map("total_shipping_cents")
+  totalDiscountsCents   Int      @default(0) @map("total_discounts_cents")
+  totalRefundsCents     Int      @default(0) @map("total_refunds_cents")
+  currency              String   @default("USD")
+  financialStatus       String?  @map("financial_status")
+  fulfillmentStatus     String?  @map("fulfillment_status")
+  customerEmail         String?  @map("customer_email")
+  shopifyCustomerId     String?  @map("shopify_customer_id")
+  landingPage           String?  @map("landing_page") @db.Text
+  referringSite         String?  @map("referring_site") @db.Text
+  sourceIdentifier      String?  @map("source_identifier")
+  sourceName            String?  @map("source_name")
+  /// Denormalised line items: [{ sku, title, productId, variantId, quantity, priceCents }].
+  lineItems             Json     @default("[]") @map("line_items")
+  tags                  String[] @default([])
+  note                  String?  @db.Text
+  rawPayload            Json?    @map("raw_payload")
+  syncedAt              DateTime @default(now()) @map("synced_at")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  @@index([processedAt])
+  @@index([financialStatus])
+  @@index([customerEmail])
+  @@index([shopifyCustomerId])
+  @@map("shopify_order_archive")
+}
+
+/// Single-row tracker for the Shopify archive backfill + safety-net cron
+/// (Phase 5A). Lets the daily cron pull only what changed since last run.
+model ShopifyArchiveSyncState {
+  id                     String    @id @default("singleton")
+  lastFullBackfillAt     DateTime? @map("last_full_backfill_at")
+  lastIncrementalAt      DateTime? @map("last_incremental_at")
+  lastCursorUpdatedAt    DateTime? @map("last_cursor_updated_at")
+  lastError              String?   @map("last_error") @db.Text
+  totalOrdersArchived    Int       @default(0) @map("total_orders_archived")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
+
+  @@map("shopify_archive_sync_state")
+}
+
 /// Per-day sales journal entries posted from PartyOn → QuickBooks (Phase 2B).
 /// Drafted by the daily cron, REQUIRE operator approval before posting
 /// (autonomy decision #4 — only qb-categorize bypasses operator click).
