@@ -36,6 +36,19 @@ export default function DashboardCheckoutModal({
   const [email, setEmail] = useState(participantEmail || '');
   const [emailError, setEmailError] = useState('');
 
+  // ─── Two checkout acknowledgements ────────────────────────────────
+  // 1. Substitutions OK — pre-checked, customer can opt out. Lets ops
+  //    swap similar items if the exact product runs out before delivery.
+  // 2. 21+ + acceptance at door — required, unchecked by default.
+  //    Customer confirms both their own age AND that an adult will be
+  //    there to receive the order (we ID at the door).
+  // Both flow into the backend as optional fields on the checkout call
+  // (API client signature update is a follow-up — for the preview the
+  // UI gates the submit so we can iterate on copy before persistence).
+  const [substitutionsOk, setSubstitutionsOk] = useState(true);
+  const [acceptanceConfirmed, setAcceptanceConfirmed] = useState(false);
+  const [acceptanceError, setAcceptanceError] = useState('');
+
   // Discount -- pre-populate from dashboard promo if it's a discount type
   const [discountCode, setDiscountCode] = useState(
     appliedPromo?.type === 'discount' ? appliedPromo.code : ''
@@ -97,6 +110,13 @@ export default function DashboardCheckoutModal({
       return;
     }
     setEmailError('');
+
+    // 21+ acceptance is mandatory — we can't dispatch alcohol without it.
+    if (!acceptanceConfirmed) {
+      setAcceptanceError('Please confirm 21+ at delivery so we can dispatch your order.');
+      return;
+    }
+    setAcceptanceError('');
 
     setLoading(true);
 
@@ -366,6 +386,55 @@ export default function DashboardCheckoutModal({
             </div>
           </div>
 
+          {/* ─── Two acknowledgements — substitutions + 21+ acceptance ──── */}
+          <div className="space-y-3 pt-1">
+            <label className="flex items-start gap-2.5 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={substitutionsOk}
+                onChange={(e) => setSubstitutionsOk(e.target.checked)}
+                className="mt-0.5 w-4 h-4 rounded border-gray-300 text-brand-blue focus:ring-brand-blue cursor-pointer"
+              />
+              <span className="text-sm text-gray-800 leading-snug">
+                <span className="font-semibold">Substitutions are OK</span> — if
+                an item runs out before we deliver, swap it for the closest
+                comparable product (same brand or same category, similar
+                price).{' '}
+                <span className="text-gray-500">
+                  Uncheck if you only want what you ordered.
+                </span>
+              </span>
+            </label>
+
+            <label className="flex items-start gap-2.5 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={acceptanceConfirmed}
+                onChange={(e) => {
+                  setAcceptanceConfirmed(e.target.checked);
+                  if (e.target.checked) setAcceptanceError('');
+                }}
+                className="mt-0.5 w-4 h-4 rounded border-gray-300 text-brand-blue focus:ring-brand-blue cursor-pointer"
+                required
+              />
+              <span className="text-sm text-gray-800 leading-snug">
+                <span className="font-semibold">I&apos;m 21+ and confirm that
+                someone 21+ will be at the delivery address</span> to accept
+                the order and show ID.{' '}
+                <span className="text-gray-500">
+                  Required — TABC rules. No ID at the door means we leave
+                  with the order.
+                </span>
+              </span>
+            </label>
+
+            {acceptanceError && (
+              <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">
+                {acceptanceError}
+              </p>
+            )}
+          </div>
+
           {error && (
             <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">
               {error}
@@ -374,7 +443,7 @@ export default function DashboardCheckoutModal({
 
           <button
             type="submit"
-            disabled={loading || items.length === 0 || !hasAddress}
+            disabled={loading || items.length === 0 || !hasAddress || !acceptanceConfirmed}
             className="w-full py-3 bg-brand-blue text-white font-semibold tracking-[0.08em] rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? (
