@@ -4,6 +4,7 @@
  */
 
 import Stripe from 'stripe';
+import { Prisma } from '@prisma/client';
 import { stripe } from './client';
 import { prisma } from '@/lib/database/client';
 import { DEFAULT_TAX_RATE } from '@/lib/tax';
@@ -15,6 +16,15 @@ import { linkOrderToAffiliate } from '@/lib/affiliates/commission-engine';
 import { getAffiliateByCode } from '@/lib/affiliates/affiliate-service';
 import { createOrderCalendarEvent } from '@/lib/calendar/google-calendar';
 import { commitInventoryForOrderItem } from '@/lib/inventory/services/order-service';
+import { snapshotItemCost } from '@/lib/analytics/margin-service';
+import {
+  buildChargedLineItems,
+  chargedLineItemToStripe,
+  parseChargedLineItems,
+  snapshotToOrderItemCreates,
+  assertOrderItemsMatchCharge,
+  type OrderItemSnapshotCreate,
+} from './charge-snapshot';
 
 // ==========================================
 // Types
@@ -115,22 +125,22 @@ export async function createGroupV2CheckoutSession(input: CreateCheckoutInput) {
   const taxableAmount = Math.max(0, subtotal - discountAmount);
   const taxAmount = Math.round(taxableAmount * DEFAULT_TAX_RATE * 100) / 100;
 
-  // Build line items
-  const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = draftItems.map((item) => ({
-    price_data: {
-      currency: 'usd',
-      product_data: {
-        name: item.title,
-        description:
-          item.variantTitle && item.variantTitle !== 'Default Title'
-            ? item.variantTitle
-            : undefined,
-        metadata: { productId: item.productId, variantId: item.variantId },
-      },
-      unit_amount: Math.round(Number(item.price) * 100),
-    },
-    quantity: item.quantity,
-  }));
+  // Build the immutable charge snapshot from the participant's draft products, then derive the
+  // Stripe product line items from it so the snapshot equals what's charged. The Order's items
+  // are later rebuilt from this snapshot (persisted on the ParticipantPayment) — not from a
+  // re-read of drafts/purchased items, which is what let post-checkout edits drift.
+  const chargedLineItems = buildChargedLineItems(
+    draftItems.map((item) => ({
+      productId: item.productId,
+      variantId: item.variantId,
+      title: item.title,
+      variantTitle: item.variantTitle,
+      price: item.price,
+      quantity: item.quantity,
+    }))
+  );
+  const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] =
+    chargedLineItems.map(chargedLineItemToStripe);
 
   // Add delivery fee line item when bundled into this checkout.
   // A FREE_SHIPPING discount code (e.g. BACHPLAN) overrides includeDeliveryFee
@@ -228,7 +238,8 @@ export async function createGroupV2CheckoutSession(input: CreateCheckoutInput) {
   // Create Stripe session
   const session = await stripe.checkout.sessions.create(sessionParams);
 
-  // Create ParticipantPayment record
+  // Create ParticipantPayment record. Persist the immutable charge snapshot so the Order's
+  // items are later built from exactly what Stripe charged (not a re-read of the drafts).
   const payment = await prisma.participantPayment.create({
     data: {
       subOrderId,
@@ -240,6 +251,7 @@ export async function createGroupV2CheckoutSession(input: CreateCheckoutInput) {
       discountAmount,
       tipAmount,
       total,
+      chargedLineItems: chargedLineItems as unknown as Prisma.InputJsonValue,
       status: 'PENDING',
     },
   });
@@ -503,6 +515,34 @@ export async function handleGroupV2PaymentCompleted(
   // Delivery fee: use bundled amount from metadata, otherwise 0 (host pays separately)
   const bundledDeliveryFee = session.metadata?.deliveryFee ? Number(session.metadata.deliveryFee) : 0;
 
+  // Build Order items from the immutable charge snapshot persisted on the payment (what Stripe
+  // charged), NOT from a re-read of purchased/draft items — this closes the two-snapshot race.
+  // Fall back to purchasedItems only for payments created before the snapshot shipped.
+  const chargeSnapshot = parseChargedLineItems(payment.chargedLineItems);
+  let orderItemCreates: OrderItemSnapshotCreate[];
+  if (chargeSnapshot) {
+    orderItemCreates = await snapshotToOrderItemCreates(prisma, chargeSnapshot);
+    assertOrderItemsMatchCharge(orderItemCreates, chargeSnapshot);
+  } else {
+    console.warn(`[Group V2 Payment] Payment ${payment.id} has no charge snapshot — falling back to purchasedItems`);
+    orderItemCreates = [];
+    for (const item of purchasedItems) {
+      const { unitCost, totalCost } = await snapshotItemCost(prisma, item.variantId, item.quantity);
+      orderItemCreates.push({
+        productId: item.productId,
+        variantId: item.variantId,
+        title: item.title,
+        variantTitle: item.variantTitle,
+        sku: null,
+        price: new Prisma.Decimal(item.price),
+        quantity: item.quantity,
+        totalPrice: new Prisma.Decimal(Number(item.price) * item.quantity),
+        unitCost,
+        totalCost,
+      });
+    }
+  }
+
   const order = await prisma.order.create({
     data: {
       customerId,
@@ -528,15 +568,7 @@ export async function handleGroupV2PaymentCompleted(
       groupOrderId: null, // V2 doesn't use v1 group order FK
       groupOrderV2Id: groupOrderId,
       items: {
-        create: purchasedItems.map((item) => ({
-          productId: item.productId,
-          variantId: item.variantId,
-          title: item.title,
-          variantTitle: item.variantTitle,
-          price: item.price,
-          quantity: item.quantity,
-          totalPrice: Number(item.price) * item.quantity,
-        })),
+        create: orderItemCreates,
       },
     },
     include: {

@@ -773,6 +773,11 @@ model Cart {
   deliveryFee Decimal @default(25) @map("delivery_fee") @db.Decimal(10, 2)
   total       Decimal @default(0) @db.Decimal(10, 2)
 
+  // Immutable snapshot of the PRODUCT line items priced into the Stripe charge at
+  // session-creation. OrderItems are rebuilt from this at order-creation so they can never
+  // diverge from what Stripe charged. Shape: ChargedLineItem[] (see lib/stripe/charge-snapshot.ts).
+  chargedLineItems Json? @map("charged_line_items")
+
   // Group order association
   groupOrderId String? @map("group_order_id")
 
@@ -1966,6 +1971,9 @@ model ParticipantPayment {
   discountAmount          Decimal              @default(0) @map("discount_amount") @db.Decimal(10, 2)
   tipAmount               Decimal              @default(0) @map("tip_amount") @db.Decimal(10, 2)
   total                   Decimal              @default(0) @db.Decimal(10, 2)
+  // Immutable snapshot of the PRODUCT line items priced into the Stripe charge at
+  // session-creation. Order items are built from this (see lib/stripe/charge-snapshot.ts).
+  chargedLineItems        Json?                @map("charged_line_items")
   status                  GroupV2PaymentStatus @default(PENDING)
   paidAt                  DateTime?            @map("paid_at")
   orderId                 String?              @map("order_id")
