@@ -4,8 +4,9 @@
  * Fires the SEMrush scrape GitHub Actions workflow on demand. Powered
  * by GitHub's `workflow_dispatch` API.
  *
- * Auth: this is mounted under /api/admin which is gated by the existing
- * ops-auth middleware. No extra auth check needed.
+ * Auth: requireOpsAuth() per handler. NOTE: /api/admin/** is NOT covered by
+ * the middleware ops-auth gate (only /api/v1/admin/** is), so the check must
+ * live in the handler itself.
  *
  * Env needed (set on Vercel + locally):
  *   GH_DISPATCH_TOKEN  — fine-grained PAT with Actions:Write on the repo
@@ -17,6 +18,7 @@
  *   { ok: false, error: 'gh_<status>', detail: '...' }  → GitHub rejected
  */
 import { NextResponse, type NextRequest } from 'next/server';
+import { requireOpsAuth } from '@/lib/auth/ops-session';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -25,6 +27,9 @@ const WORKFLOW_FILE = 'seo-scrape.yml';
 const DEFAULT_REPO = 'allan-cmyk/PartyOn2';
 
 export async function POST(req: NextRequest) {
+  const auth = await requireOpsAuth();
+  if (auth instanceof NextResponse) return auth;
+
   const token = process.env.GH_DISPATCH_TOKEN;
   if (!token) {
     return NextResponse.json(
