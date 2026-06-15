@@ -329,15 +329,17 @@ $107.1k · 2025 $203.7k · 2026 (Shopify only) $6.6k.
 
 **⚠️ Two-source architecture — critical for Phase 5C.** PartyOn migrated from
 Shopify checkout to the Stripe→Postgres dashboard flow around 2026-01. Current
-orders do NOT write to Shopify. So the Shopify archive and the `Order` table are
-**complementary, not overlapping**:
-  - Shopify archive = sole source for months **≤ 2025-12**
-  - `Order` table = sole source for months **≥ 2026-01**
-The transition months show a small Shopify tail in 2026 (~46 orders, likely
-manual draft orders). The Phase 5C monthly rollup builder MUST apply a hard
-cutoff at 2026-01 to avoid double-counting — Shopify for ≤2025-12, Order table
-for ≥2026-01. Revisit whether the 2026 Shopify tail is unique revenue worth
-folding in, or stragglers safe to drop.
+orders do NOT write to Shopify. So the two sources split by era:
+  - Shopify archive = primary source through ~2025-12 (Order table is empty then)
+  - `Order` table = primary source from 2026-01 on
+The two sets are **disjoint, not duplicates** — verified: only 2 of 311 2026
+`Order` rows carry any `shopifyOrderId`, and the archive's 2026 orders (#3922+)
+do not appear in the Order table. The Shopify 2026 tail (~46 orders, $6.6k) is
+genuine separate revenue (manual draft orders still made in Shopify).
+**So Phase 5C should UNION both sources across all time and dedup only the rare
+overlap** (match `Order.shopifyOrderId` ↔ `archive.shopify_order_id`, or
+`Order.shopifyOrderNumber` ↔ `archive.shopify_order_name`). A hard cutoff at
+2026-01 is the conservative fallback but undercounts the 2026 Shopify tail.
 
 **Shopify plan limitation.** The store (`premier-concierge`) is below the
 Shopify/Advanced/Plus tier, so the Admin API denies the `customer` object (PII:
