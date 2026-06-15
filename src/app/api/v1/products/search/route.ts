@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { searchProducts } from '@/lib/inventory/services/product-service';
+import { stripVariantCosts } from '@/lib/products/sanitize';
 
 /**
  * GET /api/v1/products/search
@@ -25,12 +26,18 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     const products = await searchProducts(query.trim(), Math.min(limit, 50));
 
+    // Public endpoint — strip internal cost data from variant rows
+    const sanitized = products.map((product) => ({
+      ...product,
+      variants: stripVariantCosts(product.variants),
+    }));
+
     return NextResponse.json({
       success: true,
-      data: products,
+      data: sanitized,
       meta: {
         query,
-        count: products.length,
+        count: sanitized.length,
       },
     });
   } catch (error) {
