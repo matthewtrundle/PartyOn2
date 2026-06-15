@@ -18,6 +18,8 @@ const mockPrismaCustomerFindFirst = vi.fn();
 const mockPrismaCustomerCreate = vi.fn();
 const mockPrismaOrderCreate = vi.fn();
 const mockPrismaDeliveryTaskCreate = vi.fn();
+const mockPrismaProductVariantFindUnique = vi.fn();
+const mockPrismaGroupOrderV2FindUnique = vi.fn();
 
 vi.mock('@/lib/database/client', () => ({
   prisma: {
@@ -44,6 +46,12 @@ vi.mock('@/lib/database/client', () => ({
     },
     deliveryTask: {
       create: (...args: unknown[]) => mockPrismaDeliveryTaskCreate(...args),
+    },
+    productVariant: {
+      findUnique: (...args: unknown[]) => mockPrismaProductVariantFindUnique(...args),
+    },
+    groupOrderV2: {
+      findUnique: (...args: unknown[]) => mockPrismaGroupOrderV2FindUnique(...args),
     },
   },
 }));
@@ -118,6 +126,7 @@ const basePayment = {
   discountCode: null,
   discountAmount: 0,
   total: 24.89,
+  chargedLineItems: null,
   status: 'PENDING',
   paidAt: null,
   orderId: null,
@@ -163,6 +172,8 @@ describe('handleGroupV2PaymentCompleted', () => {
     mockPrismaPurchasedItemFindMany.mockResolvedValue([{ ...basePurchasedItem }]);
     mockPrismaOrderCreate.mockResolvedValue({ ...createdOrder });
     mockPrismaDeliveryTaskCreate.mockResolvedValue({});
+    mockPrismaProductVariantFindUnique.mockResolvedValue({ costPerUnit: null });
+    mockPrismaGroupOrderV2FindUnique.mockResolvedValue(null);
   });
 
   describe('customer resolution from Stripe session (no email on participant)', () => {
@@ -316,6 +327,8 @@ describe('handleGroupV2PaymentCompleted', () => {
           address: null,
           tax_exempt: 'none',
           tax_ids: [],
+          business_name: null,
+          individual_name: null,
         },
       });
 
@@ -387,6 +400,51 @@ describe('handleGroupV2PaymentCompleted', () => {
         where: { id: 'payment-id-1' },
         data: { orderId: 'order-id-1' },
       });
+    });
+  });
+
+  describe('charge snapshot — OrderItems come from the charge, not a re-read', () => {
+    const paidParticipant = {
+      id: 'participant-id-1',
+      groupOrderId: 'group-order-id-1',
+      customerId: 'existing-customer-id',
+      guestName: 'Test User',
+      guestEmail: 'test@example.com',
+      guestPhone: null,
+    };
+
+    it('builds the Order from the charged snapshot, excluding items added after checkout', async () => {
+      mockPrismaParticipantPaymentFindFirst.mockResolvedValue({
+        ...basePayment,
+        chargedLineItems: [
+          { productId: 'product-id-1', variantId: 'variant-id-1', title: 'Test Beer Pack', variantTitle: '12 Pack', sku: null, unitPriceCents: 2299, quantity: 1 },
+        ],
+      });
+      // Drafts were re-read and now contain a SECOND item added after the session was created.
+      mockPrismaPurchasedItemFindMany.mockResolvedValue([
+        { ...basePurchasedItem },
+        { id: 'purchased-item-2', productId: 'product-id-2', variantId: 'variant-id-2', title: 'Sneaky Add-on', variantTitle: null, price: 40, quantity: 3 },
+      ]);
+      mockPrismaGroupParticipantV2FindUnique.mockResolvedValue(paidParticipant);
+
+      await handleGroupV2PaymentCompleted(makeSession());
+
+      const orderArg = mockPrismaOrderCreate.mock.calls[0][0];
+      const createdItems = orderArg.data.items.create;
+      // Only the charged item makes it onto the Order; the post-checkout add is excluded.
+      expect(createdItems).toHaveLength(1);
+      expect(createdItems[0]).toMatchObject({ productId: 'product-id-1', quantity: 1 });
+      expect(Number(createdItems[0].totalPrice)).toBeCloseTo(22.99);
+    });
+
+    it('falls back to purchasedItems when the payment has no snapshot (pre-feature)', async () => {
+      mockPrismaGroupParticipantV2FindUnique.mockResolvedValue(paidParticipant);
+
+      await handleGroupV2PaymentCompleted(makeSession());
+
+      const orderArg = mockPrismaOrderCreate.mock.calls[0][0];
+      expect(orderArg.data.items.create).toHaveLength(1);
+      expect(orderArg.data.items.create[0]).toMatchObject({ productId: 'product-id-1' });
     });
   });
 });
