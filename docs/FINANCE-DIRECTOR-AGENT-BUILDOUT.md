@@ -323,6 +323,32 @@ Originally scoped: add `invoice_total_cents` / `due_date` / `paid_at` / `paid_vi
   re-pulls anything Shopify updated in the last 36h.
 - Idempotent upsert keyed by Shopify order GID.
 
+**Backfill result (2026-06-15):** 2,968 orders archived, span #1001 (2021-02-14)
+→ #3968 (2026-06-11), 2,790 PAID. PAID revenue by year: 2023 $10.9k · 2024
+$107.1k · 2025 $203.7k · 2026 (Shopify only) $6.6k.
+
+**⚠️ Two-source architecture — critical for Phase 5C.** PartyOn migrated from
+Shopify checkout to the Stripe→Postgres dashboard flow around 2026-01. Current
+orders do NOT write to Shopify. So the two sources split by era:
+  - Shopify archive = primary source through ~2025-12 (Order table is empty then)
+  - `Order` table = primary source from 2026-01 on
+The two sets are **disjoint, not duplicates** — verified: only 2 of 311 2026
+`Order` rows carry any `shopifyOrderId`, and the archive's 2026 orders (#3922+)
+do not appear in the Order table. The Shopify 2026 tail (~46 orders, $6.6k) is
+genuine separate revenue (manual draft orders still made in Shopify).
+**So Phase 5C should UNION both sources across all time and dedup only the rare
+overlap** (match `Order.shopifyOrderId` ↔ `archive.shopify_order_id`, or
+`Order.shopifyOrderNumber` ↔ `archive.shopify_order_name`). A hard cutoff at
+2026-01 is the conservative fallback but undercounts the 2026 Shopify tail.
+
+**Shopify plan limitation.** The store (`premier-concierge`) is below the
+Shopify/Advanced/Plus tier, so the Admin API denies the `customer` object (PII:
+email, name, address). The archive's `customer_email` / `shopify_customer_id` /
+`landing_page` columns are always null. Top-customer attribution for the recent
+period comes from the `Order` table (Stripe-populated) instead. Segment
+classification falls back to `source_name` + group order name (Shopify `tags`
+are empty on this store too).
+
 ### Phase 6 — Auto-categorize graduation (post-trust)
 
 Only after the operator has reviewed Phase 5 briefings for 4+ weeks and feels confident, graduate the Director's auto-categorize behavior from "one-by-one with reversal button" to "batch auto-categorize with weekly audit summary." This is a config flag, not new code.
