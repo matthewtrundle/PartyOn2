@@ -36,7 +36,6 @@ interface ShopifyAdminOrderNode {
   totalShippingPriceSet: ShopifyMoney;
   currentTotalDiscountsSet: ShopifyMoney;
   totalRefundedSet: ShopifyMoney;
-  customer: { id: string | null; email: string | null } | null;
   sourceIdentifier: string | null;
   sourceName: string | null;
   tags: string[];
@@ -79,7 +78,6 @@ const ORDERS_QUERY = `
           totalShippingPriceSet { shopMoney { amount currencyCode } }
           currentTotalDiscountsSet { shopMoney { amount currencyCode } }
           totalRefundedSet { shopMoney { amount currencyCode } }
-          customer { id email }
           sourceIdentifier
           sourceName
           tags
@@ -147,11 +145,14 @@ async function upsertOrder(node: ShopifyAdminOrderNode): Promise<void> {
     currency,
     financialStatus: node.displayFinancialStatus,
     fulfillmentStatus: node.displayFulfillmentStatus,
-    customerEmail: node.customer?.email ?? null,
-    shopifyCustomerId: node.customer?.id ?? null,
-    // landingPage + referringSite live on the older REST Order resource only;
-    // Phase 5C falls back to tags / source_name / group order name to classify
-    // segments when these are null.
+    // Customer object + landingPage/referringSite are gated behind the
+    // Customer PII scope, which this store's Shopify plan does not grant
+    // (premier-concierge is below the Shopify/Advanced/Plus tier). Left null
+    // here; Phase 5C sources top-customer attribution from the Order table
+    // (Stripe-populated) for the recent period, and classifies segments from
+    // tags / source_name / group order name instead.
+    customerEmail: null,
+    shopifyCustomerId: null,
     landingPage: null,
     referringSite: null,
     sourceIdentifier: node.sourceIdentifier,

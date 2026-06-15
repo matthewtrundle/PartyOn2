@@ -323,6 +323,30 @@ Originally scoped: add `invoice_total_cents` / `due_date` / `paid_at` / `paid_vi
   re-pulls anything Shopify updated in the last 36h.
 - Idempotent upsert keyed by Shopify order GID.
 
+**Backfill result (2026-06-15):** 2,968 orders archived, span #1001 (2021-02-14)
+→ #3968 (2026-06-11), 2,790 PAID. PAID revenue by year: 2023 $10.9k · 2024
+$107.1k · 2025 $203.7k · 2026 (Shopify only) $6.6k.
+
+**⚠️ Two-source architecture — critical for Phase 5C.** PartyOn migrated from
+Shopify checkout to the Stripe→Postgres dashboard flow around 2026-01. Current
+orders do NOT write to Shopify. So the Shopify archive and the `Order` table are
+**complementary, not overlapping**:
+  - Shopify archive = sole source for months **≤ 2025-12**
+  - `Order` table = sole source for months **≥ 2026-01**
+The transition months show a small Shopify tail in 2026 (~46 orders, likely
+manual draft orders). The Phase 5C monthly rollup builder MUST apply a hard
+cutoff at 2026-01 to avoid double-counting — Shopify for ≤2025-12, Order table
+for ≥2026-01. Revisit whether the 2026 Shopify tail is unique revenue worth
+folding in, or stragglers safe to drop.
+
+**Shopify plan limitation.** The store (`premier-concierge`) is below the
+Shopify/Advanced/Plus tier, so the Admin API denies the `customer` object (PII:
+email, name, address). The archive's `customer_email` / `shopify_customer_id` /
+`landing_page` columns are always null. Top-customer attribution for the recent
+period comes from the `Order` table (Stripe-populated) instead. Segment
+classification falls back to `source_name` + group order name (Shopify `tags`
+are empty on this store too).
+
 ### Phase 6 — Auto-categorize graduation (post-trust)
 
 Only after the operator has reviewed Phase 5 briefings for 4+ weeks and feels confident, graduate the Director's auto-categorize behavior from "one-by-one with reversal button" to "batch auto-categorize with weekly audit summary." This is a config flag, not new code.
