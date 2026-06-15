@@ -5,6 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { requireOpsAuth } from '@/lib/auth/ops-session';
 import { prisma } from '@/lib/database/client';
 import { getDraftOrderById, updateDraftOrderStatus } from '@/lib/draft-orders';
 import { generateInvoiceEmail, generateInvoiceSubject } from '@/lib/email/templates/invoice';
@@ -20,6 +21,9 @@ export async function POST(
   request: NextRequest,
   { params }: RouteParams
 ): Promise<NextResponse> {
+  const auth = await requireOpsAuth();
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const { id: orderId } = await params;
     const body = await request.json();

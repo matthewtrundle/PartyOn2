@@ -13,6 +13,8 @@ import {
   deleteProduct,
   hardDeleteProduct,
 } from '@/lib/inventory/services/product-service';
+import { requireOpsAuth } from '@/lib/auth/ops-session';
+import { stripVariantCosts } from '@/lib/products/sanitize';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -37,7 +39,13 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({ success: true, data: product });
+    // Public endpoint — strip internal cost data from variant rows
+    const sanitized = {
+      ...product,
+      variants: stripVariantCosts(product.variants),
+    };
+
+    return NextResponse.json({ success: true, data: sanitized });
   } catch (error) {
     console.error('[Products API] GET by ID error:', error);
     return NextResponse.json(
@@ -58,6 +66,9 @@ export async function PUT(
   request: NextRequest,
   { params }: RouteParams
 ): Promise<NextResponse> {
+  const auth = await requireOpsAuth();
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const { id } = await params;
     const body = await request.json();
@@ -117,6 +128,9 @@ export async function DELETE(
   request: NextRequest,
   { params }: RouteParams
 ): Promise<NextResponse> {
+  const auth = await requireOpsAuth();
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const { id } = await params;
     const hardDelete = request.nextUrl.searchParams.get('hard') === 'true';

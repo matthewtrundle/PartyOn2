@@ -5,11 +5,15 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { requireOpsAuth } from '@/lib/auth/ops-session';
 import { prisma } from '@/lib/database/client';
 import { FulfillmentStatus } from '@prisma/client';
 import { sendReviewRequest, GhlReviewPayload } from '@/lib/webhooks/ghl';
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const auth = await requireOpsAuth();
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const body = await request.json();
     const { orderIds } = body as { orderIds: string[] };

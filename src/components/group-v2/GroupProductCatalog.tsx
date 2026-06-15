@@ -69,9 +69,9 @@ export default function GroupProductCatalog({
     async function fetchProducts() {
       setLoading(true);
       try {
-        let url = '/api/v1/admin/products?limit=50&status=ACTIVE';
+        let url = '/api/v1/products/catalog?limit=50';
         if (activeCollection) {
-          url += `&category=${encodeURIComponent(activeCollection)}`;
+          url += `&collection=${encodeURIComponent(activeCollection)}`;
         }
         const res = await fetch(url);
         if (!res.ok) throw new Error(`Server error: ${res.status}`);
