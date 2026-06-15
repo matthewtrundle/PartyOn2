@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireOpsAuth } from '@/lib/auth/ops-session';
 import { z } from 'zod';
 
 // Validation schema for creating an experiment
@@ -29,6 +30,9 @@ const CreateExperimentSchema = z.object({
  * List all experiments with their variants
  */
 export async function GET(request: NextRequest): Promise<NextResponse> {
+  const auth = await requireOpsAuth();
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
@@ -119,6 +123,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
  * Create a new experiment with variants
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const auth = await requireOpsAuth();
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const body = await request.json();
     const validatedData = CreateExperimentSchema.parse(body);

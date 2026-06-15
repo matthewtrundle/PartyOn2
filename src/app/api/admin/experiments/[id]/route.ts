@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireOpsAuth } from '@/lib/auth/ops-session';
 import { z } from 'zod';
 
 // Validation schema for updating an experiment
@@ -32,6 +33,9 @@ export async function GET(
   request: NextRequest,
   { params }: RouteParams
 ): Promise<NextResponse> {
+  const auth = await requireOpsAuth();
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const { id } = await params;
 
@@ -122,6 +126,9 @@ export async function PATCH(
   request: NextRequest,
   { params }: RouteParams
 ): Promise<NextResponse> {
+  const auth = await requireOpsAuth();
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const { id } = await params;
     const body = await request.json();
@@ -182,6 +189,9 @@ export async function DELETE(
   request: NextRequest,
   { params }: RouteParams
 ): Promise<NextResponse> {
+  const auth = await requireOpsAuth();
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const { id } = await params;
 
