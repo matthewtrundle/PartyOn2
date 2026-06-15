@@ -229,7 +229,7 @@ export function assertOrderItemsMatchCharge(
       diffs.push(`unit-price mismatch "${li.title}": order ${oiUnitCents}¢ vs charged ${li.unitPriceCents}¢`);
     }
   }
-  for (const [k, oi] of itemsByKey) {
+  for (const k of itemsByKey.keys()) {
     if (!snapByKey.has(k)) {
       diffs.push(`OrderItem (${k}) was not in the Stripe charge`);
     }
