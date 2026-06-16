@@ -16,6 +16,7 @@ import AgeVerificationModal from './AgeVerificationModal'
  */
 const AGE_GATE_EXEMPT_PATHS = [
   '/austin-bachelor-party-delivery',
+  '/austin-bachelor-party-delivery-ai-test',
   '/austin-bachelorette-party-delivery',
   '/austin-corporate-event-delivery',
   '/austin-wedding-weekend-delivery',

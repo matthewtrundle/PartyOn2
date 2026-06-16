@@ -42,6 +42,7 @@ const GOLD = '#F2D34F';
  */
 const EXEMPT_PATHS = new Set<string>([
   '/austin-bachelor-party-delivery',
+  '/austin-bachelor-party-delivery-ai-test',
   '/austin-bachelorette-party-delivery',
   '/austin-corporate-event-delivery',
   '/austin-wedding-weekend-delivery',
