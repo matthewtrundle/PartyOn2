@@ -27,6 +27,7 @@ type TabKey =
   | 'events'
   | 'magnets'
   | 'seo'
+  | 'pathways'
   | 'docs';
 
 export default function BriansStuffTabs({
@@ -37,6 +38,7 @@ export default function BriansStuffTabs({
   events,
   magnets,
   seo,
+  pathways,
   docs,
   initialTab = 'playbook',
 }: {
@@ -47,6 +49,7 @@ export default function BriansStuffTabs({
   events: ReactNode;
   magnets: ReactNode;
   seo: ReactNode;
+  pathways: ReactNode;
   docs: ReactNode;
   initialTab?: TabKey;
 }) {
@@ -84,6 +87,9 @@ export default function BriansStuffTabs({
           <TabButton active={tab === 'seo'} onClick={() => setTab('seo')}>
             🔭 SEO Intelligence
           </TabButton>
+          <TabButton active={tab === 'pathways'} onClick={() => setTab('pathways')}>
+            🛒 Order Pathways
+          </TabButton>
           <TabButton active={tab === 'docs'} onClick={() => setTab('docs')}>
             📚 Enrichment Docs
           </TabButton>
@@ -113,6 +119,9 @@ export default function BriansStuffTabs({
       </div>
       <div hidden={tab !== 'seo'} className="px-6 md:px-10 py-8">
         <TabErrorBoundary tabName="SEO Intelligence">{seo}</TabErrorBoundary>
+      </div>
+      <div hidden={tab !== 'pathways'} className="px-6 md:px-10 py-8">
+        <TabErrorBoundary tabName="Order Pathways">{pathways}</TabErrorBoundary>
       </div>
       <div hidden={tab !== 'docs'} className="px-6 md:px-10 py-8">
         <TabErrorBoundary tabName="Enrichment Docs">{docs}</TabErrorBoundary>
