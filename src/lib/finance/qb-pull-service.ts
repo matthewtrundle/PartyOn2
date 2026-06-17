@@ -15,7 +15,7 @@
  */
 
 import { prisma } from '@/lib/database/client';
-import { qboQuery } from './qb-client';
+import { qboQuery, getValidAccessToken } from './qb-client';
 import {
   categorizeQbAccount,
   type CategorySlug,
@@ -82,6 +82,7 @@ export async function syncQbAccounts(): Promise<{
 }> {
   let upserted = 0;
   const perTypeErrors: string[] = [];
+  const { realmId } = await getValidAccessToken();
 
   // Pull EVERY account regardless of type. Phase 2A (OpEx) only consumes
   // expense-type rows, but Phase 2B's journal mapping needs Income, Asset,
@@ -97,7 +98,7 @@ export async function syncQbAccounts(): Promise<{
       const accounts = (resp?.Account ?? []) as QbAccountApi[];
       if (accounts.length === 0) break;
       for (const a of accounts) {
-        await upsertQbAccountRow(a);
+        await upsertQbAccountRow(a, realmId);
         upserted++;
       }
       if (accounts.length < PAGE_SIZE) break;
@@ -112,7 +113,7 @@ export async function syncQbAccounts(): Promise<{
   return { upserted, perTypeErrors };
 }
 
-async function upsertQbAccountRow(a: QbAccountApi): Promise<void> {
+async function upsertQbAccountRow(a: QbAccountApi, realmId: string): Promise<void> {
   await prisma.qbAccount.upsert({
     where: { qbAccountId: a.Id },
     create: {
@@ -123,6 +124,7 @@ async function upsertQbAccountRow(a: QbAccountApi): Promise<void> {
       accountSubType: a.AccountSubType ?? null,
       currency: a.CurrencyRef?.value ?? 'USD',
       active: a.Active ?? true,
+      realmId,
       lastSyncedAt: new Date(),
     },
     update: {
@@ -131,9 +133,29 @@ async function upsertQbAccountRow(a: QbAccountApi): Promise<void> {
       accountType: a.AccountType ?? null,
       accountSubType: a.AccountSubType ?? null,
       active: a.Active ?? true,
+      realmId,
       lastSyncedAt: new Date(),
     },
   });
+}
+
+/**
+ * Delete cached QB accounts + expenses that did NOT come from `keepRealmId`.
+ * Used by the Phase 5B all-time backfill to clear the old Intuit sandbox rows
+ * (realm 9341457195868909, written before the realm_id column existed → NULL)
+ * before pulling real production data. NULL realm rows are treated as "not the
+ * current realm" and removed.
+ */
+export async function purgeOtherRealmData(
+  keepRealmId: string
+): Promise<{ expensesDeleted: number; accountsDeleted: number }> {
+  const expensesDeleted = await prisma.$executeRaw`
+    DELETE FROM qb_expenses WHERE realm_id IS DISTINCT FROM ${keepRealmId}
+  `;
+  const accountsDeleted = await prisma.$executeRaw`
+    DELETE FROM qb_accounts WHERE realm_id IS DISTINCT FROM ${keepRealmId}
+  `;
+  return { expensesDeleted, accountsDeleted };
 }
 
 // ---------------------------------------------------------------------------
@@ -201,6 +223,7 @@ export async function pullQbExpenses(
 ): Promise<PullExpensesResult> {
   let purchases = 0;
   let bills = 0;
+  const { realmId } = await getValidAccessToken();
 
   // Purchase
   let position = 1;
@@ -227,6 +250,7 @@ export async function pullQbExpenses(
           qbAccountId: cachedAccountId,
           categorySlug: category,
           memo: p.PrivateNote ?? null,
+          realmId,
           rawPayload: p as unknown as object,
         },
         update: {
@@ -236,6 +260,7 @@ export async function pullQbExpenses(
           qbAccountId: cachedAccountId,
           categorySlug: category,
           memo: p.PrivateNote ?? null,
+          realmId,
           rawPayload: p as unknown as object,
         },
       });
@@ -269,6 +294,7 @@ export async function pullQbExpenses(
           qbAccountId: cachedAccountId,
           categorySlug: category,
           memo: b.PrivateNote ?? null,
+          realmId,
           rawPayload: b as unknown as object,
         },
         update: {
@@ -278,6 +304,7 @@ export async function pullQbExpenses(
           qbAccountId: cachedAccountId,
           categorySlug: category,
           memo: b.PrivateNote ?? null,
+          realmId,
           rawPayload: b as unknown as object,
         },
       });

@@ -86,8 +86,13 @@ pull every Purchase, Bill, Journal Entry (and optionally Sales Receipt / Invoice
 
 ## Notes
 
-- The sandbox expense rows currently in `qb_expenses` (47 fake ones) should be
-  cleared before/after the production backfill so they don't pollute OpEx. The
-  Phase 5B backfill script will include a `--purge-sandbox` step keyed on the
-  sandbox realm ID.
+- The sandbox expense rows currently in `qb_expenses` (47 fake ones) are cleared
+  automatically on the Phase 5B cutover run via the
+  `GET /api/cron/finance-qb-pull?all=true&purgeSandbox=true` endpoint — it deletes
+  every cached row not stamped with the connected production realm, then pulls all
+  real history. (Requires the Phase 5B `realm_id` migration first.)
+- **After the cutover, re-map the QB journal accounts** at
+  `/admin/finance/journals/settings`. The sandbox→prod switch invalidates the old
+  account mappings (they pointed at sandbox account IDs), so the autonomous sales-
+  journal posting needs the production accounts re-selected before you trust it.
 - Plaid (bank feed) is a separate connection and isn't affected by this.

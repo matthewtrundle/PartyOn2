@@ -2740,6 +2740,10 @@ model QbAccount {
   accountSubType  String?  @map("account_sub_type")
   currency        String   @default("USD")
   active          Boolean  @default(true)
+  /// QB realm (company) this account came from. Lets the Phase 5B backfill
+  /// purge stale sandbox rows without touching production data. NULL on rows
+  /// written before Phase 5B.
+  realmId         String?  @map("realm_id")
   lastSyncedAt    DateTime @default(now()) @map("last_synced_at")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
@@ -2747,6 +2751,7 @@ model QbAccount {
   expenses        QbExpense[]
 
   @@index([accountType])
+  @@index([realmId])
   @@map("qb_accounts")
 }
 
@@ -2767,6 +2772,10 @@ model QbExpense {
   /// "Software", "Fuel", "Rent"). Derived from qb-account-map.ts.
   categorySlug      String?  @map("category_slug")
   memo              String?  @db.Text
+  /// QB realm (company) this expense came from. Lets the Phase 5B backfill
+  /// purge stale sandbox rows without touching production data. NULL on rows
+  /// written before Phase 5B.
+  realmId           String?  @map("realm_id")
   rawPayload        Json     @map("raw_payload")
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
@@ -2776,6 +2785,7 @@ model QbExpense {
   @@index([txnDate])
   @@index([categorySlug, txnDate])
   @@index([qbAccountId])
+  @@index([realmId])
   @@map("qb_expenses")
 }
 

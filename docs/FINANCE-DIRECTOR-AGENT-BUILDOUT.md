@@ -349,6 +349,28 @@ period comes from the `Order` table (Stripe-populated) instead. Segment
 classification falls back to `source_name` + group order name (Shopify `tags`
 are empty on this store too).
 
+### Phase 5B — QuickBooks all-time expense backfill
+
+- **Blocker resolved (2026-06-17):** QB was connected to the Intuit **sandbox**
+  (realm 9341457195868909, 47 fake sample expenses). Operator connected
+  **production** — realm 9130357382202626, company **Premier Concierge Worldwide**
+  (the legal entity holding PartyOn's books). Runbook:
+  `docs/CONNECT-PRODUCTION-QUICKBOOKS.md`.
+- New `realm_id` column on `qb_expenses` + `qb_accounts` so sandbox vs prod rows
+  are separable. `purgeOtherRealmData(keepRealmId)` clears everything not from the
+  connected realm (NULL rows = pre-column sandbox).
+- The existing `/api/cron/finance-qb-pull` cron gains params: `?all=true`
+  (all-time floor 2010-01-01), `?since=YYYY-MM-DD` (explicit floor for year-by-year
+  chunking), `?purgeSandbox=true` (cutover cleanup). Cutover run:
+  `GET /api/cron/finance-qb-pull?all=true&purgeSandbox=true` with the CRON_SECRET bearer.
+- **Scope:** Purchase + Bill (the proven OpEx path). JournalEntry / SalesReceipt /
+  Invoice / Deposit deferred — JournalEntry expense lines are a fast-follow once we
+  confirm the Purchase+Bill totals match the operator's sense of real OpEx.
+- **⚠️ Operator action after cutover:** the sandbox→prod switch invalidates the
+  Phase 2B journal-account mappings (they point at sandbox account IDs). Re-map at
+  `/admin/finance/journals/settings` against the new production accounts before
+  trusting the autonomous sales-journal posting.
+
 ### Phase 6 — Auto-categorize graduation (post-trust)
 
 Only after the operator has reviewed Phase 5 briefings for 4+ weeks and feels confident, graduate the Director's auto-categorize behavior from "one-by-one with reversal button" to "batch auto-categorize with weekly audit summary." This is a config flag, not new code.
