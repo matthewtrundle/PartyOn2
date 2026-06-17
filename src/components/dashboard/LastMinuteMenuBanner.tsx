@@ -49,9 +49,10 @@ export default function LastMinuteMenuBanner({ showFullMenu, onToggle }: Props) 
             You&apos;re viewing the last-minute menu
           </div>
           <div className="text-xs sm:text-sm mt-0.5" style={{ color: '#5A4A14' }}>
-            Only items we can deliver in 24h. Tap below to browse the full menu —
-            heads up: some items may not be available, and we&apos;ll text you
-            after purchase if anything needs a substitution.
+            We&apos;ll confirm all these items are available for your
+            last-minute order. After the order is placed, please make
+            sure you provide an accurate phone number in case we need
+            to contact you.
           </div>
         </div>
         <button
