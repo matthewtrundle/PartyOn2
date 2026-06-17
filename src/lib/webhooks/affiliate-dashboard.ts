@@ -6,6 +6,11 @@
  */
 
 import { z } from 'zod';
+import {
+  PREMIER_MARINA_ADDRESS,
+  CENTEX_MARINA_ADDRESS,
+  type AffiliateAddress,
+} from '@/lib/affiliates/presets';
 
 // ──────────────────────────────────────────────
 // Zod schema for inbound webhook payload
@@ -28,6 +33,9 @@ const rawWebhookSchema = z.object({
   ]).pipe(z.number().int().positive('guest_count must be a positive integer')),
   // Xola booking ID for cross-referencing
   booking_id: z.string().optional(),
+  // Marketing/SMS consent captured at booking time (e.g. a FareHarbor opt-in
+  // question). Accepts boolean or common truthy strings; defaults to false.
+  sms_consent: z.union([z.boolean(), z.string()]).optional(),
 });
 
 export const affiliateWebhookSchema = rawWebhookSchema.transform((data) => {
@@ -41,6 +49,11 @@ export const affiliateWebhookSchema = rawWebhookSchema.transform((data) => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateOnly)) {
     throw new Error('cruise_date/arrival must start with YYYY-MM-DD');
   }
+  const smsConsent =
+    data.sms_consent === true ||
+    ['true', 'yes', '1', 'on', 'checked'].includes(
+      String(data.sms_consent ?? '').toLowerCase()
+    );
   return {
     customer_name: data.customer_name,
     customer_phone: data.customer_phone,
@@ -50,6 +63,7 @@ export const affiliateWebhookSchema = rawWebhookSchema.transform((data) => {
     items_name: data.items_name,
     guest_count: data.guest_count,
     booking_id: data.booking_id || null,
+    sms_consent: smsConsent,
   };
 });
 
@@ -113,6 +127,55 @@ function formatTime12h(totalMinutes: number): string {
   const period = hours >= 12 ? 'PM' : 'AM';
   const display = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
   return minutes === 0 ? `${display}:00 ${period}` : `${display}:${String(minutes).padStart(2, '0')} ${period}`;
+}
+
+// ──────────────────────────────────────────────
+// Per-affiliate webhook dashboard config
+// ──────────────────────────────────────────────
+
+export interface WebhookDashboardConfig {
+  /** Marina / dock address the drinks are delivered to for the on-water tab */
+  marinaAddress: AffiliateAddress;
+  /** Build the on-water tab name from the booked item + customer name */
+  buildPrimaryTabName: (itemsName: string, customerName: string) => string;
+  /** Build the dashboard (group order) title */
+  buildDashboardTitle: (customerName: string) => string;
+  /** Name of the secondary lodging / stock-the-house tab */
+  lodgingTabName: string;
+}
+
+const PREMIER_WEBHOOK_CONFIG: WebhookDashboardConfig = {
+  marinaAddress: PREMIER_MARINA_ADDRESS,
+  buildPrimaryTabName: (itemsName, customerName) =>
+    buildCruiseTabName(normalizeCruiseType(itemsName), customerName),
+  buildDashboardTitle,
+  lodgingTabName: LODGING_TAB_NAME,
+};
+
+const CENTEX_WEBHOOK_CONFIG: WebhookDashboardConfig = {
+  marinaAddress: CENTEX_MARINA_ADDRESS,
+  buildPrimaryTabName: (_itemsName, customerName) =>
+    `${customerName}'s Lake Travis Boat Drink Delivery!`,
+  buildDashboardTitle,
+  lodgingTabName: LODGING_TAB_NAME,
+};
+
+/** Registry keyed by normalized affiliate code (uppercase, no dashes). */
+const WEBHOOK_CONFIG_BY_CODE: Record<string, WebhookDashboardConfig> = {
+  PREMIER: PREMIER_WEBHOOK_CONFIG,
+  CENTEXBOATRENTALS: CENTEX_WEBHOOK_CONFIG,
+};
+
+/**
+ * Resolve the dashboard config for an affiliate webhook by affiliate code.
+ * Falls back to the Premier config (the original hardcoded behavior) for any
+ * code that is not explicitly registered, so existing partners are unaffected.
+ */
+export function getWebhookDashboardConfig(
+  affiliateCode: string | null | undefined
+): WebhookDashboardConfig {
+  const key = (affiliateCode || '').toUpperCase().replace(/-/g, '');
+  return WEBHOOK_CONFIG_BY_CODE[key] || PREMIER_WEBHOOK_CONFIG;
 }
 
 // ──────────────────────────────────────────────

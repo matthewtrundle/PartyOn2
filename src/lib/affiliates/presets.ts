@@ -49,6 +49,14 @@ export const INN_CAHOOTS_ADDRESS: AffiliateAddress = {
   country: 'US',
 };
 
+export const CENTEX_MARINA_ADDRESS: AffiliateAddress = {
+  address1: '17141 Rocky Ridge Rd',
+  city: 'Austin',
+  province: 'TX',
+  zip: '78734',
+  country: 'US',
+};
+
 const PREMIER_PRESETS: AffiliatePresetConfig = {
   partyTypes: [
     {
@@ -116,6 +124,11 @@ const AFFILIATE_ORDER_DEFAULTS: Record<string, AffiliateOrderDefaults> = {
     tabName: 'Inn Cahoots Delivery',
     deliveryContextType: 'HOTEL',
     skipPartyType: true,
+  },
+  CENTEXBOATRENTALS: {
+    address: CENTEX_MARINA_ADDRESS,
+    tabName: 'Lake Travis Boat Delivery',
+    deliveryContextType: 'BOAT',
   },
 };
 
