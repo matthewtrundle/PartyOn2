@@ -4,10 +4,9 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Product } from '@/lib/types';
-import { formatPrice, getProductImageUrl, getFirstAvailableVariant, canPurchaseAlcohol } from '@/lib/utils';
+import { formatPrice, getProductImageUrl, getFirstAvailableVariant } from '@/lib/utils';
 import { useCartContext } from '@/contexts/CartContext';
 import { useBodyScrollLock } from '@/hooks/useBodyScrollLock';
-import AgeVerificationModal from './AgeVerificationModal';
 
 interface ProductModalProps {
   product: Product | null;
@@ -21,7 +20,6 @@ export default function ProductModal({ product, isOpen, onClose, ctaOverride }: 
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
-  const [showAgeVerification, setShowAgeVerification] = useState(false);
 
   // Full product details state (fetched when modal opens)
   const [fullProduct, setFullProduct] = useState<Product | null>(null);
@@ -120,12 +118,9 @@ export default function ProductModal({ product, isOpen, onClose, ctaOverride }: 
   const handleAddToCart = async () => {
     if (!variant?.id || !variant.availableForSale) return;
 
-    // Check if user needs age verification for alcohol products
-    if (!canPurchaseAlcohol()) {
-      setShowAgeVerification(true);
-      return;
-    }
-
+    // Age compliance moved from a blocking modal here to a pre-checked
+    // 21+ acknowledgement on the final checkout step. Adding to cart no
+    // longer triggers any age check.
     setIsAdding(true);
     try {
       await addToCart(variant.id, quantity);
@@ -137,27 +132,6 @@ export default function ProductModal({ product, isOpen, onClose, ctaOverride }: 
       console.error('Error adding to cart:', error);
     } finally {
       setIsAdding(false);
-    }
-  };
-
-  const handleAgeVerified = async () => {
-    setShowAgeVerification(false);
-    localStorage.setItem('age_verified', 'true');
-
-    // Now add to cart
-    if (variant?.id && variant.availableForSale) {
-      setIsAdding(true);
-      try {
-        await addToCart(variant.id, quantity);
-        // Cart updates automatically, no need to open it
-        setTimeout(() => {
-          onClose(); // Close modal after adding to cart
-        }, 300);
-      } catch (error) {
-        console.error('Error adding to cart:', error);
-      } finally {
-        setIsAdding(false);
-      }
     }
   };
 
@@ -398,13 +372,6 @@ export default function ProductModal({ product, isOpen, onClose, ctaOverride }: 
           </>
         )}
       </AnimatePresence>
-      
-      {/* Age Verification Modal */}
-      <AgeVerificationModal
-        isOpen={showAgeVerification}
-        onClose={() => setShowAgeVerification(false)}
-        onVerify={handleAgeVerified}
-      />
     </>
   );
 }

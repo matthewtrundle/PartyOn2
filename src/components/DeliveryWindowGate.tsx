@@ -50,7 +50,12 @@ const EXEMPT_PATHS = new Set<string>([
   '/event-quiz',
 ]);
 
-const EXEMPT_PREFIXES = ['/admin', '/ops', '/dashboard', '/api', '/partners', '/affiliate', '/checkout', '/invoice', '/cart'];
+// NOTE: /dashboard intentionally NOT exempt — the gate fires on first
+// dashboard view so every customer flow starts with "today/tomorrow vs
+// future", matching the entrance gate on the rest of the site. Once
+// the visitor picks, the choice persists for 24h so they don't get
+// asked again as they navigate between tabs/share links.
+const EXEMPT_PREFIXES = ['/admin', '/ops', '/api', '/partners', '/affiliate', '/checkout', '/invoice', '/cart'];
 
 function isExempt(pathname: string | null): boolean {
   if (!pathname) return false;

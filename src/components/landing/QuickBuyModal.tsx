@@ -103,10 +103,10 @@ export default function QuickBuyModal({
   const sundaySelected = isSunday(deliveryDate);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Age compliance — required checkbox before Pay Now. The landing pages
-  // skip the site-wide entrance gate (see AgeVerification.tsx), so this
-  // is where 21+ gets confirmed. Never pre-checked.
-  const [ageConfirmed, setAgeConfirmed] = useState(false);
+  // Age compliance — pre-checked per product policy. Replaces the old
+  // site-wide entrance modal (now removed). Customer can still uncheck
+  // to block submit; legal control remains carding at the door.
+  const [ageConfirmed, setAgeConfirmed] = useState(true);
   const handleAgeConfirmedChange = (checked: boolean) => {
     setAgeConfirmed(checked);
     if (checked) {

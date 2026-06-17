@@ -46,7 +46,11 @@ export default function DashboardCheckoutModal({
   // (API client signature update is a follow-up — for the preview the
   // UI gates the submit so we can iterate on copy before persistence).
   const [substitutionsOk, setSubstitutionsOk] = useState(true);
-  const [acceptanceConfirmed, setAcceptanceConfirmed] = useState(false);
+  // Pre-checked per product policy — the customer can still uncheck it,
+  // but the default state is "yes." Replaces the old site-wide age-
+  // verification modal: legal compliance now lives in this single
+  // checkbox + carding at the door.
+  const [acceptanceConfirmed, setAcceptanceConfirmed] = useState(true);
   const [acceptanceError, setAcceptanceError] = useState('');
 
   // Discount -- pre-populate from dashboard promo if it's a discount type
