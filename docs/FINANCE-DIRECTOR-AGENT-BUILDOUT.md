@@ -371,6 +371,28 @@ are empty on this store too).
   `/admin/finance/journals/settings` against the new production accounts before
   trusting the autonomous sales-journal posting.
 
+**Backfill result (2026-06-17):** 2,234 real Purchase txns (0 Bills — this company
+records expenses as Purchases, not the AP/Bill workflow), realm 9130357382202626,
+back to 2023-01-03. $629k gross outflow.
+
+**⚠️ The QB company is the 2023–2025 operating entity, dormant from ~2026-01.**
+Transaction volume declines sharply right at 2026-01 (Dec 2025: 14 txns → Jan
+2026: 4 → Jun 2026: 3, ~$20-75/mo), the SAME point revenue moved off Shopify to
+the Order table. So expense bookkeeping migrated out of this QB company around
+2026-01 too. PartyOn's 2026 expenses live in a different book (TBD with operator).
+Net result: **no single period yet has both clean revenue AND clean expenses** —
+2023-2025 has expenses (QB) but revenue is Shopify; 2026 has revenue (Order table)
+but ~no expenses here. Net-profit deferred until this resolves.
+
+**Categorization fix (qb-account-map.ts).** Real chart of accounts needed new
+rules. Inventory ($251k) = COGS (the alcohol). Added `payment_fees` (Shopify/
+Stripe $30k), `repairs`, and `non_operating` (loans + owner/inter-company
+transfers, $81k — excluded from OpEx via `isOperatingExpense()` /
+`NON_OPEX_CATEGORIES`). Result: "Other" collapsed from $374k/1,404 txns to
+$2.7k/10 txns. Clean 2023-2025 split: ~$297k true OpEx · ~$251k COGS · ~$81k
+non-operating. Phase 5C's rollup MUST exclude COGS + non_operating from OpEx
+(pl-calculation.ts line 229 currently sums ALL qb_expenses — fix in 5C).
+
 ### Phase 6 — Auto-categorize graduation (post-trust)
 
 Only after the operator has reviewed Phase 5 briefings for 4+ weeks and feels confident, graduate the Director's auto-categorize behavior from "one-by-one with reversal button" to "batch auto-categorize with weekly audit summary." This is a config flag, not new code.
