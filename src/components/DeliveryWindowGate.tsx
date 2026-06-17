@@ -1,22 +1,22 @@
 'use client';
 
 /**
- * Delivery-window entrance gate.
+ * Delivery-window question for the order flow.
  *
- * Pops right after the 21+ age gate clears (or immediately on pages
- * where the age gate is exempted but we still want the window
- * captured). Asks "When is this delivery?" with two big buttons:
+ * Shows ONLY on the order entry page (/order and its sub-steps) — i.e.
+ * after the visitor clicks "Order" / starts an order. It must NOT appear
+ * on the homepage, marketing/landing pages, invite pages, etc.: a
+ * full-screen modal on first paint there tanks bounce and is off-context.
+ *
+ * Asks "When is this delivery?" with two big buttons:
  *
  *   ⚡ Today or Tomorrow    → flips lastMinuteMode on every subsequent
  *                             modal / chat / quote endpoint
  *   📅 Future date          → standard catalog + default date ~7d out
  *
  * Choice persists in localStorage for 24h (`pod_delivery_window`).
- * Re-fires if the visitor comes back tomorrow.
- *
- * Excluded paths mirror the age gate's exemptions PLUS the dashboard,
- * admin, ops, and api routes — anywhere the delivery date is already
- * pinned to a specific order (no point asking again).
+ * Still waits for the 21+ age gate to clear first, and skips embedded
+ * partner views.
  */
 
 import { useEffect, useState } from 'react';
@@ -31,30 +31,19 @@ const NAVY = '#0A1F33';
 const GOLD = '#F2D34F';
 
 /**
- * Routes where the gate is intentionally skipped.
- *
- * The four paid-ad landing pages skip ANY entrance modal — cold ad
- * traffic bounces hard when a popup blocks the page. Each modal-led
- * order flow on those pages re-asks via its own date picker / banner.
- * The dashboard / admin / ops / api / event-quiz / partner pages are
- * skipped because the delivery date is already established by the
- * caller's context.
+ * The gate runs ONLY on the order flow — the dedicated /order entry page
+ * (and any sub-steps), which is where every "Order" / "Start an order"
+ * CTA leads. Everywhere else on the site it stays closed: the date is
+ * either irrelevant (homepage, marketing/invite pages) or already pinned
+ * by the caller's context (dashboard, checkout, invoice). Landing-page
+ * order flows capture the window through their own date pickers.
  */
-const EXEMPT_PATHS = new Set<string>([
-  '/austin-bachelor-party-delivery',
-  '/austin-bachelorette-party-delivery',
-  '/austin-corporate-event-delivery',
-  '/austin-wedding-weekend-delivery',
-  '/austin-wedding-venue-boats',
-  '/event-quiz',
-]);
+const ORDER_FLOW_PREFIX = '/order';
 
-const EXEMPT_PREFIXES = ['/admin', '/ops', '/dashboard', '/api', '/partners', '/affiliate', '/checkout', '/invoice', '/cart'];
-
-function isExempt(pathname: string | null): boolean {
+function isOrderFlow(pathname: string | null): boolean {
   if (!pathname) return false;
-  if (EXEMPT_PATHS.has(pathname)) return true;
-  return EXEMPT_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+  // Matches /order and /order/<step>, but NOT /order-now (a redirect) or /orders.
+  return pathname === ORDER_FLOW_PREFIX || pathname.startsWith(`${ORDER_FLOW_PREFIX}/`);
 }
 
 function isEmbeddedContext(): boolean {
@@ -78,8 +67,8 @@ export default function DeliveryWindowGate() {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    // Skip on exempt routes + embedded partner views.
-    if (isExempt(pathname) || isEmbeddedContext()) {
+    // Only on the order flow; stay closed everywhere else + embedded views.
+    if (!isOrderFlow(pathname) || isEmbeddedContext()) {
       setIsVisible(false);
       return;
     }
