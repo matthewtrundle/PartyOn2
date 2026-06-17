@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 
 export default async function Page() {
   const [catalog, lastMinuteCatalog, packages, upsellProducts] = await Promise.all([
-    getCuratedCatalog(),
+    getCuratedCatalog({ includeBubbly: true }),
     getLastMinuteCatalog(),
     getOccasionPackages('bachelorette'),
     getUpsellProducts(),
