@@ -746,3 +746,23 @@
     animation: none;
   }
 }
+
+/* ===== One-off event invite (/dads-gone-wild) ===== */
+/* Continuous horizontal ticker for the boat-party marquee. The track holds
+   two identical copies of the content, so translating by -50% loops
+   seamlessly. */
+@keyframes marquee-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  animation: marquee-scroll 40s linear infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee {
+    animation: none;
+  }
+}
