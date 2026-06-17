@@ -33,6 +33,22 @@ model PartnerInquiry {
   @@map("partner_inquiries")
 }
 
+// RSVPs from one-off event invite landing pages (e.g. /dads-gone-wild).
+// Public, unauthenticated capture — one row per submitted RSVP.
+model EventRsvp {
+  id         String   @id @default(uuid())
+  event      String // slug of the invite page, e.g. "dads-gone-wild"
+  name       String
+  adults     Int      @default(1)
+  kids       Int      @default(0)
+  dish       String?
+  totalHeads Int      @map("total_heads")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([event])
+  @@map("event_rsvps")
+}
+
 // Analytics Snapshots - daily analytics data
 model AnalyticsSnapshot {
   id                 String   @id @default(uuid())
