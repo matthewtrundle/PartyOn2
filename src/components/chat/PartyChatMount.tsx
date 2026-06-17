@@ -15,6 +15,7 @@
  *   - /checkout/*, /invoice/* (don't distract during checkout)
  *   - /api/*               (no UI)
  *   - /affiliate/*, /partners/* (separate funnels with their own forms)
+ *   - /dads-gone-wild         (private friends-only invite — no marketing widgets)
  */
 import { usePathname } from 'next/navigation';
 import PartyChat from './PartyChat';
@@ -30,6 +31,7 @@ const HIDE_PATTERNS: RegExp[] = [
   /^\/api\//,
   /^\/affiliate(\/|$)/,
   /^\/partners(\/|$)/,
+  /^\/dads-gone-wild(\/|$)/,
 ];
 
 export default function PartyChatMount() {
