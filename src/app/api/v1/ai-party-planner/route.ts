@@ -20,7 +20,7 @@
  */
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
-import { callOpenRouter, extractJSON } from '@/lib/ai/inventory-client';
+import { callOpenRouter, extractJSON, AI_MODELS } from '@/lib/ai/inventory-client';
 import { recommendForChat } from '@/lib/chat/recommendation';
 import { createDashboardOrder, addDraftItem } from '@/lib/group-orders-v2/service';
 import { prisma } from '@/lib/database/client';
@@ -112,10 +112,12 @@ export async function POST(req: NextRequest) {
   }
 
   // ─── 1. LLM extraction ───────────────────────────────────────────
+  // Use the same model slug the rest of the codebase relies on. Older
+  // anthropic/claude-3.5-sonnet alias was deprecated upstream.
   let extracted: z.infer<typeof llmOutSchema>;
   try {
     const llmRes = await callOpenRouter(
-      'anthropic/claude-3.5-sonnet',
+      AI_MODELS.query,
       [
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: body.prompt },
@@ -133,9 +135,14 @@ export async function POST(req: NextRequest) {
     }
     extracted = llmOutSchema.parse(parsed);
   } catch (err) {
-    console.error('[ai-party-planner] LLM step failed', err);
+    const detail = err instanceof Error ? err.message : String(err);
+    console.error('[ai-party-planner] LLM step failed', detail);
     return NextResponse.json(
-      { ok: false, error: 'AI planner is offline. Try the package builder above instead.' },
+      {
+        ok: false,
+        error: 'AI planner is offline. Try the package builder above instead.',
+        detail,
+      },
       { status: 502 },
     );
   }
