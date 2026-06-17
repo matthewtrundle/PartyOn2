@@ -29,7 +29,7 @@ export default function PrivacyPage() {
           <h1 className="font-heading text-5xl text-gray-900 mb-4 tracking-[0.1em]">
             Privacy Policy
           </h1>
-          <p className="text-gray-600">Last updated: January 2024</p>
+          <p className="text-gray-600">Last updated: June 2026</p>
         </div>
       </section>
 
@@ -84,6 +84,22 @@ export default function PrivacyPage() {
                 <li>Comply with legal obligations</li>
                 <li>Protect against fraud and unauthorized activity</li>
               </ul>
+            </div>
+
+            <div>
+              <h2 className="font-heading text-2xl text-gray-900 mb-4 tracking-[0.1em]">Text Messaging (SMS)</h2>
+              <p className="text-gray-600 leading-relaxed mb-4">
+                When you provide your mobile number &mdash; for example, during checkout after completing age verification &mdash; you consent to receive text messages from Party On Delivery related to your orders and customer service, including order confirmations, delivery status and scheduling updates, review requests, and replies to your questions. Consent to receive these texts is not a condition of any purchase.
+              </p>
+              <ul className="text-gray-600 space-y-2 list-disc pl-6 mb-4">
+                <li>Message frequency varies based on your order activity.</li>
+                <li>Message and data rates may apply.</li>
+                <li>Reply STOP to any message to unsubscribe, or HELP for help.</li>
+                <li>For assistance, contact us at info@partyondelivery.com or (737) 371-9700.</li>
+              </ul>
+              <p className="text-gray-600 leading-relaxed mb-4">
+                No mobile information will be shared with third parties or affiliates for marketing or promotional purposes. Text messaging originator opt-in data and consent will not be shared with any third parties.
+              </p>
             </div>
 
             <div>

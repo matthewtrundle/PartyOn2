@@ -171,6 +171,13 @@ export async function createCheckoutSession(
       enabled: true,
     },
     billing_address_collection: 'required',
+    // SMS consent disclosure shown at the phone-number field (A2P 10DLC opt-in).
+    custom_text: {
+      submit: {
+        message:
+          'By providing your phone number, you agree to receive order and delivery text messages from Party On Delivery. Message and data rates may apply. Reply STOP to opt out. See our Privacy Policy at partyondelivery.com/privacy.',
+      },
+    },
   };
 
   // Add customer info if available
