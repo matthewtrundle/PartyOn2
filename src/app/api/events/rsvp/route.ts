@@ -50,13 +50,22 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ ok: false, error: 'Invalid request.' }, { status: 400 });
     }
 
-    // Honeypot — a hidden field bots tend to fill. Pretend success so we
-    // don't tip them off, but persist nothing.
-    if (body.website_url) {
+    // Honeypot — a hidden, deliberately non-autofill-named field bots tend to
+    // fill. We log every trip (so a real person caught here is visible instead
+    // of vanishing) and return a success WITHOUT an `id`. The client only
+    // celebrates on an `id`, so a honeypot drop never shows a false "confirmed"
+    // card — and a real bot doesn't care either way.
+    const honeypot = body.hp_event_notes;
+    if (typeof honeypot === 'string' && honeypot.trim().length > 0) {
+      console.warn('[Event RSVP] honeypot tripped — dropped', {
+        event: typeof body.event === 'string' ? body.event : null,
+        ip,
+      });
       return NextResponse.json({ ok: true });
     }
 
     if (rateLimited(ip)) {
+      console.warn('[Event RSVP] rate limited', { ip });
       return NextResponse.json(
         { ok: false, error: 'Too many submissions. Please try again in a minute.' },
         { status: 429 },
@@ -65,6 +74,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const parsed = RsvpSchema.safeParse(body);
     if (!parsed.success) {
+      console.warn('[Event RSVP] validation failed', {
+        ip,
+        event: typeof body.event === 'string' ? body.event : null,
+        issues: parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`),
+      });
       return NextResponse.json(
         { ok: false, error: 'Please check your entries and try again.' },
         { status: 400 },
@@ -83,6 +97,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         totalHeads: adults + kids,
       },
       select: { id: true },
+    });
+
+    console.log('[Event RSVP] saved', {
+      id: rsvp.id,
+      event,
+      name,
+      totalHeads: adults + kids,
     });
 
     return NextResponse.json({ ok: true, id: rsvp.id });

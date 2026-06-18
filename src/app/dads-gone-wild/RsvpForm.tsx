@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, type ReactElement } from 'react';
+import { useState, type FormEvent, type ReactElement } from 'react';
 
 const MIN_ADULTS = 1;
 const MAX_ADULTS = 20;
@@ -51,9 +51,13 @@ function Stepper({ label, value, onDec, onInc }: StepperProps): ReactElement {
 
 /**
  * Inline RSVP form for the boat-party invite. Validates name (required),
- * clamps the steppers, shows a live "total heads" count, and on a successful
- * POST to /api/events/rsvp flips to a confirmation state. "Edit my answer"
- * returns to the form with all entered values preserved.
+ * clamps the steppers, shows a live "total heads" count, and only flips to the
+ * confirmation state when the server confirms a *persisted* row (a response
+ * with an `id`) — so we never show "you're confirmed" for an RSVP we didn't
+ * actually save. "Edit my answer" returns to the form with all entered values
+ * preserved.
+ *
+ * Rendered as a real <form> so the mobile keyboard's "Go"/Return key submits.
  */
 export default function RsvpForm({ event, hostName }: RsvpFormProps): ReactElement {
   const [name, setName] = useState('');
@@ -69,7 +73,9 @@ export default function RsvpForm({ event, hostName }: RsvpFormProps): ReactEleme
   const totalHeads = adults + kids;
   const nameError = triedSubmit && !name.trim();
 
-  async function handleSubmit(): Promise<void> {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>): Promise<void> {
+    e.preventDefault();
+    if (submitting) return;
     if (!name.trim()) {
       setTriedSubmit(true);
       return;
@@ -86,12 +92,17 @@ export default function RsvpForm({ event, hostName }: RsvpFormProps): ReactEleme
           adults,
           kids,
           dish: dish.trim(),
-          website_url: honeypot,
+          hp_event_notes: honeypot,
         }),
       });
-      const data = (await res.json().catch(() => null)) as { ok?: boolean; error?: string } | null;
-      if (!res.ok || !data?.ok) {
-        setServerError(data?.error || 'Something went sideways. Try again.');
+      const data = (await res.json().catch(() => null)) as
+        | { ok?: boolean; id?: string; error?: string }
+        | null;
+      // A real, saved RSVP always comes back with an `id`. Anything else — a
+      // network error, a validation reject, or a honeypot drop — must NOT show
+      // the confirmation card, or we'd promise a seat we never recorded.
+      if (!res.ok || !data?.ok || !data.id) {
+        setServerError(data?.error || "That didn't save — give it one more tap.");
         return;
       }
       setSubmitted(true);
@@ -130,11 +141,16 @@ export default function RsvpForm({ event, hostName }: RsvpFormProps): ReactEleme
   }
 
   return (
-    <div className="flex flex-col gap-5">
-      {/* Honeypot — hidden from humans; bots that fill it are silently dropped. */}
+    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
+      {/*
+        Honeypot — hidden from humans; bots that fill it are silently dropped.
+        The name is deliberately NOT autofill-mapped (avoid url/website/email/
+        name/phone/etc.) so iOS Safari and password managers don't fill it for
+        a real guest and get them silently dropped on the server.
+      */}
       <input
         type="text"
-        name="website_url"
+        name="hp_event_notes"
         tabIndex={-1}
         autoComplete="off"
         aria-hidden="true"
@@ -192,13 +208,12 @@ export default function RsvpForm({ event, hostName }: RsvpFormProps): ReactEleme
       {serverError && <p className="text-sm text-brand-yellow">{serverError}</p>}
 
       <button
-        type="button"
-        onClick={handleSubmit}
+        type="submit"
         disabled={submitting}
         className="rounded-lg bg-brand-yellow p-[18px] font-sans text-base font-bold uppercase tracking-[0.08em] text-gray-900 transition-colors hover:bg-yellow-400 disabled:opacity-60"
       >
         {submitting ? 'Locking It In…' : 'Lock It In'}
       </button>
-    </div>
+    </form>
   );
 }
