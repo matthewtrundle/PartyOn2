@@ -48,7 +48,7 @@ export default function UnifiedOrdersView({
 
   const [sheetOpen, setSheetOpen] = useState(false);
   const [fulfilling, setFulfilling] = useState(false);
-  const [printOrders, setPrintOrders] = useState<Order[]>([]);
+  const [printCards, setPrintCards] = useState<OrderCardData[]>([]);
   const [reviewModalOrders, setReviewModalOrders] = useState<Order[] | null>(null);
   const [reviewChecked, setReviewChecked] = useState<Set<string>>(new Set());
   const [sendingReviews, setSendingReviews] = useState(false);
@@ -58,7 +58,7 @@ export default function UnifiedOrdersView({
   // Reset pick-sheet print mode after the dialog closes so subsequent
   // prints fall back to the checklist layout.
   useEffect(() => {
-    const reset = (): void => setPrintOrders([]);
+    const reset = (): void => setPrintCards([]);
     window.addEventListener('afterprint', reset);
     return () => window.removeEventListener('afterprint', reset);
   }, []);
@@ -71,25 +71,39 @@ export default function UnifiedOrdersView({
   // --- Print paths ---
 
   const handlePrintPickSheets = useCallback(async (orderIds: string[]) => {
-    const orders = orderIds
-      .map((id) => view.ordersById.get(id))
-      .filter((o): o is OrdersViewOrder => !!o);
-    if (!orders.length) return;
-    // Prefetch authoritative pick state into the localStorage cache before
-    // the print sheet reads it, so prints reflect cross-device updates.
+    // Resolve each requested order to its cooler card and print the WHOLE
+    // cooler, so a group dashboard's guest orders share one combined sheet.
+    const cardByOrderId = new Map<string, OrderCardData>();
+    for (const card of view.allCards) {
+      for (const o of card.orders) cardByOrderId.set(o.id, card);
+    }
+    const seen = new Set<string>();
+    const cards: OrderCardData[] = [];
+    for (const id of orderIds) {
+      const card = cardByOrderId.get(id);
+      if (!card || seen.has(card.key)) continue;
+      seen.add(card.key);
+      cards.push(card);
+    }
+    if (!cards.length) return;
+    // Prefetch authoritative pick state for EVERY order across the selected
+    // coolers (not just the clicked one) so the sheet reflects cross-device
+    // updates.
     await Promise.all(
-      orders.map((o) =>
-        fetchChecks(o.id).then((server) => {
-          if (server) cacheChecks(o.id, server);
-        }),
-      ),
+      cards
+        .flatMap((c) => c.orders)
+        .map((o) =>
+          fetchChecks(o.id).then((server) => {
+            if (server) cacheChecks(o.id, server);
+          }),
+        ),
     );
-    setPrintOrders(orders);
+    setPrintCards(cards);
     setTimeout(() => window.print(), 100);
-  }, [view.ordersById]);
+  }, [view.allCards]);
 
   const handlePrintChecklist = useCallback(() => {
-    setPrintOrders([]);
+    setPrintCards([]);
     setTimeout(() => window.print(), 50);
   }, []);
 
@@ -237,7 +251,7 @@ export default function UnifiedOrdersView({
       : `${fmtDateLong(data.range.start)} – ${fmtDateLong(data.range.end)}`
     : null;
 
-  const pickSheetMode = printOrders.length > 0;
+  const pickSheetMode = printCards.length > 0;
 
   const cardActions = {
     selected,
@@ -430,7 +444,7 @@ export default function UnifiedOrdersView({
         what silently blanked pick-sheet printing after #124. */}
     {pickSheetMode && (
       <div className="hidden print:block">
-        <PickSheetPrint orders={printOrders} />
+        <PickSheetPrint cards={printCards} />
       </div>
     )}
     </>
