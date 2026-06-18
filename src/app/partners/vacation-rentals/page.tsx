@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import { blankHoneypotFields } from '@/lib/forms/honeypot';
 import Image from 'next/image';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
@@ -270,12 +271,14 @@ UTM Campaign: ${formData.utm_campaign || 'none'}`,
           source: 'vacation-rental-partners-page',
           submittedAt: new Date().toISOString(),
           _formLoadedAt: formLoadedAt.current,
-          website_url: '',
-          fax_number: '',
+          // Honeypot: always-empty trap, unified non-autofill name (see @/lib/forms/honeypot).
+          ...blankHoneypotFields(),
         }),
       });
       const result = await response.json();
-      if (!response.ok || !result.success) {
+      // Require a persisted inquiryId — a honeypot/too-fast/gibberish drop (or a
+      // failed save) returns success:true without one.
+      if (!response.ok || !result.success || !result.inquiryId) {
         throw new Error(result.error || 'Submission failed');
       }
       setSubmitStatus('success');

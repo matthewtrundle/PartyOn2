@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, type FormEvent, type ReactElement } from 'react';
+import { HONEYPOT_FIELD } from '@/lib/forms/honeypot';
 
 /**
  * Inquiry form for the Austin Wedding DJ partner landing page (WS3).
@@ -38,8 +39,9 @@ export default function AustinWeddingDjInquiryForm({ refCode }: Props): ReactEle
       partnerType: 'wedding-dj',
       source: 'wedding-dj-landing',
       refCode,
-      // honeypot — must stay empty
-      website_url: String(formData.get('website_url') || ''),
+      // honeypot — must stay empty; name carries no browser-autofill mapping
+      // so a real visitor is never trapped (see @/lib/forms/honeypot).
+      [HONEYPOT_FIELD]: String(formData.get(HONEYPOT_FIELD) || ''),
       _formLoadedAt: formLoadedAtRef.current,
       submittedAt: new Date().toISOString(),
     };
@@ -51,7 +53,11 @@ export default function AustinWeddingDjInquiryForm({ refCode }: Props): ReactEle
         body: JSON.stringify(payload),
       });
       const json = await res.json();
-      if (!res.ok || !json.success) {
+      // Only celebrate on a genuinely-persisted row. A honeypot/too-fast/
+      // gibberish drop (or a failed DB write) returns success:true WITHOUT an
+      // inquiryId, so requiring one means we never promise a follow-up we
+      // didn't actually record.
+      if (!res.ok || !json.success || !json.inquiryId) {
         throw new Error(json.error || 'Submission failed');
       }
       setStatus('success');
@@ -80,10 +86,12 @@ export default function AustinWeddingDjInquiryForm({ refCode }: Props): ReactEle
 
   return (
     <form onSubmit={handleSubmit} className="card space-y-4">
-      {/* honeypot */}
+      {/* honeypot — hidden from humans; bots that fill it are dropped. The
+          name is deliberately NOT autofill-mapped so iOS Safari / password
+          managers don't fill it for a real guest (see @/lib/forms/honeypot). */}
       <input
         type="text"
-        name="website_url"
+        name={HONEYPOT_FIELD}
         tabIndex={-1}
         autoComplete="off"
         aria-hidden="true"
