@@ -21,6 +21,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   pullQbExpenses,
+  pullQbJournalEntries,
   purgeOtherRealmData,
   syncQbAccounts,
 } from '@/lib/finance/qb-pull-service';
@@ -43,6 +44,9 @@ interface SyncReport {
   accountsUpserted: number;
   purchasesUpserted: number;
   billsUpserted: number;
+  journalEntriesScanned: number;
+  journalExpenseLinesUpserted: number;
+  journalSkippedOwn: number;
   errors: string[];
 }
 
@@ -80,6 +84,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     accountsUpserted: 0,
     purchasesUpserted: 0,
     billsUpserted: 0,
+    journalEntriesScanned: 0,
+    journalExpenseLinesUpserted: 0,
+    journalSkippedOwn: 0,
     errors: [],
   };
 
@@ -124,6 +131,15 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     report.billsUpserted = bills;
   } catch (err) {
     report.errors.push(`expenses: ${err instanceof Error ? err.message : String(err)}`);
+  }
+
+  try {
+    const je = await pullQbJournalEntries(report.sinceIso);
+    report.journalEntriesScanned = je.entriesScanned;
+    report.journalExpenseLinesUpserted = je.expenseLinesUpserted;
+    report.journalSkippedOwn = je.skippedOwn;
+  } catch (err) {
+    report.errors.push(`journalEntries: ${err instanceof Error ? err.message : String(err)}`);
   }
 
   const finishedAt = new Date();
