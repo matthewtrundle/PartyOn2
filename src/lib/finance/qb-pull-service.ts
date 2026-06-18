@@ -318,6 +318,125 @@ export async function pullQbExpenses(
 }
 
 // ---------------------------------------------------------------------------
+// JournalEntry pull (Phase 5B fast-follow)
+//
+// Some bookkeepers record expenses as journal entries rather than Purchases.
+// We pull every JournalEntry and keep only the DEBIT lines that hit an
+// expense / COGS account — the expense side of the entry. Two guards stop us
+// re-importing our OWN Phase 2B sales journals:
+//   1. skip entries whose PrivateNote marks them PartyOn-authored, and
+//   2. only count debits to P&L expense accounts (our sales journals debit
+//      cash/AR, never expense accounts), so they net to zero here anyway.
+// ---------------------------------------------------------------------------
+
+interface QbJournalLineApi {
+  Id?: string;
+  Amount?: number;
+  Description?: string;
+  DetailType?: string;
+  JournalEntryLineDetail?: {
+    PostingType?: 'Debit' | 'Credit';
+    AccountRef?: { value?: string; name?: string };
+  };
+}
+
+interface QbJournalEntryApi {
+  Id: string;
+  TxnDate?: string;
+  PrivateNote?: string;
+  CurrencyRef?: { value?: string };
+  Line?: QbJournalLineApi[];
+}
+
+/** True if a QB account type is a profit-and-loss expense account. */
+function isExpenseAccountType(accountType: string | null | undefined): boolean {
+  if (!accountType) return false;
+  return /expense|cost.?of.?goods/i.test(accountType);
+}
+
+function isPartyOnAuthoredJournal(note: string | undefined): boolean {
+  if (!note) return false;
+  return /PartyOn auto-drafted|REVERSAL of QB JournalEntry/i.test(note);
+}
+
+/**
+ * Pull JournalEntry expense lines whose TxnDate >= sinceIso. Idempotent —
+ * each expense line upserts as `JournalEntry:{entryId}:{lineId}`.
+ */
+export async function pullQbJournalEntries(
+  sinceIso: string // YYYY-MM-DD
+): Promise<{ entriesScanned: number; expenseLinesUpserted: number; skippedOwn: number }> {
+  const { realmId } = await getValidAccessToken();
+  let entriesScanned = 0;
+  let expenseLinesUpserted = 0;
+  let skippedOwn = 0;
+
+  let position = 1;
+  while (true) {
+    const q = `SELECT * FROM JournalEntry WHERE TxnDate >= '${sinceIso}' STARTPOSITION ${position} MAXRESULTS ${PAGE_SIZE}`;
+    const resp = await qboQuery(q);
+    const rows = (resp?.JournalEntry ?? []) as QbJournalEntryApi[];
+    if (rows.length === 0) break;
+
+    for (const je of rows) {
+      entriesScanned++;
+      if (isPartyOnAuthoredJournal(je.PrivateNote)) {
+        skippedOwn++;
+        continue;
+      }
+      const lines = je.Line ?? [];
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const detail = line.JournalEntryLineDetail;
+        if (detail?.PostingType !== 'Debit') continue;
+        const accountId = detail.AccountRef?.value ?? null;
+        if (!accountId) continue;
+
+        const account = await prisma.qbAccount.findUnique({
+          where: { qbAccountId: accountId },
+          select: { name: true, fullyQualifiedName: true, accountSubType: true, accountType: true },
+        });
+        // Only the expense / COGS side of the entry counts as spend.
+        if (!isExpenseAccountType(account?.accountType)) continue;
+
+        const category = account
+          ? categorizeQbAccount({
+              accountSubType: account.accountSubType,
+              name: account.name,
+              fullyQualifiedName: account.fullyQualifiedName,
+            })
+          : 'other';
+        const lineId = line.Id ?? String(i);
+        const txnId = `JournalEntry:${je.Id}:${lineId}`;
+        const data = {
+          txnType: 'JournalEntry',
+          txnDate: new Date(`${je.TxnDate ?? sinceIso}T00:00:00Z`),
+          amountCents: cents(line.Amount),
+          currency: je.CurrencyRef?.value ?? 'USD',
+          vendorName: null,
+          qbAccountId: accountId,
+          categorySlug: category,
+          memo: line.Description ?? je.PrivateNote ?? null,
+          realmId,
+          rawPayload: je as unknown as object,
+        };
+        await prisma.qbExpense.upsert({
+          where: { qbTransactionId: txnId },
+          create: { qbTransactionId: txnId, ...data },
+          update: data,
+        });
+        expenseLinesUpserted++;
+      }
+    }
+
+    if (rows.length < PAGE_SIZE) break;
+    position += rows.length;
+  }
+
+  return { entriesScanned, expenseLinesUpserted, skippedOwn };
+}
+
+// ---------------------------------------------------------------------------
 // OpEx aggregation for /admin/finance + Phase 1C P&L
 // ---------------------------------------------------------------------------
 
