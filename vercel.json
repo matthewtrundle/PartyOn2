@@ -81,6 +81,10 @@
       "schedule": "5 8 * * *"
     },
     {
+      "path": "/api/cron/finance-monthly-rollup",
+      "schedule": "10 8 * * *"
+    },
+    {
       "path": "/api/cron/finance-weekly-briefing",
       "schedule": "0 14 * * 1"
     }

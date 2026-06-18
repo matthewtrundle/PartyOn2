@@ -393,6 +393,27 @@ $2.7k/10 txns. Clean 2023-2025 split: ~$297k true OpEx · ~$251k COGS · ~$81k
 non-operating. Phase 5C's rollup MUST exclude COGS + non_operating from OpEx
 (pl-calculation.ts line 229 currently sums ALL qb_expenses — fix in 5C).
 
+### Phase 5C — Monthly trajectory rollup
+
+- New `FinanceMonthlyRollup` table (one row per year+month). Built by
+  `src/lib/finance/monthly-rollup.ts` — UNIONs Shopify archive (≤2025-12) +
+  Order table (2026+), deduped on the rare overlap, layers QB OpEx where
+  available. Stores revenue, top SKUs, segment mix, top customers/affiliates,
+  expense categories (with top vendor), and a `dataHealth` block.
+- Segment classifier `order-segment.ts` reuses the existing analytics
+  `classifySegment` taxonomy (bach/wedding/corporate/boat/kegs/general); coarse
+  historically (Shopify era has no landing page / empty tags).
+- `dataHealth.netIncomeReliable` is the honesty gate: net income is only
+  trustworthy when there are no completeness flags. In practice it's **false
+  for every month so far** — 2023-2025 revenue is Shopify-understated vs real
+  expenses (artificial losses); 2026 has real revenue but QB is dormant (COGS=0,
+  artificial profit). The Phase 5D briefing must render net income as "pending"
+  + the flags, never the raw number.
+- Full backfill: `scripts/finance/backfill-monthly-rollups.ts` (run after the
+  migration). Nightly refresh: `/api/cron/finance-monthly-rollup` (08:10 UTC,
+  trailing 2 months; `?months=N` after a re-categorization).
+- Bookkeeper handoff for the 2026 gap: `docs/QUICKBOOKS-2026-CATCHUP-FOR-BOOKKEEPER.md`.
+
 ### Phase 6 — Auto-categorize graduation (post-trust)
 
 Only after the operator has reviewed Phase 5 briefings for 4+ weeks and feels confident, graduate the Director's auto-categorize behavior from "one-by-one with reversal button" to "batch auto-categorize with weekly audit summary." This is a config flag, not new code.

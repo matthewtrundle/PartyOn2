@@ -2869,6 +2869,36 @@ model ShopifyArchiveSyncState {
   @@map("shopify_archive_sync_state")
 }
 
+/// Pre-computed monthly trajectory rollup (Phase 5C). One row per (year,
+/// month). UNIONs the two revenue eras (ShopifyOrderArchive ≤2025-12 + Order
+/// ≥2026-01, deduped) and layers QB OpEx where available. Profit columns stay
+/// null when data is incomplete. Built by src/lib/finance/monthly-rollup.ts.
+model FinanceMonthlyRollup {
+  id                       String   @id @default(cuid())
+  year                     Int
+  month                    Int // 1-12
+  revenueCents             BigInt   @default(0) @map("revenue_cents")
+  orderCount               Int      @default(0) @map("order_count")
+  cogsCents                BigInt?  @map("cogs_cents")
+  grossProfitCents         BigInt?  @map("gross_profit_cents")
+  opexCents                BigInt?  @map("opex_cents")
+  netIncomeCents           BigInt?  @map("net_income_cents")
+  revenueFromShopifyCents  BigInt   @default(0) @map("revenue_from_shopify_cents")
+  revenueFromOrdersCents   BigInt   @default(0) @map("revenue_from_orders_cents")
+  topSkus                  Json     @default("[]") @map("top_skus")
+  segmentBreakdown         Json     @default("{}") @map("segment_breakdown")
+  topCustomers             Json     @default("[]") @map("top_customers")
+  topAffiliates            Json     @default("[]") @map("top_affiliates")
+  expenseCategories        Json     @default("[]") @map("expense_categories")
+  dataHealth               Json     @default("{}") @map("data_health")
+  computedAt               DateTime @default(now()) @map("computed_at")
+  createdAt                DateTime @default(now()) @map("created_at")
+  updatedAt                DateTime @updatedAt @map("updated_at")
+
+  @@unique([year, month])
+  @@map("finance_monthly_rollup")
+}
+
 /// Per-day sales journal entries posted from PartyOn → QuickBooks (Phase 2B).
 /// Drafted by the daily cron, REQUIRE operator approval before posting
 /// (autonomy decision #4 — only qb-categorize bypasses operator click).
