@@ -2636,6 +2636,36 @@ model FinanceSnapshot {
   @@map("finance_snapshots")
 }
 
+/// Game Plan — human-authored strategic initiatives for the /admin/strategy
+/// living-document page (Allan + Brian). Distinct from the machine-detected
+/// recommendation queues above: these are owned, prioritized, hand-tracked
+/// initiatives with a sub-task checklist and an append-only progress log.
+/// Seeded with the 10 kickoff items via
+/// prisma/migrations/manual/2026-06-17-strategy-initiatives.sql.
+model StrategyInitiative {
+  id           String    @id @default(cuid())
+  pillar       String    // finance | operations | acquisition | partnerships
+  title        String
+  description  String?   @db.Text
+  status       String    @default("not_started") // not_started | in_progress | blocked | done
+  priority     String    @default("later")       // now | next | later
+  owner        String?
+  nextAction   String?   @map("next_action") @db.Text
+  targetDate   DateTime? @map("target_date") @db.Date
+  linkedDomain String?   @map("linked_domain")   // finance | operations | marketing | seo
+  sortOrder    Int       @default(0) @map("sort_order")
+  subtasks     Json      @default("[]") // [{ id, label, done, createdAt }]
+  updates      Json      @default("[]") // [{ id, author, body, createdAt }] append-only progress log
+  archivedAt   DateTime? @map("archived_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  @@index([pillar])
+  @@index([status])
+  @@index([pillar, priority, sortOrder])
+  @@map("strategy_initiatives")
+}
+
 /// Single-row holder for the active QuickBooks Online OAuth state. Refresh
 /// token rotates on each refresh; the row is updated in place. Operator-created
 /// via the /admin/finance/connect-quickbooks OAuth flow — never seeded by migration.
