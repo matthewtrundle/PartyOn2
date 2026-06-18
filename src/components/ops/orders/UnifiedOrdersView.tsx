@@ -248,6 +248,7 @@ export default function UnifiedOrdersView({
   };
 
   return (
+    <>
     <div className={pickSheetMode ? 'print:hidden' : 'print:block'}>
       {/* Print-only checklist header */}
       <div className="hidden print:block pb-2 mb-2 border-b border-gray-300">
@@ -378,13 +379,6 @@ export default function UnifiedOrdersView({
         onClear={view.clearSelection}
       />
 
-      {/* Pick sheets print tree (only mounts in pick-sheet mode) */}
-      {pickSheetMode && (
-        <div className="hidden print:block">
-          <PickSheetPrint orders={printOrders} />
-        </div>
-      )}
-
       {reviewModalOrders && (
         <ReviewRequestModal
           orders={reviewModalOrders}
@@ -429,6 +423,17 @@ export default function UnifiedOrdersView({
         }
       `}</style>
     </div>
+
+    {/* Pick sheets print on their OWN surface — must be a SIBLING of the
+        print:hidden screen wrapper above, never a child. A child can't
+        un-hide itself once an ancestor is display:none, which is exactly
+        what silently blanked pick-sheet printing after #124. */}
+    {pickSheetMode && (
+      <div className="hidden print:block">
+        <PickSheetPrint orders={printOrders} />
+      </div>
+    )}
+    </>
   );
 }
 
