@@ -25,6 +25,7 @@
  */
 import { NextResponse, type NextRequest } from 'next/server';
 import { prisma } from '@/lib/database/client';
+import { requireOpsAuth } from '@/lib/auth/ops-session';
 import { Prisma } from '@prisma/client';
 import {
   EXPERIMENTS,
@@ -47,6 +48,9 @@ type VariantStats = {
 };
 
 export async function GET(req: NextRequest) {
+  const auth = await requireOpsAuth();
+  if (auth instanceof NextResponse) return auth;
+
   const url = new URL(req.url);
   const page = url.searchParams.get('page');
   const expFilter = url.searchParams.get('experiment');
