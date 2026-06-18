@@ -14,11 +14,15 @@
  */
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/database/client';
+import { requireOpsAuth } from '@/lib/auth/ops-session';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export async function GET() {
+  const auth = await requireOpsAuth();
+  if (auth instanceof NextResponse) return auth;
+
   try {
     // Latest run: derived from MAX(capturedAt) and its runRef.
     const newest = await prisma.seoSnapshot.findFirst({

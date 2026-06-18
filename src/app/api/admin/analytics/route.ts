@@ -11,6 +11,7 @@ import { getBehaviorMetrics } from '@/lib/analytics/ga4-behavior';
 import { generateRecommendations } from '@/lib/analytics/recommendations';
 import { isGoogleConfigured } from '@/lib/analytics/google-auth';
 import { prisma } from '@/lib/prisma';
+import { requireOpsAuth } from '@/lib/auth/ops-session';
 import {
   ExtendedDashboardData,
   AnalyticsConfig,
@@ -26,6 +27,9 @@ export const dynamic = 'force-dynamic';
  * Fetches dashboard data for the specified period
  */
 export async function GET(request: NextRequest) {
+  const auth = await requireOpsAuth();
+  if (auth instanceof NextResponse) return auth;
+
   const searchParams = request.nextUrl.searchParams;
   const period = searchParams.get('period') || '30d';
 

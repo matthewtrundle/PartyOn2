@@ -1,0 +1,54 @@
+name: CI
+
+# Runs the Vitest suite and ESLint on every PR into main/dev and on pushes to
+# main. Until this existed, nothing in CI ran the tests — only Vercel's build,
+# which doesn't fail on test failures. That let a red suite land on main
+# unnoticed (e.g. the financeRecommendation mock drift in #140). This is the
+# gate that catches that class of regression at PR time.
+
+on:
+  pull_request:
+    branches: [main, dev]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# A newer commit on the same branch supersedes an in-flight run.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test & Lint
+    runs-on: ubuntu-latest
+    env:
+      # Placeholder so `prisma generate` can resolve the datasource env() at
+      # generate time. The suite is fully mocked and never opens a real
+      # connection, so no live database or secrets are needed.
+      POSTGRES_URL: postgresql://test:test@localhost:5432/test
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Run tests
+        run: npm run test:run

@@ -349,6 +349,71 @@ period comes from the `Order` table (Stripe-populated) instead. Segment
 classification falls back to `source_name` + group order name (Shopify `tags`
 are empty on this store too).
 
+### Phase 5B — QuickBooks all-time expense backfill
+
+- **Blocker resolved (2026-06-17):** QB was connected to the Intuit **sandbox**
+  (realm 9341457195868909, 47 fake sample expenses). Operator connected
+  **production** — realm 9130357382202626, company **Premier Concierge Worldwide**
+  (the legal entity holding PartyOn's books). Runbook:
+  `docs/CONNECT-PRODUCTION-QUICKBOOKS.md`.
+- New `realm_id` column on `qb_expenses` + `qb_accounts` so sandbox vs prod rows
+  are separable. `purgeOtherRealmData(keepRealmId)` clears everything not from the
+  connected realm (NULL rows = pre-column sandbox).
+- The existing `/api/cron/finance-qb-pull` cron gains params: `?all=true`
+  (all-time floor 2010-01-01), `?since=YYYY-MM-DD` (explicit floor for year-by-year
+  chunking), `?purgeSandbox=true` (cutover cleanup). Cutover run:
+  `GET /api/cron/finance-qb-pull?all=true&purgeSandbox=true` with the CRON_SECRET bearer.
+- **Scope:** Purchase + Bill (the proven OpEx path). JournalEntry / SalesReceipt /
+  Invoice / Deposit deferred — JournalEntry expense lines are a fast-follow once we
+  confirm the Purchase+Bill totals match the operator's sense of real OpEx.
+- **⚠️ Operator action after cutover:** the sandbox→prod switch invalidates the
+  Phase 2B journal-account mappings (they point at sandbox account IDs). Re-map at
+  `/admin/finance/journals/settings` against the new production accounts before
+  trusting the autonomous sales-journal posting.
+
+**Backfill result (2026-06-17):** 2,234 real Purchase txns (0 Bills — this company
+records expenses as Purchases, not the AP/Bill workflow), realm 9130357382202626,
+back to 2023-01-03. $629k gross outflow.
+
+**⚠️ The QB company is the 2023–2025 operating entity, dormant from ~2026-01.**
+Transaction volume declines sharply right at 2026-01 (Dec 2025: 14 txns → Jan
+2026: 4 → Jun 2026: 3, ~$20-75/mo), the SAME point revenue moved off Shopify to
+the Order table. So expense bookkeeping migrated out of this QB company around
+2026-01 too. PartyOn's 2026 expenses live in a different book (TBD with operator).
+Net result: **no single period yet has both clean revenue AND clean expenses** —
+2023-2025 has expenses (QB) but revenue is Shopify; 2026 has revenue (Order table)
+but ~no expenses here. Net-profit deferred until this resolves.
+
+**Categorization fix (qb-account-map.ts).** Real chart of accounts needed new
+rules. Inventory ($251k) = COGS (the alcohol). Added `payment_fees` (Shopify/
+Stripe $30k), `repairs`, and `non_operating` (loans + owner/inter-company
+transfers, $81k — excluded from OpEx via `isOperatingExpense()` /
+`NON_OPEX_CATEGORIES`). Result: "Other" collapsed from $374k/1,404 txns to
+$2.7k/10 txns. Clean 2023-2025 split: ~$297k true OpEx · ~$251k COGS · ~$81k
+non-operating. Phase 5C's rollup MUST exclude COGS + non_operating from OpEx
+(pl-calculation.ts line 229 currently sums ALL qb_expenses — fix in 5C).
+
+### Phase 5C — Monthly trajectory rollup
+
+- New `FinanceMonthlyRollup` table (one row per year+month). Built by
+  `src/lib/finance/monthly-rollup.ts` — UNIONs Shopify archive (≤2025-12) +
+  Order table (2026+), deduped on the rare overlap, layers QB OpEx where
+  available. Stores revenue, top SKUs, segment mix, top customers/affiliates,
+  expense categories (with top vendor), and a `dataHealth` block.
+- Segment classifier `order-segment.ts` reuses the existing analytics
+  `classifySegment` taxonomy (bach/wedding/corporate/boat/kegs/general); coarse
+  historically (Shopify era has no landing page / empty tags).
+- `dataHealth.netIncomeReliable` is the honesty gate: net income is only
+  trustworthy when there are no completeness flags. In practice it's **false
+  for every month so far** — 2023-2025 revenue is Shopify-understated vs real
+  expenses (artificial losses); 2026 has real revenue but QB is dormant (COGS=0,
+  artificial profit). The Phase 5D briefing must render net income as "pending"
+  + the flags, never the raw number.
+- Full backfill: `scripts/finance/backfill-monthly-rollups.ts` (run after the
+  migration). Nightly refresh: `/api/cron/finance-monthly-rollup` (08:10 UTC,
+  trailing 2 months; `?months=N` after a re-categorization).
+- Bookkeeper handoff for the 2026 gap: `docs/QUICKBOOKS-2026-CATCHUP-FOR-BOOKKEEPER.md`.
+
 ### Phase 6 — Auto-categorize graduation (post-trust)
 
 Only after the operator has reviewed Phase 5 briefings for 4+ weeks and feels confident, graduate the Director's auto-categorize behavior from "one-by-one with reversal button" to "batch auto-categorize with weekly audit summary." This is a config flag, not new code.
