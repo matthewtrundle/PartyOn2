@@ -415,7 +415,10 @@ function buildDataHealth(h: HealthInput): Record<string, unknown> {
   } else if (h.revenueCents > 0 && expensesTotalCents < h.revenueCents * 0.1) {
     flags.push('QB expenses trivial vs revenue — books likely incomplete this month');
   }
-  if ((h.cogsCents ?? 0) === 0 && h.orderItemCostCents === 0 && h.revenueCents > 0) {
+  // For a liquor-delivery business every revenue month has alcohol cost, so a
+  // zero COGS month means it wasn't recorded (the sparse OrderItem cost data
+  // is too thin to count as real COGS). Always flag it.
+  if ((h.cogsCents ?? 0) === 0 && h.revenueCents > 0) {
     flags.push('no COGS recorded — gross profit unreliable');
   }
   if (h.revenueFromShopifyCents > h.revenueCents * 0.5) {
