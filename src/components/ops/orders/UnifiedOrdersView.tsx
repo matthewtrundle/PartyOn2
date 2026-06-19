@@ -3,6 +3,7 @@
 import { ReactElement, useCallback, useEffect, useMemo, useState } from 'react';
 import BulkActionBar from './BulkActionBar';
 import DaySectionHeader from './DaySectionHeader';
+import DayTiles from './DayTiles';
 import FilterSheet from './FilterSheet';
 import OrderGroupCard from './OrderGroupCard';
 import OrdersFilterBar from './OrdersFilterBar';
@@ -14,7 +15,7 @@ import ShortageListModal from './ShortageListModal';
 import { buildShortageList } from './shortage';
 import { EMPTY_FILTERS, useOrdersView } from './useOrdersView';
 import { cacheChecks, fetchChecks, loadCachedChecks } from './usePickChecks';
-import { fmtDateLong, formatDate, formatDateTime } from './format';
+import { deliveryTimeMinutes, fmtDateLong, formatDate, formatDateTime } from './format';
 import type { OrderCardData, OrdersViewOrder } from '@/lib/ops/orders-view-data';
 import type { Order, ShortageRow } from './types';
 
@@ -54,6 +55,9 @@ export default function UnifiedOrdersView({
   const [sendingReviews, setSendingReviews] = useState(false);
   const [shortageList, setShortageList] = useState<ShortageRow[] | null>(null);
   const [shortageCount, setShortageCount] = useState(0);
+  // Day/overdue sections collapse to a compact tile overview. Keys present
+  // here are EXPANDED; empty set = all collapsed (the default landing state).
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
 
   // Reset pick-sheet print mode after the dialog closes so subsequent
   // prints fall back to the checklist layout.
@@ -261,6 +265,82 @@ export default function UnifiedOrdersView({
     onFilterByDashboard: (dashId: string) => view.setFilters({ groupOrderV2Id: dashId }),
   };
 
+  // --- Day collapse / expand ---
+
+  const allSectionKeys = useMemo(() => {
+    const keys: string[] = [];
+    if (data?.overdue) keys.push('overdue');
+    for (const d of data?.days ?? []) keys.push(d.date);
+    return keys;
+  }, [data]);
+
+  const allExpanded =
+    allSectionKeys.length > 0 && allSectionKeys.every((k) => expandedSections.has(k));
+
+  const toggleAll = useCallback(() => {
+    setExpandedSections(allExpanded ? new Set() : new Set(allSectionKeys));
+  }, [allExpanded, allSectionKeys]);
+
+  const toggleSection = useCallback((key: string) => {
+    setExpandedSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }, []);
+
+  const expandAndScroll = useCallback((sectionKey: string, cardKey: string) => {
+    setExpandedSections((prev) => new Set(prev).add(sectionKey));
+    // Let the day expand (cards leave the print-only wrapper) before scrolling.
+    setTimeout(() => {
+      document.getElementById(`cool-${cardKey}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
+  }, []);
+
+  /**
+   * One day (or the overdue group). Collapsed → a time-sorted tile overview;
+   * expanded → the full cooler cards. The full cards always render for print,
+   * so "Print checklist" stays complete regardless of what's collapsed.
+   */
+  const renderSection = (args: {
+    key: string;
+    label: string;
+    variant: 'day' | 'overdue';
+    cards: OrderCardData[];
+    total: number;
+  }): ReactElement => {
+    const collapsed = !expandedSections.has(args.key);
+    const sorted = [...args.cards].sort(
+      (a, b) => deliveryTimeMinutes(a.deliveryTime) - deliveryTimeMinutes(b.deliveryTime),
+    );
+    return (
+      <section key={args.key} className="break-inside-avoid-page">
+        <DaySectionHeader
+          label={args.label}
+          variant={args.variant}
+          cardCount={args.cards.length}
+          total={args.total}
+          orderIds={args.cards.flatMap((c) => c.orders.map((o) => o.id))}
+          selected={selected}
+          onSetManySelected={view.setManySelected}
+          collapsed={collapsed}
+          onToggleCollapse={() => toggleSection(args.key)}
+        />
+        {collapsed ? (
+          <>
+            <DayTiles cards={sorted} onTileClick={(ck) => expandAndScroll(args.key, ck)} />
+            <div className="hidden print:block">
+              <CardGrid cards={sorted} {...cardActions} />
+            </div>
+          </>
+        ) : (
+          <CardGrid cards={sorted} {...cardActions} />
+        )}
+      </section>
+    );
+  };
+
   return (
     <>
     <div className={pickSheetMode ? 'print:hidden' : 'print:block'}>
@@ -286,6 +366,8 @@ export default function UnifiedOrdersView({
           onPrintChecklist={handlePrintChecklist}
           onExportCsv={handleExportCsv}
           subtitle={subtitle}
+          onToggleAll={allSectionKeys.length ? toggleAll : undefined}
+          allExpanded={allExpanded}
         />
 
         {data && <OrdersStatsStrip data={data} />}
@@ -348,35 +430,25 @@ export default function UnifiedOrdersView({
         )}
 
         {/* Overdue section */}
-        {data?.overdue && (
-          <section className="break-inside-avoid-page">
-            <DaySectionHeader
-              label="Overdue — unfulfilled"
-              variant="overdue"
-              cardCount={data.overdue.cards.length}
-              total={data.overdue.total}
-              orderIds={data.overdue.cards.flatMap((c) => c.orders.map((o) => o.id))}
-              selected={selected}
-              onSetManySelected={view.setManySelected}
-            />
-            <CardGrid cards={data.overdue.cards} {...cardActions} />
-          </section>
-        )}
+        {data?.overdue &&
+          renderSection({
+            key: 'overdue',
+            label: 'Overdue — unfulfilled',
+            variant: 'overdue',
+            cards: data.overdue.cards,
+            total: data.overdue.total,
+          })}
 
         {/* Day sections */}
-        {data?.days.map((day) => (
-          <section key={day.date} className="break-inside-avoid-page">
-            <DaySectionHeader
-              label={fmtDateLong(day.date)}
-              cardCount={day.cards.length}
-              total={day.total}
-              orderIds={day.cards.flatMap((c) => c.orders.map((o) => o.id))}
-              selected={selected}
-              onSetManySelected={view.setManySelected}
-            />
-            <CardGrid cards={day.cards} {...cardActions} />
-          </section>
-        ))}
+        {data?.days.map((day) =>
+          renderSection({
+            key: day.date,
+            label: fmtDateLong(day.date),
+            variant: 'day',
+            cards: day.cards,
+            total: day.total,
+          }),
+        )}
       </div>
 
       {/* Spacer so the fixed bulk bar never covers the last card */}
@@ -471,6 +543,7 @@ function CardGrid({
       {cards.map((c) => (
         <OrderGroupCard
           key={c.key}
+          htmlId={`cool-${c.key}`}
           card={c}
           selected={selected}
           onToggleOrder={onToggleOrder}
