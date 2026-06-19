@@ -103,6 +103,23 @@ export function deliveryTimeMinutes(timeStr: string): number {
   return hour * 60 + min;
 }
 
+/**
+ * Very subtle AM/PM/EVE accent for the collapsed-day tiles — a left-border
+ * color class, mirroring timeOfDayPill's buckets. Unknown / TBD reads neutral.
+ */
+export function timeOfDayAccent(timeStr: string): string {
+  switch (timeOfDayPill(timeStr).label) {
+    case 'AM':
+      return 'border-l-amber-400';
+    case 'PM':
+      return 'border-l-sky-400';
+    case 'EVE':
+      return 'border-l-indigo-500';
+    default:
+      return 'border-l-gray-300';
+  }
+}
+
 /** Disco/Private/House tag colors (matches weekly checklist). */
 export function typeTagClasses(t: 'DISCO' | 'PRIVATE' | 'HOUSE'): { label: string; cls: string; labelCls: string } {
   if (t === 'DISCO') {
