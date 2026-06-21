@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import { HONEYPOT_FIELD } from '@/lib/forms/honeypot';
 
 interface VacationRentalLeadCaptureProps {
   /**
@@ -26,6 +27,7 @@ export default function VacationRentalLeadCapture({
   const [companyName, setCompanyName] = useState('');
   const [propertyCount, setPropertyCount] = useState('');
   const [signupQrId, setSignupQrId] = useState('');
+  const [honeypot, setHoneypot] = useState('');
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
   const formLoadedAt = useRef(Date.now());
@@ -72,13 +74,14 @@ export default function VacationRentalLeadCapture({
           signupQrId: signupQrId || undefined,
           submittedAt: new Date().toISOString(),
           _formLoadedAt: formLoadedAt.current,
-          website_url: '',
-          fax_number: '',
+          [HONEYPOT_FIELD]: honeypot,
         }),
       });
 
       const result = await response.json();
-      if (!response.ok || !result.success) {
+      // Require a persisted inquiryId before celebrating — a honeypot/too-fast/
+      // gibberish drop (or a failed save) returns success:true without one.
+      if (!response.ok || !result.success || !result.inquiryId) {
         throw new Error(result.error || 'Submission failed');
       }
 
@@ -162,9 +165,19 @@ export default function VacationRentalLeadCapture({
         {status === 'submitting' ? 'Sending…' : 'Get the partner one-pager →'}
       </button>
 
-      {/* Honeypot fields */}
-      <input type="text" name="website_url" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden />
-      <input type="text" name="fax_number" tabIndex={-1} autoComplete="off" className="hidden" aria-hidden />
+      {/* Honeypot — hidden from humans; bots that fill it are dropped. The name
+          carries no browser-autofill mapping so a real visitor is never trapped
+          (see @/lib/forms/honeypot). */}
+      <input
+        type="text"
+        name={HONEYPOT_FIELD}
+        value={honeypot}
+        onChange={(e) => setHoneypot(e.target.value)}
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden
+        className="hidden"
+      />
 
       {status === 'error' && (
         <p className="mt-3 text-sm text-brand-yellow text-center">{errorMessage}</p>
