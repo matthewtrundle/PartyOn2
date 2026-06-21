@@ -14,12 +14,17 @@ export default function OrdersHeader({
   onPrintChecklist,
   onExportCsv,
   subtitle,
+  onToggleAll,
+  allExpanded = false,
 }: {
   onRefresh: () => void;
   refreshing: boolean;
   onPrintChecklist: () => void;
   onExportCsv: () => void;
   subtitle: string | null;
+  /** Expand-all / collapse-all the day sections. Omitted when there are none. */
+  onToggleAll?: () => void;
+  allExpanded?: boolean;
 }): ReactElement {
   return (
     <div className="print:hidden flex flex-wrap items-center gap-2 md:gap-3">
@@ -39,6 +44,21 @@ export default function OrdersHeader({
           </svg>
           <span>Create Invoice</span>
         </Link>
+        {onToggleAll && (
+          <button
+            type="button"
+            onClick={onToggleAll}
+            className="btn-ghost !min-h-[44px] inline-flex items-center gap-2"
+          >
+            <svg
+              className={`w-4 h-4 transition-transform ${allExpanded ? 'rotate-180' : ''}`}
+              viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+            <span className="hidden sm:inline">{allExpanded ? 'Collapse all' : 'Expand all'}</span>
+          </button>
+        )}
         <button
           type="button"
           onClick={onRefresh}

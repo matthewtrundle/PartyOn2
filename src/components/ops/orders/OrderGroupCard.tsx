@@ -17,6 +17,7 @@ export default function OrderGroupCard({
   onSetManySelected,
   onPrintOrder,
   onFilterByDashboard,
+  htmlId,
 }: {
   card: OrderCardData;
   selected: Set<string>;
@@ -24,6 +25,8 @@ export default function OrderGroupCard({
   onSetManySelected: (ids: string[], on: boolean) => void;
   onPrintOrder: (orderId: string) => void;
   onFilterByDashboard: (dashboardId: string) => void;
+  /** DOM id used as a scroll target when a collapsed-day tile is clicked. */
+  htmlId?: string;
 }): ReactElement {
   const pill = timeOfDayPill(c.deliveryTime);
   const tag = typeTagClasses(c.shortType);
@@ -42,6 +45,7 @@ export default function OrderGroupCard({
 
   return (
     <article
+      id={htmlId}
       data-share-code={c.shareCode || undefined}
       className={[
         'overflow-hidden border border-gray-200 bg-white break-inside-avoid rounded-lg print:rounded-none',

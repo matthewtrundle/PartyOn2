@@ -86,6 +86,40 @@ export function timeOfDayPill(timeStr: string): TimePill {
   return { label: 'EVE', cls: 'bg-indigo-900 text-white' };
 }
 
+/**
+ * Start time of a delivery-time string as minutes since midnight, for
+ * chronological sorting. Handles "4:30 PM" and ranges like "4:30 PM - 5:00 PM"
+ * (uses the start). Blank / "TBD" / unparseable sort to the end.
+ */
+export function deliveryTimeMinutes(timeStr: string): number {
+  if (!timeStr) return Number.MAX_SAFE_INTEGER;
+  const m = timeStr.match(/(\d{1,2})(?::(\d{2}))?\s*(AM|PM)/i);
+  if (!m) return Number.MAX_SAFE_INTEGER;
+  let hour = parseInt(m[1], 10);
+  const min = m[2] ? parseInt(m[2], 10) : 0;
+  const isPM = m[3].toUpperCase() === 'PM';
+  if (isPM && hour !== 12) hour += 12;
+  if (!isPM && hour === 12) hour = 0;
+  return hour * 60 + min;
+}
+
+/**
+ * Very subtle AM/PM/EVE accent for the collapsed-day tiles — a left-border
+ * color class, mirroring timeOfDayPill's buckets. Unknown / TBD reads neutral.
+ */
+export function timeOfDayAccent(timeStr: string): string {
+  switch (timeOfDayPill(timeStr).label) {
+    case 'AM':
+      return 'border-l-amber-400';
+    case 'PM':
+      return 'border-l-sky-400';
+    case 'EVE':
+      return 'border-l-indigo-500';
+    default:
+      return 'border-l-gray-300';
+  }
+}
+
 /** Disco/Private/House tag colors (matches weekly checklist). */
 export function typeTagClasses(t: 'DISCO' | 'PRIVATE' | 'HOUSE'): { label: string; cls: string; labelCls: string } {
   if (t === 'DISCO') {
