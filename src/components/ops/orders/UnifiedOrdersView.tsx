@@ -9,6 +9,7 @@ import OrderGroupCard from './OrderGroupCard';
 import OrdersFilterBar from './OrdersFilterBar';
 import OrdersHeader from './OrdersHeader';
 import OrdersStatsStrip from './OrdersStatsStrip';
+import PackModeOverlay from './PackModeOverlay';
 import PickSheetPrint from './print/PickSheetPrint';
 import ReviewRequestModal from './ReviewRequestModal';
 import ShortageListModal from './ShortageListModal';
@@ -58,6 +59,8 @@ export default function UnifiedOrdersView({
   // Day/overdue sections collapse to a compact tile overview. Keys present
   // here are EXPANDED; empty set = all collapsed (the default landing state).
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
+  // The day currently open in full-screen Pack mode (null = closed).
+  const [packSection, setPackSection] = useState<{ label: string; cards: OrderCardData[] } | null>(null);
 
   // Reset pick-sheet print mode after the dialog closes so subsequent
   // prints fall back to the checklist layout.
@@ -326,6 +329,7 @@ export default function UnifiedOrdersView({
           onSetManySelected={view.setManySelected}
           collapsed={collapsed}
           onToggleCollapse={() => toggleSection(args.key)}
+          onPack={() => setPackSection({ label: args.label, cards: sorted })}
         />
         {collapsed ? (
           <>
@@ -492,6 +496,14 @@ export default function UnifiedOrdersView({
           items={shortageList}
           selectedCount={shortageCount}
           onClose={() => setShortageList(null)}
+        />
+      )}
+
+      {packSection && (
+        <PackModeOverlay
+          label={packSection.label}
+          cards={packSection.cards}
+          onClose={() => setPackSection(null)}
         />
       )}
 

@@ -19,6 +19,7 @@ export default function DaySectionHeader({
   variant = 'day',
   collapsed = false,
   onToggleCollapse,
+  onPack,
 }: {
   label: string;
   cardCount: number;
@@ -29,6 +30,8 @@ export default function DaySectionHeader({
   variant?: 'day' | 'overdue';
   collapsed?: boolean;
   onToggleCollapse?: () => void;
+  /** Opens Pack mode for this day's orders. */
+  onPack?: () => void;
 }): ReactElement {
   const ref = useRef<HTMLInputElement>(null);
   const allSelected = orderIds.length > 0 && orderIds.every((id) => selected.has(id));
@@ -63,6 +66,32 @@ export default function DaySectionHeader({
       <div className="text-sm font-medium opacity-90 whitespace-nowrap">
         {cardCount} cooler{cardCount === 1 ? '' : 's'} · {fmtMoney(total)}
       </div>
+      {onPack && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onPack();
+          }}
+          className="print:hidden inline-flex items-center gap-1.5 rounded-md bg-white/15 hover:bg-white/25 px-2.5 py-1 text-sm font-semibold transition-colors"
+        >
+          <svg
+            className="w-4 h-4"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+            <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+            <line x1="12" y1="22.08" x2="12" y2="12" />
+          </svg>
+          <span>Pack</span>
+        </button>
+      )}
       {clickable && (
         <svg
           className={`w-5 h-5 flex-shrink-0 transition-transform print:hidden ${collapsed ? '' : 'rotate-180'}`}
