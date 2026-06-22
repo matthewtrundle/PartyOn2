@@ -143,8 +143,9 @@ const SUB_TYPE_MAP: Record<string, CategorySlug> = {
 };
 
 // Free-text fallback — when a QB account has no recognised sub-type we
-// look for keywords in the account name.
-const NAME_KEYWORD_RULES: Array<{ pattern: RegExp; slug: CategorySlug }> = [
+// look for keywords in the account name. Exported so the Plaid bank-outflow
+// categorizer (plaid-category-map.ts) can reuse the same merchant-name rules.
+export const NAME_KEYWORD_RULES: Array<{ pattern: RegExp; slug: CategorySlug }> = [
   // High-priority disambiguators FIRST — these must win over generic rules.
   // Non-operating: loans, owner draws/contributions, inter-company transfers.
   // Never count these as expenses.
