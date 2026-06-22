@@ -6,6 +6,7 @@
 import { prisma } from '@/lib/database/client';
 import { calculateDeliveryFee } from '@/lib/delivery/rates';
 import { isLastMinuteDate } from '@/lib/lastMinute/dates';
+import { assertVariantsPurchasable } from '@/lib/products/availability';
 import {
   generateShareCode,
   computeOrderDeadline,
@@ -625,6 +626,13 @@ export async function addDraftItem(
   if (new Date() > tab.orderDeadline) {
     throw new Error('Order deadline has passed');
   }
+
+  // Defense-in-depth: never add a DRAFT/ARCHIVED product (or an off-sale variant) to a tab.
+  // This is the shared guard behind both the add-item endpoint and the /quote/start pre-loader.
+  // Throws ProductNotPurchasableError.
+  await assertVariantsPurchasable(prisma, [
+    { productId: input.productId, variantId: input.variantId, title: input.title },
+  ]);
 
   // Upsert: if same variant exists for this participant, increment qty
   const existing = await prisma.draftCartItem.findUnique({

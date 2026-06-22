@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/database/client';
 import { ProductStatus } from '@prisma/client';
+import { cascadeVariantAvailabilityForStatus } from '@/lib/products/availability';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -220,9 +221,18 @@ export async function PUT(
       }
     }
 
-    const product = await prisma.product.update({
-      where: { id },
-      data: updateData,
+    // Update the product and, when its status is moving to DRAFT/ARCHIVED, cascade its variants
+    // off-sale in the SAME transaction (the browse catalog hides non-ACTIVE products, but
+    // cart/checkout key off the variant's availableForSale flag).
+    const product = await prisma.$transaction(async (tx) => {
+      const updated = await tx.product.update({
+        where: { id },
+        data: updateData,
+      });
+      if (typeof body.status === 'string') {
+        await cascadeVariantAvailabilityForStatus(tx, id, body.status);
+      }
+      return updated;
     });
 
     // Handle costPerUnit update (stored on ProductVariant)
@@ -316,10 +326,14 @@ export async function DELETE(
         message: 'Product permanently deleted',
       });
     } else {
-      // Archive the product
-      await prisma.product.update({
-        where: { id },
-        data: { status: 'ARCHIVED' },
+      // Archive the product and take its variants off-sale in one transaction so it can't be
+      // bought via a stale cart or a direct/shared product link.
+      await prisma.$transaction(async (tx) => {
+        await tx.product.update({
+          where: { id },
+          data: { status: 'ARCHIVED' },
+        });
+        await cascadeVariantAvailabilityForStatus(tx, id, 'ARCHIVED');
       });
 
       return NextResponse.json({

@@ -14,6 +14,7 @@ import { notifyNewOrder, buildGhlPayload } from '@/lib/webhooks/ghl';
 import { getAffiliateByCode } from '@/lib/affiliates/affiliate-service';
 import { linkOrderToAffiliate } from '@/lib/affiliates/commission-engine';
 import { createOrderCalendarEvent } from '@/lib/calendar/google-calendar';
+import { ProductNotPurchasableError } from '@/lib/products/availability';
 import { prisma } from '@/lib/database/client';
 
 const CART_ID_COOKIE = 'cart_id';
@@ -293,6 +294,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
   } catch (error) {
     console.error('[Checkout API] POST error:', error);
+    // A since-drafted/archived product in the cart is a conflict with current catalog state.
+    if (error instanceof ProductNotPurchasableError) {
+      return NextResponse.json(
+        { success: false, error: error.message },
+        { status: 409 }
+      );
+    }
     return NextResponse.json(
       {
         success: false,

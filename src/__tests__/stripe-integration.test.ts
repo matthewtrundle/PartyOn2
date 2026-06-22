@@ -38,6 +38,11 @@ const mockPaymentIntentRetrieve = vi.fn().mockResolvedValue({
   amount: 15000,
 });
 const mockCartUpdate = vi.fn().mockResolvedValue({});
+// createCheckoutSession now re-reads variant/product status (defense-in-depth). Default to the
+// cart's variant being a purchasable ACTIVE product; individual tests override for rejection cases.
+const mockProductVariantFindMany = vi.fn().mockResolvedValue([
+  { id: 'var-1', availableForSale: true, product: { id: 'prod-1', status: 'ACTIVE', title: 'Test Wine' } },
+]);
 
 // Mock the Stripe module with a proper class constructor
 vi.mock('stripe', () => {
@@ -70,6 +75,7 @@ vi.mock('stripe', () => {
 vi.mock('@/lib/database/client', () => ({
   prisma: {
     cart: { update: (...args: unknown[]) => mockCartUpdate(...args) },
+    productVariant: { findMany: (...args: unknown[]) => mockProductVariantFindMany(...args) },
   },
 }));
 
@@ -176,6 +182,7 @@ describe('Checkout Session Creation', () => {
     mockSessionRetrieve.mockClear();
     mockSessionExpire.mockClear();
     mockCartUpdate.mockClear();
+    mockProductVariantFindMany.mockClear();
   });
 
   it('should create checkout session with cart items', async () => {
@@ -231,6 +238,29 @@ describe('Checkout Session Creation', () => {
     );
     expect(productLine?.price_data?.unit_amount).toBe(2499);
     expect(productLine?.quantity).toBe(2);
+  });
+
+  it('rejects checkout when a cart product is no longer ACTIVE (drafted/archived after add-to-cart)', async () => {
+    const { createCheckoutSession } = await import('@/lib/stripe/checkout');
+    const { ProductNotPurchasableError } = await import('@/lib/products/availability');
+
+    // Same variant id as the cart, but the product has since been drafted.
+    mockProductVariantFindMany.mockResolvedValueOnce([
+      { id: 'var-1', availableForSale: true, product: { id: 'prod-1', status: 'DRAFT', title: 'Test Wine' } },
+    ]);
+
+    await expect(
+      createCheckoutSession({
+        cart: mockCart,
+        successUrl: 'https://example.com/success',
+        cancelUrl: 'https://example.com/cancel',
+        customerEmail: 'test@example.com',
+      })
+    ).rejects.toBeInstanceOf(ProductNotPurchasableError);
+
+    // The guard short-circuits BEFORE Stripe is charged or the snapshot is persisted.
+    expect(mockSessionCreate).not.toHaveBeenCalled();
+    expect(mockCartUpdate).not.toHaveBeenCalled();
   });
 
   it('should retrieve checkout session', async () => {

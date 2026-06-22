@@ -9,6 +9,7 @@ import { stripe } from './client';
 import { CartWithItems } from '@/lib/inventory/services/cart-service';
 import { prisma } from '@/lib/database/client'; // Used for getOrCreateStripeCustomer
 import { getTaxRateForZip, DEFAULT_TAX_RATE } from '@/lib/tax';
+import { assertVariantsPurchasable } from '@/lib/products/availability';
 import { buildChargedLineItems, chargedLineItemToStripe } from './charge-snapshot';
 
 /**
@@ -80,6 +81,19 @@ export async function createCheckoutSession(
   options: CreateCheckoutOptions
 ): Promise<Stripe.Checkout.Session> {
   const { cart, successUrl, cancelUrl, customerEmail, stripeCustomerId, affiliateCode, overrideDeliveryFee, tipAmount, attribution } = options;
+
+  // Defense-in-depth: refuse to charge for any product that isn't ACTIVE (or whose variant isn't
+  // availableForSale), re-read from the DB rather than trusting the cart snapshot. A product
+  // drafted/archived after it was added to the cart must not be purchasable here. Throws
+  // ProductNotPurchasableError, which the checkout route surfaces as a clear error.
+  await assertVariantsPurchasable(
+    prisma,
+    cart.items.map((item) => ({
+      productId: item.productId,
+      variantId: item.variantId,
+      title: item.product.title,
+    }))
+  );
 
   // Build the immutable charge snapshot from the cart's products, then derive the Stripe
   // product line items from it so the snapshot literally equals what's charged. OrderItems are
