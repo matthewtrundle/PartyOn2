@@ -11,6 +11,7 @@ import {
   getParticipantById,
 } from '@/lib/group-orders-v2/service';
 import { createGroupV2CheckoutSession } from '@/lib/stripe/group-v2-payments';
+import { ProductNotPurchasableError } from '@/lib/products/availability';
 
 interface RouteParams {
   params: Promise<{ code: string; tabId: string }>;
@@ -152,6 +153,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     });
   } catch (error) {
     console.error('[Group V2] Checkout error:', error);
+    if (error instanceof ProductNotPurchasableError) {
+      return NextResponse.json({ success: false, error: error.message }, { status: 409 });
+    }
     const msg = error instanceof Error ? error.message : 'Failed to create checkout';
     return NextResponse.json({ success: false, error: msg }, { status: 500 });
   }

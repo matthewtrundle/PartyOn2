@@ -19,6 +19,7 @@ const mockPrismaCustomerCreate = vi.fn();
 const mockPrismaOrderCreate = vi.fn();
 const mockPrismaDeliveryTaskCreate = vi.fn();
 const mockPrismaProductVariantFindUnique = vi.fn();
+const mockPrismaProductVariantFindMany = vi.fn();
 const mockPrismaGroupOrderV2FindUnique = vi.fn();
 
 vi.mock('@/lib/database/client', () => ({
@@ -49,6 +50,7 @@ vi.mock('@/lib/database/client', () => ({
     },
     productVariant: {
       findUnique: (...args: unknown[]) => mockPrismaProductVariantFindUnique(...args),
+      findMany: (...args: unknown[]) => mockPrismaProductVariantFindMany(...args),
     },
     groupOrderV2: {
       findUnique: (...args: unknown[]) => mockPrismaGroupOrderV2FindUnique(...args),
@@ -85,7 +87,8 @@ vi.mock('@/lib/tax', () => ({
 }));
 
 // Import after mocks are set up
-import { handleGroupV2PaymentCompleted } from '@/lib/stripe/group-v2-payments';
+import { handleGroupV2PaymentCompleted, createGroupV2CheckoutSession } from '@/lib/stripe/group-v2-payments';
+import { ProductNotPurchasableError } from '@/lib/products/availability';
 
 // --- Test helpers ---
 
@@ -446,5 +449,48 @@ describe('handleGroupV2PaymentCompleted', () => {
       expect(orderArg.data.items.create).toHaveLength(1);
       expect(orderArg.data.items.create[0]).toMatchObject({ productId: 'product-id-1' });
     });
+  });
+});
+
+describe('createGroupV2CheckoutSession availability guard', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const baseInput = {
+    groupOrderId: 'group-order-id-1',
+    subOrderId: 'sub-order-id-1',
+    participantId: 'participant-id-1',
+    participantName: 'Guest',
+    draftItems: [
+      {
+        id: 'draft-1',
+        productId: 'product-id-1',
+        variantId: 'variant-id-1',
+        title: 'Test Beer Pack',
+        variantTitle: '12 Pack',
+        price: 22.99,
+        imageUrl: null,
+        quantity: 1,
+      },
+    ],
+    successUrl: 'https://example.com/success',
+    cancelUrl: 'https://example.com/cancel',
+  };
+
+  it('refuses to create a checkout session for a DRAFT product, before any Stripe charge', async () => {
+    mockPrismaProductVariantFindMany.mockResolvedValue([
+      {
+        id: 'variant-id-1',
+        availableForSale: true,
+        product: { id: 'product-id-1', status: 'DRAFT', title: 'Test Beer Pack' },
+      },
+    ]);
+
+    // A ProductNotPurchasableError (rather than a Stripe/DB crash) proves the guard ran first:
+    // the stripe client is mocked as {}, so reaching the charge would throw a different error.
+    await expect(createGroupV2CheckoutSession(baseInput)).rejects.toBeInstanceOf(
+      ProductNotPurchasableError
+    );
   });
 });

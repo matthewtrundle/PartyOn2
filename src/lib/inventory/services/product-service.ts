@@ -5,6 +5,7 @@
 
 import { prisma } from '@/lib/database/client';
 import { Prisma, ProductStatus } from '@prisma/client';
+import { cascadeVariantAvailabilityForStatus } from '@/lib/products/availability';
 import type {
   ProductCreateInput,
   ProductUpdateInput,
@@ -186,24 +187,38 @@ export async function updateProduct(
     updateData.abv = data.abv ? new Prisma.Decimal(data.abv) : null;
   }
 
-  return prisma.product.update({
-    where: { id },
-    data: updateData,
-    include: {
-      variants: true,
-      images: { orderBy: { position: 'asc' } },
-      categories: { include: { category: true } },
-    },
+  // Cascade status → variant availability in the SAME transaction: a product moving to
+  // DRAFT/ARCHIVED must take its variants off-sale so it can't be bought via a stale cart or a
+  // direct/shared link. Cascade runs first so the product.update's `include` returns fresh variants.
+  return prisma.$transaction(async (tx) => {
+    if (data.status !== undefined) {
+      await cascadeVariantAvailabilityForStatus(tx, id, data.status);
+    }
+    return tx.product.update({
+      where: { id },
+      data: updateData,
+      include: {
+        variants: true,
+        images: { orderBy: { position: 'asc' } },
+        categories: { include: { category: true } },
+      },
+    });
   });
 }
 
 /**
  * Delete a product (soft delete by archiving)
+ *
+ * Archiving also takes the product's variants off-sale (in one transaction) so the archived
+ * product can't be bought via a stale cart or a direct/shared product link.
  */
 export async function deleteProduct(id: string): Promise<void> {
-  await prisma.product.update({
-    where: { id },
-    data: { status: 'ARCHIVED' },
+  await prisma.$transaction(async (tx) => {
+    await tx.product.update({
+      where: { id },
+      data: { status: 'ARCHIVED' },
+    });
+    await cascadeVariantAvailabilityForStatus(tx, id, 'ARCHIVED');
   });
 }
 

@@ -17,6 +17,7 @@ import { getAffiliateByCode } from '@/lib/affiliates/affiliate-service';
 import { createOrderCalendarEvent } from '@/lib/calendar/google-calendar';
 import { commitInventoryForOrderItem } from '@/lib/inventory/services/order-service';
 import { snapshotItemCost } from '@/lib/analytics/margin-service';
+import { assertVariantsPurchasable } from '@/lib/products/availability';
 import {
   buildChargedLineItems,
   chargedLineItemToStripe,
@@ -82,6 +83,19 @@ export async function createGroupV2CheckoutSession(input: CreateCheckoutInput) {
     groupOrderId, subOrderId, participantId, participantEmail,
     draftItems, discountCode, successUrl, cancelUrl,
   } = input;
+
+  // Defense-in-depth: refuse to charge for any product that isn't ACTIVE (or whose variant isn't
+  // availableForSale), re-read from the DB. A product drafted/archived after a participant added
+  // it to their tab must not be purchasable here. Throws ProductNotPurchasableError, which the
+  // checkout route surfaces as a clear error listing the offending items.
+  await assertVariantsPurchasable(
+    prisma,
+    draftItems.map((item) => ({
+      productId: item.productId,
+      variantId: item.variantId,
+      title: item.title,
+    }))
+  );
 
   // Calculate subtotal
   const subtotal = draftItems.reduce(

@@ -5,6 +5,7 @@
 
 import { PrismaClient, ProductStatus, Prisma } from '@prisma/client';
 import { paginatedAdminQuery } from './admin-client';
+import { cascadeVariantAvailabilityForStatus } from '@/lib/products/availability';
 
 const PRODUCTS_QUERY = `
   query getProducts($first: Int!, $after: String) {
@@ -257,6 +258,12 @@ async function syncSingleProduct(
 
   // Sync variants
   await syncProductVariants(prisma, productId, shopifyProduct.variants.edges.map(e => e.node));
+
+  // Cascade status → variant availability. Variant sync leaves availableForSale untouched (and
+  // new variants default to true), so a DRAFT/ARCHIVED Shopify product would otherwise sync in
+  // with purchasable variants. Run last so it overrides freshly-created variants. Mirrors the
+  // admin status-change cascade; no-ops for ACTIVE (we never auto-re-enable).
+  await cascadeVariantAvailabilityForStatus(prisma, productId, productData.status);
 
   return { isNew };
 }
