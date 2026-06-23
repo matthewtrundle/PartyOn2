@@ -120,11 +120,22 @@ function getWebhookUrl(): string {
 }
 
 /**
+ * OAuth redirect URI. Required for OAuth institutions (e.g. Wells Fargo), which
+ * send the user to the bank's own site and back. Must be registered in the Plaid
+ * dashboard (Team Settings → API → Allowed redirect URIs) and match exactly.
+ * Returns undefined when unset so the non-OAuth sandbox flow is unaffected.
+ */
+function getRedirectUri(): string | undefined {
+  return process.env.PLAID_REDIRECT_URI || undefined;
+}
+
+/**
  * Create a link_token the browser SDK exchanges for a public_token.
- * Phase 0 only requests `Transactions` since that's all Phase 2C uses.
+ * Only requests `Transactions` since that's all the sync path uses.
  */
 export async function createLinkToken(userId: string): Promise<string> {
   const client = createClient();
+  const redirectUri = getRedirectUri();
   const response = await client.linkTokenCreate({
     user: { client_user_id: userId },
     client_name: 'Party On Delivery',
@@ -132,6 +143,9 @@ export async function createLinkToken(userId: string): Promise<string> {
     country_codes: [CountryCode.Us],
     language: 'en',
     webhook: getWebhookUrl(),
+    // OAuth banks (Wells Fargo) require a registered redirect_uri; omit it
+    // entirely for the non-OAuth sandbox bank so that flow is unchanged.
+    ...(redirectUri ? { redirect_uri: redirectUri } : {}),
   });
   return response.data.link_token;
 }

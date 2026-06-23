@@ -2754,6 +2754,14 @@ model PlaidTransaction {
   matchedQbExpenseId              String?   @map("matched_qb_expense_id")
   qbTransactionId                 String?   @map("qb_transaction_id")
   qbCategoryAssigned              String?   @map("qb_category_assigned")
+  /// Finance data cleanup — the PartyOn CategorySlug assigned to this outflow by
+  /// plaid-category-map.ts during sync (production items only). Lets the monthly
+  /// rollup source expenses from the bank feed for QB-dormant months.
+  bankDerivedCategory             String?   @map("bank_derived_category")
+  /// True only for real business costs (cogs or an operating slug) on a production
+  /// item with no QB match. Transfers / CC payments / loan principal / owner draws
+  /// are non_operating → false, so they never count as expenses.
+  isBankDerivedExpense            Boolean   @default(false) @map("is_bank_derived_expense")
   reconciledAt                    DateTime? @map("reconciled_at")
   createdAt                       DateTime  @default(now()) @map("created_at")
   updatedAt                       DateTime  @updatedAt @map("updated_at")

@@ -19,9 +19,37 @@ import {
   CATEGORY_LABELS,
   type CategorySlug,
 } from './qb-account-map';
+import { reconcileBankIncome, type BankIncomeRecon } from './bank-income-recon';
 
 const SEGMENTS: readonly Segment[] = ['bach', 'wedding', 'corporate', 'boat', 'kegs', 'general'];
 const TOP_N = 10;
+
+/**
+ * QB is the expense source for a month only when it has MATERIAL expenses — the
+ * sum of QB expenses in categories OTHER than auto-posted `payment_fees` must
+ * clear this floor. Below it (e.g. 2026's ~$1,700/mo of Shopify selling fees),
+ * the bank feed is the real expense source. Without this guard those auto-posted
+ * fee rows would falsely "win" a `qbExpenses.length > 0` test and hide the real
+ * bank expenses. Never blend the two — QB's own bank feed sees the same
+ * transactions Plaid does, so blending would double-count.
+ */
+const QB_MATERIAL_FLOOR_CENTS = 50_000; // $500
+
+/**
+ * Whether QuickBooks has MATERIAL expense data for a month — the test that picks
+ * QB vs the bank feed as the expense source. Sums QB expenses in categories OTHER
+ * than auto-posted `payment_fees`; a bare `qbExpenses.length > 0` would let
+ * 2026's ~$1,700/mo of Shopify-fee rows falsely win and hide the real bank
+ * expenses (the precedence trap — risk #1).
+ */
+export function isQbMaterial(
+  qbExpenses: { amountCents: number; categorySlug: string | null }[]
+): boolean {
+  const materialCents = qbExpenses
+    .filter((e) => e.categorySlug !== 'payment_fees')
+    .reduce((s, e) => s + e.amountCents, 0);
+  return materialCents >= QB_MATERIAL_FLOOR_CENTS;
+}
 
 export interface SkuRow { sku: string | null; title: string; revenueCents: number; qty: number }
 export interface CustomerRow { name: string; email: string; revenueCents: number; orderCount: number }
@@ -195,7 +223,53 @@ export async function computeMonthlyRollup(
   const segmentBreakdown = buildSegments(orders, archiveDeduped);
   const topCustomers = buildTopCustomers(orders);
   const topAffiliates = buildTopAffiliates(commissions);
-  const { expenseCategories, cogsCents, opexCents } = buildExpenses(qbExpenses);
+  // --- Expense source: QB where MATERIAL, else bank-derived (never blend) -----
+  const qb = buildExpenses(qbExpenses);
+  const qbMaterial = isQbMaterial(qbExpenses);
+
+  // Bank-derived expenses: production outflows stamped as real costs (B2).
+  // Queried every month so QB-sourced months can still cross-check (B5).
+  const bankRows = await prisma.plaidTransaction.findMany({
+    where: {
+      item: { environment: 'production' },
+      date: { gte: start, lt: end },
+      pending: false,
+      isBankDerivedExpense: true,
+    },
+    select: { amount: true, bankDerivedCategory: true, merchantName: true, name: true },
+  });
+  const bank = buildExpenses(
+    bankRows.map((r) => ({
+      amountCents: decToCents(r.amount),
+      categorySlug: r.bankDerivedCategory,
+      vendorName: r.merchantName ?? r.name,
+    }))
+  );
+  const bankExpenseTotalCents = (bank.cogsCents ?? 0) + (bank.opexCents ?? 0);
+
+  let expenseSource: 'qb' | 'bank' | 'none';
+  let cogsCents: number | null;
+  let opexCents: number | null;
+  let expenseCategories: ExpenseCatRow[];
+  if (qbMaterial) {
+    expenseSource = 'qb';
+    ({ cogsCents, opexCents, expenseCategories } = qb);
+  } else if (bankRows.length > 0) {
+    expenseSource = 'bank';
+    ({ cogsCents, opexCents, expenseCategories } = bank);
+  } else {
+    expenseSource = 'none';
+    cogsCents = null;
+    opexCents = null;
+    expenseCategories = [];
+  }
+
+  // Income cross-check against real bank deposits (does NOT replace revenue).
+  const bankIncome = await reconcileBankIncome({
+    year,
+    month,
+    stripeRevenueProxyCents: revenueCents,
+  });
 
   // Per-order COGS from OrderItem cost (sparse, ~4% coverage) — only used as a
   // fallback signal; QB inventory cogs is the primary cost source.
@@ -215,8 +289,11 @@ export async function computeMonthlyRollup(
     revenueCents,
     revenueFromShopifyCents,
     qbExpenseCount: qbExpenses.length,
+    expenseSource,
     cogsCents,
     opexCents,
+    bankExpenseTotalCents,
+    bankIncome,
     orderItemCostCents,
     orderCount: orders.length,
     archiveCount: archiveDeduped.length,
@@ -394,8 +471,11 @@ interface HealthInput {
   revenueCents: number;
   revenueFromShopifyCents: number;
   qbExpenseCount: number;
+  expenseSource: 'qb' | 'bank' | 'none';
   cogsCents: number | null;
   opexCents: number | null;
+  bankExpenseTotalCents: number;
+  bankIncome: BankIncomeRecon;
   orderItemCostCents: number;
   orderCount: number;
   archiveCount: number;
@@ -403,36 +483,77 @@ interface HealthInput {
 
 /**
  * Flags every reason a month's profit number can't be trusted, and sets
- * `netIncomeReliable` accordingly. The Phase 5D briefing renders net income
- * only when reliable; otherwise it shows "pending" + these flags.
+ * `netIncomeReliable` accordingly. The briefing renders net income only when
+ * reliable; otherwise it shows "pending" + these flags.
+ *
+ * Net income is reliable via EITHER path: QB (the books are material + complete)
+ * OR bank-derived (expenses sourced from the real bank feed AND income
+ * reconciled to deposits). 2026 months flip to reliable once Wells Fargo is
+ * connected + the bank-category backfill runs; thin pre-2023 months stay
+ * unreliable.
  */
 function buildDataHealth(h: HealthInput): Record<string, unknown> {
   const flags: string[] = [];
   const expensesTotalCents = (h.cogsCents ?? 0) + (h.opexCents ?? 0);
 
-  if (h.qbExpenseCount === 0) {
-    flags.push('no QB expenses recorded this month — OpEx + net income unavailable');
+  // 1. Expense completeness, per chosen source.
+  if (h.expenseSource === 'none') {
+    flags.push(
+      'no expense source this month — QB not material and no production bank data → OpEx + net income unavailable'
+    );
   } else if (h.revenueCents > 0 && expensesTotalCents < h.revenueCents * 0.1) {
-    flags.push('QB expenses trivial vs revenue — books likely incomplete this month');
+    flags.push(
+      h.expenseSource === 'qb'
+        ? 'QB expenses trivial vs revenue — books likely incomplete this month'
+        : 'bank-derived expenses trivial vs revenue — bank feed likely incomplete this month'
+    );
   }
-  // For a liquor-delivery business every revenue month has alcohol cost, so a
-  // zero COGS month means it wasn't recorded (the sparse OrderItem cost data
-  // is too thin to count as real COGS). Always flag it.
+
+  // 2. COGS completeness — a liquor business has alcohol cost every revenue month,
+  // so a zero-COGS month means it wasn't recorded (incl. a distributor-allowlist
+  // miss on the bank path). The sparse OrderItem cost data is too thin to count.
   if ((h.cogsCents ?? 0) === 0 && h.revenueCents > 0) {
     flags.push('no COGS recorded — gross profit unreliable');
   }
-  if (h.revenueFromShopifyCents > h.revenueCents * 0.5) {
+
+  // 3. Shopify-era understatement (only when QB-sourced and revenue is mostly Shopify).
+  if (h.expenseSource === 'qb' && h.revenueFromShopifyCents > h.revenueCents * 0.5) {
     flags.push('Shopify-era revenue is net-of-refund and understated vs real expenses');
   }
 
+  // 4. Income reconciliation to bank deposits (bank-sourced months only).
+  if (h.expenseSource === 'bank' && !h.bankIncome.reconciled) {
+    flags.push(...h.bankIncome.flags);
+  }
+
+  // 5. Discrepancy (surface, don't auto-fix): bank shows materially more spending
+  // than QB booked, in a QB-sourced month with bank coverage → QB likely incomplete.
+  if (
+    h.expenseSource === 'qb' &&
+    h.bankExpenseTotalCents > expensesTotalCents * 1.5 &&
+    h.bankExpenseTotalCents - expensesTotalCents > QB_MATERIAL_FLOOR_CENTS
+  ) {
+    flags.push(
+      `bank outflows ($${(h.bankExpenseTotalCents / 100).toFixed(0)}) materially exceed QB expenses ` +
+        `($${(expensesTotalCents / 100).toFixed(0)}) — QB books may be incomplete this month`
+    );
+  }
+
   const netIncomeReliable =
-    flags.length === 0 && h.cogsCents !== null && h.opexCents !== null;
+    flags.length === 0 &&
+    h.cogsCents !== null &&
+    h.opexCents !== null &&
+    (h.expenseSource === 'qb' ||
+      (h.expenseSource === 'bank' && h.bankIncome.reconciled));
 
   return {
     hasOrders: h.orderCount > 0,
     hasArchive: h.archiveCount > 0,
     hasQbExpenses: h.qbExpenseCount > 0,
+    expenseSource: h.expenseSource,
     netIncomeReliable,
+    incomeReconciled: h.bankIncome.hasProductionBank ? h.bankIncome.reconciled : null,
+    otherIncomeCents: h.bankIncome.hasProductionBank ? h.bankIncome.otherIncomeCents : null,
     flags,
   };
 }
