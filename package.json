@@ -13,6 +13,8 @@
     "sync:seo:watch": "node scripts/operations/sync-seo.mjs --watch",
     "sync:operations": "node scripts/operations/sync-obsidian.mjs",
     "sync:operations:watch": "node scripts/operations/sync-obsidian.mjs --watch",
+    "sync:finance": "node scripts/finance/sync-obsidian.mjs",
+    "sync:finance:watch": "node scripts/finance/sync-obsidian.mjs --watch",
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",

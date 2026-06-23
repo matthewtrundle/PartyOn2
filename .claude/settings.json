@@ -7,7 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "input=$(cat); subagent=$(echo \"$input\" | jq -r '.tool_input.subagent_type // \"\"'); if [ \"$subagent\" = \"marketing-director\" ]; then echo \"[marketing-sync] firing\"; cd \"$CLAUDE_PROJECT_DIR\" && npm run sync:marketing 2>&1 | tail -5 || true; elif [ \"$subagent\" = \"seo-director\" ]; then echo \"[seo-sync] firing\"; cd \"$CLAUDE_PROJECT_DIR\" && npm run sync:seo 2>&1 | tail -5 || true; elif [ \"$subagent\" = \"operations-director\" ]; then echo \"[operations-sync] firing\"; cd \"$CLAUDE_PROJECT_DIR\" && npm run sync:operations 2>&1 | tail -5 || true; fi",
+            "command": "input=$(cat); subagent=$(echo \"$input\" | jq -r '.tool_input.subagent_type // \"\"'); if [ \"$subagent\" = \"marketing-director\" ]; then echo \"[marketing-sync] firing\"; cd \"$CLAUDE_PROJECT_DIR\" && npm run sync:marketing 2>&1 | tail -5 || true; elif [ \"$subagent\" = \"seo-director\" ]; then echo \"[seo-sync] firing\"; cd \"$CLAUDE_PROJECT_DIR\" && npm run sync:seo 2>&1 | tail -5 || true; elif [ \"$subagent\" = \"operations-director\" ]; then echo \"[operations-sync] firing\"; cd \"$CLAUDE_PROJECT_DIR\" && npm run sync:operations 2>&1 | tail -5 || true; elif [ \"$subagent\" = \"finance-director\" ]; then echo \"[finance-sync] firing\"; cd \"$CLAUDE_PROJECT_DIR\" && npm run sync:finance 2>&1 | tail -5 || true; fi",
             "timeout": 30
           }
         ]
