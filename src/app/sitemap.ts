@@ -95,6 +95,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/austin-bachelorette-party-delivery',
     '/austin-corporate-event-delivery',
     '/austin-wedding-weekend-delivery',
+    '/austin-4th-of-july-delivery',
   ].map(route => ({
     url: `${baseUrl}${route}`,
     lastModified: new Date('2026-05-06'),

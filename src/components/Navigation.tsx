@@ -27,6 +27,7 @@ const NAV_TRANSPARENT_ROUTES = [
   '/partners/mobile-bartenders',
   '/partners/hotels-resorts',
   '/partners/property-management',
+  '/austin-4th-of-july-delivery',  // Dark navy fireworks hero covers the nav area
 ];
 
 interface NavLinkProps {
