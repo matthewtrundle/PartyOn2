@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import NewsletterSignup from './NewsletterSignup'
 
 export default function Footer() {
   const currentYear = new Date().getFullYear()
@@ -225,19 +226,7 @@ export default function Footer() {
             <p className="font-sans text-sm text-gray-200">
               Get exclusive deals and party tips delivered to your inbox
             </p>
-            <form className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="flex-grow px-4 py-3 bg-white/10 border border-white/20 rounded-full text-white placeholder:text-gray-200 focus:outline-none focus:border-yellow-500 transition-colors duration-300"
-              />
-              <button
-                type="submit"
-                className="btn-primary whitespace-nowrap"
-              >
-                Subscribe
-              </button>
-            </form>
+            <NewsletterSignup />
           </div>
         </div>
       </div>
