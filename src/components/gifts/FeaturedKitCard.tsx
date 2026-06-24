@@ -83,7 +83,7 @@ export default function FeaturedKitCard({
   showIngredients = true,
   onClickProduct
 }: FeaturedKitCardProps) {
-  const { addToCart, loading: cartLoading } = useCartContext();
+  const { addToCart, openCart, loading: cartLoading } = useCartContext();
   const [isAdding, setIsAdding] = useState(false);
   const [showAgeVerification, setShowAgeVerification] = useState(false);
   const imageUrl = getProductImageUrl(product);
@@ -113,6 +113,7 @@ export default function FeaturedKitCard({
     setIsAdding(true);
     try {
       await addToCart(variant.id, 1);
+      openCart(); // slide the cart open so the add is visible + checkout-ready
     } catch (error) {
       console.error('Error adding to cart:', error);
     } finally {
@@ -128,6 +129,7 @@ export default function FeaturedKitCard({
       setIsAdding(true);
       try {
         await addToCart(variant.id, 1);
+        openCart(); // slide the cart open so the add is visible + checkout-ready
       } catch (error) {
         console.error('Error adding to cart:', error);
       } finally {
