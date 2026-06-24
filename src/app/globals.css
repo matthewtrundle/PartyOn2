@@ -167,6 +167,11 @@
     @apply container mx-auto px-4 md:px-6 lg:px-8 max-w-7xl;
   }
 
+  /* 64x1px yellow section rule — sits under section H2s (design-system signature) */
+  .rule-yellow {
+    @apply block w-16 h-px bg-brand-yellow border-0;
+  }
+
   /* Premium input styles - using brand-blue for focus */
   .input-premium {
     @apply w-full px-4 py-3 text-base border-2 border-gray-200 rounded-lg
