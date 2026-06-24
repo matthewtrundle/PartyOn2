@@ -11,8 +11,10 @@ import type { OrderCardData, OrdersViewOrder } from '@/lib/ops/orders-view-data'
  * - Solo orders print the classic single-order sheet.
  * - Group dashboards (a shareCode shared across several payers) print ONE
  *   combined sheet: a shared banner + delivery/partner block, then a per-guest
- *   item checklist for each order, and combined money totals. Page breaks fall
- *   only between cards, never between guests of the same group.
+ *   item checklist for each order, and combined money totals. The sheet flows
+ *   to fill the page — guest blocks are NOT kept whole (that wasted up to half
+ *   a page), so a long group can split a guest across pages, but individual
+ *   rows stay intact and the column header repeats on the overflow page.
  *
  * The banner leads with the order number + full customer name on one line and
  * the day/date/time on the next, so long times no longer crop.
@@ -24,19 +26,30 @@ import type { OrderCardData, OrdersViewOrder } from '@/lib/ops/orders-view-data'
 export default function PickSheetPrint({ cards }: { cards: OrderCardData[] }): ReactElement {
   return (
     <>
-      {cards.map((card, idx) => (
-        <div
-          key={card.key}
-          className={`order-sheet ${idx > 0 ? 'break-before-page' : ''}`}
-          style={idx > 0 ? { pageBreakBefore: 'always' } : undefined}
-        >
-          {card.orders.length > 1 ? (
-            <GroupSheet card={card} />
-          ) : (
-            <SoloSheet order={card.orders[0]} />
-          )}
-        </div>
-      ))}
+      {cards.map((card, idx) => {
+        const cruiseLabel = boatLabel(card);
+        const zoom = fitZoom(card);
+        // Page break before every sheet but the first; `zoom` shrinks the
+        // whole sheet just enough to stay on one page (only when it would
+        // otherwise overflow — see fitZoom).
+        const style = {
+          ...(idx > 0 ? { pageBreakBefore: 'always' } : {}),
+          ...(zoom < 1 ? { zoom } : {}),
+        } as React.CSSProperties;
+        return (
+          <div
+            key={card.key}
+            className={`order-sheet ${idx > 0 ? 'break-before-page' : ''}`}
+            style={style}
+          >
+            {card.orders.length > 1 ? (
+              <GroupSheet card={card} cruiseLabel={cruiseLabel} />
+            ) : (
+              <SoloSheet order={card.orders[0]} cruiseLabel={cruiseLabel} />
+            )}
+          </div>
+        );
+      })}
     </>
   );
 }
@@ -44,7 +57,13 @@ export default function PickSheetPrint({ cards }: { cards: OrderCardData[] }): R
 // --- Sheets ---------------------------------------------------------------
 
 /** One payer / direct order — the familiar single-order pick sheet. */
-function SoloSheet({ order }: { order: OrdersViewOrder }): ReactElement {
+function SoloSheet({
+  order,
+  cruiseLabel,
+}: {
+  order: OrdersViewOrder;
+  cruiseLabel: string | null;
+}): ReactElement {
   const addrStr = order.deliveryAddress ? formatAddress(order.deliveryAddress) : '';
   return (
     <>
@@ -54,15 +73,16 @@ function SoloSheet({ order }: { order: OrdersViewOrder }): ReactElement {
         dateLine={bannerDateLine(order)}
         affiliate={order.affiliate?.businessName}
         marina={addrMarina(addrStr)}
+        cruiseLabel={cruiseLabel}
       />
 
       {order.groupOrder && (
-        <div className="mb-3 px-2 py-1.5 border-2 border-blue-500 bg-blue-50 rounded text-sm font-bold">
+        <div className="mb-2 px-2 py-1 border-2 border-blue-500 bg-blue-50 rounded text-sm font-bold">
           Group Order: {order.groupOrder.name || order.groupOrder.shareCode}
         </div>
       )}
 
-      <div className="flex gap-3 mb-3">
+      <div className="flex gap-2 mb-2">
         <CustomerBox order={order} />
         <DeliveryBox order={order} addrStr={addrStr} />
         {order.affiliate && <PartnerBox affiliate={order.affiliate} />}
@@ -91,7 +111,13 @@ function SoloSheet({ order }: { order: OrdersViewOrder }): ReactElement {
 }
 
 /** A group dashboard's orders pooled onto one sheet, one checklist per guest. */
-function GroupSheet({ card }: { card: OrderCardData }): ReactElement {
+function GroupSheet({
+  card,
+  cruiseLabel,
+}: {
+  card: OrderCardData;
+  cruiseLabel: string | null;
+}): ReactElement {
   const orders = card.orders;
   const first = orders[0];
   const addrStr = first.deliveryAddress ? formatAddress(first.deliveryAddress) : '';
@@ -114,9 +140,10 @@ function GroupSheet({ card }: { card: OrderCardData }): ReactElement {
         dateLine={bannerDateLine(first)}
         affiliate={affiliate?.businessName}
         marina={addrMarina(addrStr)}
+        cruiseLabel={cruiseLabel}
       />
 
-      <div className="mb-3 px-2 py-1.5 border-2 border-blue-500 bg-blue-50 rounded text-sm font-bold flex flex-wrap justify-between gap-x-4">
+      <div className="mb-2 px-2 py-1 border-2 border-blue-500 bg-blue-50 rounded text-sm font-bold flex flex-wrap justify-between gap-x-4">
         <span>
           Group: {card.dashboard?.name || card.displayName}
           {card.shareCode ? ` · ${card.shareCode}` : ''}
@@ -126,7 +153,7 @@ function GroupSheet({ card }: { card: OrderCardData }): ReactElement {
         </span>
       </div>
 
-      <div className="flex gap-3 mb-3">
+      <div className="flex gap-2 mb-2">
         <DeliveryBox order={first} addrStr={addrStr} />
         {affiliate && <PartnerBox affiliate={affiliate} />}
       </div>
@@ -154,9 +181,9 @@ function GuestBlock({ order }: { order: OrdersViewOrder }): ReactElement {
     .filter(Boolean)
     .join(' · ');
   return (
-    <div className="mb-4 break-inside-avoid">
-      <div className="flex items-baseline justify-between border-b-2 border-gray-800 pb-1 mb-1.5">
-        <div className="text-xl font-black tracking-tight">
+    <div className="mb-3">
+      <div className="flex items-baseline justify-between border-b-2 border-gray-800 pb-0.5 mb-1 break-after-avoid">
+        <div className="text-lg font-black tracking-tight">
           #{order.orderNumber} &middot; {fullName(order)}
         </div>
         {contact && <div className="text-sm text-gray-600">{contact}</div>}
@@ -186,27 +213,36 @@ function SheetBanner({
   dateLine,
   affiliate,
   marina,
+  cruiseLabel,
 }: {
   orderNumber?: string;
   name: string;
   dateLine: string;
   affiliate?: string;
   marina: boolean;
+  cruiseLabel?: string | null;
 }): ReactElement {
   return (
     <div
-      className={`rounded-lg px-4 py-3 mb-3 ${marina ? 'bg-blue-600 text-white' : 'bg-yellow-400 text-black'}`}
+      className={`rounded-lg px-3 py-1.5 mb-2 ${marina ? 'bg-blue-600 text-white' : 'bg-yellow-400 text-black'}`}
     >
-      <div className="flex items-baseline gap-3 flex-wrap leading-none">
-        {orderNumber && (
-          <span className="text-[52px] font-black tracking-tight whitespace-nowrap">{orderNumber}</span>
+      <div className="flex items-baseline justify-between gap-2">
+        <div className="flex items-baseline gap-2 flex-wrap leading-none">
+          {orderNumber && (
+            <span className="text-[32px] font-black tracking-tight whitespace-nowrap">{orderNumber}</span>
+          )}
+          <span className="text-[28px] font-black tracking-tight break-words">{name}</span>
+        </div>
+        {cruiseLabel && (
+          <span className="shrink-0 self-center rounded-md bg-gray-900 text-white text-2xl font-black tracking-[0.15em] px-3 py-1">
+            {cruiseLabel}
+          </span>
         )}
-        <span className="text-[46px] font-black tracking-tight break-words">{name}</span>
       </div>
-      <div className="text-3xl font-bold leading-none mt-2">{dateLine}</div>
+      <div className="text-lg font-bold leading-none mt-0.5">{dateLine}</div>
       {affiliate && (
-        <div className="flex justify-end mt-1">
-          <span className="text-xl font-semibold opacity-85">{affiliate}</span>
+        <div className="flex justify-end mt-0.5">
+          <span className="text-base font-semibold opacity-85">{affiliate}</span>
         </div>
       )}
     </div>
@@ -215,7 +251,7 @@ function SheetBanner({
 
 function CustomerBox({ order }: { order: OrdersViewOrder }): ReactElement {
   return (
-    <div className="flex-1 border border-gray-400 rounded p-2">
+    <div className="flex-1 border border-gray-400 rounded p-1.5">
       <BoxHeading>Customer</BoxHeading>
       <div className="font-bold text-sm">{order.customerName}</div>
       <div className="text-sm">{order.customerEmail}</div>
@@ -226,7 +262,7 @@ function CustomerBox({ order }: { order: OrdersViewOrder }): ReactElement {
 
 function DeliveryBox({ order, addrStr }: { order: OrdersViewOrder; addrStr: string }): ReactElement {
   return (
-    <div className="flex-1 border border-gray-400 rounded p-2">
+    <div className="flex-1 border border-gray-400 rounded p-1.5">
       <BoxHeading>Delivery</BoxHeading>
       <div className="font-bold text-sm">
         {new Date(order.deliveryDate).toLocaleDateString('en-US', {
@@ -249,7 +285,7 @@ function PartnerBox({
   affiliate: NonNullable<OrdersViewOrder['affiliate']>;
 }): ReactElement {
   return (
-    <div className="flex-1 border border-gray-400 rounded p-2">
+    <div className="flex-1 border border-gray-400 rounded p-1.5">
       <BoxHeading>Partner</BoxHeading>
       <div className="font-bold text-sm">{affiliate.businessName}</div>
       <div className="text-sm">{affiliate.contactName}</div>
@@ -260,7 +296,7 @@ function PartnerBox({
 
 function BoxHeading({ children }: { children: React.ReactNode }): ReactElement {
   return (
-    <div className="font-bold text-xs uppercase tracking-wide border-b border-gray-300 pb-1 mb-1">
+    <div className="font-bold text-xs uppercase tracking-wide border-b border-gray-300 pb-0.5 mb-0.5">
       {children}
     </div>
   );
@@ -268,7 +304,7 @@ function BoxHeading({ children }: { children: React.ReactNode }): ReactElement {
 
 function InstructionsBox({ text }: { text: string }): ReactElement {
   return (
-    <div className="mb-3 px-2 py-1.5 border-2 border-yellow-500 bg-yellow-50 rounded text-sm">
+    <div className="mb-2 px-2 py-1 border-2 border-yellow-500 bg-yellow-50 rounded text-sm">
       <span className="font-bold">Instructions: </span>
       {text}
     </div>
@@ -290,31 +326,31 @@ function NoteLine({ label, text }: { label: string; text: string }): ReactElemen
 function ItemChecklistTable({ order }: { order: OrdersViewOrder }): ReactElement {
   const checks = loadCachedChecks(order.id);
   return (
-    <table className="w-full mb-3 border-collapse text-lg">
+    <table className="w-full mb-2 border-collapse text-sm">
       <thead>
         <tr className="border-b-2 border-black">
-          <th className="text-left py-1 px-2 font-bold">Item</th>
-          <th className="text-center py-1 px-2 w-14 font-bold">Qty</th>
-          <th className="text-center py-1 w-20 font-bold">In Stock?</th>
-          <th className="text-center py-1 w-20 font-bold">Packed?</th>
-          <th className="text-center py-1 w-20 font-bold">Short By</th>
+          <th className="text-left py-0.5 px-2 font-bold">Item</th>
+          <th className="text-center py-0.5 px-2 w-12 font-bold">Qty</th>
+          <th className="text-center py-0.5 w-16 font-bold">In Stock?</th>
+          <th className="text-center py-0.5 w-16 font-bold">Packed?</th>
+          <th className="text-center py-0.5 w-16 font-bold">Short By</th>
         </tr>
       </thead>
       <tbody>
         {order.items.map((item, idx) => (
           <React.Fragment key={idx}>
             <tr className="border-b border-gray-300">
-              <td className="py-1 px-2">
+              <td className="py-0.5 px-2">
                 <span className="font-medium">{item.title}</span>
               </td>
-              <td className="text-center py-1 px-2 font-bold text-xl">{item.quantity}</td>
-              <td className="text-center py-1">
+              <td className="text-center py-0.5 px-2 font-bold text-base">{item.quantity}</td>
+              <td className="text-center py-0.5">
                 <PickBox on={!!checks[item.title]?.inStock} />
               </td>
-              <td className="text-center py-1">
+              <td className="text-center py-0.5">
                 <PickBox on={!!checks[item.title]?.packed} />
               </td>
-              <td className="text-center py-1 font-bold text-xl">
+              <td className="text-center py-0.5 font-bold text-base">
                 {checks[item.title]?.shortBy || ''}
               </td>
             </tr>
@@ -322,11 +358,11 @@ function ItemChecklistTable({ order }: { order: OrdersViewOrder }): ReactElement
               const bcKey = `${item.title}::${bc.title}`;
               return (
                 <tr key={`${idx}-bc-${bcIdx}`} className="border-b border-gray-200">
-                  <td className="py-0.5 pl-6 pr-2 text-gray-500 text-[15px]">
+                  <td className="py-0.5 pl-6 pr-2 text-gray-500 text-[13px]">
                     |- {bc.title}
                     {bc.variantTitle && bc.variantTitle !== 'Default Title' && ` (${bc.variantTitle})`}
                   </td>
-                  <td className="text-center py-0.5 text-base font-semibold text-gray-500">
+                  <td className="text-center py-0.5 text-[13px] font-semibold text-gray-500">
                     {item.quantity * bc.quantity}
                   </td>
                   <td className="text-center py-0.5">
@@ -335,7 +371,7 @@ function ItemChecklistTable({ order }: { order: OrdersViewOrder }): ReactElement
                   <td className="text-center py-0.5">
                     <PickBox on={!!checks[bcKey]?.packed} small />
                   </td>
-                  <td className="text-center py-0.5 text-base font-semibold text-gray-500">
+                  <td className="text-center py-0.5 text-[13px] font-semibold text-gray-500">
                     {checks[bcKey]?.shortBy || ''}
                   </td>
                 </tr>
@@ -346,13 +382,13 @@ function ItemChecklistTable({ order }: { order: OrdersViewOrder }): ReactElement
       </tbody>
       <tfoot>
         <tr className="border-t-2 border-black">
-          <td className="py-1.5 px-2 font-bold">
+          <td className="py-1 px-2 font-bold">
             Total Items: {order.items.reduce((sum, item) => sum + item.quantity, 0)}
           </td>
           <td></td>
-          <td colSpan={3} className="text-center py-1.5">
+          <td colSpan={3} className="text-center py-1">
             <span className="font-bold text-sm mr-1">Order Complete?</span>
-            <span className="inline-block w-6 h-6 border-2 border-black rounded-sm align-middle"></span>
+            <span className="inline-block w-5 h-5 border-2 border-black rounded-sm align-middle"></span>
           </td>
         </tr>
       </tfoot>
@@ -362,7 +398,7 @@ function ItemChecklistTable({ order }: { order: OrdersViewOrder }): ReactElement
 
 /** A printed checkbox, filled black with a white tick when `on`. */
 function PickBox({ on, small }: { on: boolean; small?: boolean }): ReactElement {
-  const size = small ? 'w-[18px] h-[18px] border-[1.5px]' : 'w-5 h-5 border-2';
+  const size = small ? 'w-3.5 h-3.5 border-[1.5px]' : 'w-[18px] h-[18px] border-2';
   return (
     <span className={`inline-block ${size} border-black rounded-sm ${on ? 'bg-black' : ''}`}>
       {on && (
@@ -382,6 +418,10 @@ function PickBox({ on, small }: { on: boolean; small?: boolean }): ReactElement 
 
 // --- Totals ---------------------------------------------------------------
 
+/**
+ * Compact one-line money strip. Deliberately de-emphasized — the item rows
+ * own the page; the dollar breakdown just rides along at the bottom.
+ */
 function TotalsBox({
   subtotal,
   discount,
@@ -396,24 +436,12 @@ function TotalsBox({
   total: number;
 }): ReactElement {
   return (
-    <div className="w-48 border border-gray-400 rounded overflow-hidden text-sm ml-auto">
-      <TotalsRow label="Subtotal" value={formatCurrency(subtotal)} />
-      {discount > 0 && <TotalsRow label="Discount" value={`-${formatCurrency(discount)}`} />}
-      <TotalsRow label="Delivery" value={formatCurrency(delivery)} />
-      <TotalsRow label="Tax" value={formatCurrency(tax)} />
-      <div className="flex justify-between py-1 px-2 bg-gray-100 font-bold text-base">
-        <span>TOTAL</span>
-        <span>{formatCurrency(total)}</span>
-      </div>
-    </div>
-  );
-}
-
-function TotalsRow({ label, value }: { label: string; value: string }): ReactElement {
-  return (
-    <div className="flex justify-between py-0.5 px-2 border-b border-gray-200">
-      <span>{label}</span>
-      <span>{value}</span>
+    <div className="mt-1 text-right text-xs text-gray-500">
+      <span>Subtotal {formatCurrency(subtotal)}</span>
+      {discount > 0 && <span> · Disc -{formatCurrency(discount)}</span>}
+      <span> · Delivery {formatCurrency(delivery)}</span>
+      <span> · Tax {formatCurrency(tax)}</span>
+      <span className="font-bold text-gray-900"> · TOTAL {formatCurrency(total)}</span>
     </div>
   );
 }
@@ -440,4 +468,80 @@ function bannerDateLine(order: OrdersViewOrder): string {
 function addrMarina(addrStr: string): boolean {
   const a = addrStr.toLowerCase();
   return a.includes('13993 fm 2769') || a.includes('rocky hills');
+}
+
+/**
+ * Boat label for the banner. DISCO / PRIVATE come straight from the cooler's
+ * classification (Premiere webhook or a manifest DSC/PVT tab — both go out to
+ * the boat). HOUSE (a normal delivery) gets no label.
+ */
+function boatLabel(card: OrderCardData): string | null {
+  if (card.shortType === 'DISCO') return 'DISCO';
+  if (card.shortType === 'PRIVATE') return 'PRIVATE';
+  return null;
+}
+
+// --- Fit-to-one-page ------------------------------------------------------
+
+/**
+ * Approximate rendered height (px) of each block at the current print styles,
+ * biased slightly HIGH so we shrink a touch too much rather than spill. These
+ * are the knobs to turn if a real sheet still overflows (raise them) or prints
+ * smaller than it needs to (lower them).
+ */
+const SHEET_PX = {
+  // Letter is 11in − 0.6in margins ≈ 998px of usable height. We target well
+  // below that: the estimate runs a little low in practice (a group sheet that
+  // computed 0.91 still spilled its last line), so the budget carries the
+  // safety margin — shrink a touch too much rather than spill.
+  budget: 880,
+  banner: 88,
+  bannerAffiliate: 22,
+  infoRow: 96, // customer / delivery / partner boxes (one shared row)
+  groupBanner: 34,
+  instructions: 40,
+  note: 30,
+  guestHeader: 30,
+  tableHeader: 26,
+  itemRow: 30, // text-sm row, biased high to cover titles that wrap to 2 lines
+  bundleRow: 20,
+  tableFooter: 30,
+  totals: 24,
+} as const;
+
+/** Estimate a sheet's printed height from its contents (no DOM measurement). */
+function estimateSheetPx(card: OrderCardData): number {
+  const orders = card.orders;
+  const isGroup = orders.length > 1;
+  let h = SHEET_PX.banner;
+  if (orders.some((o) => o.affiliate)) h += SHEET_PX.bannerAffiliate;
+  h += SHEET_PX.infoRow;
+  if (isGroup) h += SHEET_PX.groupBanner;
+  if (!isGroup && orders[0].groupOrder) h += SHEET_PX.groupBanner;
+  if (orders[0].deliveryInstructions) h += SHEET_PX.instructions;
+
+  for (const o of orders) {
+    if (isGroup) h += SHEET_PX.guestHeader;
+    if (o.customerNote) h += SHEET_PX.note;
+    if (o.internalNote) h += SHEET_PX.note;
+    h += SHEET_PX.tableHeader;
+    for (const item of o.items) {
+      h += SHEET_PX.itemRow;
+      h += (item.bundleComponents?.length ?? 0) * SHEET_PX.bundleRow;
+    }
+    h += SHEET_PX.tableFooter;
+  }
+  h += SHEET_PX.totals;
+  return h;
+}
+
+/**
+ * CSS `zoom` factor to keep a sheet on one page: 1 when it already fits,
+ * otherwise just enough to fit, floored at 0.5 so a genuinely huge order
+ * (~30+ items) stays legible and is allowed to spill rather than shrink away.
+ */
+function fitZoom(card: OrderCardData): number {
+  const h = estimateSheetPx(card);
+  if (h <= SHEET_PX.budget) return 1;
+  return Math.max(0.5, Math.floor((SHEET_PX.budget / h) * 100) / 100);
 }

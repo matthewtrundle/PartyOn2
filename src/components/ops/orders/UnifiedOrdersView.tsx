@@ -510,7 +510,9 @@ export default function UnifiedOrdersView({
       <style jsx global>{`
         @media print {
           @page {
-            margin: 0.4in;
+            /* Match the pick-sheet margin in globals.css — two different
+               @page margins fight each other in the cascade. */
+            margin: 0.3in;
           }
           body {
             background: white !important;
