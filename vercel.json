@@ -29,6 +29,10 @@
       "schedule": "0 13 * * 1"
     },
     {
+      "path": "/api/cron/boat-schedule-sync",
+      "schedule": "0 12 * * 1"
+    },
+    {
       "path": "/api/cron/measure-recommendations",
       "schedule": "0 8 * * *"
     },
