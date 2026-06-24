@@ -46,6 +46,8 @@ interface OrderDetail {
   status: string;
   financialStatus: string;
   fulfillmentStatus: string;
+  cruiseType: 'DISCO' | 'PRIVATE' | null;
+  cruiseBoat: string | null;
   customer: {
     id: string;
     email: string;
@@ -1043,6 +1045,19 @@ export default function OrderDetailPage(): ReactElement {
                   {order.groupOrder.isGroupOrder && (
                     <span className="px-3 py-1 text-sm font-medium bg-purple-100 text-purple-700 border border-purple-200 rounded-full">
                       Group Order
+                    </span>
+                  )}
+                  {order.cruiseType && (
+                    <span
+                      className={`px-3 py-1 text-sm font-semibold rounded-full border ${
+                        order.cruiseType === 'DISCO'
+                          ? 'bg-orange-500 text-white border-orange-700'
+                          : 'bg-teal-600 text-white border-teal-800'
+                      }`}
+                      title={order.cruiseBoat ? `Boat: ${order.cruiseBoat}` : undefined}
+                    >
+                      {order.cruiseType === 'DISCO' ? 'Disco Cruise' : 'Private Cruise'}
+                      {order.cruiseBoat ? ` · ${order.cruiseBoat}` : ''}
                     </span>
                   )}
                 </div>

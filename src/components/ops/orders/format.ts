@@ -7,6 +7,9 @@
  * formatting would shift evening orders a day in Austin.
  */
 
+import type { OrderCardData } from '@/lib/ops/orders-view-data';
+import { isBoatAddress } from '@/lib/ops/boat-address';
+
 /** Format a number as USD currency. */
 export function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('en-US', {
@@ -141,6 +144,21 @@ export function typeTagClasses(t: 'DISCO' | 'PRIVATE' | 'HOUSE'): { label: strin
     cls: 'bg-emerald-800 text-white ring-1 ring-inset ring-emerald-900',
     labelCls: 'text-emerald-800',
   };
+}
+
+/**
+ * Cruise label (DISCO / PRIVATE) for a cooler card — shown ONLY when BOTH are
+ * true: the delivery is going to the boat (marina address) AND the order is
+ * matched on the boat manifest. So a guest booked on a cruise another day,
+ * whose THIS order ships elsewhere, gets no cruise label. Returns null when it
+ * is not a qualified cruise delivery.
+ */
+export function cruiseLabelForCard(card: OrderCardData): 'DISCO' | 'PRIVATE' | null {
+  if (!card.manifestMatch) return null;
+  if (!isBoatAddress(card.address)) return null;
+  return card.shortType === 'DISCO' || card.shortType === 'PRIVATE'
+    ? card.shortType
+    : null;
 }
 
 /** Badge classes for Order.status values. */

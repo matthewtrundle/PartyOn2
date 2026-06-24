@@ -2,7 +2,7 @@
 
 import { ReactElement, useRef } from 'react';
 import OrderSubCard from './OrderSubCard';
-import { fmtDateShort, fmtMoney, timeOfDayPill, typeTagClasses } from './format';
+import { fmtDateShort, fmtMoney, timeOfDayPill, typeTagClasses, cruiseLabelForCard } from './format';
 import type { OrderCardData } from '@/lib/ops/orders-view-data';
 
 /**
@@ -29,7 +29,10 @@ export default function OrderGroupCard({
   htmlId?: string;
 }): ReactElement {
   const pill = timeOfDayPill(c.deliveryTime);
-  const tag = typeTagClasses(c.shortType);
+  // Cruise label is gated: only a marina delivery that's matched on the boat
+  // manifest counts as DISCO/PRIVATE; everything else shows as HOUSE.
+  const cruise = cruiseLabelForCard(c);
+  const typeTag = typeTagClasses(cruise ?? 'HOUSE');
   const checkboxRef = useRef<HTMLInputElement>(null);
 
   const orderIds = c.orders.map((o) => o.id);
@@ -68,8 +71,8 @@ export default function OrderGroupCard({
           <span className="text-sm md:text-base font-bold text-gray-900 leading-none">
             {c.deliveryTime || 'TBD'}
           </span>
-          <span className={`inline-flex items-center px-2.5 py-1 rounded text-xs font-extrabold tracking-[0.06em] uppercase leading-none ${tag.cls}`}>
-            {tag.label}
+          <span className={`inline-flex items-center px-2.5 py-1 rounded text-xs font-extrabold tracking-[0.06em] uppercase leading-none ${typeTag.cls}`}>
+            {typeTag.label}
           </span>
           {c.isVeryLarge && (
             <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold tracking-[0.08em] bg-orange-100 text-orange-800 ring-1 ring-orange-400">
@@ -113,7 +116,7 @@ export default function OrderGroupCard({
             <span className="text-gray-400 mx-1">·</span>
             {pill.label}
             <span className="text-gray-400 mx-1">·</span>
-            <span className={tag.labelCls}>{c.shortType}</span>
+            <span className={typeTag.labelCls}>{cruise ?? 'HOUSE'}</span>
           </span>
         </div>
 

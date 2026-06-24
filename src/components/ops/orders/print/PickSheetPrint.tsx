@@ -1,7 +1,7 @@
 'use client';
 
 import React, { ReactElement } from 'react';
-import { formatAddress, formatCurrency } from '../format';
+import { formatAddress, formatCurrency, cruiseLabelForCard } from '../format';
 import { loadCachedChecks } from '../usePickChecks';
 import type { OrderCardData, OrdersViewOrder } from '@/lib/ops/orders-view-data';
 
@@ -27,7 +27,7 @@ export default function PickSheetPrint({ cards }: { cards: OrderCardData[] }): R
   return (
     <>
       {cards.map((card, idx) => {
-        const cruiseLabel = boatLabel(card);
+        const cruiseLabel = cruiseLabelForCard(card);
         const zoom = fitZoom(card);
         // Page break before every sheet but the first; `zoom` shrinks the
         // whole sheet just enough to stay on one page (only when it would
@@ -468,17 +468,6 @@ function bannerDateLine(order: OrdersViewOrder): string {
 function addrMarina(addrStr: string): boolean {
   const a = addrStr.toLowerCase();
   return a.includes('13993 fm 2769') || a.includes('rocky hills');
-}
-
-/**
- * Boat label for the banner. DISCO / PRIVATE come straight from the cooler's
- * classification (Premiere webhook or a manifest DSC/PVT tab — both go out to
- * the boat). HOUSE (a normal delivery) gets no label.
- */
-function boatLabel(card: OrderCardData): string | null {
-  if (card.shortType === 'DISCO') return 'DISCO';
-  if (card.shortType === 'PRIVATE') return 'PRIVATE';
-  return null;
 }
 
 // --- Fit-to-one-page ------------------------------------------------------
