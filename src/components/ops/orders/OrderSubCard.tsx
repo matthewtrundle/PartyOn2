@@ -53,7 +53,12 @@ export default function OrderSubCard({
               Paid by
             </span>
           )}
-          <span className="break-words">{order.customerName}</span>
+          <Link
+            href={`/ops/orders/${order.id}`}
+            className="break-words text-blue-700 hover:text-blue-900 hover:underline print:text-gray-900 print:no-underline"
+          >
+            {order.customerName}
+          </Link>
           <Link
             href={`/ops/orders/${order.id}`}
             className="text-xs font-mono font-semibold text-blue-600 hover:text-blue-800 ml-1.5"

@@ -1,6 +1,7 @@
 'use client';
 
 import { ReactElement, useRef } from 'react';
+import Link from 'next/link';
 import OrderSubCard from './OrderSubCard';
 import { fmtDateShort, fmtMoney, timeOfDayPill, typeTagClasses, cruiseLabelForCard } from './format';
 import type { OrderCardData } from '@/lib/ops/orders-view-data';
@@ -107,8 +108,17 @@ export default function OrderGroupCard({
               className="hidden print:inline-block flex-shrink-0 w-5 h-5 border-2 border-gray-900 rounded-sm bg-white"
               aria-hidden="true"
             />
-            <h3 className="font-heading text-xl md:text-2xl font-extrabold tracking-[0.02em] text-gray-900 leading-tight break-words">
-              {c.displayName}
+            <h3 className="font-heading text-xl md:text-2xl font-extrabold tracking-[0.02em] leading-tight break-words">
+              {c.orders.length === 1 ? (
+                <Link
+                  href={`/ops/orders/${c.orders[0].id}`}
+                  className="text-gray-900 hover:text-brand-blue hover:underline print:text-gray-900 print:no-underline"
+                >
+                  {c.displayName}
+                </Link>
+              ) : (
+                <span className="text-gray-900">{c.displayName}</span>
+              )}
             </h3>
           </div>
           <span className="ml-auto font-mono text-xs font-bold tracking-[0.08em] uppercase text-brand-blue whitespace-nowrap">
