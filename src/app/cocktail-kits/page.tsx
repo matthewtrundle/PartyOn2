@@ -1,6 +1,7 @@
 import { Metadata } from 'next'
 import Image from 'next/image'
 import CocktailKitsProductSection from '@/components/CocktailKitsProductSection'
+import July4CocktailKitsSection from '@/components/July4CocktailKitsSection'
 import LuxuryCard from '@/components/LuxuryCard'
 import { prisma } from '@/lib/database/client'
 import { transformToProduct } from '@/lib/products/transform'
@@ -43,6 +44,29 @@ export default async function CocktailKitsPage() {
 
   const cocktailKits = productCategories.map(pc => transformToProduct(pc.product))
 
+  // --- July 4th seasonal trio (Red → True Blue → Coconut). Fetched by handle (not via the
+  // collection) so the section is explicit and ordered; these kits also live in the cocktail-kits
+  // category, so they're de-duped out of the grid below. Mirrors /austin-4th-of-july-delivery. ---
+  const JULY4_HANDLES = [
+    'strawberry-lemonade-vodka-kit-serves-16',
+    'blue-margarita-kit-serves-16',
+    'coconut-colada-kit-serves-16',
+  ]
+  const july4Rows = await prisma.product.findMany({
+    where: { handle: { in: JULY4_HANDLES }, status: 'ACTIVE' },
+    include: {
+      images: { orderBy: { position: 'asc' } },
+      variants: { include: { image: true }, orderBy: { createdAt: 'asc' } },
+      categories: { include: { category: true } },
+    },
+  })
+  const july4Kits: Product[] = []
+  for (const handle of JULY4_HANDLES) {
+    const row = july4Rows.find(r => r.handle === handle)
+    if (row) july4Kits.push(transformToProduct(row))
+  }
+  const july4KitIds = new Set(july4Kits.map(kit => kit.id))
+
   // Find specific featured kits by name patterns
   const findKit = (pattern: string) =>
     cocktailKits.find((p: Product) =>
@@ -66,9 +90,9 @@ export default async function CocktailKitsPage() {
   // Get IDs of featured kits to exclude from secondary grid
   const featuredKitIds = new Set(featuredKits.map(kit => kit.id))
 
-  // Get other cocktail kits not in featured list
+  // Get other cocktail kits not in featured list (and not in the July 4th section above)
   const otherKits = cocktailKits.filter((kit: Product) =>
-    !featuredKitIds.has(kit.id)
+    !featuredKitIds.has(kit.id) && !july4KitIds.has(kit.id)
   )
 
   // Short, punchy subheadlines for each kit
@@ -148,6 +172,9 @@ export default async function CocktailKitsPage() {
           </div>
         </div>
       </section>
+
+      {/* July 4th Cocktails! — seasonal red/white/blue trio */}
+      <July4CocktailKitsSection kits={july4Kits} />
 
       {/* Featured Cocktail Kits - Split Layout */}
       <section id="featured-products" className="py-16 bg-white border-b border-gray-100">
