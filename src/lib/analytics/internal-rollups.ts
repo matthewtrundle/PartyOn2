@@ -158,6 +158,54 @@ export async function getLandingPageRollup(windowDays = 30, endDaysAgo = 0): Pro
     .sort((a, b) => b.revenue - a.revenue);
 }
 
+export interface LandingPagePathsRollup {
+  orders: number;
+  revenue: number;
+  averageOrderValue: number;
+}
+
+/**
+ * Orders/revenue/AOV for a specific set of landing-page paths, unioned together.
+ * Used by the per-landing-page analytics hub, where one page = a canonical route
+ * plus alias routes (e.g. /weddings + /austin-wedding-weekend-delivery). Matches
+ * `Order.landingPage` on the path portion only (query string stripped), mirroring
+ * getLandingPageRollup's bucketing.
+ */
+export async function getLandingPageRollupForPaths(
+  paths: string[],
+  windowDays = 30,
+  endDaysAgo = 0
+): Promise<LandingPagePathsRollup> {
+  if (paths.length === 0) return { orders: 0, revenue: 0, averageOrderValue: 0 };
+  const window = dateWindow(windowDays, endDaysAgo);
+  const wanted = new Set(paths);
+  // Push the path filter into the query (startsWith catches `/weddings?utm=...`
+  // query-string variants) so we don't scan every order in the window; the JS
+  // `split('?')` check below is the precise filter that rejects `/weddings-foo`.
+  const orders = await prisma.order.findMany({
+    where: {
+      createdAt: window,
+      status: { notIn: ['CANCELLED', 'REFUNDED'] },
+      OR: paths.map((p) => ({ landingPage: { startsWith: p } })),
+    },
+    select: { landingPage: true, total: true },
+  });
+
+  let count = 0;
+  let revenue = 0;
+  for (const o of orders) {
+    const key = (o.landingPage ?? '/').split('?')[0];
+    if (!wanted.has(key)) continue;
+    count += 1;
+    revenue += Number(o.total);
+  }
+  return {
+    orders: count,
+    revenue: Number(revenue.toFixed(2)),
+    averageOrderValue: count > 0 ? Number((revenue / count).toFixed(2)) : 0,
+  };
+}
+
 /**
  * Revenue/margin/AOV split by customer segment (bach/wedding/corporate/boat/kegs/general).
  * Reads `Order.segment` directly — populated at order creation by classifySegment(); rows

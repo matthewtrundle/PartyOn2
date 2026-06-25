@@ -1,5 +1,7 @@
 import { Metadata } from 'next'
 import Image from 'next/image'
+import TrackedLink from '@/components/analytics/TrackedLink'
+import CocktailKitsHero from './CocktailKitsHero'
 import CocktailKitsProductSection from '@/components/CocktailKitsProductSection'
 import July4CocktailKitsSection from '@/components/July4CocktailKitsSection'
 import LuxuryCard from '@/components/LuxuryCard'
@@ -113,33 +115,8 @@ export default async function CocktailKitsPage() {
       <section className="relative bg-gradient-to-br from-gray-50 to-gray-100 py-16 sm:py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Left Column - Text */}
-            <div className="text-center lg:text-left">
-              <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl text-gray-900 mb-6">
-                Premium Cocktail Kits, Delivered to Your Door
-              </h1>
-              <p className="text-xl sm:text-2xl text-gray-700 mb-6 tracking-wide">
-                Everything you need to make bar-quality cocktails at home. Just add ice.
-              </p>
-              <p className="text-lg text-gray-700 mb-8 leading-relaxed">
-                Skip the store runs and recipe hunting. Each kit comes with premium spirits, fresh mixers, and garnishes — perfectly portioned to make 16-24 cocktails for your next party.
-              </p>
-
-              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                <a
-                  href="#featured-products"
-                  className="inline-block bg-yellow-500 hover:bg-brand-yellow text-gray-900 px-8 py-4 text-lg font-medium tracking-widest transition-colors duration-200"
-                >
-                  SHOP COCKTAIL KITS
-                </a>
-                <a
-                  href="#how-it-works"
-                  className="inline-block border-2 border-gray-900 text-gray-900 hover:bg-gray-100 px-8 py-4 text-lg font-medium tracking-widest transition-colors duration-200"
-                >
-                  HOW IT WORKS
-                </a>
-              </div>
-            </div>
+            {/* Left Column - Text (hero A/B copy) */}
+            <CocktailKitsHero />
 
             {/* Right Column - Hero Image */}
             <div className="relative">
@@ -514,12 +491,14 @@ export default async function CocktailKitsPage() {
           <p className="text-lg mb-8 text-gray-700">
             Free Delivery on Orders $100+
           </p>
-          <a
+          <TrackedLink
             href="#featured-products"
+            section="final_cta"
+            buttonText="SHOP ALL COCKTAIL KITS"
             className="inline-block bg-gray-900 text-white hover:bg-gray-900 px-8 py-4 text-lg font-medium tracking-widest transition-colors duration-200"
           >
             SHOP ALL COCKTAIL KITS
-          </a>
+          </TrackedLink>
         </div>
       </section>
     </div>

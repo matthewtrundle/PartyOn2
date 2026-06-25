@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import { requireOpsAuth } from '@/lib/auth/ops-session';
+import { mirrorExperimentToVault } from '@/lib/analytics/experiment-mirror';
 
 // Validation schema for updating an experiment
 const UpdateExperimentSchema = z.object({
@@ -18,6 +19,7 @@ const UpdateExperimentSchema = z.object({
   goalMetric: z.enum(['cta_click', 'scroll_depth', 'conversion', 'revenue']).optional(),
   goalValue: z.string().optional(),
   winningVariant: z.string().optional(),
+  winnerReason: z.string().max(1000).optional(),
   confidence: z.number().min(0).max(100).optional(),
 });
 
@@ -164,6 +166,32 @@ export async function PATCH(
         variants: true,
       },
     });
+
+    // On conclude (→ COMPLETED with a declared winner), log the result to the
+    // Obsidian vault via the marketing markdown pipeline. Fails soft.
+    if (validatedData.status === 'COMPLETED' && experiment.winningVariant) {
+      await mirrorExperimentToVault({
+        id: experiment.id,
+        name: experiment.name,
+        page: experiment.page,
+        elementId: experiment.elementId,
+        goalMetric: experiment.goalMetric,
+        winningVariant: experiment.winningVariant,
+        winnerReason: experiment.winnerReason,
+        confidence: experiment.confidence,
+        endDate: experiment.endDate,
+        variants: experiment.variants.map((v) => ({
+          id: v.id,
+          name: v.name,
+          isControl: v.isControl,
+          weight: v.weight,
+          impressions: v.impressions,
+          clicks: v.clicks,
+          conversions: v.conversions,
+          content: v.content,
+        })),
+      }).catch(() => undefined);
+    }
 
     return NextResponse.json(experiment);
   } catch (error) {
