@@ -19,6 +19,7 @@ export type BlogTopic =
   | 'WEDDING'
   | 'CORPORATE'
   | 'BOAT'
+  | 'JULY4'
   | 'GENERIC';
 
 export interface BlogCta {
@@ -65,6 +66,13 @@ const TOPIC_TO_CTA: Record<BlogTopic, BlogCta> = {
     buttonText: 'Get a quote',
     href: '/boat-parties',
   },
+  JULY4: {
+    topic: 'JULY4',
+    heading: 'Skip the mixing — get the kits delivered',
+    body: 'We deliver pre-batched red, white & blue cocktail kits across Austin. Each serves 16 with a dispenser — just add ice. Reserve your 4th of July delivery window early.',
+    buttonText: 'Shop the 4th of July kits',
+    href: '/austin-4th-of-july-delivery',
+  },
   GENERIC: {
     topic: 'GENERIC',
     heading: 'Need alcohol delivery in Austin?',
@@ -79,6 +87,7 @@ const TOPIC_TO_CTA: Record<BlogTopic, BlogCta> = {
 // on PR #52's branch to regenerate.
 const SLUG_TO_TOPIC: Record<string, BlogTopic> = {
   '15-unique-birthday-party-ideas-in-austin-for-adults': 'GENERIC',
+  '4th-of-july-cocktails': 'JULY4',
   'accessible-austin-party-houses-boat-parties-inclusive-event-planning-for-all-guests': 'BOAT',
   'affordable-birthday-party-rentals-and-suppliers': 'GENERIC',
   'all-inclusive-austin-wedding-venues': 'WEDDING',

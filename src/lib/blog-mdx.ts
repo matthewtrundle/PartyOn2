@@ -7,6 +7,15 @@ export interface MDXBlogFAQ {
   a: string;
 }
 
+export interface MDXRecipe {
+  name: string;
+  description?: string;
+  recipeYield?: string;
+  prepTime?: string;
+  ingredients: string[];
+  instructions: string[];
+}
+
 export interface MDXBlogPost {
   slug: string;
   title: string;
@@ -18,6 +27,7 @@ export interface MDXBlogPost {
   author: string;
   content: string;
   faq?: MDXBlogFAQ[];
+  recipes?: MDXRecipe[];
 }
 
 const POSTS_DIRECTORY = path.join(process.cwd(), 'content', 'blog', 'posts');
@@ -62,6 +72,16 @@ export function getMDXPost(slug: string): MDXBlogPost | null {
           )
       : undefined;
 
+    const recipes = Array.isArray(data.recipes)
+      ? data.recipes
+          .filter((item: unknown): item is MDXRecipe =>
+            !!item && typeof item === 'object'
+            && typeof (item as MDXRecipe).name === 'string'
+            && Array.isArray((item as MDXRecipe).ingredients)
+            && Array.isArray((item as MDXRecipe).instructions)
+          )
+      : undefined;
+
     return {
       slug,
       title: data.title || '',
@@ -73,6 +93,7 @@ export function getMDXPost(slug: string): MDXBlogPost | null {
       author: data.author || 'Party On Delivery Team',
       content,
       faq,
+      recipes,
     };
   } catch (error) {
     console.error(`Error reading MDX post ${slug}:`, error);
