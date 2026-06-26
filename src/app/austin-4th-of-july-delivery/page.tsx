@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { prisma } from '@/lib/database/client';
 import { transformToProduct } from '@/lib/products/transform';
 import { Product } from '@/lib/types';
+import Navigation from '@/components/Navigation';
 import FireworksCanvas from './FireworksCanvas';
 import July4KitCards from './July4KitCards';
 
@@ -111,6 +112,9 @@ export default async function Austin4thOfJulyDeliveryPage() {
 
   return (
     <>
+      {/* Global nav (cart button + count). Transparent over the hero via NAV_TRANSPARENT_ROUTES. */}
+      <Navigation />
+
       {/* z-0 — fixed navy night-sky backdrop */}
       <div
         className="fixed inset-0 z-0 pointer-events-none"

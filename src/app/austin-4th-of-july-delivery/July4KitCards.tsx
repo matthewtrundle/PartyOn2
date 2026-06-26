@@ -57,7 +57,7 @@ const CheckIcon = () => (
 
 function KitCard({ product }: { product: Product }) {
   const meta: KitMeta = KIT_META[product.handle] ?? { hook: '', ingredients: [], accent: '#0B74B8' };
-  const { addToCart, loading } = useCartContext();
+  const { addToCart, openCart, loading } = useCartContext();
   const [isAdding, setIsAdding] = useState(false);
   const [justAdded, setJustAdded] = useState(false);
   const [showAge, setShowAge] = useState(false);
@@ -74,6 +74,7 @@ function KitCard({ product }: { product: Product }) {
       await addToCart(variant.id, 1);
       setJustAdded(true);
       window.setTimeout(() => setJustAdded(false), 2200);
+      openCart(); // slide the cart drawer open so the add is visible + checkout-ready
     } catch (error) {
       console.error('Add to cart failed:', error);
     } finally {

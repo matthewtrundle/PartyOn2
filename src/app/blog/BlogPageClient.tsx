@@ -6,6 +6,7 @@ export default function BlogPageClient() {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
+  const [ok, setOk] = useState(false)
 
   const handleNewsletterSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -22,12 +23,15 @@ export default function BlogPageClient() {
       const data = await response.json()
 
       if (response.ok) {
-        setMessage('Thank you for subscribing!')
+        setOk(true)
+        setMessage(data.message || 'Almost there! Check your email to confirm.')
         setEmail('')
       } else {
+        setOk(false)
         setMessage(data.error || 'Something went wrong')
       }
     } catch {
+      setOk(false)
       setMessage('Failed to subscribe. Please try again.')
     } finally {
       setLoading(false)
@@ -63,7 +67,7 @@ export default function BlogPageClient() {
             </button>
           </form>
           {message && (
-            <p className={`text-sm mt-4 ${message.includes('Thank you') ? 'text-green-400' : 'text-red-400'}`}>
+            <p className={`text-sm mt-4 ${ok ? 'text-green-400' : 'text-red-400'}`}>
               {message}
             </p>
           )}

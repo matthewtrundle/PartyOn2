@@ -226,6 +226,7 @@ export interface CreateDashboardInput {
   name?: string;
   tabName?: string;
   deliveryDate?: string;
+  deliveryTime?: string;
   isLastMinute?: boolean;
   deliveryAddress?: {
     address1: string;

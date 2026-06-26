@@ -28,6 +28,7 @@ import { createDashboardOrderV2 } from '@/lib/group-orders-v2/api-client';
 import type { PartyType, DashboardSource, DeliveryContextType } from '@/lib/group-orders-v2/types';
 import { getAffiliateOrderDefaults } from '@/lib/affiliates/presets';
 import { trackCTAClick } from '@/lib/analytics/ga4-events';
+import { getEventPreset } from '@/lib/events/event-presets';
 
 const PARTY_TYPE_MAP: Record<string, PartyType> = {
   bachelor: 'BACHELOR',
@@ -106,6 +107,7 @@ function OrderRedirectInner(): ReactElement {
   const deliveryParam = searchParams?.get('d') ?? null;
   const nameParam = searchParams?.get('name') ?? null;
   const affiliateParam = searchParams?.get('a') ?? null;
+  const eventParam = searchParams?.get('event') ?? null;
 
   // Resolve affiliate + presets + decide auto-mode vs chip selector.
   useEffect(() => {
@@ -114,7 +116,7 @@ function OrderRedirectInner(): ReactElement {
     async function decide() {
       // If party type came in via ?p= or ?name= (which is partner-named), or
       // an affiliate preset hands us one, we skip the chip selector.
-      if (partyParam || nameParam) {
+      if (partyParam || nameParam || eventParam) {
         if (!cancelled) {
           setAutoMode(true);
           runCreate();
@@ -164,7 +166,7 @@ function OrderRedirectInner(): ReactElement {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [partyParam, nameParam, ref, affiliateParam]);
+  }, [partyParam, nameParam, ref, affiliateParam, eventParam]);
 
   /**
    * Create the GroupOrderV2 and redirect to the dashboard. Called either
@@ -174,6 +176,7 @@ function OrderRedirectInner(): ReactElement {
     if (creating.current) return;
     creating.current = true;
     setBusy(true);
+    const eventPreset = getEventPreset(eventParam);
     try {
       let affiliateId: string | undefined;
       let affiliateCode: string | undefined;
@@ -233,9 +236,11 @@ function OrderRedirectInner(): ReactElement {
         deliveryContextType,
         affiliateId,
         source,
-        name: nameParam ? `${nameParam}'s Order` : undefined,
+        name: eventPreset?.name ?? (nameParam ? `${nameParam}'s Order` : undefined),
         deliveryAddress: presets?.address,
-        tabName: presets?.tabName,
+        tabName: eventPreset?.tabName ?? presets?.tabName,
+        deliveryDate: eventPreset?.deliveryDate,
+        deliveryTime: eventPreset?.deliveryTime,
       });
 
       const host = group.participants.find((p) => p.isHost);
@@ -259,7 +264,7 @@ function OrderRedirectInner(): ReactElement {
       creating.current = false;
       setBusy(false);
     }
-  }, [ref, affiliateParam, partyParam, deliveryParam, nameParam, router]);
+  }, [ref, affiliateParam, partyParam, deliveryParam, nameParam, router, eventParam]);
 
   if (error) {
     return (

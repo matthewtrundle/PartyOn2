@@ -1,0 +1,50 @@
+/* Ambient Texas backdrop — positions + parallax-on-scroll motion.
+   Color + opacity are set inline per tone (light = brand-blue, dark = gold).
+   Motion uses CSS scroll-driven animation where supported; it simply stays
+   static (still faded) in browsers without animation-timeline, and is disabled
+   for reduced-motion users. */
+
+.texas {
+  position: absolute;
+  left: -13%;
+  bottom: -16%;
+  width: 60%;
+  height: auto;
+}
+
+.star {
+  position: absolute;
+  right: -10%;
+  top: -14%;
+  width: 44%;
+  height: auto;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .texas {
+    animation: txbRise linear both;
+    animation-timeline: scroll(root);
+  }
+  .star {
+    animation: txbFloat linear both;
+    animation-timeline: scroll(root);
+  }
+}
+
+@keyframes txbRise {
+  from {
+    transform: translateY(9%);
+  }
+  to {
+    transform: translateY(-9%);
+  }
+}
+
+@keyframes txbFloat {
+  from {
+    transform: translateY(5%) translateX(-2%);
+  }
+  to {
+    transform: translateY(-5%) translateX(2%);
+  }
+}

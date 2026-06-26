@@ -1004,7 +1004,7 @@ export async function createDashboardOrder(
           name: input.tabName || 'Location 1',
           position: 0,
           deliveryDate,
-          deliveryTime: '12:00 PM - 2:00 PM',
+          deliveryTime: input.deliveryTime || '12:00 PM - 2:00 PM',
           deliveryAddress: deliveryAddress as unknown as Record<string, string>,
           orderDeadline: computeOrderDeadline(deliveryDate),
           deliveryFee: deliveryAddress.zip
