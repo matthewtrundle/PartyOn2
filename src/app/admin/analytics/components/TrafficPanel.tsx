@@ -3,6 +3,7 @@
 import { ReactElement } from 'react';
 import TrafficChart from './TrafficChart';
 import type {
+  AnalyticsPeriod,
   LandingPagePayload,
   TrafficGranularity,
   PageTrafficTotals,
@@ -10,16 +11,26 @@ import type {
 
 interface TrafficPanelProps {
   traffic: LandingPagePayload['traffic'];
+  /** Active time window — drives the chart and all per-page metrics. */
+  period: AnalyticsPeriod;
+  onPeriodChange: (p: AnalyticsPeriod) => void;
+  /** Auto-derived from the window; shown as a label (no manual toggle). */
   granularity: TrafficGranularity;
-  onGranularityChange: (g: TrafficGranularity) => void;
   loading?: boolean;
 }
 
-const GRANULARITIES: { id: TrafficGranularity; label: string }[] = [
-  { id: 'day', label: 'Daily' },
-  { id: 'week', label: 'Weekly' },
-  { id: 'month', label: 'Monthly' },
+const WINDOWS: { id: AnalyticsPeriod; label: string }[] = [
+  { id: '7d', label: '7D' },
+  { id: '30d', label: '30D' },
+  { id: '90d', label: '90D' },
+  { id: '1y', label: '1Y' },
 ];
+
+const GRANULARITY_LABEL: Record<TrafficGranularity, string> = {
+  day: 'daily points',
+  week: 'weekly points',
+  month: 'monthly points',
+};
 
 /** One D/W/M stat block showing unique visitors (big) + pageviews (muted). */
 function TrafficStat({
@@ -51,13 +62,16 @@ function TrafficStat({
 }
 
 /**
- * Traffic section: daily/weekly/monthly visitor + pageview totals (exact unique
- * counts from GA4) plus a trend chart at the chosen granularity.
+ * Traffic section: fixed daily/weekly/monthly visitor totals (top cards) plus a
+ * trend chart whose time window is selectable (7D/30D/90D/1Y). The data-point
+ * spacing follows the window automatically (7D/30D → daily, 90D → weekly,
+ * 1Y → monthly), shown as a label next to the chart.
  */
 export default function TrafficPanel({
   traffic,
+  period,
+  onPeriodChange,
   granularity,
-  onGranularityChange,
   loading = false,
 }: TrafficPanelProps): ReactElement {
   return (
@@ -80,23 +94,23 @@ export default function TrafficPanel({
 
       <div className="card">
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
+          <div className="flex items-baseline gap-2">
             <h3 className="text-lg font-semibold text-gray-900">Traffic trend</h3>
-            <span className="text-xs text-gray-400 uppercase">{traffic.source}</span>
+            <span className="text-xs text-gray-400">{GRANULARITY_LABEL[granularity]} · {traffic.source.toUpperCase()}</span>
           </div>
           <div className="flex gap-1">
-            {GRANULARITIES.map((g) => (
+            {WINDOWS.map((w) => (
               <button
-                key={g.id}
+                key={w.id}
                 type="button"
-                onClick={() => onGranularityChange(g.id)}
+                onClick={() => onPeriodChange(w.id)}
                 className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
-                  granularity === g.id
+                  period === w.id
                     ? 'bg-gray-900 text-white'
                     : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
                 }`}
               >
-                {g.label}
+                {w.label}
               </button>
             ))}
           </div>

@@ -31,11 +31,20 @@ import { allPathsFor, landingPageByKey, type LandingPageKey } from './landing-pa
 export type { PageTrafficTotals, PageTrafficPoint } from './google-analytics';
 
 export type TrafficGranularity = 'day' | 'week' | 'month';
-export type AnalyticsPeriod = '7d' | '30d' | '90d';
+export type AnalyticsPeriod = '7d' | '30d' | '90d' | '1y';
 
 /** Map a period token to a day count. */
 export function periodToDays(period: AnalyticsPeriod): number {
-  return period === '7d' ? 7 : period === '90d' ? 90 : 30;
+  switch (period) {
+    case '7d':
+      return 7;
+    case '90d':
+      return 90;
+    case '1y':
+      return 365;
+    default:
+      return 30;
+  }
 }
 
 function daysAgoDate(n: number): Date {

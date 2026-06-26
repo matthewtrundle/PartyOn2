@@ -17,11 +17,21 @@ import type {
   TrafficGranularity,
 } from '@/lib/analytics/landing-page-metrics';
 
-const PERIODS: { id: AnalyticsPeriod; label: string }[] = [
-  { id: '7d', label: '7 days' },
-  { id: '30d', label: '30 days' },
-  { id: '90d', label: '90 days' },
-];
+/**
+ * Sensible chart granularity for a window: a year reads best as monthly points,
+ * a quarter as weekly, and a week/month as daily. The window selector lives on
+ * the traffic chart; granularity follows automatically.
+ */
+function defaultGranularityForPeriod(period: AnalyticsPeriod): TrafficGranularity {
+  switch (period) {
+    case '1y':
+      return 'month';
+    case '90d':
+      return 'week';
+    default:
+      return 'day';
+  }
+}
 
 const EMPTY_TRAFFIC: LandingPagePayload['traffic'] = {
   source: 'ga4',
@@ -82,6 +92,11 @@ function AnalyticsHub(): ReactElement {
     load();
   }, [load]);
 
+  const selectPeriod = (p: AnalyticsPeriod): void => {
+    setPeriod(p);
+    setGranularity(defaultGranularityForPeriod(p));
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
@@ -91,28 +106,12 @@ function AnalyticsHub(): ReactElement {
             Traffic, CTA clicks &amp; conversion for each landing page.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          {PERIODS.map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              onClick={() => setPeriod(p.id)}
-              className={`px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                period === p.id
-                  ? 'bg-gray-900 text-white'
-                  : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-              }`}
-            >
-              {p.label}
-            </button>
-          ))}
-          <Link
-            href="/admin/dashboard"
-            className="px-3 py-2 text-sm font-semibold rounded-md bg-white text-brand-blue border border-brand-blue hover:bg-blue-50 transition-colors"
-          >
-            Global Overview →
-          </Link>
-        </div>
+        <Link
+          href="/admin/dashboard"
+          className="px-3 py-2 text-sm font-semibold rounded-md bg-white text-brand-blue border border-brand-blue hover:bg-blue-50 transition-colors"
+        >
+          Global Overview →
+        </Link>
       </header>
 
       <LandingPageTabs active={active} />
@@ -121,8 +120,9 @@ function AnalyticsHub(): ReactElement {
 
       <TrafficPanel
         traffic={data?.traffic ?? EMPTY_TRAFFIC}
+        period={period}
+        onPeriodChange={selectPeriod}
         granularity={granularity}
-        onGranularityChange={setGranularity}
         loading={loading}
       />
       <CtaClickTable rows={data?.ctas ?? []} loading={loading} />

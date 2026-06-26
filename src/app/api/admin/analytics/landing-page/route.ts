@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 
 const QuerySchema = z.object({
   page: z.enum(LANDING_PAGE_KEYS as [string, ...string[]]),
-  period: z.enum(['7d', '30d', '90d']).default('30d'),
+  period: z.enum(['7d', '30d', '90d', '1y']).default('30d'),
   granularity: z.enum(['day', 'week', 'month']).default('day'),
 });
 
