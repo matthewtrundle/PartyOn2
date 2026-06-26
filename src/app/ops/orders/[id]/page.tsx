@@ -660,14 +660,14 @@ export default function OrderDetailPage(): ReactElement {
     if (!order) return;
     setReturnProcessing(true);
     try {
+      // Only send the order-item id and quantity. Price, product, and variant
+      // are resolved server-side from the stored OrderItem, so there is nothing
+      // here a tampered client could use to inflate the refund.
       const itemsToReturn = order.items
         .filter((item) => (returnItems[item.id] || 0) > 0)
         .map((item) => ({
           orderItemId: item.id,
-          productId: item.product.id,
-          variantId: item.variant?.id || null,
           returnQuantity: returnItems[item.id],
-          unitPrice: item.price,
         }));
 
       const res = await fetch(`/api/v1/admin/orders/${orderId}/return`, {

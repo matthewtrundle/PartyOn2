@@ -6,6 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createHash } from 'crypto';
+import { z } from 'zod';
 import { requireOpsAuth } from '@/lib/auth/ops-session';
 import { prisma } from '@/lib/database/client';
 import { stripe } from '@/lib/stripe/client';
@@ -18,12 +19,31 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-interface ReturnItem {
+/**
+ * Request body contract. Only `orderItemId` + a positive whole `returnQuantity`
+ * are read per line; any extra price/product/variant fields are stripped and
+ * ignored (the server is the sole source of those values — and stripping rather
+ * than rejecting keeps a stale cached client working right after a deploy).
+ * `reason` is length-capped to stay under Stripe's 500-char metadata limit.
+ */
+const ReturnRequestSchema = z.object({
+  items: z
+    .array(
+      z.object({
+        orderItemId: z.string().min(1),
+        returnQuantity: z.number().int().positive(),
+      }),
+    )
+    .min(1, 'No items specified for return'),
+  reason: z.string().max(500).optional(),
+});
+
+/** A return line after validation, carrying canonical server-side values. */
+interface ValidatedReturn {
   orderItemId: string;
   productId: string;
   variantId: string | null;
   returnQuantity: number;
-  unitPrice: number;
 }
 
 type TransactionClient = Omit<typeof prisma, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'>;
@@ -139,18 +159,15 @@ export async function POST(
 
   try {
     const { id } = await params;
-    const body = await request.json();
-    const { items, reason } = body as {
-      items: ReturnItem[];
-      reason?: string;
-    };
 
-    if (!items || items.length === 0) {
+    const parsed = ReturnRequestSchema.safeParse(await request.json());
+    if (!parsed.success) {
       return NextResponse.json(
-        { success: false, error: 'No items specified for return' },
+        { success: false, error: parsed.error.issues[0]?.message || 'Invalid return request' },
         { status: 400 }
       );
     }
+    const { items, reason } = parsed.data;
 
     // Load order with items and existing refunds
     const order = await prisma.order.findUnique({
@@ -175,9 +192,24 @@ export async function POST(
       );
     }
 
-    // Validate each return item
+    // Validate each return item. The refund is computed ONLY from the stored
+    // OrderItem.price (server source of truth) — never from any price in the
+    // request body — so an inflated client value cannot enlarge the refund.
     let totalRefundAmount = 0;
+    const validatedReturns: ValidatedReturn[] = [];
+    const seenOrderItemIds = new Set<string>();
     for (const returnItem of items) {
+      // Reject a line that names the same order item twice: each pass reads the
+      // same `refundedQuantity` from the in-memory order, so duplicates would
+      // both clear the max-returnable check and stack into an over-refund.
+      if (seenOrderItemIds.has(returnItem.orderItemId)) {
+        return NextResponse.json(
+          { success: false, error: `Order item ${returnItem.orderItemId} listed more than once` },
+          { status: 400 }
+        );
+      }
+      seenOrderItemIds.add(returnItem.orderItemId);
+
       const orderItem = order.items.find((oi) => oi.id === returnItem.orderItemId);
       if (!orderItem) {
         return NextResponse.json(
@@ -187,12 +219,6 @@ export async function POST(
       }
 
       const maxReturnable = orderItem.quantity - orderItem.refundedQuantity;
-      if (returnItem.returnQuantity <= 0) {
-        return NextResponse.json(
-          { success: false, error: `Return quantity must be greater than 0 for ${orderItem.title}` },
-          { status: 400 }
-        );
-      }
       if (returnItem.returnQuantity > maxReturnable) {
         return NextResponse.json(
           { success: false, error: `Cannot return ${returnItem.returnQuantity} of ${orderItem.title} (max returnable: ${maxReturnable})` },
@@ -200,7 +226,13 @@ export async function POST(
         );
       }
 
-      totalRefundAmount += returnItem.returnQuantity * returnItem.unitPrice;
+      totalRefundAmount += returnItem.returnQuantity * Number(orderItem.price);
+      validatedReturns.push({
+        orderItemId: orderItem.id,
+        productId: orderItem.productId,
+        variantId: orderItem.variantId,
+        returnQuantity: returnItem.returnQuantity,
+      });
     }
 
     // Round to avoid floating point issues
@@ -250,7 +282,7 @@ export async function POST(
       // For unfulfilled orders: release committedQuantity instead
       const isFulfilled = order.fulfillmentStatus === 'DELIVERED';
 
-      for (const returnItem of items) {
+      for (const returnItem of validatedReturns) {
         await tx.orderItem.update({
           where: { id: returnItem.orderItemId },
           data: {
@@ -318,7 +350,7 @@ export async function POST(
       console.error('[Return API] Failed to send refund email:', emailError);
     }
 
-    const totalItemsReturned = items.reduce((sum, i) => sum + i.returnQuantity, 0);
+    const totalItemsReturned = validatedReturns.reduce((sum, i) => sum + i.returnQuantity, 0);
 
     return NextResponse.json({
       success: true,
