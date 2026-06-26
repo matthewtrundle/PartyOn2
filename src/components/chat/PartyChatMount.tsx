@@ -32,6 +32,9 @@ const HIDE_PATTERNS: RegExp[] = [
   /^\/affiliate(\/|$)/,
   /^\/partners(\/|$)/,
   /^\/dads-gone-wild(\/|$)/,
+  // Private event invites — no general chat bubble; the page has its
+  // own dedicated flow.
+  /^\/events(\/|$)/,
 ];
 
 export default function PartyChatMount() {

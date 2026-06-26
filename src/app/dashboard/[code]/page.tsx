@@ -15,6 +15,7 @@ import VibePickerModal from '@/components/dashboard/VibePickerModal';
 // it. See plan: /Users/allan/.claude/plans/rustling-snacking-rain.md
 import OrderSidebar from '@/components/dashboard/OrderSidebar';
 import ProductBrowse from '@/components/dashboard/ProductBrowse';
+import LastMinuteMenuBanner from '@/components/dashboard/LastMinuteMenuBanner';
 import DashboardBottomBar from '@/components/dashboard/DashboardBottomBar';
 import DashboardCheckoutModal from '@/components/dashboard/DashboardCheckoutModal';
 import DeliveryDetailsModal from '@/components/dashboard/DeliveryDetailsModal';
@@ -31,6 +32,7 @@ import PremierPerksBanner from '@/components/dashboard/PremierPerksBanner';
 import { OnboardingTourProvider, DashboardTour } from '@/components/dashboard/tour';
 import { getHiddenProductIds } from '@/lib/affiliates/product-exclusions';
 import { getCustomDashboardTheme } from '@/lib/dashboard/custom-themes';
+import { useDeliveryWindow } from '@/lib/deliveryWindow/window';
 
 // Direction E Rec #5: brand palette only (was darker blue + magenta + orange,
 // none of which are on-brand). Once-per-session cap so the celebration stays
@@ -94,11 +96,32 @@ export default function DashboardPage(): ReactElement {
     [groupOrder?.affiliate?.code]
   );
 
-  // Last-minute whitelist: when flagged, load the `last-minute` Shopify
-  // collection and use it as the allow-set for product display.
+  // Last-minute whitelist: when flagged, load the `last-minute`
+  // collection from the local Postgres `Category` table and use it as
+  // the allow-set for product display.
   const [lastMinuteAllowedIds, setLastMinuteAllowedIds] = useState<Set<string> | null>(null);
+  // Customer-facing override: when true (and isLastMinute), we don't
+  // filter the catalog — they see the full menu. The banner explains
+  // some items may be unavailable + we'll text post-purchase.
+  const [showFullMenuOverride, setShowFullMenuOverride] = useState(false);
+
+  // Delivery-window gate choice (Today/Tomorrow vs Future). The gate
+  // fires on first dashboard view; once the customer picks, this value
+  // overrides the GroupOrderV2.isLastMinute flag for menu display.
+  //   gate = 'last-minute' → last-minute menu, regardless of server flag
+  //   gate = 'future'      → full menu, regardless of server flag
+  //   gate = null          → server flag wins (no choice yet, or expired)
+  const { window: deliveryWindowChoice } = useDeliveryWindow();
+  const effectiveIsLastMinute =
+    deliveryWindowChoice === 'last-minute'
+      ? true
+      : deliveryWindowChoice === 'future'
+        ? false
+        : (groupOrder?.isLastMinute ?? false);
   useEffect(() => {
-    if (!groupOrder?.isLastMinute) {
+    // Fetch the last-minute allow-list whenever the EFFECTIVE last-minute
+    // mode is on (server flag OR gate choice = 'last-minute').
+    if (!effectiveIsLastMinute) {
       setLastMinuteAllowedIds(null);
       return;
     }
@@ -118,7 +141,12 @@ export default function DashboardPage(): ReactElement {
     return () => {
       cancelled = true;
     };
-  }, [groupOrder?.isLastMinute]);
+  }, [effectiveIsLastMinute]);
+  // Reset the override when the underlying effective mode flips back
+  // (e.g. host edits the delivery date to next week OR gate changes).
+  useEffect(() => {
+    if (!effectiveIsLastMinute) setShowFullMenuOverride(false);
+  }, [effectiveIsLastMinute]);
 
 
   // Restore participant ID from localStorage
@@ -521,6 +549,16 @@ export default function DashboardPage(): ReactElement {
             onItemChanged={refresh}
           />
 
+          {/* Last-minute mode banner — renders whenever the EFFECTIVE
+              mode is last-minute (gate choice overrides the server flag).
+              Lets the customer flip to the full menu with a caveat. */}
+          {effectiveIsLastMinute && (
+            <LastMinuteMenuBanner
+              showFullMenu={showFullMenuOverride}
+              onToggle={() => setShowFullMenuOverride((prev) => !prev)}
+            />
+          )}
+
           <ProductBrowse
             shareCode={groupOrder.shareCode}
             tabId={tab.id}
@@ -530,7 +568,13 @@ export default function DashboardPage(): ReactElement {
             isLocked={isLocked}
             onItemChanged={refresh}
             affiliateCode={groupOrder.affiliate?.code}
-            allowedProductIds={groupOrder.isLastMinute ? lastMinuteAllowedIds : null}
+            allowedProductIds={
+              // Filter only when effective last-minute is on AND the
+              // customer hasn't toggled the override to see full catalog.
+              effectiveIsLastMinute && !showFullMenuOverride
+                ? lastMinuteAllowedIds
+                : null
+            }
             recsSection={
               recommendations ? (
                 <RecommendationsSection

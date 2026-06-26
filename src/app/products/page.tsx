@@ -13,7 +13,6 @@ import MobileFilterDrawer from '@/components/mobile/MobileFilterDrawer';
 import { useCustomCollectionProducts } from '@/lib/cart/hooks/useCustomProducts';
 import { Product } from '@/lib/types';
 import AIConcierge from '@/components/AIConcierge';
-import AgeVerificationModal from '@/components/AgeVerificationModal';
 import ProductModal from '@/components/ProductModal';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { getProductCategory, FILTER_OPTIONS, SHOPIFY_COLLECTIONS, getUniqueTags } from '@/lib/products/categories';
@@ -31,8 +30,9 @@ function ProductsContent() {
   const [collectionFilter, setCollectionFilter] = useState<string | null>(null);
   const { products, loading, error, hasNextPage, loadMore } = useCustomCollectionProducts(collectionFilter, initialLoadCount);
   const [sortBy, setSortBy] = useState('featured');
-  const [showAgeVerification, setShowAgeVerification] = useState(false);
-  const [isAgeVerified, setIsAgeVerified] = useState(false);
+  // Age gate retired site-wide — compliance now lives on the checkout
+  // form (pre-checked 21+ acknowledgement). Premium-collection content
+  // is no longer gated; the old isAgeVerified state was removed too.
 
   // Shopify-based filters
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -51,12 +51,6 @@ function ProductsContent() {
   // Sticky collections disabled - was causing scroll conflicts on mobile
   const collectionsRef = useRef<HTMLElement>(null);
 
-  // Check age verification on mount
-  useEffect(() => {
-    const ageVerified = localStorage.getItem('age_verified') === 'true';
-    setIsAgeVerified(ageVerified);
-  }, []);
-
   // Set default collection to favorites-home-page on initial load
   useEffect(() => {
     // Only set default if no search query and no collection filter is already set
@@ -64,18 +58,6 @@ function ProductsContent() {
       setCollectionFilter('favorites-home-page');
     }
   }, [searchQuery, collectionFilter]);
-
-  const handleAgeVerified = () => {
-    setShowAgeVerification(false);
-    setIsAgeVerified(true);
-    localStorage.setItem('age_verified', 'true');
-  };
-
-  const handleUnlock = () => {
-    if (!isAgeVerified) {
-      setShowAgeVerification(true);
-    }
-  };
 
   const handleProductClick = (product: Product) => {
     setSelectedProduct(product);
@@ -244,23 +226,8 @@ function ProductsContent() {
             Find something everyone will enjoy
           </p>
 
-          {/* Age Verification Unlock Button */}
-          {!isAgeVerified && (
-            <button
-              onClick={handleUnlock}
-              className="inline-flex items-center gap-3 px-8 py-4 rounded-lg bg-brand-yellow hover:bg-yellow-400 active:bg-yellow-500 text-gray-900 font-semibold tracking-[0.08em] transition-all duration-300 group"
-              style={{ animationDelay: '500ms' }}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
-                  d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
-              </svg>
-              UNLOCK PREMIUM COLLECTION
-              <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          )}
+          {/* "Unlock premium collection" button removed with the
+              age-verification gate — content is no longer locked. */}
         </div>
       </section>
 
@@ -696,13 +663,6 @@ function ProductsContent() {
       
       {/* AI Concierge */}
       <AIConcierge mode="elegant" />
-      
-      {/* Age Verification Modal */}
-      <AgeVerificationModal
-        isOpen={showAgeVerification}
-        onClose={() => setShowAgeVerification(false)}
-        onVerify={handleAgeVerified}
-      />
       
       <ProductModal
         product={selectedProduct}

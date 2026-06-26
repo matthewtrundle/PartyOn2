@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Barlow_Condensed, Inter, Fraunces, Manrope } from 'next/font/google';
 import dynamic from 'next/dynamic';
 import "./globals.css";
-import AgeVerification from "@/components/AgeVerification";
 import { CartProvider } from "@/contexts/CartContext";
 import { CustomerProvider } from "@/contexts/CustomerContext";
 import ClientLayoutWrapper from "@/components/ClientLayoutWrapper";
@@ -133,7 +132,12 @@ export default function RootLayout({
         <CustomerProvider>
           <CartProvider>
             <GroupOrderProvider>
-              <AgeVerification />
+              {/* Age verification is no longer a site-wide entrance gate.
+                  It moved to a pre-checked "21+" acknowledgement on the
+                  final checkout step (DashboardCheckoutModal, QuickBuyModal,
+                  /invoice/<token>). Legal control remains carding at the
+                  door — TABC compliance is identical, the modal was just
+                  costing us paid-traffic bounces. */}
               <PixelMount />
               <ClientLayoutWrapper>
                 {children}

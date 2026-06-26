@@ -128,6 +128,92 @@ const SERVINGS_PER_UNIT: Record<string, number> = {
 };
 
 // ---------------------------------------------------------------------------
+// Engine spec — public, frozen snapshot of the rules above.
+//
+// Read by the admin "Recommendation Logic" panel in Brian's Stuff so the
+// source of truth for "what the chatbot recommends" stays here in the
+// engine — there is no separate hand-written doc that can drift. If a
+// rule changes, change it in this file; the panel updates on next load.
+// ---------------------------------------------------------------------------
+
+export interface EngineSpec {
+  durationHours: Record<Duration, number>;
+  boatBachRate: number;
+  boatBachTypes: EventType[];
+  formulas: { boatBach: string; everythingElse: string; ice: string };
+  splits: {
+    boatBach: Record<string, number>;
+    everythingElseNoKits: Record<string, number>;
+    everythingElseWithKits: Record<string, number>;
+  };
+  servingsPerUnit: Record<string, number>;
+  estimatedPrices: Record<string, number>;
+  productMix: {
+    beer: { product: string; share: number }[];
+    seltzers: { product: string; share: number }[];
+    wine: { product: string; share: number }[];
+    spirits: { product: string; share: number }[];
+    cocktailKits: { product: string }[];
+  };
+  searchOverrides: Record<string, { search: string; variantHint?: string }>;
+}
+
+export const ENGINE_SPEC: EngineSpec = {
+  durationHours: DURATION_HOURS,
+  boatBachRate: BOAT_BACH_RATE,
+  boatBachTypes: BOAT_BACH_TYPES,
+  formulas: {
+    boatBach: 'totalDrinks = ceil(guests × hours × 2)',
+    everythingElse: 'totalDrinks = ceil(guests × (hours + 1))   // heavier first hour',
+    ice: 'iceBags = ceil(guests / 10)   // always, every order',
+  },
+  splits: {
+    // Boat/Bach uses equal split across selected categories; this is
+    // the base table (1/3 each when all five are selected).
+    boatBach: {
+      beer: 1 / 3,
+      seltzers: 1 / 3,
+      'cocktail-kits': 1 / 3,
+      wine: 1 / 3,
+      spirits: 1 / 3,
+    },
+    everythingElseNoKits: EVERYTHING_ELSE_BASE_SPLIT,
+    everythingElseWithKits: EVERYTHING_ELSE_KITS_SPLIT,
+  },
+  servingsPerUnit: SERVINGS_PER_UNIT,
+  estimatedPrices: ESTIMATED_PRICES,
+  productMix: {
+    beer: [
+      { product: 'Miller Lite 24pk', share: 0.4 },
+      { product: 'Modelo Especial 24pk', share: 0.4 },
+      { product: 'Austin Beerworks Variety 12pk', share: 0.2 },
+    ],
+    seltzers: [
+      { product: 'High Noon Variety 12pk', share: 0.4 },
+      { product: 'White Claw Variety 24pk', share: 0.3 },
+      { product: 'Surfside Starter Pack', share: 0.3 },
+    ],
+    wine: [
+      { product: 'Dark Horse Pinot Grigio', share: 0.5 },
+      { product: '14 Hands Cabernet Sauvignon', share: 0.5 },
+    ],
+    spirits: [
+      { product: 'Espolon Tequila Blanco', share: 0.4 },
+      { product: "Tito's Handmade Vodka 1L", share: 0.3 },
+      { product: 'Still Austin Bourbon', share: 0.1 },
+      { product: 'Island Getaway White Rum', share: 0.1 },
+      { product: 'Dripping Springs Artisan Gin', share: 0.1 },
+    ],
+    cocktailKits: [
+      { product: 'Lady Bird Margarita' },
+      { product: 'Barton Springs Mojito' },
+      { product: 'Eastside Gin & Tonic' },
+    ],
+  },
+  searchOverrides: SEARCH_OVERRIDES,
+};
+
+// ---------------------------------------------------------------------------
 // Quiz stepper functions (unchanged -- used by standalone quiz page)
 // ---------------------------------------------------------------------------
 

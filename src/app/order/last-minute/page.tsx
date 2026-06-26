@@ -113,6 +113,11 @@ function LastMinuteRedirectInner(): ReactElement {
 
         const premierAddress = affiliateCode ? getAffiliateDefaultAddress(affiliateCode) : null;
 
+        // NOTE: we no longer pre-set isLastMinute=true. The dashboard's
+        // delivery-window gate (Today/Tomorrow vs Future) now fires on
+        // first dashboard view and lets the customer pick. This URL
+        // becomes a generic "start a fresh order" entry that still spins
+        // up the GroupOrderV2 but defers the menu decision to the gate.
         const group = await createDashboardOrderV2({
           hostName: nameParam || 'Party Host',
           partyType,
@@ -122,7 +127,6 @@ function LastMinuteRedirectInner(): ReactElement {
           name: nameParam ? `${nameParam}'s Order` : undefined,
           deliveryAddress: premierAddress || undefined,
           tabName: premierAddress ? 'Marina Delivery' : undefined,
-          isLastMinute: true,
         });
 
         const host = group.participants.find((p) => p.isHost);

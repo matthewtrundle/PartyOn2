@@ -21,13 +21,18 @@ const GOLD = '#F2D34F';
 // Mirrors DeliveryWindowGate — keep in sync.
 const EXEMPT_PATHS = new Set<string>([
   '/austin-bachelor-party-delivery',
+  '/austin-bachelor-party-delivery-ai-test',
   '/austin-bachelorette-party-delivery',
   '/austin-corporate-event-delivery',
   '/austin-wedding-weekend-delivery',
   '/austin-wedding-venue-boats',
   '/event-quiz',
+  '/events/4th-of-july-disco-cruise',
 ]);
-const EXEMPT_PREFIXES = ['/admin', '/ops', '/dashboard', '/api', '/partners', '/affiliate', '/checkout', '/invoice', '/cart'];
+// /dashboard intentionally NOT exempt — the chip shows up so the
+// customer can re-pick their delivery window mid-flow if the gate's
+// initial choice was wrong.
+const EXEMPT_PREFIXES = ['/admin', '/ops', '/api', '/partners', '/affiliate', '/checkout', '/invoice', '/cart'];
 
 function isExempt(pathname: string | null): boolean {
   if (!pathname) return true;

@@ -6,6 +6,8 @@ import EventsView from '@/components/admin/EventsView';
 import LeadMagnetView from '@/components/admin/LeadMagnetView';
 import ExperimentsView from '@/components/admin/ExperimentsView';
 import SeoIntelligenceView from '@/components/admin/SeoIntelligenceView';
+import OrderPathwaysView from '@/components/admin/OrderPathwaysView';
+import RecommendationLogicView from '@/components/admin/RecommendationLogicView';
 import EnrichmentDocsView from '@/components/admin/EnrichmentDocsView';
 import BriansStuffTabs from './BriansStuffTabs';
 
@@ -37,6 +39,8 @@ export default async function Page({ searchParams }: { searchParams: SP }) {
     'events',
     'magnets',
     'seo',
+    'pathways',
+    'logic',
     'docs',
   ] as const;
   const initialTab = (
@@ -55,6 +59,8 @@ export default async function Page({ searchParams }: { searchParams: SP }) {
       events={<EventsView />}
       magnets={<LeadMagnetView />}
       seo={<SeoIntelligenceView />}
+      pathways={<OrderPathwaysView />}
+      logic={<RecommendationLogicView />}
       docs={<EnrichmentDocsView />}
     />
   );

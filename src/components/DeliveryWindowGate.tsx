@@ -3,10 +3,16 @@
 /**
  * Delivery-window question for the order flow.
  *
- * Shows ONLY on the order entry page (/order and its sub-steps) — i.e.
- * after the visitor clicks "Order" / starts an order. It must NOT appear
- * on the homepage, marketing/landing pages, invite pages, etc.: a
- * full-screen modal on first paint there tanks bounce and is off-context.
+ * Fires on TWO surfaces:
+ *   /order/*     — the dedicated order entry page (and any sub-steps),
+ *                  where every "Order" / "Start an order" CTA leads.
+ *   /dashboard/* — first dashboard view, per founder's explicit ask
+ *                  ("Once they get to the dashboard, it should show the
+ *                  pop-up modal").
+ *
+ * Stays closed everywhere else — homepage, marketing pages, invite
+ * pages, partner pages. A full-screen modal on first paint there tanks
+ * bounce and is off-context.
  *
  * Asks "When is this delivery?" with two big buttons:
  *
@@ -31,19 +37,24 @@ const NAVY = '#0A1F33';
 const GOLD = '#F2D34F';
 
 /**
- * The gate runs ONLY on the order flow — the dedicated /order entry page
- * (and any sub-steps), which is where every "Order" / "Start an order"
- * CTA leads. Everywhere else on the site it stays closed: the date is
- * either irrelevant (homepage, marketing/invite pages) or already pinned
- * by the caller's context (dashboard, checkout, invoice). Landing-page
- * order flows capture the window through their own date pickers.
+ * Active prefixes — anywhere the path starts with one of these, the
+ * gate fires (once per 24h). Everywhere else it stays closed.
  */
-const ORDER_FLOW_PREFIX = '/order';
+// Two surfaces fire the gate:
+//   /order/*    — the dedicated order entry flow (upstream policy).
+//   /dashboard/* — every customer landing on a dashboard for the first
+//                  time, per founder's explicit ask: "Once they get to
+//                  the dashboard, it should show the pop-up modal."
+//
+// Once the visitor picks, the choice persists in localStorage for 24h
+// (`pod_delivery_window`) so they aren't re-asked as they navigate.
+const ACTIVE_PREFIXES = ['/order', '/dashboard'];
 
-function isOrderFlow(pathname: string | null): boolean {
+function isGateActive(pathname: string | null): boolean {
   if (!pathname) return false;
-  // Matches /order and /order/<step>, but NOT /order-now (a redirect) or /orders.
-  return pathname === ORDER_FLOW_PREFIX || pathname.startsWith(`${ORDER_FLOW_PREFIX}/`);
+  return ACTIVE_PREFIXES.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`),
+  );
 }
 
 function isEmbeddedContext(): boolean {
@@ -68,7 +79,7 @@ export default function DeliveryWindowGate() {
 
   useEffect(() => {
     // Only on the order flow; stay closed everywhere else + embedded views.
-    if (!isOrderFlow(pathname) || isEmbeddedContext()) {
+    if (!isGateActive(pathname) || isEmbeddedContext()) {
       setIsVisible(false);
       return;
     }

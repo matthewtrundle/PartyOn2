@@ -64,6 +64,15 @@ type Props = {
    */
   lastMinuteCatalog?: Catalog;
   upsellProducts?: UpsellProducts;
+  /**
+   * Optional content block injected just below the trust bar / above
+   * "PAIN → SOLUTION". Used by the AI-test bachelor page to drop an
+   * AIPartyChatBar in the middle of the funnel without forking the
+   * whole template. When `undefined`, nothing renders — every existing
+   * landing page passes nothing, so behavior on the live site is
+   * identical.
+   */
+  aiChatSlot?: ReactNode;
 };
 
 export default function LandingPageTemplate({
@@ -71,6 +80,7 @@ export default function LandingPageTemplate({
   catalog,
   lastMinuteCatalog,
   upsellProducts,
+  aiChatSlot,
 }: Props) {
   const [builderOpen, setBuilderOpen] = useState(false);
   const [quickBuyPkg, setQuickBuyPkg] = useState<Package | null>(null);
@@ -407,6 +417,11 @@ export default function LandingPageTemplate({
           ))}
         </div>
       </section>
+
+      {/* OPTIONAL AI CHAT SLOT — only the AI-test bachelor page passes
+          this. Sits between the trust bar and the pain/solution section
+          so the bar lives in the "middle of the page" per the brief. */}
+      {aiChatSlot}
 
       {/* PAIN → SOLUTION */}
       <section className="py-20" style={{ background: T.cream }}>

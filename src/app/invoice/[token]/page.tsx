@@ -21,6 +21,11 @@ export default function InvoicePage(): ReactElement {
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [updatingItems, setUpdatingItems] = useState(false);
 
+  // Pre-checked 21+ acknowledgement — replaces the old site-wide
+  // age-verification modal. Customer can uncheck to block payment;
+  // legal control remains carding at the door.
+  const [ageConfirmed, setAgeConfirmed] = useState(true);
+
   // Discount code state
   const [discountInput, setDiscountInput] = useState('');
   const [discountLoading, setDiscountLoading] = useState(false);
@@ -483,9 +488,30 @@ export default function InvoicePage(): ReactElement {
           {/* Pay Button */}
           {isPayable && (
             <div className="p-6">
+              {/* 21+ acknowledgement — pre-checked, customer can uncheck.
+                  Replaces the old site-wide age-verification modal. */}
+              <label className="flex items-start gap-2.5 mb-4 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={ageConfirmed}
+                  onChange={(e) => setAgeConfirmed(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 rounded border-gray-300 text-brand-blue focus:ring-brand-blue cursor-pointer"
+                />
+                <span className="text-sm text-gray-800 leading-snug">
+                  <span className="font-semibold">
+                    I&apos;m 21+ and confirm someone 21+ will be at the
+                    delivery address
+                  </span>{' '}
+                  to accept the order and show ID.{' '}
+                  <span className="text-gray-500">
+                    Required — TABC rules. No ID at the door means we leave
+                    with the order.
+                  </span>
+                </span>
+              </label>
               <button
                 onClick={handlePayNow}
-                disabled={paymentLoading || updatingItems}
+                disabled={paymentLoading || updatingItems || !ageConfirmed}
                 className="w-full py-4 bg-brand-yellow hover:bg-yellow-600 text-gray-900 font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {paymentLoading ? (
