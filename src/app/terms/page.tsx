@@ -100,7 +100,7 @@ export default function TermsPage() {
             <div>
               <h2 className="font-heading text-2xl text-gray-900 mb-4 tracking-[0.1em]">9. Text Messaging (SMS)</h2>
               <p className="text-gray-600 leading-relaxed mb-4">
-                When you provide your mobile number, you consent to receive text messages from Party On Delivery related to your orders and customer service, including order confirmations, delivery status and scheduling updates, review requests, and replies to your questions. Consent is not a condition of purchase.
+                When you provide your mobile number, you consent to receive text messages from Party On Delivery related to your orders and customer service, including order confirmations, delivery status and scheduling updates, group order coordination links, review requests, reminders to complete an unfinished order, and replies to your questions. Consent is not a condition of purchase.
               </p>
               <ul className="text-gray-600 space-y-2 list-disc pl-6 mb-4">
                 <li>Message frequency varies based on your order activity.</li>
