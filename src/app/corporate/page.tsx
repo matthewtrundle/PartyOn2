@@ -9,8 +9,12 @@ import CorporateEventCalculatorLanding from '@/components/CorporateEventCalculat
 import ScrollRevealCSS from '@/components/ui/ScrollRevealCSS';
 import { trackMetaEvent } from '@/components/MetaPixel';
 import { trackPageView, ANALYTICS_EVENTS } from '@/lib/analytics/track';
+import { trackCTAClick } from '@/lib/analytics/ga4-events';
+import { useHeroExperiment } from '@/hooks/useHeroExperiment';
+import { trackExperimentClick } from '@/hooks/useExperimentVariant';
 
 export default function CorporateLandingPage() {
+  const hero = useHeroExperiment('/corporate');
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -317,26 +321,28 @@ export default function CorporateLandingPage() {
 
           <h1 className="sr-only">Austin Corporate Event Alcohol Delivery</h1>
           <h2 className="font-heading text-3xl sm:text-4xl md:text-5xl lg:text-6xl mb-6 tracking-tight sm:tracking-[0.05em] max-w-4xl leading-snug sm:leading-tight">
-            Austin&apos;s Easiest Way to Stock the Bar for Company Parties.
+            {hero.content?.headline ?? "Austin's Easiest Way to Stock the Bar for Company Parties."}
           </h2>
           <p className="text-lg sm:text-xl md:text-2xl max-w-3xl leading-relaxed mb-8">
-            From 20 to 500+ guests—beer, wine, spirits, mixers, and ice delivered cold and on time. Simple planning, zero stress.
+            {hero.content?.subhead ?? 'From 20 to 500+ guests—beer, wine, spirits, mixers, and ice delivered cold and on time. Simple planning, zero stress.'}
           </p>
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mt-2 flex-wrap">
             <button
-              onClick={handleScheduleCall}
+              onClick={() => { const label = hero.content?.ctaText ?? 'SCHEDULE A CALL'; trackCTAClick(label, '#', 'hero', hero.experimentId ?? undefined, hero.variantId ?? undefined); if (hero.experimentId && hero.variantId) trackExperimentClick(hero.experimentId, hero.variantId, label); handleScheduleCall(); }}
               className="px-8 py-4 bg-brand-yellow text-black hover:bg-yellow-600 transition-colors tracking-[0.1em] text-sm font-medium"
             >
-              SCHEDULE A CALL
+              {hero.content?.ctaText ?? 'SCHEDULE A CALL'}
             </button>
             <button
-              onClick={handleScheduleCall}
+              onClick={() => { trackCTAClick('GET A QUOTE', '#', 'hero'); handleScheduleCall(); }}
               className="px-8 py-4 border-2 border-white text-white hover:bg-white hover:text-gray-900 transition-all duration-300 tracking-[0.1em] text-sm font-medium"
             >
               GET A QUOTE
             </button>
             <Link href="/plan-event">
-              <button className="px-8 py-4 border-2 border-brand-yellow text-brand-yellow hover:bg-brand-yellow hover:text-gray-900 transition-all duration-300 tracking-[0.1em] text-sm font-medium">
+              <button
+                onClick={() => trackCTAClick('GET A QUICK ESTIMATE', '/plan-event', 'hero')}
+                className="px-8 py-4 border-2 border-brand-yellow text-brand-yellow hover:bg-brand-yellow hover:text-gray-900 transition-all duration-300 tracking-[0.1em] text-sm font-medium">
                 GET A QUICK ESTIMATE
               </button>
             </Link>
@@ -524,13 +530,13 @@ export default function CorporateLandingPage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
-                onClick={handleScheduleCall}
+                onClick={() => { trackCTAClick('SCHEDULE A CALL', '#', 'packages'); handleScheduleCall(); }}
                 className="px-8 py-4 bg-brand-yellow text-gray-900 hover:bg-yellow-600 transition-colors tracking-[0.1em] text-sm font-medium"
               >
                 SCHEDULE A CALL
               </button>
               <button
-                onClick={handleScheduleCall}
+                onClick={() => { trackCTAClick('GET A QUOTE', '#', 'packages'); handleScheduleCall(); }}
                 className="px-8 py-4 border-2 border-brand-yellow text-brand-yellow hover:bg-yellow-50 transition-colors tracking-[0.1em] text-sm font-medium"
               >
                 GET A QUOTE
@@ -758,7 +764,9 @@ export default function CorporateLandingPage() {
               Read our complete guide to corporate event planning—venues, budgets, catering, team building, and more.
             </p>
             <Link href="/corporate-events-guide">
-              <button className="px-8 py-4 bg-brand-yellow text-gray-900 hover:bg-yellow-600 transition-colors tracking-[0.1em] text-sm font-medium">
+              <button
+                onClick={() => trackCTAClick('READ THE FULL GUIDE', '/corporate-events-guide', 'final_cta')}
+                className="px-8 py-4 bg-brand-yellow text-gray-900 hover:bg-yellow-600 transition-colors tracking-[0.1em] text-sm font-medium">
                 READ THE FULL GUIDE
               </button>
             </Link>
@@ -825,7 +833,7 @@ export default function CorporateLandingPage() {
               One call, one vendor, zero stress. Get started with a custom quote today.
             </p>
             <button
-              onClick={handleScheduleCall}
+              onClick={() => { trackCTAClick('SCHEDULE A CALL', '#', 'final_cta'); handleScheduleCall(); }}
               className="px-8 py-4 bg-white text-brand-yellow hover:bg-gray-100 transition-colors tracking-[0.1em] text-sm font-medium"
             >
               SCHEDULE A CALL

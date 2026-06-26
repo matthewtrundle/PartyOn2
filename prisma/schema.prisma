@@ -167,6 +167,7 @@ model Experiment {
   goalMetric     String           @map("goal_metric")
   goalValue      String?          @map("goal_value")
   winningVariant String?          @map("winning_variant")
+  winnerReason   String?          @map("winner_reason") @db.Text
   confidence     Float?
   createdAt      DateTime         @default(now()) @map("created_at")
   updatedAt      DateTime         @updatedAt @map("updated_at")
@@ -189,6 +190,9 @@ model ExperimentVariant {
   experimentId String   @map("experiment_id")
   name         String
   description  String?
+  /// Self-serve hero-copy payload for this variant: { eyebrow?, headline?, subhead?, ctaText? }.
+  /// Null = render the page's default copy (control).
+  content      Json?
   isControl    Boolean  @default(false) @map("is_control")
   weight       Int      @default(50)
   impressions  Int      @default(0)

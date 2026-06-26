@@ -42,11 +42,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Find the variant by matching the content ID to variant name
-    const dbVariant = experiment.variants.find((v) => {
-      const contentId = mapVariantNameToContentId(v.name);
-      return contentId === variantId;
-    });
+    // Resolve the variant. Self-serve hero tests pass the real DB variant id;
+    // the legacy homepage hero passes a content id (control/variant-a/…). Accept
+    // both: match the DB id first, then fall back to the name→content-id mapping.
+    const dbVariant =
+      experiment.variants.find((v) => v.id === variantId) ??
+      experiment.variants.find((v) => mapVariantNameToContentId(v.name) === variantId);
 
     if (!dbVariant) {
       // Variant not found - this might happen if variant was deleted

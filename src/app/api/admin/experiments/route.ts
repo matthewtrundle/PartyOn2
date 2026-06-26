@@ -8,6 +8,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import { requireOpsAuth } from '@/lib/auth/ops-session';
+import { computeSignificance, type VariantStat } from '@/lib/analytics/experiment-significance';
+
+// Hero-copy payload an operator can set per variant (all fields optional —
+// an absent field falls back to the page's default copy).
+const VariantContentSchema = z.object({
+  eyebrow: z.string().max(200).optional(),
+  headline: z.string().max(300).optional(),
+  subhead: z.string().max(500).optional(),
+  ctaText: z.string().max(120).optional(),
+});
 
 // Validation schema for creating an experiment
 const CreateExperimentSchema = z.object({
@@ -22,8 +32,20 @@ const CreateExperimentSchema = z.object({
     description: z.string().optional(),
     isControl: z.boolean().default(false),
     weight: z.number().min(0).max(100).default(50),
+    content: VariantContentSchema.optional(),
   })).min(2, 'At least 2 variants required'),
 });
+
+/**
+ * Per-variant success count for the significance test: for click-style goals the
+ * "success" is a click; for conversion/revenue goals it's a recorded conversion.
+ */
+function successCount(
+  goalMetric: string,
+  v: { clicks: number; conversions: number }
+): number {
+  return goalMetric === 'cta_click' || goalMetric === 'scroll_depth' ? v.clicks : v.conversions;
+}
 
 /**
  * GET /api/admin/experiments
@@ -84,11 +106,23 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         ? Math.floor((Date.now() - startDate.getTime()) / (1000 * 60 * 60 * 24))
         : 0;
 
+      // Two-proportion z-test significance over the variant counters, using the
+      // goal-appropriate success count (clicks for click goals, conversions otherwise).
+      const sigStats: VariantStat[] = exp.variants.map((v) => ({
+        id: v.id,
+        name: v.name,
+        isControl: v.isControl,
+        impressions: v.impressions,
+        conversions: successCount(exp.goalMetric, v),
+      }));
+      const significance = computeSignificance(sigStats);
+
       return {
         ...exp,
         totalImpressions,
         uplift: Math.round(uplift * 10) / 10,
         daysRunning,
+        significance,
         variants: exp.variants.map((v) => ({
           ...v,
           clickRate: v.impressions > 0 ? (v.clicks / v.impressions) * 100 : 0,
@@ -163,6 +197,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             description: v.description,
             isControl: v.isControl,
             weight: v.weight,
+            content: v.content ?? undefined,
           })),
         },
       },

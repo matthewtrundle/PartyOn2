@@ -14,7 +14,7 @@ import { PhoneIcon, ChatIcon, CheckIcon } from './sections/icons';
 import type { LandingConfig, Catalog, Package } from './types';
 import type { UpsellProducts } from '@/lib/landing/getUpsellProducts';
 import { generateFAQSchema } from '@/lib/seo/schemas';
-import { trackContactClick } from '@/lib/analytics/ga4-events';
+import { trackContactClick, trackCTAClick } from '@/lib/analytics/ga4-events';
 import { experimentsForPath, type BachelorHeroPayload, type CtaCopyPayload } from '@/lib/experiments/registry';
 import { useVariant } from '@/lib/experiments/clientAssign';
 import { useFunnelTracker } from '@/lib/experiments/funnelTrack';
@@ -317,7 +317,10 @@ export default function LandingPageTemplate({
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4">
               <button
                 type="button"
-                onClick={openBuilder}
+                onClick={() => {
+                  trackCTAClick(primaryCtaText, '#builder', 'hero');
+                  openBuilder();
+                }}
                 className="inline-flex items-center justify-center font-bold text-base sm:text-lg px-8 py-5 rounded-lg tracking-[0.08em] transition-colors shadow-xl"
                 style={{ background: T.primary, color: T.primaryText }}
               >
@@ -441,10 +444,12 @@ export default function LandingPageTemplate({
                 pkg={pkg}
                 theme={T}
                 onCta={() => {
+                  trackCTAClick(pkg.name, '#builder', 'package_card');
                   onPackageClick(pkg, 'builder');
                   openBuilder();
                 }}
                 onBuyNow={(p) => {
+                  trackCTAClick(p.name, '#quickbuy', 'package_card');
                   onPackageClick(p, 'quickbuy');
                   setQuickBuyPkg(p);
                 }}
@@ -776,7 +781,10 @@ export default function LandingPageTemplate({
             <div className="flex flex-col sm:flex-row gap-4 justify-center flex-wrap">
               <button
                 type="button"
-                onClick={openBuilder}
+                onClick={() => {
+                  trackCTAClick(config.ctaText, '#builder', 'final_cta');
+                  openBuilder();
+                }}
                 className="inline-flex items-center justify-center font-bold text-lg px-10 py-5 rounded-lg tracking-[0.08em] transition-colors shadow-xl"
                 style={{ background: T.primary, color: T.primaryText }}
               >
@@ -844,7 +852,10 @@ export default function LandingPageTemplate({
       <div className="md:hidden fixed bottom-0 inset-x-0 z-50 bg-white border-t border-gray-200 px-4 py-3 flex gap-2.5 shadow-2xl">
         <button
           type="button"
-          onClick={openBuilder}
+          onClick={() => {
+            trackCTAClick('Build my package', '#builder', 'package_builder');
+            openBuilder();
+          }}
           className="flex-1 inline-flex items-center justify-center border-2 font-bold py-3 rounded-lg text-sm whitespace-nowrap"
           style={{ borderColor: T.navy, color: T.navy }}
         >
@@ -852,7 +863,10 @@ export default function LandingPageTemplate({
         </button>
         <button
           type="button"
-          onClick={openBuilder}
+          onClick={() => {
+            trackCTAClick('Checkout now', '#builder', 'package_builder');
+            openBuilder();
+          }}
           className="flex-1 inline-flex items-center justify-center font-bold py-3 rounded-lg text-sm whitespace-nowrap"
           style={{ background: T.primary, color: T.primaryText }}
         >

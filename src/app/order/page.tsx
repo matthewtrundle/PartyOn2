@@ -27,6 +27,7 @@ import Image from 'next/image';
 import { createDashboardOrderV2 } from '@/lib/group-orders-v2/api-client';
 import type { PartyType, DashboardSource, DeliveryContextType } from '@/lib/group-orders-v2/types';
 import { getAffiliateOrderDefaults } from '@/lib/affiliates/presets';
+import { trackCTAClick } from '@/lib/analytics/ga4-events';
 import { getEventPreset } from '@/lib/events/event-presets';
 
 const PARTY_TYPE_MAP: Record<string, PartyType> = {
@@ -334,7 +335,7 @@ function OrderRedirectInner(): ReactElement {
             <button
               key={chip.partyType}
               type="button"
-              onClick={() => runCreate(chip.partyType)}
+              onClick={() => { trackCTAClick(chip.label, '/order', 'party_type_chip'); runCreate(chip.partyType); }}
               disabled={busy}
               className="flex flex-col items-center justify-center gap-2 px-4 py-5 md:py-6 bg-white rounded-2xl shadow-warm-sm hover:shadow-warm-md active:bg-cream font-heading font-semibold tracking-[0.04em] text-gray-900 transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
             >

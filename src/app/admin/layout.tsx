@@ -168,13 +168,12 @@ export default function AdminLayout({ children }: AdminLayoutProps): ReactElemen
   // Navigation items (admin-only strategic/management features)
   const navItems = [
     { href: '/admin/strategy', label: 'Game Plan' },
-    { href: '/admin/dashboard', label: 'Analytics' },
+    { href: '/admin/analytics', label: 'Analytics' },
     { href: '/admin/customers', label: 'Customers' },
     { href: '/admin/emails', label: 'Emails' },
     { href: '/admin/email-signups', label: 'Email Signups' },
     { href: '/admin/sync', label: 'Sync' },
     { href: '/admin/reports', label: 'Reports' },
-    { href: '/admin/experiments', label: 'Experiments' },
     { href: '/admin/promotions', label: 'Promotions' },
     { href: '/admin/affiliates', label: 'Affiliates' },
     { href: '/admin/brians-stuff', label: "Brian's Stuff" },

@@ -92,6 +92,7 @@ const FOLDER_MAP = [
   { remote: 'docs/marketing/weekly', local: path.join(VAULT, 'Briefings') },
   { remote: 'docs/marketing/recommendations', local: path.join(VAULT, 'Recommendations') },
   { remote: 'docs/marketing/decisions', local: path.join(VAULT, 'Decisions') },
+  { remote: 'docs/marketing/experiments', local: path.join(VAULT, 'Experiments') },
 ];
 
 const SYNC_STATE_PATH = path.join(VAULT, '.sync-state.json');

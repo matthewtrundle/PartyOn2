@@ -100,10 +100,21 @@ export interface PageEngagement {
 /**
  * Per-page engagement summary for landing-page diagnostics.
  * Bounce rate = % of sessions that only saw this one page and left without scrolling.
+ *
+ * @param paths - When provided, restrict results to these exact pathnames
+ *   (e.g. a landing page's canonical + alias routes). Bounce is still computed
+ *   against the session's full path set, so a visitor who continued to another
+ *   page is correctly counted as not-bounced.
  */
-export async function getPageEngagement(windowDays = 30, limit = 25): Promise<PageEngagement[]> {
+export async function getPageEngagement(
+  windowDays = 30,
+  limit = 25,
+  paths?: string[]
+): Promise<PageEngagement[]> {
   const since = new Date();
   since.setDate(since.getDate() - windowDays);
+
+  const pathFilter = paths && paths.length > 0 ? paths : null;
 
   const rows = await prisma.$queryRawUnsafe<
     Array<{
@@ -126,6 +137,7 @@ export async function getPageEngagement(windowDays = 30, limit = 25): Promise<Pa
                  ELSE 0 END)                             AS max_scroll
       FROM analytics_events
       WHERE occurred_at >= $1 AND path IS NOT NULL
+        AND ($3::text[] IS NULL OR path = ANY($3::text[]))
       GROUP BY path, session_id
     ),
     session_path_counts AS (
@@ -152,7 +164,8 @@ export async function getPageEngagement(windowDays = 30, limit = 25): Promise<Pa
     LIMIT $2
   `,
     since,
-    limit
+    limit,
+    pathFilter
   );
 
   return rows.map((r) => {

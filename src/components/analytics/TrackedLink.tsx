@@ -7,12 +7,12 @@
 
 import Link from 'next/link';
 import type { ReactElement, ReactNode } from 'react';
-import { trackCTAClick } from '@/lib/analytics/ga4-events';
+import { trackCTAClick, type CtaSection } from '@/lib/analytics/ga4-events';
 
 interface TrackedLinkProps {
   href: string;
   children: ReactNode;
-  section: 'hero' | 'choose_path' | 'services' | 'footer_cta' | 'navigation' | 'group_order_strip';
+  section: CtaSection;
   buttonText: string;
   className?: string;
 }
