@@ -3,9 +3,15 @@
 /**
  * 4th of July Disco Cruise Drink Delivery — 3-step invite.
  *
- *   Step 1 · Choose your favorite cocktails and beverages
+ *   Step 1 · Choose your favorite cocktails & beverages
  *   Step 2 · Schedule delivery   (pick 1 of 3 fixed slots)
  *   Step 3 · Party On!           (contact + pay)
+ *
+ * Receives a pre-grouped list of product sections (boat-party order:
+ * cocktails first, then seltzers, beer, spirits, wine, mixers, supplies)
+ * from the server page. Each section renders a product-card grid with
+ * the image, title, price, and +/- qty controls — same visual language
+ * as the dashboard's ProductBrowse so the page feels native.
  *
  * Address is hard-coded (Premier Party Cruises marina). No group
  * ordering — each guest places an individual DraftOrder and gets their
@@ -14,7 +20,23 @@
  */
 
 import { useMemo, useState, type ReactElement, type FormEvent } from 'react';
-import type { Catalog, BuilderProduct, Selection } from '@/components/landing/types';
+
+export type DiscoCruiseProduct = {
+  id: string;
+  variantId: string;
+  title: string;
+  price: number;
+  imageUrl?: string;
+  handle: string;
+};
+
+export type DiscoCruiseSection = {
+  type: string;
+  emoji: string;
+  products: DiscoCruiseProduct[];
+};
+
+type Selection = Record<string, number>;
 
 const NAVY = '#0A1F33';
 const GOLD = '#F2D34F';
@@ -68,9 +90,9 @@ const SLOTS: DeliverySlot[] = [
   },
 ];
 
-type Props = { catalog: Catalog };
+type Props = { sections: DiscoCruiseSection[] };
 
-export default function DiscoCruiseInvite({ catalog }: Props): ReactElement {
+export default function DiscoCruiseInvite({ sections }: Props): ReactElement {
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [selection, setSelection] = useState<Selection>({});
   const [slotId, setSlotId] = useState<string>(SLOTS[0].id);
@@ -81,15 +103,23 @@ export default function DiscoCruiseInvite({ catalog }: Props): ReactElement {
   const [error, setError] = useState<string | null>(null);
   const [ageConfirmed, setAgeConfirmed] = useState(true);
 
-  // Subtotal — derived from selection × productById.
+  // Flat product index for cheap subtotal + summary lookups.
+  const productById = useMemo(() => {
+    const map = new Map<string, DiscoCruiseProduct>();
+    for (const section of sections) {
+      for (const p of section.products) map.set(p.id, p);
+    }
+    return map;
+  }, [sections]);
+
   const subtotal = useMemo(() => {
     let sum = 0;
     for (const [id, qty] of Object.entries(selection)) {
-      const p = catalog.productById[id];
+      const p = productById.get(id);
       if (p && qty > 0) sum += p.price * qty;
     }
     return sum;
-  }, [selection, catalog.productById]);
+  }, [selection, productById]);
 
   const itemCount = useMemo(
     () => Object.values(selection).reduce((s, q) => s + q, 0),
@@ -130,8 +160,8 @@ export default function DiscoCruiseInvite({ catalog }: Props): ReactElement {
     const items = Object.entries(selection)
       .filter(([, qty]) => qty > 0)
       .map(([id, qty]) => {
-        const p = catalog.productById[id];
-        return p?.sku ? { handle: p.sku, qty } : null;
+        const p = productById.get(id);
+        return p?.handle ? { handle: p.handle, qty } : null;
       })
       .filter((x): x is { handle: string; qty: number } => x !== null);
 
@@ -189,12 +219,12 @@ export default function DiscoCruiseInvite({ catalog }: Props): ReactElement {
   return (
     <main className="min-h-screen" style={{ background: CREAM }}>
       <Hero />
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 pb-20">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-32">
         <StepHeader step={step} setStep={setStep} canAdvance={canAdvanceFrom} />
 
         {step === 1 && (
           <StepOne
-            catalog={catalog}
+            sections={sections}
             selection={selection}
             inc={inc}
             dec={dec}
@@ -202,10 +232,7 @@ export default function DiscoCruiseInvite({ catalog }: Props): ReactElement {
         )}
 
         {step === 2 && (
-          <StepTwo
-            slotId={slotId}
-            setSlotId={setSlotId}
-          />
+          <StepTwo slotId={slotId} setSlotId={setSlotId} />
         )}
 
         {step === 3 && (
@@ -214,7 +241,7 @@ export default function DiscoCruiseInvite({ catalog }: Props): ReactElement {
             itemCount={itemCount}
             subtotal={subtotal}
             selection={selection}
-            catalog={catalog}
+            productById={productById}
             name={name}
             email={email}
             phone={phone}
@@ -228,44 +255,61 @@ export default function DiscoCruiseInvite({ catalog }: Props): ReactElement {
             onSubmit={handleSubmit}
           />
         )}
-
-        {/* Step nav */}
-        <div className="mt-6 flex items-center justify-between gap-3">
-          <button
-            type="button"
-            onClick={() => setStep((s) => (s > 1 ? ((s - 1) as 1 | 2 | 3) : s))}
-            disabled={step === 1}
-            className="rounded-lg px-4 py-3 text-sm font-bold tracking-[0.08em] transition-transform hover:scale-[1.02] disabled:opacity-30 disabled:cursor-not-allowed"
-            style={{
-              background: '#FFFFFF',
-              color: NAVY,
-              border: `2px solid ${NAVY}`,
-            }}
-          >
-            ← Back
-          </button>
-          {step !== 3 && (
-            <button
-              type="button"
-              onClick={() => {
-                if (canAdvanceFrom(step)) setStep((s) => (s < 3 ? ((s + 1) as 1 | 2 | 3) : s));
-              }}
-              disabled={!canAdvanceFrom(step)}
-              className="rounded-lg px-5 py-3 text-sm sm:text-base font-bold tracking-[0.08em] transition-transform hover:scale-[1.03] disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{
-                background: GOLD,
-                color: NAVY,
-                border: `2px solid ${NAVY}`,
-                boxShadow: `0 3px 0 ${NAVY}`,
-              }}
-            >
-              {step === 1
-                ? `Continue · ${itemCount} item${itemCount === 1 ? '' : 's'} →`
-                : 'Continue →'}
-            </button>
-          )}
-        </div>
       </div>
+
+      {/* Sticky footer cart on step 1 + 2 — same pattern as the dashboard
+          bottom bar so the user always knows where they are. */}
+      {step !== 3 && (
+        <div
+          className="fixed bottom-0 inset-x-0 z-40 border-t-2"
+          style={{ background: '#FFFFFF', borderColor: NAVY, boxShadow: '0 -6px 24px rgba(10,15,25,0.18)' }}
+        >
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+            <div>
+              <div className="text-[10px] font-bold tracking-widest text-gray-500">
+                {itemCount === 0 ? 'YOUR CART' : `${itemCount} ITEM${itemCount === 1 ? '' : 'S'}`}
+              </div>
+              <div
+                className="font-heading text-lg sm:text-2xl font-bold tracking-wide"
+                style={{ color: NAVY }}
+              >
+                ${subtotal.toFixed(2)}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setStep((s) => (s > 1 ? ((s - 1) as 1 | 2 | 3) : s))}
+                disabled={step === 1}
+                className="rounded-lg px-3 sm:px-4 py-3 text-xs sm:text-sm font-bold tracking-[0.08em] transition-transform hover:scale-[1.02] disabled:opacity-30 disabled:cursor-not-allowed"
+                style={{
+                  background: '#FFFFFF',
+                  color: NAVY,
+                  border: `2px solid ${NAVY}`,
+                }}
+              >
+                ← Back
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (canAdvanceFrom(step)) setStep((s) => (s < 3 ? ((s + 1) as 1 | 2 | 3) : s));
+                }}
+                disabled={!canAdvanceFrom(step)}
+                className="rounded-lg px-4 sm:px-6 py-3 text-xs sm:text-base font-bold tracking-[0.08em] transition-transform hover:scale-[1.03] disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  background: GOLD,
+                  color: NAVY,
+                  border: `2px solid ${NAVY}`,
+                  boxShadow: `0 3px 0 ${NAVY}`,
+                }}
+              >
+                {step === 1 ? 'Schedule delivery →' : 'Continue →'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
@@ -292,9 +336,7 @@ function Hero() {
         >
           🎆 PRIVATE EVENT INVITE
         </div>
-        <h1
-          className="font-heading text-3xl md:text-5xl font-bold tracking-wide leading-tight"
-        >
+        <h1 className="font-heading text-3xl md:text-5xl font-bold tracking-wide leading-tight">
           4th of July Disco Cruise
           <br />
           <span style={{ color: GOLD }}>Drink Delivery</span>
@@ -367,73 +409,61 @@ function StepHeader({
 // ─── Step 1 — Product picker ────────────────────────────────────────
 
 function StepOne({
-  catalog,
+  sections,
   selection,
   inc,
   dec,
 }: {
-  catalog: Catalog;
+  sections: DiscoCruiseSection[];
   selection: Selection;
   inc: (id: string) => void;
   dec: (id: string) => void;
 }) {
-  const sections = [
-    { label: 'Beer, Wine & Seltzers', cats: catalog.stepOneCategories },
-    { label: 'Spirits & Cocktails', cats: catalog.stepTwoCategories },
-    { label: 'Sodas, Mixers & Extras', cats: catalog.stepThreeCategories },
-  ];
-
   return (
-    <div className="mt-2">
+    <div className="mt-4 space-y-8">
       {sections.map((section) => (
-        <div key={section.label} className="mb-6">
-          <h2
-            className="font-heading text-xl md:text-2xl font-bold tracking-wide mb-3"
-            style={{ color: NAVY }}
-          >
-            {section.label}
-          </h2>
-          {section.cats.map((cat) => (
-            <CategoryBlock
-              key={cat.key}
-              label={cat.label}
-              products={[...cat.products, ...(cat.extras ?? [])]}
-              selection={selection}
-              inc={inc}
-              dec={dec}
-            />
-          ))}
-        </div>
+        <SectionBlock
+          key={section.type}
+          section={section}
+          selection={selection}
+          inc={inc}
+          dec={dec}
+        />
       ))}
     </div>
   );
 }
 
-function CategoryBlock({
-  label,
-  products,
+function SectionBlock({
+  section,
   selection,
   inc,
   dec,
 }: {
-  label: string;
-  products: BuilderProduct[];
+  section: DiscoCruiseSection;
   selection: Selection;
   inc: (id: string) => void;
   dec: (id: string) => void;
 }) {
-  if (products.length === 0) return null;
   return (
-    <div className="mb-4">
-      <div
-        className="text-xs font-bold tracking-widest mb-2"
-        style={{ color: NAVY }}
-      >
-        {label.toUpperCase()}
+    <section>
+      <div className="flex items-baseline gap-3 mb-3">
+        <span className="text-2xl sm:text-3xl" aria-hidden>
+          {section.emoji}
+        </span>
+        <h2
+          className="font-heading text-xl sm:text-2xl font-bold tracking-wide"
+          style={{ color: NAVY }}
+        >
+          {section.type}
+        </h2>
+        <span className="text-xs sm:text-sm text-gray-500">
+          {section.products.length} {section.products.length === 1 ? 'option' : 'options'}
+        </span>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        {products.map((p) => (
-          <ProductRow
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        {section.products.map((p) => (
+          <ProductCard
             key={p.id}
             product={p}
             qty={selection[p.id] ?? 0}
@@ -442,77 +472,108 @@ function CategoryBlock({
           />
         ))}
       </div>
-    </div>
+    </section>
   );
 }
 
-function ProductRow({
+function ProductCard({
   product,
   qty,
   onInc,
   onDec,
 }: {
-  product: BuilderProduct;
+  product: DiscoCruiseProduct;
   qty: number;
   onInc: () => void;
   onDec: () => void;
 }) {
+  const inCart = qty > 0;
   return (
     <div
-      className="rounded-lg p-3 flex items-center gap-3"
+      className="rounded-xl overflow-hidden flex flex-col transition-transform hover:scale-[1.02]"
       style={{
         background: '#FFFFFF',
-        border: `${qty > 0 ? '2px' : '1.5px'} solid ${qty > 0 ? NAVY : '#E5E7EB'}`,
+        border: `${inCart ? '2.5px' : '1.5px'} solid ${inCart ? NAVY : '#E5E7EB'}`,
+        boxShadow: inCart ? `0 3px 0 ${NAVY}` : '0 1px 2px rgba(0,0,0,0.04)',
       }}
     >
-      <div className="text-2xl flex-shrink-0" aria-hidden>
-        {product.emoji}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="text-sm font-bold truncate" style={{ color: NAVY }}>
-          {product.name}
-        </div>
-        {product.detail && (
-          <div className="text-xs text-gray-500 truncate">{product.detail}</div>
+      <div
+        className="relative w-full aspect-square overflow-hidden"
+        style={{ background: '#F4F4F4' }}
+      >
+        {product.imageUrl ? (
+          // Plain img is fine here — the catalog uses external CDN URLs and
+          // we don't want to wrestle with next.config remote patterns for a
+          // private event page.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={product.imageUrl}
+            alt={product.title}
+            loading="lazy"
+            className="absolute inset-0 w-full h-full object-contain p-2"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center text-4xl opacity-30">
+            🍾
+          </div>
         )}
-        <div className="text-xs font-mono mt-0.5" style={{ color: NAVY }}>
-          ${product.price.toFixed(2)}
-        </div>
+        {inCart && (
+          <div
+            className="absolute top-2 right-2 rounded-full px-2 py-0.5 text-xs font-bold"
+            style={{ background: NAVY, color: GOLD }}
+          >
+            {qty} in cart
+          </div>
+        )}
       </div>
-      <div className="flex items-center gap-1 flex-shrink-0">
-        <button
-          type="button"
-          onClick={onDec}
-          disabled={qty === 0}
-          aria-label="Decrease quantity"
-          className="w-8 h-8 rounded-md text-sm font-bold disabled:opacity-30 transition-transform active:scale-95"
-          style={{
-            background: '#FFFFFF',
-            color: NAVY,
-            border: `1.5px solid ${NAVY}`,
-          }}
-        >
-          −
-        </button>
+      <div className="p-3 flex-1 flex flex-col">
         <div
-          className="w-7 text-center text-sm font-bold"
+          className="text-xs sm:text-sm font-bold leading-tight line-clamp-2"
           style={{ color: NAVY }}
         >
-          {qty}
+          {product.title}
         </div>
-        <button
-          type="button"
-          onClick={onInc}
-          aria-label="Increase quantity"
-          className="w-8 h-8 rounded-md text-sm font-bold transition-transform active:scale-95"
-          style={{
-            background: GOLD,
-            color: NAVY,
-            border: `1.5px solid ${NAVY}`,
-          }}
+        <div
+          className="mt-1 text-sm font-mono"
+          style={{ color: NAVY }}
         >
-          +
-        </button>
+          ${product.price.toFixed(2)}
+        </div>
+        <div className="mt-3 flex items-center justify-between gap-1">
+          <button
+            type="button"
+            onClick={onDec}
+            disabled={qty === 0}
+            aria-label={`Decrease ${product.title}`}
+            className="w-9 h-9 rounded-md text-base font-bold disabled:opacity-30 transition-transform active:scale-95"
+            style={{
+              background: '#FFFFFF',
+              color: NAVY,
+              border: `1.5px solid ${NAVY}`,
+            }}
+          >
+            −
+          </button>
+          <div
+            className="text-base font-bold w-6 text-center"
+            style={{ color: NAVY }}
+          >
+            {qty}
+          </div>
+          <button
+            type="button"
+            onClick={onInc}
+            aria-label={`Add ${product.title}`}
+            className="flex-1 rounded-md py-2 text-xs sm:text-sm font-bold tracking-wide transition-transform active:scale-95"
+            style={{
+              background: GOLD,
+              color: NAVY,
+              border: `1.5px solid ${NAVY}`,
+            }}
+          >
+            {inCart ? '+' : '+ Add'}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -528,7 +589,7 @@ function StepTwo({
   setSlotId: (id: string) => void;
 }) {
   return (
-    <div className="mt-2">
+    <div className="mt-4">
       <p className="text-sm text-gray-700 mb-4">
         Pick your cruise window. We deliver to the dock <strong>one hour
         before the event starts</strong> so your drinks are iced and ready.
@@ -617,7 +678,7 @@ function StepThree({
   itemCount,
   subtotal,
   selection,
-  catalog,
+  productById,
   name,
   email,
   phone,
@@ -634,7 +695,7 @@ function StepThree({
   itemCount: number;
   subtotal: number;
   selection: Selection;
-  catalog: Catalog;
+  productById: Map<string, DiscoCruiseProduct>;
   name: string;
   email: string;
   phone: string;
@@ -650,13 +711,13 @@ function StepThree({
   const lineItems = Object.entries(selection)
     .filter(([, qty]) => qty > 0)
     .map(([id, qty]) => ({
-      product: catalog.productById[id],
+      product: productById.get(id),
       qty,
     }))
-    .filter((x) => x.product);
+    .filter((x): x is { product: DiscoCruiseProduct; qty: number } => !!x.product);
 
   return (
-    <form onSubmit={onSubmit} className="mt-2 space-y-4">
+    <form onSubmit={onSubmit} className="mt-4 space-y-4">
       {/* Order summary */}
       <div
         className="rounded-lg p-4"
@@ -667,12 +728,12 @@ function StepThree({
         </div>
         <ul className="space-y-1 text-sm" style={{ color: NAVY }}>
           {lineItems.map(({ product, qty }) => (
-            <li key={product!.id} className="flex justify-between gap-2">
+            <li key={product.id} className="flex justify-between gap-2">
               <span className="truncate">
-                {qty}× {product!.name}
+                {qty}× {product.title}
               </span>
               <span className="font-mono flex-shrink-0">
-                ${(product!.price * qty).toFixed(2)}
+                ${(product.price * qty).toFixed(2)}
               </span>
             </li>
           ))}
