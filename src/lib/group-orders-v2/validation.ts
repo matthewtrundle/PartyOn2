@@ -135,6 +135,16 @@ export const CreateDashboardSchema = z.object({
   tabName: z.string().max(200).optional(),
   isLastMinute: z.boolean().optional(),
   deliveryAddress: DeliveryAddressSchema.optional(),
+  // Relaxed date check (no Sunday/past block) so preset boat events (which run
+  // on Sundays) can pass a fixed delivery date through the dashboard flow.
+  deliveryDate: z
+    .string()
+    .refine(
+      (v) => !isNaN(new Date(v.includes('T') ? v : `${v}T12:00:00Z`).getTime()),
+      'Invalid delivery date'
+    )
+    .optional(),
+  deliveryTime: z.string().max(100).optional(),
 });
 
 export {
