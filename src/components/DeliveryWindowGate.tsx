@@ -48,6 +48,7 @@ const EXEMPT_PATHS = new Set<string>([
   '/austin-wedding-weekend-delivery',
   '/austin-wedding-venue-boats',
   '/event-quiz',
+  '/events/4th-of-july-disco-cruise',
 ]);
 
 // NOTE: /dashboard intentionally NOT exempt — the gate fires on first

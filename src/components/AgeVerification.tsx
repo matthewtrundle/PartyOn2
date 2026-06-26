@@ -22,6 +22,7 @@ const AGE_GATE_EXEMPT_PATHS = [
   '/austin-wedding-weekend-delivery',
   '/austin-wedding-venue-boats',
   '/event-quiz',
+  '/events/4th-of-july-disco-cruise',
 ]
 
 /**

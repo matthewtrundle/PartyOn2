@@ -68,6 +68,43 @@ export default function OrderPathwaysView() {
         </p>
       </Card>
 
+      {/* ─── LIVE URL CHEAT-SHEET ────────────────────────────────── */}
+      <SectionHeading id="live-urls">
+        🔗 Live URL cheat-sheet
+      </SectionHeading>
+      <p className="text-sm text-gray-700 mb-3">
+        Every customer-facing entry point on partyondelivery.com.
+        Click-through to test each path. Each path block lower on this
+        page also has its own live link.
+      </p>
+      <div className="rounded-lg p-4 mb-6" style={{ background: NAVY, color: '#FFFFFF' }}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+          <LiveUrlGroup label="🟢 Land on /dashboard/<code>">
+            <LiveUrl label="Homepage (chat bubble)" href="https://partyondelivery.com/" />
+            <LiveUrl label="Bachelor — Build My Package" href="https://partyondelivery.com/austin-bachelor-party-delivery" />
+            <LiveUrl label="Bachelorette" href="https://partyondelivery.com/austin-bachelorette-party-delivery" />
+            <LiveUrl label="Corporate" href="https://partyondelivery.com/austin-corporate-event-delivery" />
+            <LiveUrl label="Wedding" href="https://partyondelivery.com/austin-wedding-weekend-delivery" />
+            <LiveUrl label="AI free-form planner (new)" href="https://partyondelivery.com/austin-bachelor-party-delivery-ai-test" />
+            <LiveUrl label="Event quiz funnel" href="https://partyondelivery.com/event-quiz" />
+            <LiveUrl label="/order/last-minute" href="https://partyondelivery.com/order/last-minute" />
+            <LiveUrl label="Partner — Premier Party Cruises" href="https://partyondelivery.com/partners/premier-party-cruises" />
+            <LiveUrl label="Partner — Inn Cahoots" href="https://partyondelivery.com/partners/inn-cahoots" />
+          </LiveUrlGroup>
+          <LiveUrlGroup label="🟡 Land on /invoice/<token>">
+            <LiveUrl label="QuickBuy — same 4 landing pages above" href="https://partyondelivery.com/austin-bachelor-party-delivery" />
+            <LiveUrl label="Admin draft creator (/ops/orders/create)" href="https://partyondelivery.com/ops/orders/create" />
+          </LiveUrlGroup>
+          <LiveUrlGroup label="🎆 Private event invite (NEW)">
+            <LiveUrl label="4th of July Disco Cruise" href="https://partyondelivery.com/events/4th-of-july-disco-cruise" />
+          </LiveUrlGroup>
+          <LiveUrlGroup label="⚪ No-purchase surfaces">
+            <LiveUrl label="Browse /products" href="https://partyondelivery.com/products" />
+            <LiveUrl label="Blog" href="https://partyondelivery.com/blog" />
+          </LiveUrlGroup>
+        </div>
+      </div>
+
       {/* ─── SECTION 2 — The 2 final buying surfaces ─────────────── */}
       <SectionHeading id="surfaces">
         🎯 The 2 final buying surfaces (where money is actually collected)
@@ -162,6 +199,12 @@ export default function OrderPathwaysView() {
           ['Flow', '5-step modal (vibe → basics → menu → contact → review) → POST /api/v1/quote/start → redirect.'],
           ['Item seeding', 'customer-curated items from the 5 steps.'],
         ]}
+        liveUrls={[
+          { label: 'Bachelor', href: 'https://partyondelivery.com/austin-bachelor-party-delivery' },
+          { label: 'Bachelorette', href: 'https://partyondelivery.com/austin-bachelorette-party-delivery' },
+          { label: 'Corporate', href: 'https://partyondelivery.com/austin-corporate-event-delivery' },
+          { label: 'Wedding', href: 'https://partyondelivery.com/austin-wedding-weekend-delivery' },
+        ]}
       />
       <EntryPoint
         index="1.2"
@@ -172,15 +215,21 @@ export default function OrderPathwaysView() {
           ['Flow', 'party type → date → headcount → contact → AI-recommended cart → POST /api/v1/quote/start → redirect.'],
           ['Item seeding', 'drink-planner engine output for the chosen party type + headcount.'],
         ]}
+        liveUrls={[
+          { label: 'Homepage', href: 'https://partyondelivery.com/' },
+        ]}
       />
       <EntryPoint
         index="1.3"
-        title="AI Test free-form planner (new — preview branch only)"
+        title="AI free-form planner (live)"
         rows={[
           ['Entry', '/austin-bachelor-party-delivery-ai-test (noindex, not in nav).'],
           ['Component', 'src/components/landing/AIPartyChatBar.tsx'],
-          ['Flow', 'natural-language prompt → Claude extracts party type + headcount + duration + drink categories → /api/v1/ai-party-planner → creates GroupOrderV2 directly → redirect.'],
-          ['Item seeding', 'same engine as PartyChat, but driven by free-form prompt.'],
+          ['Flow', 'natural-language prompt → Claude extracts party type + headcount + duration + drink categories → 5 budget chips ($20-100/person) → /api/v1/ai-party-planner builds GroupOrderV2 with budget-scaled cart → redirect.'],
+          ['Item seeding', 'same engine as PartyChat, but driven by free-form prompt + chosen budget.'],
+        ]}
+        liveUrls={[
+          { label: 'AI test page', href: 'https://partyondelivery.com/austin-bachelor-party-delivery-ai-test' },
         ]}
       />
       <EntryPoint
@@ -192,6 +241,9 @@ export default function OrderPathwaysView() {
           ['Flow', '3-step quiz → routes to the matching landing page (e.g. wedding picks → /austin-wedding-weekend-delivery?welcome=1).'],
           ['Final buy', 'customer THEN uses PackageBuilderModal or QuickBuyModal on that destination page — quiz itself doesn\'t buy anything.'],
         ]}
+        liveUrls={[
+          { label: 'Event quiz', href: 'https://partyondelivery.com/event-quiz' },
+        ]}
       />
       <EntryPoint
         index="1.5"
@@ -199,8 +251,11 @@ export default function OrderPathwaysView() {
         rows={[
           ['Entry', '/order/last-minute (often hit from email links or partner pages).'],
           ['Component', 'src/app/order/last-minute/page.tsx'],
-          ['Flow', 'server creates a fresh GroupOrderV2 flagged isLastMinute=true → immediate redirect.'],
-          ['Item seeding', 'empty cart, last-minute menu filter active.'],
+          ['Flow', 'server creates a fresh GroupOrderV2 → redirects to /dashboard/<code> → dashboard delivery-window gate (Today/Tomorrow vs Future) decides the menu.'],
+          ['Item seeding', 'empty cart, last-minute menu filter engaged when the customer picks Today/Tomorrow on the gate.'],
+        ]}
+        liveUrls={[
+          { label: '/order/last-minute', href: 'https://partyondelivery.com/order/last-minute' },
         ]}
       />
       <EntryPoint
@@ -211,6 +266,10 @@ export default function OrderPathwaysView() {
           ['Flow', 'partner-branded landing page → CTA → /order/last-minute?a=<affiliateId> or PackageBuilderModal with attribution → /dashboard/<code> with affiliate stamped on the order.'],
           ['Item seeding', 'empty or partner-recommended starter cart.'],
         ]}
+        liveUrls={[
+          { label: 'Premier Party Cruises', href: 'https://partyondelivery.com/partners/premier-party-cruises' },
+          { label: 'Inn Cahoots', href: 'https://partyondelivery.com/partners/inn-cahoots' },
+        ]}
       />
       <EntryPoint
         index="1.7"
@@ -218,6 +277,20 @@ export default function OrderPathwaysView() {
         rows={[
           ['Entry', 'anyone with a /dashboard/<code> URL (shared via group chat, email, or saved bookmark).'],
           ['No funnel', 'they go straight to the existing dashboard, can add items, then checkout.'],
+        ]}
+        liveUrls={[]}
+      />
+      <EntryPoint
+        index="1.8"
+        title="🎆 Private event invite — 4th of July Disco Cruise (NEW)"
+        rows={[
+          ['Entry', '/events/4th-of-july-disco-cruise — shared via invite link only (noindex).'],
+          ['Component', 'src/components/events/DiscoCruiseInvite.tsx + src/app/events/4th-of-july-disco-cruise/page.tsx'],
+          ['Flow', '3-step UI (pick drinks → pick time slot → contact + pay) → POST /api/v1/landing/quote with mode=pay-now → DraftOrder → /invoice/<token>/checkout. Address LOCKED to 13993 FM 2769, Leander TX 78641. Three fixed delivery slots, each one hour before the event start.'],
+          ['Per-person ordering', 'NOT a GroupOrderV2 — each guest places an individual DraftOrder and pays their own /invoice/<token>. No shared dashboard, no multi-tab, no sharing UI.'],
+        ]}
+        liveUrls={[
+          { label: 'Live invite', href: 'https://partyondelivery.com/events/4th-of-july-disco-cruise' },
         ]}
       />
 
@@ -250,6 +323,12 @@ export default function OrderPathwaysView() {
           ['Why it bypasses the dashboard', 'designed as a "checkout-this-exact-recipe-right-now" path — no item editing, no group sharing, no multi-tab.'],
           ['Trade-off', 'faster path to payment, but the customer loses the ability to share with friends, split-pay, or browse the full catalog.'],
         ]}
+        liveUrls={[
+          { label: 'Bachelor packages', href: 'https://partyondelivery.com/austin-bachelor-party-delivery' },
+          { label: 'Bachelorette packages', href: 'https://partyondelivery.com/austin-bachelorette-party-delivery' },
+          { label: 'Corporate packages', href: 'https://partyondelivery.com/austin-corporate-event-delivery' },
+          { label: 'Wedding packages', href: 'https://partyondelivery.com/austin-wedding-weekend-delivery' },
+        ]}
       />
       <EntryPoint
         index="2.2"
@@ -258,6 +337,9 @@ export default function OrderPathwaysView() {
           ['Entry', '/invoice/<token> via an email Brian or ops sent.'],
           ['Source', 'admin creates a DraftOrder at /ops/orders/create → customer receives the invoice email → clicks the link → pays.'],
           ['Use case', 'custom quotes, corporate bulk orders, special events, anything that needs hand-massaged pricing.'],
+        ]}
+        liveUrls={[
+          { label: 'Admin draft creator', href: 'https://partyondelivery.com/ops/orders/create' },
         ]}
       />
       <EntryPoint
@@ -560,12 +642,17 @@ function EntryPoint({
   rows,
   flagged,
   muted,
+  liveUrls,
 }: {
   index: string;
   title: string;
   rows: [string, string][];
   flagged?: boolean;
   muted?: boolean;
+  /** Live partyondelivery.com URLs the founder can click to test this
+   *  entry point. Each entry is a {label, href} pair so the same path
+   *  can list multiple variants (e.g. 4 landing pages in one block). */
+  liveUrls?: { label: string; href: string }[];
 }) {
   const border = flagged ? GOLD : muted ? '#D1D5DB' : '#E5E7EB';
   const bg = flagged ? CREAM : muted ? SOFT_GRAY : '#FFFFFF';
@@ -598,6 +685,31 @@ function EntryPoint({
           </li>
         ))}
       </ul>
+      {liveUrls && liveUrls.length > 0 && (
+        <div className="mt-3 pt-3 border-t border-gray-200">
+          <div className="text-xs font-bold tracking-widest mb-1.5" style={{ color: NAVY }}>
+            🔗 LIVE
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {liveUrls.map((u) => (
+              <a
+                key={u.href}
+                href={u.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs rounded-md px-2.5 py-1 font-mono transition-transform hover:scale-[1.03]"
+                style={{
+                  background: NAVY,
+                  color: GOLD,
+                  border: `1.5px solid ${NAVY}`,
+                }}
+              >
+                {u.label}
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -628,6 +740,41 @@ function ConvergenceRow({
         <span style={{ color: '#0F8141' }}>✅</span> {verdict}
       </td>
     </tr>
+  );
+}
+
+function LiveUrlGroup({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-md p-3" style={{ background: 'rgba(255,255,255,0.06)' }}>
+      <div className="text-xs font-bold tracking-widest mb-2" style={{ color: GOLD }}>
+        {label}
+      </div>
+      <div className="space-y-1">{children}</div>
+    </div>
+  );
+}
+
+function LiveUrl({ label, href }: { label: string; href: string }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-baseline gap-2 text-xs hover:underline"
+      style={{ color: '#FFFFFF' }}
+    >
+      <span className="opacity-60">→</span>
+      <span className="font-medium">{label}</span>
+      <span className="font-mono opacity-50 truncate text-[10px]">
+        {href.replace('https://partyondelivery.com', '')}
+      </span>
+    </a>
   );
 }
 

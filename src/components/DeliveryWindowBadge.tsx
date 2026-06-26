@@ -27,6 +27,7 @@ const EXEMPT_PATHS = new Set<string>([
   '/austin-wedding-weekend-delivery',
   '/austin-wedding-venue-boats',
   '/event-quiz',
+  '/events/4th-of-july-disco-cruise',
 ]);
 // /dashboard intentionally NOT exempt — the chip shows up so the
 // customer can re-pick their delivery window mid-flow if the gate's
