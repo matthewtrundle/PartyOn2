@@ -75,17 +75,31 @@ export async function POST(
       }, { status: 400 });
     }
 
-    // Process Stripe refund
-    const refund = await stripe.refunds.create({
-      payment_intent: order.stripePaymentIntentId,
-      amount: Math.round(amount * 100), // Stripe uses cents
-      reason: 'requested_by_customer',
-      metadata: {
-        orderId: id,
-        orderNumber: String(order.orderNumber),
-        reason: reason || 'Order amendment refund',
+    // Process Stripe refund.
+    // The Stripe-aware cap above stops a FULL re-refund, but a partial refund
+    // would still fit under the (reduced) cap on retry — so we also pass an
+    // idempotency key. Scoped to (order, amendment, amount) so a retried request
+    // replays the same refund, while distinct amendments / amounts stay independent.
+    // CAVEAT (manual path, no amendmentId): two genuinely-distinct manual refunds
+    // of the SAME dollar amount on the SAME order within Stripe's 24h idempotency
+    // window will collide — the second replays the first instead of issuing new
+    // money. That's the safe direction (never double-pays); if a real second
+    // same-amount manual refund is needed within 24h, vary the amount by a cent or
+    // resolve it through an amendment so it gets a distinct key.
+    const amountCents = Math.round(amount * 100);
+    const refund = await stripe.refunds.create(
+      {
+        payment_intent: order.stripePaymentIntentId,
+        amount: amountCents, // Stripe uses cents
+        reason: 'requested_by_customer',
+        metadata: {
+          orderId: id,
+          orderNumber: String(order.orderNumber),
+          reason: reason || 'Order amendment refund',
+        },
       },
-    });
+      { idempotencyKey: `order-refund-${id}-${amendmentId ?? 'manual'}-${amountCents}` }
+    );
 
     // Create refund record in DB and update financial status
     await createRefund(id, amount, reason || 'Order amendment refund');
