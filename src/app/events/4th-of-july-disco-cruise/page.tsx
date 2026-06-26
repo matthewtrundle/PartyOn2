@@ -15,8 +15,11 @@
  *       July 3 · 6–10 PM event → delivery at 5 PM
  *       July 4 · 11 AM–3 PM event → delivery at 10 AM
  *
- * Uses the existing last-minute catalog (deep-stock items we know we
- * can fulfill) so guests can only pick from products ops has on hand.
+ * Pulls the FULL catalog of active products + their first available
+ * variant and groups them by productType, ordered like a boat party
+ * (cocktails first → seltzers → beer → spirits → wine → mixers).
+ * That matches what guests would see on a regular dashboard browsing
+ * by category — same menu items, same data shape.
  *
  * Backend: re-uses POST /api/v1/landing/quote with mode='pay-now' which
  * creates a DraftOrder + redirects to /invoice/<token>/checkout for
@@ -25,8 +28,10 @@
  * dashboard visibility).
  */
 import type { Metadata } from 'next';
-import { getLastMinuteCatalog } from '@/lib/landing/getLastMinuteCatalog';
-import DiscoCruiseInvite from '@/components/events/DiscoCruiseInvite';
+import { prisma } from '@/lib/database/client';
+import DiscoCruiseInvite, {
+  type DiscoCruiseSection,
+} from '@/components/events/DiscoCruiseInvite';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,7 +44,107 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+// Boat-party order — cocktails first per founder spec, then crushables,
+// then beer, then spirits, then wine, then supporting items. Any
+// productType not listed here gets appended in alphabetical order so
+// nothing silently disappears when ops adds a new type.
+const PREFERRED_TYPE_ORDER = [
+  'Batched Cocktail',
+  'Cocktail Kit',
+  'Seltzer',
+  'Light Beer',
+  'Craft Beer',
+  'Tequila',
+  'Whiskey',
+  'Vodka',
+  'Rum',
+  'Gin',
+  'Sparkling Wine',
+  'White Wine',
+  'Red Wine',
+  'Mixer',
+  'Weekend Supply',
+];
+
+const TYPE_EMOJI: Record<string, string> = {
+  'Batched Cocktail': '🍹',
+  'Cocktail Kit': '🍸',
+  Seltzer: '🌊',
+  'Light Beer': '🍺',
+  'Craft Beer': '🍻',
+  Tequila: '🌵',
+  Whiskey: '🥃',
+  Vodka: '🧊',
+  Rum: '🏝️',
+  Gin: '🌿',
+  'Sparkling Wine': '🥂',
+  'White Wine': '🍾',
+  'Red Wine': '🍷',
+  Mixer: '🥤',
+  'Weekend Supply': '🛍️',
+};
+
+async function getDiscoCruiseSections(): Promise<DiscoCruiseSection[]> {
+  const products = await prisma.product.findMany({
+    where: { status: 'ACTIVE' },
+    include: {
+      variants: {
+        where: { availableForSale: true },
+        orderBy: { price: 'asc' },
+        take: 1,
+      },
+      images: { take: 1, orderBy: { position: 'asc' } },
+    },
+    orderBy: { title: 'asc' },
+  });
+
+  // Build the section map.
+  const grouped: Record<
+    string,
+    { id: string; variantId: string; title: string; price: number; imageUrl?: string; handle: string }[]
+  > = {};
+
+  for (const p of products) {
+    const variant = p.variants[0];
+    if (!variant) continue;
+    const type = p.productType?.trim() || 'Other';
+    if (!grouped[type]) grouped[type] = [];
+    grouped[type].push({
+      id: p.id,
+      variantId: variant.id,
+      title: p.title,
+      price: Number(variant.price),
+      imageUrl: p.images[0]?.url,
+      handle: p.handle,
+    });
+  }
+
+  // Order sections per the preference list, then append everything else.
+  const sections: DiscoCruiseSection[] = [];
+  for (const type of PREFERRED_TYPE_ORDER) {
+    if (grouped[type]?.length) {
+      sections.push({
+        type,
+        emoji: TYPE_EMOJI[type] || '🥃',
+        products: grouped[type],
+      });
+    }
+  }
+  const leftover = Object.keys(grouped)
+    .filter((t) => !PREFERRED_TYPE_ORDER.includes(t))
+    .sort();
+  for (const type of leftover) {
+    sections.push({
+      type,
+      emoji: TYPE_EMOJI[type] || '🥂',
+      products: grouped[type],
+    });
+  }
+
+  return sections;
+}
+
 export default async function Page() {
-  const catalog = await getLastMinuteCatalog();
-  return <DiscoCruiseInvite catalog={catalog} />;
+  const sections = await getDiscoCruiseSections();
+  return <DiscoCruiseInvite sections={sections} />;
 }
