@@ -5,6 +5,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createHash } from 'crypto';
 import { requireOpsAuth } from '@/lib/auth/ops-session';
 import { prisma } from '@/lib/database/client';
 import { stripe } from '@/lib/stripe/client';
@@ -220,18 +221,27 @@ export async function POST(
       }, { status: 400 });
     }
 
-    // Process Stripe refund first (can't roll back if it succeeds)
-    const stripeRefund = await stripe.refunds.create({
-      payment_intent: order.stripePaymentIntentId,
-      amount: Math.round(totalRefundAmount * 100), // Stripe uses cents
-      reason: 'requested_by_customer',
-      metadata: {
-        orderId: id,
-        orderNumber: String(order.orderNumber),
-        reason: reason ? `Return: ${reason}` : 'Return: items returned',
-        type: 'return',
+    // Process Stripe refund first (can't roll back if it succeeds).
+    // Idempotency key is derived from the order + the exact set of returned
+    // items, so retrying after the Stripe refund succeeded but the DB
+    // transaction failed replays the same refund instead of double-refunding.
+    const returnFingerprint = createHash('sha1')
+      .update(items.map((it) => `${it.orderItemId}:${it.returnQuantity}`).sort().join(','))
+      .digest('hex');
+    const stripeRefund = await stripe.refunds.create(
+      {
+        payment_intent: order.stripePaymentIntentId,
+        amount: Math.round(totalRefundAmount * 100), // Stripe uses cents
+        reason: 'requested_by_customer',
+        metadata: {
+          orderId: id,
+          orderNumber: String(order.orderNumber),
+          reason: reason ? `Return: ${reason}` : 'Return: items returned',
+          type: 'return',
+        },
       },
-    });
+      { idempotencyKey: `order-return-${id}-${returnFingerprint}` }
+    );
 
     // DB transaction for all writes
     await prisma.$transaction(async (tx: TransactionClient) => {

@@ -116,17 +116,29 @@ export async function POST(
         );
       }
 
-      // Process Stripe refund
-      const stripeRefund = await stripe.refunds.create({
-        payment_intent: order.stripePaymentIntentId,
-        amount: Math.round(refundAmount * 100),
-        reason: 'requested_by_customer',
-        metadata: {
-          orderId: id,
-          orderNumber: String(order.orderNumber),
-          reason: 'Order cancelled',
+      // Process Stripe refund.
+      // Idempotency key is derived from the order id + amount: a cancel is a
+      // one-shot terminal action, so if this request is retried after the Stripe
+      // refund succeeded but the DB write failed, Stripe replays the SAME refund
+      // instead of issuing a second one. The amount is included so that if the
+      // order is amended between a failed attempt and the retry (changing the
+      // computed refund), the retry gets a fresh key rather than colliding with
+      // the old amount and locking Stripe for 24h. Belt-and-suspenders with the
+      // Stripe-aware cap above (which already blocks re-refunding a refunded order).
+      const refundAmountCents = Math.round(refundAmount * 100);
+      const stripeRefund = await stripe.refunds.create(
+        {
+          payment_intent: order.stripePaymentIntentId,
+          amount: refundAmountCents,
+          reason: 'requested_by_customer',
+          metadata: {
+            orderId: id,
+            orderNumber: String(order.orderNumber),
+            reason: 'Order cancelled',
+          },
         },
-      });
+        { idempotencyKey: `order-cancel-refund-${id}-${refundAmountCents}` }
+      );
 
       // Create refund record in DB
       await createRefund(id, refundAmount, 'Order cancelled');
