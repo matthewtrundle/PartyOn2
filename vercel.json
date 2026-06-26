@@ -29,6 +29,10 @@
       "schedule": "0 13 * * 1"
     },
     {
+      "path": "/api/cron/boat-schedule-sync",
+      "schedule": "0 12 * * 1"
+    },
+    {
       "path": "/api/cron/measure-recommendations",
       "schedule": "0 8 * * *"
     },
@@ -61,6 +65,10 @@
       "schedule": "15 7 * * *"
     },
     {
+      "path": "/api/cron/finance-shopify-archive-sync",
+      "schedule": "0 7 * * *"
+    },
+    {
       "path": "/api/cron/finance-snapshot",
       "schedule": "45 7 * * *"
     },
@@ -75,6 +83,14 @@
     {
       "path": "/api/cron/finance-plaid-sync",
       "schedule": "5 8 * * *"
+    },
+    {
+      "path": "/api/cron/finance-monthly-rollup",
+      "schedule": "10 8 * * *"
+    },
+    {
+      "path": "/api/cron/finance-weekly-briefing",
+      "schedule": "0 14 * * 1"
     }
   ]
 }

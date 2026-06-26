@@ -11,6 +11,12 @@ import type { DraftOrderWithTotal, DraftOrderItem } from '@/lib/draft-orders/typ
 import { snapshotItemCost, finalizeOrderMargin } from '@/lib/analytics/margin-service';
 import { classifySegment } from '@/lib/analytics/segment-classifier';
 import { unitsOffShelf } from './pick-inventory-service';
+import {
+  parseChargedLineItems,
+  snapshotToOrderItemCreates,
+  assertOrderItemsMatchCharge,
+  type OrderItemSnapshotCreate,
+} from '@/lib/stripe/charge-snapshot';
 
 /**
  * Order with all relations
@@ -516,29 +522,43 @@ export async function createOrderFromCheckout(
       include: { items: true, groupOrderV2: { select: { shareCode: true } } },
     });
 
-    // Create order items
-    for (const item of cart.items) {
-      const { unitCost, totalCost } = await snapshotItemCost(tx, item.variantId, item.quantity);
-      await tx.orderItem.create({
-        data: {
-          orderId: newOrder.id,
+    // Build OrderItems from the immutable charge snapshot (what Stripe actually charged), NOT
+    // from a re-read of cart.items — this closes the two-snapshot race. Fall back to cart.items
+    // only for carts created before the snapshot shipped (in-flight across deploy).
+    const snapshot = parseChargedLineItems(cart.chargedLineItems);
+    let orderItemCreates: OrderItemSnapshotCreate[];
+    if (snapshot) {
+      orderItemCreates = await snapshotToOrderItemCreates(tx, snapshot);
+      assertOrderItemsMatchCharge(orderItemCreates, snapshot);
+    } else {
+      console.warn(`[Order] Cart ${cart.id} has no charge snapshot — falling back to cart.items (in-flight at deploy?)`);
+      orderItemCreates = [];
+      for (const item of cart.items) {
+        const { unitCost, totalCost } = await snapshotItemCost(tx, item.variantId, item.quantity);
+        orderItemCreates.push({
           productId: item.productId,
           variantId: item.variantId,
           title: item.product.title,
           variantTitle: item.variant.title,
           sku: item.variant.sku,
-          quantity: item.quantity,
           price: item.price,
+          quantity: item.quantity,
           totalPrice: new Prisma.Decimal(Number(item.price) * item.quantity),
           unitCost,
           totalCost,
-        },
-      });
+        });
+      }
     }
 
-    // Commit inventory for each item (handles bundles automatically)
-    for (const item of cart.items) {
-      await commitInventoryForOrderItem(tx, item.productId, item.variantId, item.quantity, newOrder.orderNumber, newOrder.id);
+    // Create order items
+    for (const itemData of orderItemCreates) {
+      await tx.orderItem.create({ data: { orderId: newOrder.id, ...itemData } });
+    }
+
+    // Commit inventory for each item (handles bundles automatically). Sourced from the same
+    // snapshot so committed stock matches exactly what was charged.
+    for (const itemData of orderItemCreates) {
+      await commitInventoryForOrderItem(tx, itemData.productId, itemData.variantId, itemData.quantity, newOrder.orderNumber, newOrder.id);
     }
 
     await finalizeOrderMargin(tx, newOrder.id);

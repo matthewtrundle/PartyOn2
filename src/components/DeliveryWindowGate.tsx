@@ -1,22 +1,28 @@
 'use client';
 
 /**
- * Delivery-window entrance gate.
+ * Delivery-window question for the order flow.
  *
- * Pops right after the 21+ age gate clears (or immediately on pages
- * where the age gate is exempted but we still want the window
- * captured). Asks "When is this delivery?" with two big buttons:
+ * Fires on TWO surfaces:
+ *   /order/*     — the dedicated order entry page (and any sub-steps),
+ *                  where every "Order" / "Start an order" CTA leads.
+ *   /dashboard/* — first dashboard view, per founder's explicit ask
+ *                  ("Once they get to the dashboard, it should show the
+ *                  pop-up modal").
+ *
+ * Stays closed everywhere else — homepage, marketing pages, invite
+ * pages, partner pages. A full-screen modal on first paint there tanks
+ * bounce and is off-context.
+ *
+ * Asks "When is this delivery?" with two big buttons:
  *
  *   ⚡ Today or Tomorrow    → flips lastMinuteMode on every subsequent
  *                             modal / chat / quote endpoint
  *   📅 Future date          → standard catalog + default date ~7d out
  *
  * Choice persists in localStorage for 24h (`pod_delivery_window`).
- * Re-fires if the visitor comes back tomorrow.
- *
- * Excluded paths mirror the age gate's exemptions PLUS the dashboard,
- * admin, ops, and api routes — anywhere the delivery date is already
- * pinned to a specific order (no point asking again).
+ * Still waits for the 21+ age gate to clear first, and skips embedded
+ * partner views.
  */
 
 import { useEffect, useState } from 'react';
@@ -31,37 +37,24 @@ const NAVY = '#0A1F33';
 const GOLD = '#F2D34F';
 
 /**
- * Routes where the gate is intentionally skipped.
- *
- * The four paid-ad landing pages skip ANY entrance modal — cold ad
- * traffic bounces hard when a popup blocks the page. Each modal-led
- * order flow on those pages re-asks via its own date picker / banner.
- * The dashboard / admin / ops / api / event-quiz / partner pages are
- * skipped because the delivery date is already established by the
- * caller's context.
+ * Active prefixes — anywhere the path starts with one of these, the
+ * gate fires (once per 24h). Everywhere else it stays closed.
  */
-const EXEMPT_PATHS = new Set<string>([
-  '/austin-bachelor-party-delivery',
-  '/austin-bachelor-party-delivery-ai-test',
-  '/austin-bachelorette-party-delivery',
-  '/austin-corporate-event-delivery',
-  '/austin-wedding-weekend-delivery',
-  '/austin-wedding-venue-boats',
-  '/event-quiz',
-  '/events/4th-of-july-disco-cruise',
-]);
+// Two surfaces fire the gate:
+//   /order/*    — the dedicated order entry flow (upstream policy).
+//   /dashboard/* — every customer landing on a dashboard for the first
+//                  time, per founder's explicit ask: "Once they get to
+//                  the dashboard, it should show the pop-up modal."
+//
+// Once the visitor picks, the choice persists in localStorage for 24h
+// (`pod_delivery_window`) so they aren't re-asked as they navigate.
+const ACTIVE_PREFIXES = ['/order', '/dashboard'];
 
-// NOTE: /dashboard intentionally NOT exempt — the gate fires on first
-// dashboard view so every customer flow starts with "today/tomorrow vs
-// future", matching the entrance gate on the rest of the site. Once
-// the visitor picks, the choice persists for 24h so they don't get
-// asked again as they navigate between tabs/share links.
-const EXEMPT_PREFIXES = ['/admin', '/ops', '/api', '/partners', '/affiliate', '/checkout', '/invoice', '/cart'];
-
-function isExempt(pathname: string | null): boolean {
+function isGateActive(pathname: string | null): boolean {
   if (!pathname) return false;
-  if (EXEMPT_PATHS.has(pathname)) return true;
-  return EXEMPT_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+  return ACTIVE_PREFIXES.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`),
+  );
 }
 
 function isEmbeddedContext(): boolean {
@@ -85,8 +78,8 @@ export default function DeliveryWindowGate() {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    // Skip on exempt routes + embedded partner views.
-    if (isExempt(pathname) || isEmbeddedContext()) {
+    // Only on the order flow; stay closed everywhere else + embedded views.
+    if (!isGateActive(pathname) || isEmbeddedContext()) {
       setIsVisible(false);
       return;
     }

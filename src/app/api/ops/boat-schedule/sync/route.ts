@@ -1,25 +1,20 @@
 /**
  * POST /api/ops/boat-schedule/sync
  *
- * Reads the Premier Google Sheet, parses into structured data,
- * upserts to `boat_schedule`, and runs auto-matching against orders.
+ * Reads the Premier Google Sheet, parses into structured data, upserts to
+ * `boat_schedule`, and runs auto-matching against orders. Core logic lives in
+ * `@/lib/premier/sync` and is shared with the weekly cron.
  *
  * Auth: ops session cookie OR x-api-key header matching BOAT_SCHEDULE_SYNC_KEY
  *
- * Body (optional): { "tabs": ["04-PVT", "04-DSC"], "triggeredBy": "cowork" }
+ * Body (optional): { "tabs": ["06-PVT", "06-DSC"], "triggeredBy": "cowork" }
+ * When `tabs` is omitted, syncs the current + next month automatically.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/database/client';
 import { getOpsSession } from '@/lib/auth/ops-session';
-import {
-  readGoogleSheet,
-  parseSheet,
-  type ParsedBooking,
-} from '@/lib/premier/sheet-parser';
-import { runMatching, insertMatches } from '@/lib/premier/matcher';
-
-const DEFAULT_TABS = ['04-PVT', '04-DSC'];
+import { runBoatScheduleSync, scheduleTabsForNow } from '@/lib/premier/sync';
 
 async function isAuthorized(req: NextRequest): Promise<boolean> {
   const apiKey = req.headers.get('x-api-key');
@@ -46,179 +41,29 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json().catch(() => ({}));
-  const tabs: string[] = Array.isArray(body.tabs) && body.tabs.length > 0 ? body.tabs : DEFAULT_TABS;
+  const tabs: string[] =
+    Array.isArray(body.tabs) && body.tabs.length > 0
+      ? body.tabs
+      : scheduleTabsForNow(new Date());
   const triggeredBy: string = body.triggeredBy || 'manual';
 
-  const syncLog = await prisma.syncLog.create({
-    data: { triggeredBy, status: 'running' },
-  });
+  const result = await runBoatScheduleSync(tabs, triggeredBy);
 
-  const allBookings: ParsedBooking[] = [];
-  const allErrors: Array<Record<string, unknown>> = [];
-
-  try {
-    // Read and parse each tab
-    for (const tab of tabs) {
-      try {
-        const sheetData = await readGoogleSheet(tab);
-        const { bookings, warnings } = parseSheet(sheetData, tab);
-        allBookings.push(...bookings);
-        if (warnings.length > 0) allErrors.push({ tab, warnings });
-      } catch (err) {
-        allErrors.push({ tab, error: err instanceof Error ? err.message : String(err) });
-      }
-    }
-
-    // Mark existing rows in these tabs as potentially stale
-    await prisma.boatSchedule.updateMany({
-      where: { sheetTab: { in: tabs } },
-      data: { isStale: true },
-    });
-
-    // Upsert parsed bookings
-    let upserted = 0;
-    for (const b of allBookings) {
-      try {
-        const clientNameKey = b.clientName ?? '';
-        await prisma.boatSchedule.upsert({
-          where: {
-            cruiseDate_timeSlot_boat_clientName: {
-              cruiseDate: new Date(b.cruiseDate),
-              timeSlot: b.timeSlot,
-              boat: b.boat,
-              clientName: clientNameKey,
-            },
-          },
-          create: {
-            sheetTab: b.sheetTab,
-            cruiseDate: new Date(b.cruiseDate),
-            dayOfWeek: b.dayOfWeek || null,
-            weekType: b.weekType || null,
-            timeSlot: b.timeSlot,
-            boat: b.boat,
-            clientName: clientNameKey,
-            clientPhone: b.clientPhone,
-            normalizedName: b.normalizedName,
-            normalizedPhone: b.normalizedPhone,
-            package: b.package,
-            addOns: b.addOns,
-            occasion: b.occasion,
-            avgAge: b.avgAge,
-            headcount: b.headcount,
-            dj: b.dj,
-            photographer: b.photographer,
-            tip: b.tip,
-            amount: b.amount,
-            podFlag: b.podFlag,
-            captainCrew: b.captainCrew,
-            sheetRow: b.sheetRow,
-            rawData: b.rawData,
-            isStale: false,
-            lastSeenAt: new Date(),
-          },
-          update: {
-            sheetTab: b.sheetTab,
-            dayOfWeek: b.dayOfWeek || null,
-            weekType: b.weekType || null,
-            clientName: clientNameKey,
-            clientPhone: b.clientPhone,
-            normalizedName: b.normalizedName,
-            normalizedPhone: b.normalizedPhone,
-            package: b.package,
-            addOns: b.addOns,
-            occasion: b.occasion,
-            avgAge: b.avgAge,
-            headcount: b.headcount,
-            dj: b.dj,
-            photographer: b.photographer,
-            tip: b.tip,
-            amount: b.amount,
-            podFlag: b.podFlag,
-            captainCrew: b.captainCrew,
-            sheetRow: b.sheetRow,
-            rawData: b.rawData,
-            isStale: false,
-            lastSeenAt: new Date(),
-          },
-        });
-        upserted++;
-      } catch (err) {
-        allErrors.push({
-          row: b.sheetRow,
-          booking: `${b.cruiseDate} ${b.boat} ${b.clientName}`,
-          error: err instanceof Error ? err.message : String(err),
-        });
-      }
-    }
-
-    const staleCount = await prisma.boatSchedule.count({
-      where: { isStale: true, sheetTab: { in: tabs } },
-    });
-
-    // Run matching
-    let autoMatched = 0;
-    let needsReview = 0;
-    let unmatchedBookings = 0;
-    let unmatchedOrders = 0;
-
-    try {
-      const matchResult = await runMatching();
-      await insertMatches(matchResult.matches);
-      autoMatched = matchResult.matches.filter(m => m.status === 'matched').length;
-      needsReview = matchResult.matches.filter(m => m.status === 'needs_review').length;
-      unmatchedBookings = matchResult.unmatched.length;
-      unmatchedOrders = matchResult.orphanOrders.length;
-    } catch (err) {
-      allErrors.push({
-        phase: 'matching',
-        error: err instanceof Error ? err.message : String(err),
-      });
-    }
-
-    const status = allErrors.length === 0 ? 'success' : 'partial';
-
-    await prisma.syncLog.update({
-      where: { id: syncLog.id },
-      data: {
-        completedAt: new Date(),
-        status,
-        rowsParsed: allBookings.length,
-        rowsUpserted: upserted,
-        rowsStale: staleCount,
-        autoMatched,
-        needsReview,
-        unmatchedBookings,
-        unmatchedOrders,
-        errors: allErrors as object,
-      },
-    });
-
-    return NextResponse.json({
-      status,
-      syncId: syncLog.id,
-      rows_parsed: allBookings.length,
-      rows_upserted: upserted,
-      rows_stale: staleCount,
-      auto_matched: autoMatched,
-      needs_review: needsReview,
-      unmatched_bookings: unmatchedBookings,
-      unmatched_orders: unmatchedOrders,
-      errors: allErrors.length > 0 ? allErrors : undefined,
-    });
-  } catch (err) {
-    await prisma.syncLog.update({
-      where: { id: syncLog.id },
-      data: {
-        completedAt: new Date(),
-        status: 'failed',
-        errors: [{ fatal: err instanceof Error ? err.message : String(err) }],
-      },
-    });
-    return NextResponse.json(
-      { status: 'failed', error: err instanceof Error ? err.message : String(err) },
-      { status: 500 },
-    );
-  }
+  return NextResponse.json(
+    {
+      status: result.status,
+      syncId: result.syncId,
+      rows_parsed: result.rowsParsed,
+      rows_upserted: result.rowsUpserted,
+      rows_stale: result.rowsStale,
+      auto_matched: result.autoMatched,
+      needs_review: result.needsReview,
+      unmatched_bookings: result.unmatchedBookings,
+      unmatched_orders: result.unmatchedOrders,
+      errors: result.errors.length > 0 ? result.errors : undefined,
+    },
+    { status: result.status === 'failed' ? 500 : 200 },
+  );
 }
 
 // GET -- status check

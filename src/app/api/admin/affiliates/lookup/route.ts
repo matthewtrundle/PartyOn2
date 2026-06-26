@@ -5,8 +5,12 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getAffiliateByCode } from '@/lib/affiliates/affiliate-service';
+import { requireOpsAuth } from '@/lib/auth/ops-session';
 
 export async function GET(request: NextRequest) {
+  const auth = await requireOpsAuth();
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const code = request.nextUrl.searchParams.get('code');
     if (!code) {

@@ -4,6 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { requireOpsAuth } from '@/lib/auth/ops-session';
 import { getDraftOrderById, updateDraftOrderStatus } from '@/lib/draft-orders';
 import { generateInvoiceEmail, generateInvoiceSubject, InvoiceTextOverrides } from '@/lib/email/templates/invoice';
 import { getInvoiceTextOverrides } from '@/lib/email/template-content';
@@ -19,6 +20,9 @@ interface RouteParams {
  * Send invoice email to customer
  */
 export async function POST(request: NextRequest, { params }: RouteParams) {
+  const auth = await requireOpsAuth();
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const { id } = await params;
 

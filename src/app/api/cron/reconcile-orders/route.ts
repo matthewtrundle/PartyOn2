@@ -27,6 +27,14 @@ import {
 import { recordDiscountUsage } from '@/lib/discounts/discount-engine';
 import { linkOrderToAffiliate } from '@/lib/affiliates/commission-engine';
 import { createOrderCalendarEvent } from '@/lib/calendar/google-calendar';
+import { Prisma } from '@prisma/client';
+import { snapshotItemCost } from '@/lib/analytics/margin-service';
+import {
+  parseChargedLineItems,
+  snapshotToOrderItemCreates,
+  assertOrderItemsMatchCharge,
+  type OrderItemSnapshotCreate,
+} from '@/lib/stripe/charge-snapshot';
 
 export const maxDuration = 60;
 
@@ -233,6 +241,33 @@ export async function GET(request: NextRequest) {
           continue;
         }
 
+        // Build items from the charge snapshot (what Stripe charged), not a re-read of
+        // purchasedItems — mirrors the webhook fix so cron recovery can't reintroduce drift.
+        const chargeSnapshot = parseChargedLineItems(payment.chargedLineItems);
+        let orderItemCreates: OrderItemSnapshotCreate[];
+        if (chargeSnapshot) {
+          orderItemCreates = await snapshotToOrderItemCreates(prisma, chargeSnapshot);
+          assertOrderItemsMatchCharge(orderItemCreates, chargeSnapshot);
+        } else {
+          console.warn(`[Reconcile] Payment ${payment.id} has no charge snapshot — falling back to purchasedItems`);
+          orderItemCreates = [];
+          for (const item of purchasedItems) {
+            const { unitCost, totalCost } = await snapshotItemCost(prisma, item.variantId, item.quantity);
+            orderItemCreates.push({
+              productId: item.productId,
+              variantId: item.variantId,
+              title: item.title,
+              variantTitle: item.variantTitle,
+              sku: null,
+              price: new Prisma.Decimal(item.price),
+              quantity: item.quantity,
+              totalPrice: new Prisma.Decimal(Number(item.price) * item.quantity),
+              unitCost,
+              totalCost,
+            });
+          }
+        }
+
         // Create Order record
         const order = await prisma.order.create({
           data: {
@@ -257,15 +292,7 @@ export async function GET(request: NextRequest) {
             groupOrderId: null,
             groupOrderV2Id: payment.subOrder.groupOrderId,
             items: {
-              create: purchasedItems.map((item) => ({
-                productId: item.productId,
-                variantId: item.variantId,
-                title: item.title,
-                variantTitle: item.variantTitle,
-                price: item.price,
-                quantity: item.quantity,
-                totalPrice: Number(item.price) * item.quantity,
-              })),
+              create: orderItemCreates,
             },
           },
           include: {

@@ -21,8 +21,20 @@ const AGE_GATE_EXEMPT_PATHS = [
   '/austin-corporate-event-delivery',
   '/austin-wedding-weekend-delivery',
   '/austin-wedding-venue-boats',
+  '/austin-4th-of-july-delivery',
   '/event-quiz',
   '/events/4th-of-july-disco-cruise',
+]
+
+/**
+ * Private, invite-only event pages shared by direct link to known guests
+ * (e.g. a one-off party invite). Unlike the paid landers above, these have
+ * NO on-page purchase and NO public/ad traffic — the audience is the host's
+ * own friends, so the entrance gate is pure friction. The legal control
+ * remains carding at the door / on delivery.
+ */
+const AGE_GATE_EXEMPT_INVITE_PATHS = [
+  '/dads-gone-wild',
 ]
 
 /**
@@ -71,10 +83,15 @@ export default function AgeVerification() {
   const pathname = usePathname()
 
   useEffect(() => {
-    // Paid landing pages defer the gate to the in-modal 21+ checkbox.
+    // Paid landing pages defer the gate to the in-modal 21+ checkbox;
+    // private invite pages skip it entirely (friends-only, no purchase).
     // No localStorage stamp here — if the visitor navigates to the rest
     // of the site without checking out, the standard gate still applies.
-    if (pathname && AGE_GATE_EXEMPT_PATHS.includes(pathname)) {
+    if (
+      pathname &&
+      (AGE_GATE_EXEMPT_PATHS.includes(pathname) ||
+        AGE_GATE_EXEMPT_INVITE_PATHS.includes(pathname))
+    ) {
       setIsVisible(false)
       return
     }

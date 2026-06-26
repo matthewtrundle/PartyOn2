@@ -11,6 +11,7 @@ import GoogleAdsTag from "@/components/GoogleAdsTag";
 import MetaPixel from "@/components/MetaPixel";
 import ClarityInit from "@/components/ClarityInit";
 import AttributionTracker from "@/components/AttributionTracker";
+import PageViewTracker from "@/components/analytics/PageViewTracker";
 import { Analytics } from '@vercel/analytics/react';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 
@@ -121,6 +122,7 @@ export default function RootLayout({
         <GoogleAdsTag />
         <MetaPixel />
         <AttributionTracker />
+        <PageViewTracker />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}

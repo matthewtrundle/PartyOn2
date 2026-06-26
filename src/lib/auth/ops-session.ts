@@ -1,55 +1,28 @@
 /**
  * Ops Session Management
  * JWT-based auth for /ops and /api/ops routes
+ *
+ * Token signing/verification lives in ops-token.ts (edge-safe, used by
+ * middleware too); this module owns the cookie and route-handler helpers.
  */
 
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
-import { SignJWT, jwtVerify } from 'jose';
+import {
+  OPS_SESSION_COOKIE,
+  createOpsSessionToken,
+  verifyOpsSessionToken,
+  type OpsRole,
+  type OpsSessionPayload,
+} from './ops-token';
 
-export type OpsRole = 'admin' | 'employee';
-
-const OPS_SESSION_COOKIE = 'ops_session';
-const TOKEN_EXPIRY = '48h';
-
-function getJwtSecret(): Uint8Array {
-  const secret = process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET;
-  if (!secret) {
-    throw new Error('JWT_SECRET or NEXTAUTH_SECRET environment variable is required');
-  }
-  return new TextEncoder().encode(secret);
-}
-
-export interface OpsSessionPayload {
-  role: OpsRole;
-  exp?: number;
-  iat?: number;
-}
-
-/**
- * Create a JWT session token for ops
- */
-export async function createOpsSessionToken(role: OpsRole): Promise<string> {
-  return new SignJWT({ role } as unknown as Record<string, unknown>)
-    .setProtectedHeader({ alg: 'HS256' })
-    .setIssuedAt()
-    .setExpirationTime(TOKEN_EXPIRY)
-    .sign(getJwtSecret());
-}
-
-/**
- * Verify an ops session token
- */
-export async function verifyOpsSessionToken(
-  token: string
-): Promise<OpsSessionPayload | null> {
-  try {
-    const { payload } = await jwtVerify(token, getJwtSecret());
-    return payload as unknown as OpsSessionPayload;
-  } catch {
-    return null;
-  }
-}
+export {
+  OPS_SESSION_COOKIE,
+  createOpsSessionToken,
+  verifyOpsSessionToken,
+  type OpsRole,
+  type OpsSessionPayload,
+};
 
 /**
  * Set the ops session cookie

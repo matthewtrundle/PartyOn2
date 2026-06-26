@@ -10,6 +10,9 @@ import WeddingDrinkCalculator from '@/components/WeddingDrinkCalculator';
 import ScrollRevealCSS from '@/components/ui/ScrollRevealCSS';
 import WeddingsSchemas from '@/components/seo/WeddingsSchemas';
 import { trackPageView, ANALYTICS_EVENTS } from '@/lib/analytics/track';
+import { trackCTAClick } from '@/lib/analytics/ga4-events';
+import { useHeroExperiment } from '@/hooks/useHeroExperiment';
+import { trackExperimentClick } from '@/hooks/useExperimentVariant';
 
 // Testimonial Carousel Component
 function TestimonialCarousel() {
@@ -164,6 +167,7 @@ function TestimonialCarousel() {
 export default function WeddingsPage() {
   const [currentHeroIndex, setCurrentHeroIndex] = useState(0);
   const [showStickyBar, setShowStickyBar] = useState(false);
+  const hero = useHeroExperiment('/weddings');
 
   // Track page view on mount
   useEffect(() => {
@@ -293,22 +297,39 @@ export default function WeddingsPage() {
         <div className="absolute inset-0 bg-gradient-to-b from-gray-900/50 via-gray-900/30 to-gray-900/50" />
 
         <div className="hero-fade-in relative text-center text-white z-10 max-w-4xl mx-auto px-8">
+          {hero.content?.eyebrow ?? null}
           <h1 className="font-heading font-light text-5xl md:text-7xl mb-6 tracking-[0.08em] leading-tight md:leading-tight">
-            <span className="block text-white mb-2">Your Austin Wedding,</span>
-            <span className="block text-brand-yellow">PERFECTLY SERVED</span>
+            {hero.content?.headline ? (
+              <span className="block text-brand-yellow">{hero.content.headline}</span>
+            ) : (
+              <>
+                <span className="block text-white mb-2">Your Austin Wedding,</span>
+                <span className="block text-brand-yellow">PERFECTLY SERVED</span>
+              </>
+            )}
           </h1>
           <div className="w-24 h-px bg-brand-yellow mx-auto mb-6" />
           <p className="text-lg md:text-xl font-light tracking-[0.1em] text-gray-200 mb-8">
-            Curated bar service with venue coordination, cold delivery, and TABC-certified bartenders for Austin, Hill Country, and Lake Travis weddings.
+            {hero.content?.subhead ?? 'Curated bar service with venue coordination, cold delivery, and TABC-certified bartenders for Austin, Hill Country, and Lake Travis weddings.'}
           </p>
           <div className="flex flex-col md:flex-row gap-4 justify-center">
             <Link href="/order">
-              <button className="px-8 py-4 bg-brand-yellow text-gray-900 hover:bg-yellow-600 transition-colors tracking-[0.08em] text-sm font-medium">
-                ORDER NOW
+              <button
+                onClick={() => {
+                  const label = hero.content?.ctaText ?? 'ORDER NOW';
+                  trackCTAClick(label, '/order', 'hero', hero.experimentId ?? undefined, hero.variantId ?? undefined);
+                  if (hero.experimentId && hero.variantId) trackExperimentClick(hero.experimentId, hero.variantId, label);
+                }}
+                className="px-8 py-4 bg-brand-yellow text-gray-900 hover:bg-yellow-600 transition-colors tracking-[0.08em] text-sm font-medium"
+              >
+                {hero.content?.ctaText ?? 'ORDER NOW'}
               </button>
             </Link>
             <Link href="/contact">
-              <button className="px-8 py-4 border-2 border-white text-white hover:bg-white hover:text-gray-900 transition-all duration-300 tracking-[0.08em] text-sm font-medium">
+              <button
+                onClick={() => trackCTAClick('SCHEDULE 15-MIN PLANNING CALL', '/contact', 'hero')}
+                className="px-8 py-4 border-2 border-white text-white hover:bg-white hover:text-gray-900 transition-all duration-300 tracking-[0.08em] text-sm font-medium"
+              >
                 SCHEDULE 15-MIN PLANNING CALL
               </button>
             </Link>
@@ -369,7 +390,10 @@ export default function WeddingsPage() {
                 </li>
               </ul>
               <Link href="/order">
-                <button className="w-full py-3 bg-brand-yellow text-gray-900 hover:bg-yellow-600 transition-colors tracking-[0.08em] text-sm font-medium">
+                <button
+                  onClick={() => trackCTAClick('ORDER NOW', '/order', 'packages')}
+                  className="w-full py-3 bg-brand-yellow text-gray-900 hover:bg-yellow-600 transition-colors tracking-[0.08em] text-sm font-medium"
+                >
                   ORDER NOW
                 </button>
               </Link>
@@ -404,7 +428,10 @@ export default function WeddingsPage() {
                 </li>
               </ul>
               <Link href="/contact">
-                <button className="w-full py-3 bg-brand-yellow text-gray-900 hover:bg-yellow-600 transition-colors tracking-[0.08em] text-sm font-medium">
+                <button
+                  onClick={() => trackCTAClick('SCHEDULE A CONSULTATION', '/contact', 'packages')}
+                  className="w-full py-3 bg-brand-yellow text-gray-900 hover:bg-yellow-600 transition-colors tracking-[0.08em] text-sm font-medium"
+                >
                   SCHEDULE A CONSULTATION
                 </button>
               </Link>
@@ -597,11 +624,14 @@ export default function WeddingsPage() {
                     ))}
                   </ul>
                   <Link href="/contact">
-                    <button className={`w-full py-3 tracking-[0.08em] text-sm transition-all duration-300 ${
-                      pkg.featured
-                        ? 'bg-brand-yellow text-gray-900 hover:bg-yellow-600'
-                        : 'border border-brand-yellow text-gray-900 hover:bg-brand-yellow hover:text-gray-900'
-                    }`}>
+                    <button
+                      onClick={() => trackCTAClick('PLAN THIS PACKAGE (CONSULTATION)', '/contact', 'packages')}
+                      className={`w-full py-3 tracking-[0.08em] text-sm transition-all duration-300 ${
+                        pkg.featured
+                          ? 'bg-brand-yellow text-gray-900 hover:bg-yellow-600'
+                          : 'border border-brand-yellow text-gray-900 hover:bg-brand-yellow hover:text-gray-900'
+                      }`}
+                    >
                       PLAN THIS PACKAGE (CONSULTATION)
                     </button>
                   </Link>
@@ -616,7 +646,10 @@ export default function WeddingsPage() {
               <strong>Just need delivery?</strong> Build your cart in minutes and we&apos;ll coordinate drop-off with your venue.
             </p>
             <Link href="/order">
-              <button className="px-8 py-3 border-2 border-brand-yellow text-gray-900 hover:bg-brand-yellow hover:text-gray-900 transition-all duration-300 tracking-[0.08em] text-sm font-medium">
+              <button
+                onClick={() => trackCTAClick('ORDER DELIVERY-ONLY', '/order', 'final_cta')}
+                className="px-8 py-3 border-2 border-brand-yellow text-gray-900 hover:bg-brand-yellow hover:text-gray-900 transition-all duration-300 tracking-[0.08em] text-sm font-medium"
+              >
                 ORDER DELIVERY-ONLY
               </button>
             </Link>
@@ -636,6 +669,7 @@ export default function WeddingsPage() {
             </p>
             <Link
               href="/wedding-drink-calculator"
+              onClick={() => trackCTAClick('Wedding Drink Calculator', '/wedding-drink-calculator', 'wedding_calc_hero')}
               className="btn-primary inline-flex items-center justify-center"
             >
               Wedding Drink Calculator

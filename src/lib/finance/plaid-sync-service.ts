@@ -19,6 +19,7 @@
 
 import { prisma } from '@/lib/database/client';
 import { syncTransactions, type SyncTransactionsResult } from './plaid-client';
+import { categorizeBankOutflow, isBankExpenseCategory } from './plaid-category-map';
 
 const ONE_DAY_MS = 86_400_000;
 
@@ -46,6 +47,8 @@ export interface ItemSyncResult {
   inflowsMatched: number;
   outflowsMatched: number;
   unmatched: number;
+  /** Outflows stamped with a bank-derived expense category (production only). */
+  bankCategorized: number;
 }
 
 export async function syncItem(plaidItemId: string): Promise<ItemSyncResult> {
@@ -160,6 +163,10 @@ export async function syncItem(plaidItemId: string): Promise<ItemSyncResult> {
   // Auto-reconcile in the same call so the dashboard reflects the new state.
   const reconcile = await reconcileItem(plaidItemId);
 
+  // Stamp bank-derived expense categories on unmatched outflows (production
+  // items only) so QB-dormant months can source expenses from the bank feed.
+  const bankCat = await categorizeBankOutflows(plaidItemId);
+
   return {
     plaidItemId,
     itemId: item.itemId,
@@ -172,6 +179,7 @@ export async function syncItem(plaidItemId: string): Promise<ItemSyncResult> {
     inflowsMatched: reconcile.inflowsMatched,
     outflowsMatched: reconcile.outflowsMatched,
     unmatched: reconcile.unmatched,
+    bankCategorized: bankCat.categorized,
   };
 }
 
@@ -189,6 +197,49 @@ export async function syncAllItems(): Promise<ItemSyncResult[]> {
     }
   }
   return results;
+}
+
+export interface PurgeNonProdResult {
+  itemsDeleted: number;
+  accountsDeleted: number;
+  transactionsDeleted: number;
+  cursorsDeleted: number;
+}
+
+/**
+ * Delete every NON-production PlaidItem and its dependent rows. Used on the
+ * Wells Fargo cutover to clear the Plaid sandbox "Platypus" data once real
+ * production is connected (mirrors the QB realm purge). PlaidAccount +
+ * PlaidTransaction cascade from PlaidItem, but PlaidSyncCursor has no FK cascade
+ * — all are deleted explicitly inside one transaction so the counts are exact.
+ */
+export async function purgeNonProdPlaidData(): Promise<PurgeNonProdResult> {
+  const nonProd = await prisma.plaidItem.findMany({
+    where: { environment: { not: 'production' } },
+    select: { id: true },
+  });
+  const ids = nonProd.map((i) => i.id);
+  if (ids.length === 0) {
+    return { itemsDeleted: 0, accountsDeleted: 0, transactionsDeleted: 0, cursorsDeleted: 0 };
+  }
+  return prisma.$transaction(async (tx) => {
+    const transactions = await tx.plaidTransaction.deleteMany({
+      where: { plaidItemId: { in: ids } },
+    });
+    const accounts = await tx.plaidAccount.deleteMany({
+      where: { plaidItemId: { in: ids } },
+    });
+    const cursors = await tx.plaidSyncCursor.deleteMany({
+      where: { plaidItemId: { in: ids } },
+    });
+    const items = await tx.plaidItem.deleteMany({ where: { id: { in: ids } } });
+    return {
+      itemsDeleted: items.count,
+      accountsDeleted: accounts.count,
+      transactionsDeleted: transactions.count,
+      cursorsDeleted: cursors.count,
+    };
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -262,6 +313,8 @@ export async function reconcileItem(plaidItemId: string): Promise<ReconcileResul
             qbTransactionId: expense.qbTransactionId,
             qbCategoryAssigned: expense.categorySlug ?? null,
             reconciledAt: new Date(),
+            // QB is the source for this outflow — never also a bank-derived expense.
+            isBankDerivedExpense: false,
           },
         });
         outflowsMatched++;
@@ -273,6 +326,64 @@ export async function reconcileItem(plaidItemId: string): Promise<ReconcileResul
   }
 
   return { inflowsMatched, outflowsMatched, unmatched };
+}
+
+export interface BankCategorizeResult {
+  categorized: number;
+  expenseCount: number;
+}
+
+/**
+ * Stamp bank-derived expense categories on this item's UNMATCHED outflows
+ * (outflows with no QB expense match). PRODUCTION items only — sandbox data must
+ * never count as a real expense, even before the sandbox PlaidItem is purged.
+ *
+ * The monthly rollup uses these for QB-dormant months (e.g. 2026), where the
+ * bank outflow IS the expense because QB has no real expense rows. Idempotent:
+ * only touches rows not yet categorized (bankDerivedCategory IS NULL), so it's
+ * safe to run on every sync and from the backfill script.
+ */
+export async function categorizeBankOutflows(
+  plaidItemId: string
+): Promise<BankCategorizeResult> {
+  const item = await prisma.plaidItem.findUnique({
+    where: { id: plaidItemId },
+    select: { environment: true },
+  });
+  if (!item || item.environment !== 'production') {
+    return { categorized: 0, expenseCount: 0 };
+  }
+
+  const txns = await prisma.plaidTransaction.findMany({
+    where: {
+      plaidItemId,
+      pending: false,
+      matchedQbExpenseId: null,
+      bankDerivedCategory: null,
+      amount: { gt: 0 }, // Plaid convention: positive = outflow / debit
+    },
+    take: 1000,
+    orderBy: { date: 'desc' },
+  });
+
+  let categorized = 0;
+  let expenseCount = 0;
+  for (const txn of txns) {
+    const slug = categorizeBankOutflow({
+      name: txn.name,
+      merchantName: txn.merchantName,
+      personalFinanceCategoryPrimary: txn.personalFinanceCategoryPrimary,
+      personalFinanceCategoryDetailed: txn.personalFinanceCategoryDetailed,
+    });
+    const isExpense = isBankExpenseCategory(slug);
+    await prisma.plaidTransaction.update({
+      where: { id: txn.id },
+      data: { bankDerivedCategory: slug, isBankDerivedExpense: isExpense },
+    });
+    categorized++;
+    if (isExpense) expenseCount++;
+  }
+  return { categorized, expenseCount };
 }
 
 async function findStripePayoutMatch(

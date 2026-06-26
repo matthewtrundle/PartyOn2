@@ -33,26 +33,40 @@ function isGtagAvailable(): boolean {
 }
 
 /**
+ * The page section a CTA lives in. Used to slice cta_click events by where on
+ * the page the click happened. Shared by `trackCTAClick` and `TrackedLink` so
+ * the two never drift, and mirrored into the landing-page registry's
+ * `ctaSections` (see src/lib/analytics/landing-pages.ts).
+ */
+export type CtaSection =
+  | 'hero'
+  | 'choose_path'
+  | 'services'
+  | 'footer_cta'
+  | 'navigation'
+  | 'group_order_strip'
+  | 'wedding_calc_hero'
+  | 'wedding_calc_package'
+  | 'wedding_calc_sticky'
+  | 'packages'
+  | 'final_cta'
+  | 'party_type_chip'
+  | 'package_card'
+  | 'quick_buy'
+  | 'package_builder';
+
+/**
  * Track CTA button clicks for A/B testing
  * @param buttonText - The text displayed on the button
  * @param buttonUrl - The destination URL
- * @param section - The page section (hero, choose_path, services, footer_cta)
+ * @param section - The page section the CTA lives in (see {@link CtaSection})
  * @param experimentId - Optional experiment ID for A/B test attribution
  * @param variantId - Optional variant ID for A/B test attribution
  */
 export function trackCTAClick(
   buttonText: string,
   buttonUrl: string,
-  section:
-    | 'hero'
-    | 'choose_path'
-    | 'services'
-    | 'footer_cta'
-    | 'navigation'
-    | 'group_order_strip'
-    | 'wedding_calc_hero'
-    | 'wedding_calc_package'
-    | 'wedding_calc_sticky',
+  section: CtaSection,
   experimentId?: string,
   variantId?: string
 ): void {

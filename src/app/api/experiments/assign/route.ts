@@ -77,6 +77,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       variantId: variantContentId,
       variantName: assignedVariant.name,
       variantDbId: assignedVariant.id,
+      // Self-serve hero copy stored on the variant (null = render page default).
+      content: assignedVariant.content ?? null,
+      goalMetric: experiment.goalMetric,
     });
   } catch (error) {
     console.error('Error assigning variant:', error);

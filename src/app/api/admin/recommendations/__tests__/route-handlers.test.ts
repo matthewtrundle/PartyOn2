@@ -11,6 +11,7 @@ import { NextRequest } from 'next/server';
 const prismaMock = vi.hoisted(() => ({
   recommendationItem: { findUnique: vi.fn(), update: vi.fn() },
   operationsRecommendation: { findUnique: vi.fn(), update: vi.fn() },
+  financeRecommendation: { findUnique: vi.fn(), update: vi.fn() },
   $transaction: vi.fn(),
 }));
 
@@ -50,6 +51,10 @@ beforeEach(() => {
   prismaMock.$transaction.mockImplementation(async (cb: (tx: typeof prismaMock) => Promise<unknown>) =>
     cb(prismaMock)
   );
+  // findRecommendationLocation checks ops → finance → marketing in that order.
+  // Default to "no finance rec" so ops/marketing tests fall through finance to
+  // reach the marketing table. Tests exercising a finance rec override this.
+  prismaMock.financeRecommendation.findUnique.mockResolvedValue(null);
   authMock.requireOpsAuth.mockResolvedValue({ id: 'op_1', role: 'admin' });
   reconcileMock.reconcilePackForOrder.mockReset();
 });

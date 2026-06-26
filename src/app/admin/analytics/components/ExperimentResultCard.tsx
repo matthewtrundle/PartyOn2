@@ -1,0 +1,187 @@
+'use client';
+
+import { ReactElement } from 'react';
+import Link from 'next/link';
+
+export interface HeroContent {
+  eyebrow?: string;
+  headline?: string;
+  subhead?: string;
+  ctaText?: string;
+}
+export interface VariantRow {
+  id: string;
+  name: string;
+  isControl: boolean;
+  weight: number;
+  impressions: number;
+  clicks: number;
+  conversions: number;
+  clickRate: number;
+  conversionRate: number;
+  content: HeroContent | null;
+}
+export interface SigVariant { id: string; confidence: number; liftPct: number; pValue: number }
+export interface Significance { variants: SigVariant[]; winner: string | null; hasEnoughData: boolean }
+export interface Experiment {
+  id: string;
+  name: string;
+  status: 'DRAFT' | 'RUNNING' | 'PAUSED' | 'COMPLETED';
+  goalMetric: string;
+  winningVariant: string | null;
+  winnerReason: string | null;
+  daysRunning: number;
+  significance: Significance;
+  variants: VariantRow[];
+}
+
+/** Matches the per-variant impression floor in computeSignificance. */
+const MIN_SAMPLE = 100;
+
+const STATUS_STYLES: Record<string, string> = {
+  DRAFT: 'bg-gray-100 text-gray-700',
+  RUNNING: 'bg-green-100 text-green-800',
+  PAUSED: 'bg-yellow-100 text-yellow-800',
+  COMPLETED: 'bg-blue-100 text-blue-800',
+};
+
+export interface ConcludeControls {
+  active: boolean;
+  winnerSel: string;
+  reason: string;
+  setWinner: (id: string) => void;
+  setReason: (s: string) => void;
+  start: () => void;
+  cancel: () => void;
+  save: () => void;
+}
+
+interface Props {
+  exp: Experiment;
+  canonicalPath: string;
+  onStatus: (status: 'RUNNING' | 'PAUSED') => void;
+  onDelete: () => void;
+  conclude: ConcludeControls;
+}
+
+function rateOf(v: VariantRow, goalIsClick: boolean): number {
+  return goalIsClick ? v.clickRate : v.conversionRate;
+}
+
+function VariantCard({
+  v,
+  goalIsClick,
+  badge,
+  canonicalPath,
+}: {
+  v: VariantRow;
+  goalIsClick: boolean;
+  badge: 'winner' | 'ahead' | null;
+  canonicalPath: string;
+}): ReactElement {
+  return (
+    <div className={`rounded-lg border p-4 ${badge === 'winner' ? 'border-amber-300 bg-amber-50' : 'border-gray-200 bg-white'}`}>
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-sm font-medium text-gray-900">
+          {v.name}{v.isControl && <span className="text-gray-400"> · control</span>}
+        </span>
+        {badge === 'winner' && <span className="text-xs font-semibold text-amber-600">★ WINNER</span>}
+        {badge === 'ahead' && <span className="text-xs font-semibold text-green-600">AHEAD</span>}
+      </div>
+      <div className="flex items-end justify-between">
+        <div>
+          <div className="text-4xl font-bold text-gray-900 leading-none">{rateOf(v, goalIsClick).toFixed(1)}%</div>
+          <div className="text-sm text-gray-500 mt-1">{goalIsClick ? 'click rate' : 'conversion rate'}</div>
+        </div>
+        <div className="text-right text-sm text-gray-600">
+          <div>{v.impressions.toLocaleString()} views</div>
+          <div>{v.clicks.toLocaleString()} clicks</div>
+          {!goalIsClick && <div>{v.conversions.toLocaleString()} conversions</div>}
+        </div>
+      </div>
+      <div className="border-t border-gray-100 mt-3 pt-2 text-sm text-gray-600">
+        copy: {v.content?.headline ? `“${v.content.headline}”` : <span className="text-gray-400">current page copy</span>}
+      </div>
+      <Link href={canonicalPath} target="_blank" className="text-brand-blue text-sm hover:underline inline-block mt-1">
+        View landing page ↗
+      </Link>
+    </div>
+  );
+}
+
+/** One running/concluded A/B test rendered as side-by-side variant cards + a confidence read-out. */
+export default function ExperimentResultCard({ exp, canonicalPath, onStatus, onDelete, conclude }: Props): ReactElement {
+  const goalIsClick = exp.goalMetric === 'cta_click' || exp.goalMetric === 'scroll_depth';
+  const sorted = [...exp.variants].sort((a, b) => rateOf(b, goalIsClick) - rateOf(a, goalIsClick));
+  const leaderId = sorted[0]?.id ?? null;
+  const minImpr = exp.variants.length ? Math.min(...exp.variants.map((v) => v.impressions)) : 0;
+  const needViews = Math.max(0, MIN_SAMPLE - minImpr);
+  const nonControlIds = new Set(exp.variants.filter((v) => !v.isControl).map((v) => v.id));
+  const topConf = Math.round(
+    Math.max(0, ...exp.significance.variants.filter((s) => nonControlIds.has(s.id)).map((s) => s.confidence))
+  );
+  const leaderName = exp.variants.find((v) => v.id === leaderId)?.name ?? '—';
+
+  function badgeFor(v: VariantRow): 'winner' | 'ahead' | null {
+    if (exp.significance.winner === v.id || exp.winningVariant === v.id) return 'winner';
+    if (!exp.significance.winner && v.id === leaderId && exp.status !== 'DRAFT') return 'ahead';
+    return null;
+  }
+
+  let summary: string;
+  if (exp.status === 'COMPLETED') {
+    const w = exp.variants.find((v) => v.id === exp.winningVariant);
+    summary = w ? `Concluded — winner: ${w.name}.` : 'Concluded.';
+  } else if (exp.significance.winner) {
+    summary = `Significant — ${leaderName} wins at ${topConf}% confidence.`;
+  } else if (needViews > 0) {
+    summary = `Not enough data yet — ~${needViews.toLocaleString()} more views on the smaller variant to reach the minimum sample. Confidence ${topConf}% (need 95% to call it).`;
+  } else {
+    summary = `${leaderName} ahead, but not conclusive — confidence ${topConf}% (need 95% to call it).`;
+  }
+
+  return (
+    <div className="rounded-lg border border-gray-200 p-4">
+      <div className="flex items-start justify-between mb-3">
+        <div>
+          <div className="font-semibold text-gray-900">{exp.name}</div>
+          <div className="text-xs text-gray-500">goal: {exp.goalMetric}{exp.status === 'RUNNING' ? ` · day ${exp.daysRunning}` : ''}</div>
+        </div>
+        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_STYLES[exp.status]}`}>{exp.status}</span>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {exp.variants.map((v) => (
+          <VariantCard key={v.id} v={v} goalIsClick={goalIsClick} badge={badgeFor(v)} canonicalPath={canonicalPath} />
+        ))}
+      </div>
+
+      <p className={`mt-3 text-sm ${exp.significance.winner ? 'text-green-700' : 'text-gray-600'}`}>{summary}</p>
+      {exp.status === 'COMPLETED' && exp.winnerReason && (
+        <p className="mt-1 text-sm text-gray-600"><span className="font-medium">Why it won:</span> {exp.winnerReason}</p>
+      )}
+
+      {conclude.active ? (
+        <div className="mt-3 rounded-lg bg-gray-50 p-3 space-y-2">
+          <select className="input-premium" value={conclude.winnerSel} onChange={(e) => conclude.setWinner(e.target.value)}>
+            {exp.variants.map((v) => <option key={v.id} value={v.id}>{v.name}</option>)}
+          </select>
+          <input className="input-premium" placeholder="Why did it win? (one line — logged to Obsidian)"
+            value={conclude.reason} onChange={(e) => conclude.setReason(e.target.value)} />
+          <div className="flex gap-2">
+            <button type="button" className="btn-primary text-sm" onClick={conclude.save}>Save winner &amp; log</button>
+            <button type="button" className="btn-secondary text-sm" onClick={conclude.cancel}>Cancel</button>
+          </div>
+        </div>
+      ) : (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {exp.status === 'DRAFT' && <button type="button" className="btn-primary text-sm" onClick={() => onStatus('RUNNING')}>Start</button>}
+          {exp.status === 'RUNNING' && <button type="button" className="btn-secondary text-sm" onClick={() => onStatus('PAUSED')}>Pause</button>}
+          {exp.status === 'PAUSED' && <button type="button" className="btn-primary text-sm" onClick={() => onStatus('RUNNING')}>Resume</button>}
+          {(exp.status === 'RUNNING' || exp.status === 'PAUSED') && <button type="button" className="btn-secondary text-sm" onClick={conclude.start}>Conclude</button>}
+          {exp.status !== 'RUNNING' && exp.status !== 'COMPLETED' && <button type="button" className="btn-ghost text-sm text-red-600" onClick={onDelete}>Delete</button>}
+        </div>
+      )}
+    </div>
+  );
+}

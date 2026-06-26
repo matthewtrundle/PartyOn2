@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { blankHoneypotFields } from '@/lib/forms/honeypot';
 import Image from 'next/image';
 import Link from 'next/link';
 import CorporateEventCalculatorLanding from '@/components/CorporateEventCalculatorLanding';
@@ -91,8 +92,8 @@ export default function CorporateHolidayPartyPage() {
         utm_campaign: sessionStorage.getItem('utm_campaign') || '',
         utm_content: sessionStorage.getItem('utm_content') || '',
         _formLoadedAt: formLoadedAt.current,
-        website_url: '',
-        fax_number: '',
+        // Honeypot: always-empty trap, unified non-autofill name (see @/lib/forms/honeypot).
+        ...blankHoneypotFields(),
       };
 
       const response = await fetch('/api/partners/inquiry', {
@@ -102,7 +103,10 @@ export default function CorporateHolidayPartyPage() {
       });
 
       const data = await response.json();
-      if (!response.ok || !data.success) {
+      // Require a persisted inquiryId — a honeypot/too-fast/gibberish drop (or a
+      // failed save) returns success:true without one, so this keeps the
+      // confirmation (and the Meta Lead event below) honest.
+      if (!response.ok || !data.success || !data.inquiryId) {
         throw new Error(data.error || 'Failed to submit form');
       }
 

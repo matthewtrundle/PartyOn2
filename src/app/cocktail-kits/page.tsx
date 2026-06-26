@@ -1,6 +1,9 @@
 import { Metadata } from 'next'
 import Image from 'next/image'
+import TrackedLink from '@/components/analytics/TrackedLink'
+import CocktailKitsHero from './CocktailKitsHero'
 import CocktailKitsProductSection from '@/components/CocktailKitsProductSection'
+import July4CocktailKitsSection from '@/components/July4CocktailKitsSection'
 import LuxuryCard from '@/components/LuxuryCard'
 import { prisma } from '@/lib/database/client'
 import { transformToProduct } from '@/lib/products/transform'
@@ -43,6 +46,29 @@ export default async function CocktailKitsPage() {
 
   const cocktailKits = productCategories.map(pc => transformToProduct(pc.product))
 
+  // --- July 4th seasonal trio (Red → True Blue → Coconut). Fetched by handle (not via the
+  // collection) so the section is explicit and ordered; these kits also live in the cocktail-kits
+  // category, so they're de-duped out of the grid below. Mirrors /austin-4th-of-july-delivery. ---
+  const JULY4_HANDLES = [
+    'strawberry-lemonade-vodka-kit-serves-16',
+    'blue-margarita-kit-serves-16',
+    'coconut-colada-kit-serves-16',
+  ]
+  const july4Rows = await prisma.product.findMany({
+    where: { handle: { in: JULY4_HANDLES }, status: 'ACTIVE' },
+    include: {
+      images: { orderBy: { position: 'asc' } },
+      variants: { include: { image: true }, orderBy: { createdAt: 'asc' } },
+      categories: { include: { category: true } },
+    },
+  })
+  const july4Kits: Product[] = []
+  for (const handle of JULY4_HANDLES) {
+    const row = july4Rows.find(r => r.handle === handle)
+    if (row) july4Kits.push(transformToProduct(row))
+  }
+  const july4KitIds = new Set(july4Kits.map(kit => kit.id))
+
   // Find specific featured kits by name patterns
   const findKit = (pattern: string) =>
     cocktailKits.find((p: Product) =>
@@ -66,9 +92,9 @@ export default async function CocktailKitsPage() {
   // Get IDs of featured kits to exclude from secondary grid
   const featuredKitIds = new Set(featuredKits.map(kit => kit.id))
 
-  // Get other cocktail kits not in featured list
+  // Get other cocktail kits not in featured list (and not in the July 4th section above)
   const otherKits = cocktailKits.filter((kit: Product) =>
-    !featuredKitIds.has(kit.id)
+    !featuredKitIds.has(kit.id) && !july4KitIds.has(kit.id)
   )
 
   // Short, punchy subheadlines for each kit
@@ -89,33 +115,8 @@ export default async function CocktailKitsPage() {
       <section className="relative bg-gradient-to-br from-gray-50 to-gray-100 py-16 sm:py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Left Column - Text */}
-            <div className="text-center lg:text-left">
-              <h1 className="font-heading text-4xl sm:text-5xl lg:text-6xl text-gray-900 mb-6">
-                Premium Cocktail Kits, Delivered to Your Door
-              </h1>
-              <p className="text-xl sm:text-2xl text-gray-700 mb-6 tracking-wide">
-                Everything you need to make bar-quality cocktails at home. Just add ice.
-              </p>
-              <p className="text-lg text-gray-700 mb-8 leading-relaxed">
-                Skip the store runs and recipe hunting. Each kit comes with premium spirits, fresh mixers, and garnishes — perfectly portioned to make 16-24 cocktails for your next party.
-              </p>
-
-              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                <a
-                  href="#featured-products"
-                  className="inline-block bg-yellow-500 hover:bg-brand-yellow text-gray-900 px-8 py-4 text-lg font-medium tracking-widest transition-colors duration-200"
-                >
-                  SHOP COCKTAIL KITS
-                </a>
-                <a
-                  href="#how-it-works"
-                  className="inline-block border-2 border-gray-900 text-gray-900 hover:bg-gray-100 px-8 py-4 text-lg font-medium tracking-widest transition-colors duration-200"
-                >
-                  HOW IT WORKS
-                </a>
-              </div>
-            </div>
+            {/* Left Column - Text (hero A/B copy) */}
+            <CocktailKitsHero />
 
             {/* Right Column - Hero Image */}
             <div className="relative">
@@ -148,6 +149,9 @@ export default async function CocktailKitsPage() {
           </div>
         </div>
       </section>
+
+      {/* July 4th Cocktails! — seasonal red/white/blue trio */}
+      <July4CocktailKitsSection kits={july4Kits} />
 
       {/* Featured Cocktail Kits - Split Layout */}
       <section id="featured-products" className="py-16 bg-white border-b border-gray-100">
@@ -487,12 +491,14 @@ export default async function CocktailKitsPage() {
           <p className="text-lg mb-8 text-gray-700">
             Free Delivery on Orders $100+
           </p>
-          <a
+          <TrackedLink
             href="#featured-products"
+            section="final_cta"
+            buttonText="SHOP ALL COCKTAIL KITS"
             className="inline-block bg-gray-900 text-white hover:bg-gray-900 px-8 py-4 text-lg font-medium tracking-widest transition-colors duration-200"
           >
             SHOP ALL COCKTAIL KITS
-          </a>
+          </TrackedLink>
         </div>
       </section>
     </div>

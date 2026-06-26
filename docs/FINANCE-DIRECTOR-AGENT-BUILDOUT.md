@@ -6,6 +6,46 @@
 
 ---
 
+## 0. Current status (updated 2026-06-19)
+
+> This banner supersedes the Phase-0 "Goal" above — Phase 0 shipped long ago. It records
+> what's live, the data-reliability verdict, and the active next priority.
+
+**Shipped:** Phases 0 → 5C are all merged.
+
+| Phase | What | PR(s) |
+|---|---|---|
+| 5A | Shopify all-time order archive | #126 (fix #129) |
+| 5B | QuickBooks all-time expense backfill | #138 |
+| 5B.1 | Categorize QB expenses + pull journal-entry expenses | #142 |
+| 5C | Monthly trajectory rollup + segment classifier | #146 (zero-COGS unreliability fix #147) |
+
+**Investigation verdict (2026-06-18/19) — why profit isn't trustworthy yet.** Revenue
+trajectory (2021→today) is solid, but **net income is unreliable for every month** because
+expenses + income aren't reconciled against the operator's two real sources:
+
+1. **QuickBooks is on production but dormant for 2026.** Company *Premier Concierge
+   Worldwide* (realm 9130357382202626) has clean expenses for 2023–2025 (~$297k OpEx ·
+   ~$251k COGS · ~$81k non-operating) but bookkeeping lapsed at 2025-12-31. 2026 has only
+   ~$1,700/mo of auto-posted Shopify-selling-fee Purchases — no rent/payroll/alcohol, 0
+   Bills, 0 Journal Entries. The real 2026 expenses live in a different book (open with the
+   operator's accountant).
+2. **Plaid (bank feed) is still on SANDBOX.** `plaid_items` points at Plaid's fake
+   "Platypus" test institution — **real Wells Fargo was never connected**, so the
+   bank-reconciliation path is synthetic.
+3. **No Stripe→QB income connector** beyond the Phase 2B daily sales-journal cron. Real
+   2026 income (~$107k YTD) lives in the `Order` table (Stripe-direct).
+
+**Active next priority — Finance data cleanup (before PR D, the monthly close email).**
+Connect real Wells Fargo via Plaid (recent ~24 months; fills the 2026 expense gap QB
+misses), categorize bank outflows, reconcile income to bank deposits, and extend the
+monthly rollup to source expenses from QB where material else bank-derived — then flip
+`netIncomeReliable` per month. Canonical plan: `docs/finance/DATA-CLEANUP-PLAN.md`.
+Wells-Fargo connection runbook: `docs/CONNECT-PRODUCTION-PLAID.md`. **PR D (monthly close
+email) is deferred until the cleanup lands and the rollup is rebuilt on reconciled data.**
+
+---
+
 ## 1. Context — why this agent exists
 
 Party On Delivery (premium alcohol + party coordination delivery, Austin TX) is being reorganized around an "agentic org structure" — director-level Claude agents that own a functional area, surface decisions to the operator (Allan), and execute routine work autonomously. Three directors are now live:
@@ -308,6 +348,112 @@ Originally scoped: add `invoice_total_cents` / `due_date` / `paid_at` / `paid_vi
 - Heuristic generators in `src/lib/finance/recommendations.ts` (signals listed below)
 - Obsidian sync: `scripts/finance/sync-obsidian.mjs` + PreToolUse hook in `.claude/settings.json`
 - Vault shell: `Programs/Finance-Director.md` + `Memory/Finance/{Briefings,Recommendations,Decisions,MonthlyClose,Open-Questions.md,README.md}`
+
+### Phase 5A — Shopify all-time order archive (post-merge trajectory work) — ✅ shipped #126 (fix #129)
+
+- Splits out from Phase 5 follow-up: the monthly close email needs multi-year
+  history that doesn't live in the Order table (which only goes back ~5 months).
+- New `ShopifyOrderArchive` table — thin financial snapshot of every Shopify
+  order ever processed (totals, refunds, line items, landing page, tags).
+- New `ShopifyArchiveSyncState` singleton tracks last full backfill + last
+  incremental cursor.
+- One-shot backfill script `scripts/finance/backfill-shopify-archive.ts` walks
+  the Admin GraphQL `orders` connection from inception.
+- Daily safety-net cron `/api/cron/finance-shopify-archive-sync` (07:00 UTC)
+  re-pulls anything Shopify updated in the last 36h.
+- Idempotent upsert keyed by Shopify order GID.
+
+**Backfill result (2026-06-15):** 2,968 orders archived, span #1001 (2021-02-14)
+→ #3968 (2026-06-11), 2,790 PAID. PAID revenue by year: 2023 $10.9k · 2024
+$107.1k · 2025 $203.7k · 2026 (Shopify only) $6.6k.
+
+**⚠️ Two-source architecture — critical for Phase 5C.** PartyOn migrated from
+Shopify checkout to the Stripe→Postgres dashboard flow around 2026-01. Current
+orders do NOT write to Shopify. So the two sources split by era:
+  - Shopify archive = primary source through ~2025-12 (Order table is empty then)
+  - `Order` table = primary source from 2026-01 on
+The two sets are **disjoint, not duplicates** — verified: only 2 of 311 2026
+`Order` rows carry any `shopifyOrderId`, and the archive's 2026 orders (#3922+)
+do not appear in the Order table. The Shopify 2026 tail (~46 orders, $6.6k) is
+genuine separate revenue (manual draft orders still made in Shopify).
+**So Phase 5C should UNION both sources across all time and dedup only the rare
+overlap** (match `Order.shopifyOrderId` ↔ `archive.shopify_order_id`, or
+`Order.shopifyOrderNumber` ↔ `archive.shopify_order_name`). A hard cutoff at
+2026-01 is the conservative fallback but undercounts the 2026 Shopify tail.
+
+**Shopify plan limitation.** The store (`premier-concierge`) is below the
+Shopify/Advanced/Plus tier, so the Admin API denies the `customer` object (PII:
+email, name, address). The archive's `customer_email` / `shopify_customer_id` /
+`landing_page` columns are always null. Top-customer attribution for the recent
+period comes from the `Order` table (Stripe-populated) instead. Segment
+classification falls back to `source_name` + group order name (Shopify `tags`
+are empty on this store too).
+
+### Phase 5B — QuickBooks all-time expense backfill — ✅ shipped #138
+
+- **Blocker resolved (2026-06-17):** QB was connected to the Intuit **sandbox**
+  (realm 9341457195868909, 47 fake sample expenses). Operator connected
+  **production** — realm 9130357382202626, company **Premier Concierge Worldwide**
+  (the legal entity holding PartyOn's books). Runbook:
+  `docs/CONNECT-PRODUCTION-QUICKBOOKS.md`.
+- New `realm_id` column on `qb_expenses` + `qb_accounts` so sandbox vs prod rows
+  are separable. `purgeOtherRealmData(keepRealmId)` clears everything not from the
+  connected realm (NULL rows = pre-column sandbox).
+- The existing `/api/cron/finance-qb-pull` cron gains params: `?all=true`
+  (all-time floor 2010-01-01), `?since=YYYY-MM-DD` (explicit floor for year-by-year
+  chunking), `?purgeSandbox=true` (cutover cleanup). Cutover run:
+  `GET /api/cron/finance-qb-pull?all=true&purgeSandbox=true` with the CRON_SECRET bearer.
+- **Scope:** Purchase + Bill (the proven OpEx path). JournalEntry / SalesReceipt /
+  Invoice / Deposit deferred — JournalEntry expense lines are a fast-follow once we
+  confirm the Purchase+Bill totals match the operator's sense of real OpEx.
+- **⚠️ Operator action after cutover:** the sandbox→prod switch invalidates the
+  Phase 2B journal-account mappings (they point at sandbox account IDs). Re-map at
+  `/admin/finance/journals/settings` against the new production accounts before
+  trusting the autonomous sales-journal posting.
+
+**Backfill result (2026-06-17):** 2,234 real Purchase txns (0 Bills — this company
+records expenses as Purchases, not the AP/Bill workflow), realm 9130357382202626,
+back to 2023-01-03. $629k gross outflow.
+
+**⚠️ The QB company is the 2023–2025 operating entity, dormant from ~2026-01.**
+Transaction volume declines sharply right at 2026-01 (Dec 2025: 14 txns → Jan
+2026: 4 → Jun 2026: 3, ~$20-75/mo), the SAME point revenue moved off Shopify to
+the Order table. So expense bookkeeping migrated out of this QB company around
+2026-01 too. PartyOn's 2026 expenses live in a different book (TBD with operator).
+Net result: **no single period yet has both clean revenue AND clean expenses** —
+2023-2025 has expenses (QB) but revenue is Shopify; 2026 has revenue (Order table)
+but ~no expenses here. Net-profit deferred until this resolves.
+
+**Categorization fix (qb-account-map.ts) — ✅ Phase 5B.1, shipped #142** (also pulls
+journal-entry expense lines). Real chart of accounts needed new
+rules. Inventory ($251k) = COGS (the alcohol). Added `payment_fees` (Shopify/
+Stripe $30k), `repairs`, and `non_operating` (loans + owner/inter-company
+transfers, $81k — excluded from OpEx via `isOperatingExpense()` /
+`NON_OPEX_CATEGORIES`). Result: "Other" collapsed from $374k/1,404 txns to
+$2.7k/10 txns. Clean 2023-2025 split: ~$297k true OpEx · ~$251k COGS · ~$81k
+non-operating. Phase 5C's rollup MUST exclude COGS + non_operating from OpEx
+(pl-calculation.ts line 229 currently sums ALL qb_expenses — fix in 5C).
+
+### Phase 5C — Monthly trajectory rollup — ✅ shipped #146 (zero-COGS unreliability fix #147)
+
+- New `FinanceMonthlyRollup` table (one row per year+month). Built by
+  `src/lib/finance/monthly-rollup.ts` — UNIONs Shopify archive (≤2025-12) +
+  Order table (2026+), deduped on the rare overlap, layers QB OpEx where
+  available. Stores revenue, top SKUs, segment mix, top customers/affiliates,
+  expense categories (with top vendor), and a `dataHealth` block.
+- Segment classifier `order-segment.ts` reuses the existing analytics
+  `classifySegment` taxonomy (bach/wedding/corporate/boat/kegs/general); coarse
+  historically (Shopify era has no landing page / empty tags).
+- `dataHealth.netIncomeReliable` is the honesty gate: net income is only
+  trustworthy when there are no completeness flags. In practice it's **false
+  for every month so far** — 2023-2025 revenue is Shopify-understated vs real
+  expenses (artificial losses); 2026 has real revenue but QB is dormant (COGS=0,
+  artificial profit). The Phase 5D briefing must render net income as "pending"
+  + the flags, never the raw number.
+- Full backfill: `scripts/finance/backfill-monthly-rollups.ts` (run after the
+  migration). Nightly refresh: `/api/cron/finance-monthly-rollup` (08:10 UTC,
+  trailing 2 months; `?months=N` after a re-categorization).
+- Bookkeeper handoff for the 2026 gap: `docs/QUICKBOOKS-2026-CATCHUP-FOR-BOOKKEEPER.md`.
 
 ### Phase 6 — Auto-categorize graduation (post-trust)
 

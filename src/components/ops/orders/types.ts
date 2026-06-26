@@ -37,7 +37,8 @@ export interface Order {
   status: string;
   financialStatus: string;
   fulfillmentStatus: string;
-  customer: OrderCustomer;
+  /** Present on /api/v1/admin/orders payloads; absent on orders-view payloads. */
+  customer?: OrderCustomer;
   customerName: string;
   customerEmail: string;
   customerPhone: string | null;

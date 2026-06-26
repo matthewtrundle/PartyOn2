@@ -12,7 +12,7 @@ import BlogTopicCTA from '@/components/blog/BlogTopicCTA'
 import BlogFAQ from '@/components/blog/BlogFAQ'
 import blogPostsData from '@/data/blog-posts/posts.json'
 import { seoConfig } from '@/lib/seo/config'
-import { generateArticleSchema, generateFAQSchema } from '@/lib/seo/schemas'
+import { generateArticleSchema, generateFAQSchema, generateRecipeSchema } from '@/lib/seo/schemas'
 import { buildBlogMetadata } from '@/lib/seo/build-metadata'
 
 interface BlogPost {
@@ -1064,6 +1064,20 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
       ? generateFAQSchema(mdxPost.faq.map(({ q, a }) => ({ question: q, answer: a })))
       : null
 
+    const recipeSchemas = (mdxPost.recipes ?? []).map((r) =>
+      generateRecipeSchema({
+        name: r.name,
+        description: r.description,
+        recipeYield: r.recipeYield,
+        prepTime: r.prepTime,
+        ingredients: r.ingredients,
+        instructions: r.instructions,
+        image: `${seoConfig.siteUrl}${mdxPost.image}`,
+        author: mdxPost.author,
+        url: `${seoConfig.siteUrl}/blog/${resolvedParams.slug}`,
+      })
+    )
+
     return (
       <div className="bg-white min-h-screen">
         <script
@@ -1076,6 +1090,13 @@ export default async function BlogPostPage({ params }: BlogPostPageProps) {
             dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
           />
         )}
+        {recipeSchemas.map((recipeSchema, i) => (
+          <script
+            key={`recipe-${i}`}
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(recipeSchema) }}
+          />
+        ))}
         <Navigation />
 
         {/* Hero Section with Image */}

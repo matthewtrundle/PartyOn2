@@ -4,6 +4,7 @@ import { sendPartnerInquiryNotification, sendPartnerOnePagerEmail } from '@/lib/
 import type { PartnerInquiryData } from '@/lib/email/email-service'
 import { addContactToAudience } from '@/lib/email/resend-audiences'
 import { kv, isKVConfigured, prisma } from '@/lib/database/client'
+import { isHoneypotTripped } from '@/lib/forms/honeypot'
 
 // Sources that trigger an automated outbound email with the partner one-pager
 // PDF + Calendly CTA (in addition to the existing ops notification).
@@ -154,10 +155,15 @@ export async function POST(request: NextRequest) {
       hasData: !!body && Object.keys(body).length > 0
     })
 
-    // Honeypot check — hidden field that should always be empty
-    if (body.website_url || body.fax_number) {
-      console.warn('[Partner Inquiry] REJECTED: Honeypot triggered', { ip, userAgent })
-      // Return success to not tip off bots
+    // Honeypot check — a hidden, deliberately non-autofill-named field bots
+    // tend to fill (see src/lib/forms/honeypot.ts for why the name matters).
+    // We log every trip with the ip + which trap fired, so a real person caught
+    // here is visible in logs instead of vanishing. We return success WITHOUT
+    // an `inquiryId` — the client only celebrates on an `inquiryId`, so a drop
+    // never shows a false "thank you", and a bot can't tell it was caught.
+    const honeypot = isHoneypotTripped(body)
+    if (honeypot.tripped) {
+      console.warn('[Partner Inquiry] honeypot tripped — dropped', { field: honeypot.field, ip, userAgent })
       return NextResponse.json({
         success: true,
         message: 'Thank you for your interest! Our partnership team will contact you within 24 hours.',

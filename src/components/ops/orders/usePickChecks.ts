@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import type { ItemCheckEntry, ItemChecks } from './types';
 
 // --- In Stock / Packed / Short By state ---
@@ -19,6 +19,49 @@ export function loadCachedChecks(orderId: string): ItemChecks {
   }
 }
 
+// --- Cross-component change signal ---
+// Pick state lives in localStorage + the server. This lets lightweight readers
+// (the day tiles' pack-progress badges, Pack mode's day total) re-render
+// whenever ANY order's pick state is written, without each owning a fetch.
+let pickVersion = 0;
+const pickListeners = new Set<() => void>();
+
+function notifyPickChange(): void {
+  pickVersion += 1;
+  pickListeners.forEach((fn) => fn());
+}
+
+function subscribePick(listener: () => void): () => void {
+  pickListeners.add(listener);
+  return () => {
+    pickListeners.delete(listener);
+  };
+}
+
+/** Re-render the caller whenever any order's pick state changes. */
+export function usePickTick(): number {
+  return useSyncExternalStore(
+    subscribePick,
+    () => pickVersion,
+    () => pickVersion,
+  );
+}
+
+/**
+ * Top-level line-item pack progress for one order, read from the cache.
+ * Counts how many of the order's line items are marked Packed (bundle
+ * components are tracked in the checklist but not counted here).
+ */
+export function orderPackProgress(
+  orderId: string,
+  items: { title: string }[],
+): { packed: number; total: number } {
+  const checks = loadCachedChecks(orderId);
+  let packed = 0;
+  for (const it of items) if (checks[it.title]?.packed) packed += 1;
+  return { packed, total: items.length };
+}
+
 /** Write-through cache an order's pick state to localStorage. */
 export function cacheChecks(orderId: string, data: ItemChecks): void {
   try {
@@ -26,6 +69,7 @@ export function cacheChecks(orderId: string, data: ItemChecks): void {
   } catch {
     // ignore quota / private-mode errors
   }
+  notifyPickChange();
 }
 
 /** Fetch authoritative pick state from the server. Returns null on failure. */

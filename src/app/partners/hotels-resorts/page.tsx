@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
+import { blankHoneypotFields } from '@/lib/forms/honeypot'
 import Image from 'next/image'
 import Navigation from "@/components/Navigation"
 import Footer from '@/components/Footer'
@@ -58,13 +59,15 @@ export default function HotelsResortsPartnerPage() {
           source: 'hotels-resorts-page',
           submittedAt: new Date().toISOString(),
           _formLoadedAt: formLoadedAt.current,
-          website_url: '',
-          fax_number: '',
+          // Honeypot: always-empty trap, unified non-autofill name (see @/lib/forms/honeypot).
+          ...blankHoneypotFields(),
         }),
       })
 
       const data = await response.json();
-      if (!response.ok || !data.success) {
+      // Require a persisted inquiryId — a honeypot/too-fast/gibberish drop (or a
+      // failed save) returns success:true without one.
+      if (!response.ok || !data.success || !data.inquiryId) {
         throw new Error(data.error || 'Failed to submit form');
       }
 

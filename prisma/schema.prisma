@@ -33,6 +33,22 @@ model PartnerInquiry {
   @@map("partner_inquiries")
 }
 
+// RSVPs from one-off event invite landing pages (e.g. /dads-gone-wild).
+// Public, unauthenticated capture — one row per submitted RSVP.
+model EventRsvp {
+  id         String   @id @default(uuid())
+  event      String // slug of the invite page, e.g. "dads-gone-wild"
+  name       String
+  adults     Int      @default(1)
+  kids       Int      @default(0)
+  dish       String?
+  totalHeads Int      @map("total_heads")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([event])
+  @@map("event_rsvps")
+}
+
 // Analytics Snapshots - daily analytics data
 model AnalyticsSnapshot {
   id                 String   @id @default(uuid())
@@ -151,6 +167,7 @@ model Experiment {
   goalMetric     String           @map("goal_metric")
   goalValue      String?          @map("goal_value")
   winningVariant String?          @map("winning_variant")
+  winnerReason   String?          @map("winner_reason") @db.Text
   confidence     Float?
   createdAt      DateTime         @default(now()) @map("created_at")
   updatedAt      DateTime         @updatedAt @map("updated_at")
@@ -173,6 +190,9 @@ model ExperimentVariant {
   experimentId String   @map("experiment_id")
   name         String
   description  String?
+  /// Self-serve hero-copy payload for this variant: { eyebrow?, headline?, subhead?, ctaText? }.
+  /// Null = render the page's default copy (control).
+  content      Json?
   isControl    Boolean  @default(false) @map("is_control")
   weight       Int      @default(50)
   impressions  Int      @default(0)
@@ -772,6 +792,11 @@ model Cart {
   taxAmount   Decimal @default(0) @map("tax_amount") @db.Decimal(10, 2)
   deliveryFee Decimal @default(25) @map("delivery_fee") @db.Decimal(10, 2)
   total       Decimal @default(0) @db.Decimal(10, 2)
+
+  // Immutable snapshot of the PRODUCT line items priced into the Stripe charge at
+  // session-creation. OrderItems are rebuilt from this at order-creation so they can never
+  // diverge from what Stripe charged. Shape: ChargedLineItem[] (see lib/stripe/charge-snapshot.ts).
+  chargedLineItems Json? @map("charged_line_items")
 
   // Group order association
   groupOrderId String? @map("group_order_id")
@@ -1966,6 +1991,9 @@ model ParticipantPayment {
   discountAmount          Decimal              @default(0) @map("discount_amount") @db.Decimal(10, 2)
   tipAmount               Decimal              @default(0) @map("tip_amount") @db.Decimal(10, 2)
   total                   Decimal              @default(0) @db.Decimal(10, 2)
+  // Immutable snapshot of the PRODUCT line items priced into the Stripe charge at
+  // session-creation. Order items are built from this (see lib/stripe/charge-snapshot.ts).
+  chargedLineItems        Json?                @map("charged_line_items")
   status                  GroupV2PaymentStatus @default(PENDING)
   paidAt                  DateTime?            @map("paid_at")
   orderId                 String?              @map("order_id")
@@ -2612,6 +2640,36 @@ model FinanceSnapshot {
   @@map("finance_snapshots")
 }
 
+/// Game Plan — human-authored strategic initiatives for the /admin/strategy
+/// living-document page (Allan + Brian). Distinct from the machine-detected
+/// recommendation queues above: these are owned, prioritized, hand-tracked
+/// initiatives with a sub-task checklist and an append-only progress log.
+/// Seeded with the 10 kickoff items via
+/// prisma/migrations/manual/2026-06-17-strategy-initiatives.sql.
+model StrategyInitiative {
+  id           String    @id @default(cuid())
+  pillar       String    // finance | operations | acquisition | partnerships
+  title        String
+  description  String?   @db.Text
+  status       String    @default("not_started") // not_started | in_progress | blocked | done
+  priority     String    @default("later")       // now | next | later
+  owner        String?
+  nextAction   String?   @map("next_action") @db.Text
+  targetDate   DateTime? @map("target_date") @db.Date
+  linkedDomain String?   @map("linked_domain")   // finance | operations | marketing | seo
+  sortOrder    Int       @default(0) @map("sort_order")
+  subtasks     Json      @default("[]") // [{ id, label, done, createdAt }]
+  updates      Json      @default("[]") // [{ id, author, body, createdAt }] append-only progress log
+  archivedAt   DateTime? @map("archived_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  @@index([pillar])
+  @@index([status])
+  @@index([pillar, priority, sortOrder])
+  @@map("strategy_initiatives")
+}
+
 /// Single-row holder for the active QuickBooks Online OAuth state. Refresh
 /// token rotates on each refresh; the row is updated in place. Operator-created
 /// via the /admin/finance/connect-quickbooks OAuth flow — never seeded by migration.
@@ -2700,6 +2758,14 @@ model PlaidTransaction {
   matchedQbExpenseId              String?   @map("matched_qb_expense_id")
   qbTransactionId                 String?   @map("qb_transaction_id")
   qbCategoryAssigned              String?   @map("qb_category_assigned")
+  /// Finance data cleanup — the PartyOn CategorySlug assigned to this outflow by
+  /// plaid-category-map.ts during sync (production items only). Lets the monthly
+  /// rollup source expenses from the bank feed for QB-dormant months.
+  bankDerivedCategory             String?   @map("bank_derived_category")
+  /// True only for real business costs (cogs or an operating slug) on a production
+  /// item with no QB match. Transfers / CC payments / loan principal / owner draws
+  /// are non_operating → false, so they never count as expenses.
+  isBankDerivedExpense            Boolean   @default(false) @map("is_bank_derived_expense")
   reconciledAt                    DateTime? @map("reconciled_at")
   createdAt                       DateTime  @default(now()) @map("created_at")
   updatedAt                       DateTime  @updatedAt @map("updated_at")
@@ -2740,6 +2806,10 @@ model QbAccount {
   accountSubType  String?  @map("account_sub_type")
   currency        String   @default("USD")
   active          Boolean  @default(true)
+  /// QB realm (company) this account came from. Lets the Phase 5B backfill
+  /// purge stale sandbox rows without touching production data. NULL on rows
+  /// written before Phase 5B.
+  realmId         String?  @map("realm_id")
   lastSyncedAt    DateTime @default(now()) @map("last_synced_at")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
@@ -2747,6 +2817,7 @@ model QbAccount {
   expenses        QbExpense[]
 
   @@index([accountType])
+  @@index([realmId])
   @@map("qb_accounts")
 }
 
@@ -2767,6 +2838,10 @@ model QbExpense {
   /// "Software", "Fuel", "Rent"). Derived from qb-account-map.ts.
   categorySlug      String?  @map("category_slug")
   memo              String?  @db.Text
+  /// QB realm (company) this expense came from. Lets the Phase 5B backfill
+  /// purge stale sandbox rows without touching production data. NULL on rows
+  /// written before Phase 5B.
+  realmId           String?  @map("realm_id")
   rawPayload        Json     @map("raw_payload")
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
@@ -2776,7 +2851,94 @@ model QbExpense {
   @@index([txnDate])
   @@index([categorySlug, txnDate])
   @@index([qbAccountId])
+  @@index([realmId])
   @@map("qb_expenses")
+}
+
+/// Thin financial snapshot of every Shopify order ever processed (Phase 5A).
+/// Powers multi-year monthly rollups for the Finance Director trajectory
+/// briefing. NOT a replacement for Order — Order is still the system of
+/// record for fulfillment / picking / refunds. This holds only the fields
+/// needed for trajectory math + segment classification.
+model ShopifyOrderArchive {
+  id                    String   @id @default(cuid())
+  shopifyOrderId        String   @unique @map("shopify_order_id")
+  shopifyOrderName      String?  @map("shopify_order_name")
+  processedAt           DateTime @map("processed_at")
+  shopifyCreatedAt      DateTime @map("shopify_created_at")
+  totalPriceCents       Int      @map("total_price_cents")
+  subtotalPriceCents    Int      @map("subtotal_price_cents")
+  totalTaxCents         Int      @default(0) @map("total_tax_cents")
+  totalShippingCents    Int      @default(0) @map("total_shipping_cents")
+  totalDiscountsCents   Int      @default(0) @map("total_discounts_cents")
+  totalRefundsCents     Int      @default(0) @map("total_refunds_cents")
+  currency              String   @default("USD")
+  financialStatus       String?  @map("financial_status")
+  fulfillmentStatus     String?  @map("fulfillment_status")
+  customerEmail         String?  @map("customer_email")
+  shopifyCustomerId     String?  @map("shopify_customer_id")
+  landingPage           String?  @map("landing_page") @db.Text
+  referringSite         String?  @map("referring_site") @db.Text
+  sourceIdentifier      String?  @map("source_identifier")
+  sourceName            String?  @map("source_name")
+  /// Denormalised line items: [{ sku, title, productId, variantId, quantity, priceCents }].
+  lineItems             Json     @default("[]") @map("line_items")
+  tags                  String[] @default([])
+  note                  String?  @db.Text
+  rawPayload            Json?    @map("raw_payload")
+  syncedAt              DateTime @default(now()) @map("synced_at")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  @@index([processedAt])
+  @@index([financialStatus])
+  @@index([customerEmail])
+  @@index([shopifyCustomerId])
+  @@map("shopify_order_archive")
+}
+
+/// Single-row tracker for the Shopify archive backfill + safety-net cron
+/// (Phase 5A). Lets the daily cron pull only what changed since last run.
+model ShopifyArchiveSyncState {
+  id                     String    @id @default("singleton")
+  lastFullBackfillAt     DateTime? @map("last_full_backfill_at")
+  lastIncrementalAt      DateTime? @map("last_incremental_at")
+  lastCursorUpdatedAt    DateTime? @map("last_cursor_updated_at")
+  lastError              String?   @map("last_error") @db.Text
+  totalOrdersArchived    Int       @default(0) @map("total_orders_archived")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
+
+  @@map("shopify_archive_sync_state")
+}
+
+/// Pre-computed monthly trajectory rollup (Phase 5C). One row per (year,
+/// month). UNIONs the two revenue eras (ShopifyOrderArchive ≤2025-12 + Order
+/// ≥2026-01, deduped) and layers QB OpEx where available. Profit columns stay
+/// null when data is incomplete. Built by src/lib/finance/monthly-rollup.ts.
+model FinanceMonthlyRollup {
+  id                       String   @id @default(cuid())
+  year                     Int
+  month                    Int // 1-12
+  revenueCents             BigInt   @default(0) @map("revenue_cents")
+  orderCount               Int      @default(0) @map("order_count")
+  cogsCents                BigInt?  @map("cogs_cents")
+  grossProfitCents         BigInt?  @map("gross_profit_cents")
+  opexCents                BigInt?  @map("opex_cents")
+  netIncomeCents           BigInt?  @map("net_income_cents")
+  revenueFromShopifyCents  BigInt   @default(0) @map("revenue_from_shopify_cents")
+  revenueFromOrdersCents   BigInt   @default(0) @map("revenue_from_orders_cents")
+  topSkus                  Json     @default("[]") @map("top_skus")
+  segmentBreakdown         Json     @default("{}") @map("segment_breakdown")
+  topCustomers             Json     @default("[]") @map("top_customers")
+  topAffiliates            Json     @default("[]") @map("top_affiliates")
+  expenseCategories        Json     @default("[]") @map("expense_categories")
+  dataHealth               Json     @default("{}") @map("data_health")
+  computedAt               DateTime @default(now()) @map("computed_at")
+  createdAt                DateTime @default(now()) @map("created_at")
+  updatedAt                DateTime @updatedAt @map("updated_at")
+
+  @@unique([year, month])
+  @@map("finance_monthly_rollup")
 }
 
 /// Per-day sales journal entries posted from PartyOn → QuickBooks (Phase 2B).

@@ -15,7 +15,7 @@
  */
 
 import { prisma } from '@/lib/database/client';
-import { qboQuery } from './qb-client';
+import { qboQuery, getValidAccessToken } from './qb-client';
 import {
   categorizeQbAccount,
   type CategorySlug,
@@ -82,6 +82,7 @@ export async function syncQbAccounts(): Promise<{
 }> {
   let upserted = 0;
   const perTypeErrors: string[] = [];
+  const { realmId } = await getValidAccessToken();
 
   // Pull EVERY account regardless of type. Phase 2A (OpEx) only consumes
   // expense-type rows, but Phase 2B's journal mapping needs Income, Asset,
@@ -97,7 +98,7 @@ export async function syncQbAccounts(): Promise<{
       const accounts = (resp?.Account ?? []) as QbAccountApi[];
       if (accounts.length === 0) break;
       for (const a of accounts) {
-        await upsertQbAccountRow(a);
+        await upsertQbAccountRow(a, realmId);
         upserted++;
       }
       if (accounts.length < PAGE_SIZE) break;
@@ -112,7 +113,7 @@ export async function syncQbAccounts(): Promise<{
   return { upserted, perTypeErrors };
 }
 
-async function upsertQbAccountRow(a: QbAccountApi): Promise<void> {
+async function upsertQbAccountRow(a: QbAccountApi, realmId: string): Promise<void> {
   await prisma.qbAccount.upsert({
     where: { qbAccountId: a.Id },
     create: {
@@ -123,6 +124,7 @@ async function upsertQbAccountRow(a: QbAccountApi): Promise<void> {
       accountSubType: a.AccountSubType ?? null,
       currency: a.CurrencyRef?.value ?? 'USD',
       active: a.Active ?? true,
+      realmId,
       lastSyncedAt: new Date(),
     },
     update: {
@@ -131,9 +133,29 @@ async function upsertQbAccountRow(a: QbAccountApi): Promise<void> {
       accountType: a.AccountType ?? null,
       accountSubType: a.AccountSubType ?? null,
       active: a.Active ?? true,
+      realmId,
       lastSyncedAt: new Date(),
     },
   });
+}
+
+/**
+ * Delete cached QB accounts + expenses that did NOT come from `keepRealmId`.
+ * Used by the Phase 5B all-time backfill to clear the old Intuit sandbox rows
+ * (realm 9341457195868909, written before the realm_id column existed → NULL)
+ * before pulling real production data. NULL realm rows are treated as "not the
+ * current realm" and removed.
+ */
+export async function purgeOtherRealmData(
+  keepRealmId: string
+): Promise<{ expensesDeleted: number; accountsDeleted: number }> {
+  const expensesDeleted = await prisma.$executeRaw`
+    DELETE FROM qb_expenses WHERE realm_id IS DISTINCT FROM ${keepRealmId}
+  `;
+  const accountsDeleted = await prisma.$executeRaw`
+    DELETE FROM qb_accounts WHERE realm_id IS DISTINCT FROM ${keepRealmId}
+  `;
+  return { expensesDeleted, accountsDeleted };
 }
 
 // ---------------------------------------------------------------------------
@@ -201,6 +223,7 @@ export async function pullQbExpenses(
 ): Promise<PullExpensesResult> {
   let purchases = 0;
   let bills = 0;
+  const { realmId } = await getValidAccessToken();
 
   // Purchase
   let position = 1;
@@ -227,6 +250,7 @@ export async function pullQbExpenses(
           qbAccountId: cachedAccountId,
           categorySlug: category,
           memo: p.PrivateNote ?? null,
+          realmId,
           rawPayload: p as unknown as object,
         },
         update: {
@@ -236,6 +260,7 @@ export async function pullQbExpenses(
           qbAccountId: cachedAccountId,
           categorySlug: category,
           memo: p.PrivateNote ?? null,
+          realmId,
           rawPayload: p as unknown as object,
         },
       });
@@ -269,6 +294,7 @@ export async function pullQbExpenses(
           qbAccountId: cachedAccountId,
           categorySlug: category,
           memo: b.PrivateNote ?? null,
+          realmId,
           rawPayload: b as unknown as object,
         },
         update: {
@@ -278,6 +304,7 @@ export async function pullQbExpenses(
           qbAccountId: cachedAccountId,
           categorySlug: category,
           memo: b.PrivateNote ?? null,
+          realmId,
           rawPayload: b as unknown as object,
         },
       });
@@ -288,6 +315,125 @@ export async function pullQbExpenses(
   }
 
   return { purchases, bills };
+}
+
+// ---------------------------------------------------------------------------
+// JournalEntry pull (Phase 5B fast-follow)
+//
+// Some bookkeepers record expenses as journal entries rather than Purchases.
+// We pull every JournalEntry and keep only the DEBIT lines that hit an
+// expense / COGS account — the expense side of the entry. Two guards stop us
+// re-importing our OWN Phase 2B sales journals:
+//   1. skip entries whose PrivateNote marks them PartyOn-authored, and
+//   2. only count debits to P&L expense accounts (our sales journals debit
+//      cash/AR, never expense accounts), so they net to zero here anyway.
+// ---------------------------------------------------------------------------
+
+interface QbJournalLineApi {
+  Id?: string;
+  Amount?: number;
+  Description?: string;
+  DetailType?: string;
+  JournalEntryLineDetail?: {
+    PostingType?: 'Debit' | 'Credit';
+    AccountRef?: { value?: string; name?: string };
+  };
+}
+
+interface QbJournalEntryApi {
+  Id: string;
+  TxnDate?: string;
+  PrivateNote?: string;
+  CurrencyRef?: { value?: string };
+  Line?: QbJournalLineApi[];
+}
+
+/** True if a QB account type is a profit-and-loss expense account. */
+function isExpenseAccountType(accountType: string | null | undefined): boolean {
+  if (!accountType) return false;
+  return /expense|cost.?of.?goods/i.test(accountType);
+}
+
+function isPartyOnAuthoredJournal(note: string | undefined): boolean {
+  if (!note) return false;
+  return /PartyOn auto-drafted|REVERSAL of QB JournalEntry/i.test(note);
+}
+
+/**
+ * Pull JournalEntry expense lines whose TxnDate >= sinceIso. Idempotent —
+ * each expense line upserts as `JournalEntry:{entryId}:{lineId}`.
+ */
+export async function pullQbJournalEntries(
+  sinceIso: string // YYYY-MM-DD
+): Promise<{ entriesScanned: number; expenseLinesUpserted: number; skippedOwn: number }> {
+  const { realmId } = await getValidAccessToken();
+  let entriesScanned = 0;
+  let expenseLinesUpserted = 0;
+  let skippedOwn = 0;
+
+  let position = 1;
+  while (true) {
+    const q = `SELECT * FROM JournalEntry WHERE TxnDate >= '${sinceIso}' STARTPOSITION ${position} MAXRESULTS ${PAGE_SIZE}`;
+    const resp = await qboQuery(q);
+    const rows = (resp?.JournalEntry ?? []) as QbJournalEntryApi[];
+    if (rows.length === 0) break;
+
+    for (const je of rows) {
+      entriesScanned++;
+      if (isPartyOnAuthoredJournal(je.PrivateNote)) {
+        skippedOwn++;
+        continue;
+      }
+      const lines = je.Line ?? [];
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        const detail = line.JournalEntryLineDetail;
+        if (detail?.PostingType !== 'Debit') continue;
+        const accountId = detail.AccountRef?.value ?? null;
+        if (!accountId) continue;
+
+        const account = await prisma.qbAccount.findUnique({
+          where: { qbAccountId: accountId },
+          select: { name: true, fullyQualifiedName: true, accountSubType: true, accountType: true },
+        });
+        // Only the expense / COGS side of the entry counts as spend.
+        if (!isExpenseAccountType(account?.accountType)) continue;
+
+        const category = account
+          ? categorizeQbAccount({
+              accountSubType: account.accountSubType,
+              name: account.name,
+              fullyQualifiedName: account.fullyQualifiedName,
+            })
+          : 'other';
+        const lineId = line.Id ?? String(i);
+        const txnId = `JournalEntry:${je.Id}:${lineId}`;
+        const data = {
+          txnType: 'JournalEntry',
+          txnDate: new Date(`${je.TxnDate ?? sinceIso}T00:00:00Z`),
+          amountCents: cents(line.Amount),
+          currency: je.CurrencyRef?.value ?? 'USD',
+          vendorName: null,
+          qbAccountId: accountId,
+          categorySlug: category,
+          memo: line.Description ?? je.PrivateNote ?? null,
+          realmId,
+          rawPayload: je as unknown as object,
+        };
+        await prisma.qbExpense.upsert({
+          where: { qbTransactionId: txnId },
+          create: { qbTransactionId: txnId, ...data },
+          update: data,
+        });
+        expenseLinesUpserted++;
+      }
+    }
+
+    if (rows.length < PAGE_SIZE) break;
+    position += rows.length;
+  }
+
+  return { entriesScanned, expenseLinesUpserted, skippedOwn };
 }
 
 // ---------------------------------------------------------------------------

@@ -27,13 +27,48 @@ export type CategorySlug =
   | 'professional'
   | 'taxes_fees'
   | 'bank_fees'
+  | 'payment_fees'
+  | 'repairs'
   | 'shipping'
+  | 'non_operating'
   | 'other';
+
+/**
+ * Categories that are NOT operating expenses and must be excluded when
+ * computing OpEx / net income:
+ *   - `cogs` — cost of goods (the alcohol); matched against revenue as a
+ *     gross-margin input, not an operating cost.
+ *   - `non_operating` — loans, owner draws/contributions, inter-company
+ *     transfers, capital movements. Money that left the account but isn't
+ *     a business expense.
+ * Phase 5C's monthly rollup uses this to keep OpEx honest.
+ */
+export const NON_OPEX_CATEGORIES: ReadonlySet<CategorySlug> = new Set([
+  'cogs',
+  'non_operating',
+]);
+
+/** True if a category counts toward operating expense (OpEx). */
+export function isOperatingExpense(slug: CategorySlug): boolean {
+  return !NON_OPEX_CATEGORIES.has(slug);
+}
 
 const SUB_TYPE_MAP: Record<string, CategorySlug> = {
   SuppliesMaterialsCogs: 'cogs',
   CostOfGoodsSold: 'cogs',
   PurchasesOfStocksForSale: 'cogs',
+  Inventory: 'cogs', // alcohol bought for resale is booked to the Inventory acct
+
+  RepairsAndMaintenance: 'repairs',
+  RepairAndMaintenanceExpense: 'repairs',
+
+  // Loans / financing / equity movements — not operating expenses.
+  NotesPayable: 'non_operating',
+  OtherLongTermLiabilities: 'non_operating',
+  ShareholderNotesPayable: 'non_operating',
+  OwnersEquity: 'non_operating',
+  PartnerDistributions: 'non_operating',
+  PartnerContributions: 'non_operating',
 
   RentOrLeaseOfBuildings: 'rent',
   RentOrLeaseOfFacilities: 'rent',
@@ -108,8 +143,25 @@ const SUB_TYPE_MAP: Record<string, CategorySlug> = {
 };
 
 // Free-text fallback — when a QB account has no recognised sub-type we
-// look for keywords in the account name.
-const NAME_KEYWORD_RULES: Array<{ pattern: RegExp; slug: CategorySlug }> = [
+// look for keywords in the account name. Exported so the Plaid bank-outflow
+// categorizer (plaid-category-map.ts) can reuse the same merchant-name rules.
+export const NAME_KEYWORD_RULES: Array<{ pattern: RegExp; slug: CategorySlug }> = [
+  // High-priority disambiguators FIRST — these must win over generic rules.
+  // Non-operating: loans, owner draws/contributions, inter-company transfers.
+  // Never count these as expenses.
+  {
+    pattern:
+      /\bloans?\b|notes?\s*payable|due\s*(to|from)|related\s*part|owner'?s?\s*(draw|contribution|distribution)|capital\s*contribution|inter.?company|shareholder|member\s*draw|\bcontributions?\b/i,
+    slug: 'non_operating',
+  },
+  // Inventory = COGS (alcohol bought for resale).
+  { pattern: /\binventory\b|stock\s*for\s*resale|goods?\s*for\s*resale/i, slug: 'cogs' },
+  // Platform / payment-processor selling fees (Shopify, Stripe, etc.).
+  {
+    pattern: /shopify|selling\s*fee|processing\s*fee|merchant\s*fee|payment\s*processing|\bstripe\b/i,
+    slug: 'payment_fees',
+  },
+
   { pattern: /rent|lease/i, slug: 'rent' },
   { pattern: /utility|electric|gas\b|water/i, slug: 'utilities' },
   { pattern: /internet|telephone|phone/i, slug: 'utilities' },
@@ -127,6 +179,8 @@ const NAME_KEYWORD_RULES: Array<{ pattern: RegExp; slug: CategorySlug }> = [
   { pattern: /tax|permit|license/i, slug: 'taxes_fees' },
   { pattern: /bank\s*fee|finance\s*charge|cc\s*fee|credit\s*card\s*fee/i, slug: 'bank_fees' },
   { pattern: /ship|postage|delivery\s*fee/i, slug: 'shipping' },
+  { pattern: /repair|maintenance/i, slug: 'repairs' },
+  { pattern: /supplies|materials|general\s*business/i, slug: 'office' },
   { pattern: /\bcogs\b|cost\s*of\s*goods/i, slug: 'cogs' },
 ];
 
@@ -169,6 +223,9 @@ export const CATEGORY_LABELS: Record<CategorySlug, string> = {
   professional: 'Professional fees',
   taxes_fees: 'Taxes & fees',
   bank_fees: 'Bank fees',
+  payment_fees: 'Payment & platform fees',
+  repairs: 'Repairs & maintenance',
   shipping: 'Shipping',
+  non_operating: 'Non-operating (loans, transfers)',
   other: 'Other',
 };

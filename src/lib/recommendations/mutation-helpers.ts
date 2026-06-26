@@ -10,13 +10,14 @@
 import { prisma } from '@/lib/database/client';
 import type { Prisma } from '@prisma/client';
 import { appendActionLog } from '@/lib/operations/recommendation-store';
+import { appendActionLog as appendFinanceActionLog } from '@/lib/finance/recommendation-store';
 import { mirrorOperationsRecommendation } from '@/lib/operations/recommendation-mirror';
 import { buildActionLogEntry } from './unified-list';
 import type { ActionLogEntry } from '@/lib/operations/types';
 import type { RecommendationStatus } from './lifecycle';
 import { isValidTransition } from './lifecycle';
 
-export type RecLocation = 'ops' | 'marketing-seo';
+export type RecLocation = 'ops' | 'marketing-seo' | 'finance';
 
 export interface StatusUpdate {
   status: RecommendationStatus;
@@ -64,6 +65,19 @@ export async function applyStatusUpdate(
     return;
   }
 
+  if (location === 'finance') {
+    const data: Prisma.FinanceRecommendationUpdateInput = { status: update.status };
+    if (update.status === 'shipped') data.shippedAt = new Date();
+    if (update.dismissReason !== undefined) data.dismissReason = update.dismissReason;
+    if (update.snoozeUntil !== undefined) data.snoozeUntil = update.snoozeUntil;
+    if (update.status === 'open') {
+      data.dismissReason = null;
+      data.snoozeUntil = null;
+    }
+    await prisma.financeRecommendation.update({ where: { id }, data });
+    return;
+  }
+
   const data: Prisma.RecommendationItemUpdateInput = { status: update.status };
   if (update.status === 'shipped') data.shippedAt = new Date();
   // Marketing has no native dismissReason / snoozeUntil; fold reason into notes
@@ -86,12 +100,25 @@ export async function logAction(
   location: RecLocation,
   entry: Omit<ActionLogEntry, 'timestamp'>
 ): Promise<void> {
-  if (location !== 'ops') return;
+  if (location === 'marketing-seo') return;
   const built = buildActionLogEntry({
     actionKind: entry.actionKind ?? 'unknown',
     actionLabel: entry.actionLabel,
     result: entry.result,
     errorMessage: entry.errorMessage,
   });
-  await appendActionLog(id, built);
+  if (location === 'ops') {
+    await appendActionLog(id, built);
+    return;
+  }
+  if (location === 'finance') {
+    await appendFinanceActionLog(id, {
+      timestamp: built.timestamp,
+      actionKind: built.actionKind,
+      actionLabel: built.actionLabel,
+      result: built.result,
+      errorMessage: built.errorMessage,
+    });
+    return;
+  }
 }

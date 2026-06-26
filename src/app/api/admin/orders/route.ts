@@ -4,6 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { requireOpsAuth } from '@/lib/auth/ops-session';
 
 export const dynamic = 'force-dynamic';
 
@@ -66,6 +67,9 @@ export interface OrderForDisplay {
  * Fetches recent orders from Shopify
  */
 export async function GET(request: NextRequest) {
+  const auth = await requireOpsAuth();
+  if (auth instanceof NextResponse) return auth;
+
   if (!SHOPIFY_DOMAIN || !SHOPIFY_ADMIN_TOKEN) {
     return NextResponse.json(
       { success: false, error: 'Shopify not configured' },

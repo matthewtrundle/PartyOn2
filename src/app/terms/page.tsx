@@ -29,7 +29,7 @@ export default function TermsPage() {
           <h1 className="font-heading text-5xl text-gray-900 mb-4 tracking-[0.1em]">
             Terms of Service
           </h1>
-          <p className="text-gray-600">Last updated: January 2024</p>
+          <p className="text-gray-600">Last updated: June 2026</p>
         </div>
       </section>
 
@@ -98,14 +98,30 @@ export default function TermsPage() {
             </div>
 
             <div>
-              <h2 className="font-heading text-2xl text-gray-900 mb-4 tracking-[0.1em]">9. Changes to Terms</h2>
+              <h2 className="font-heading text-2xl text-gray-900 mb-4 tracking-[0.1em]">9. Text Messaging (SMS)</h2>
+              <p className="text-gray-600 leading-relaxed mb-4">
+                When you provide your mobile number, you consent to receive text messages from Party On Delivery related to your orders and customer service, including order confirmations, delivery status and scheduling updates, group order coordination links, review requests, reminders to complete an unfinished order, and replies to your questions. Consent is not a condition of purchase.
+              </p>
+              <ul className="text-gray-600 space-y-2 list-disc pl-6 mb-4">
+                <li>Message frequency varies based on your order activity.</li>
+                <li>Message and data rates may apply.</li>
+                <li>Reply STOP at any time to unsubscribe; reply HELP for assistance.</li>
+                <li>Carriers are not liable for delayed or undelivered messages.</li>
+              </ul>
+              <p className="text-gray-600 leading-relaxed mb-4">
+                We do not share mobile information with third parties or affiliates for marketing or promotional purposes. See our <Link href="/privacy" className="text-brand-yellow hover:text-yellow-600">Privacy Policy</Link> for details on how we handle your information.
+              </p>
+            </div>
+
+            <div>
+              <h2 className="font-heading text-2xl text-gray-900 mb-4 tracking-[0.1em]">10. Changes to Terms</h2>
               <p className="text-gray-600 leading-relaxed mb-4">
                 We reserve the right to modify these terms at any time. Changes will be effective immediately upon posting to our website. Your continued use of our services constitutes acceptance of any changes.
               </p>
             </div>
 
             <div>
-              <h2 className="font-heading text-2xl text-gray-900 mb-4 tracking-[0.1em]">10. Contact Information</h2>
+              <h2 className="font-heading text-2xl text-gray-900 mb-4 tracking-[0.1em]">11. Contact Information</h2>
               <p className="text-gray-600 leading-relaxed mb-4">
                 If you have questions about these Terms of Service, please contact us at:
               </p>

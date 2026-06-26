@@ -230,6 +230,29 @@ MDX-based blog stored in `content/blog/posts/` (134 posts). NOT database-backed.
 
 ---
 
+## Working Discipline — verify before "done"
+
+Skip all of this for trivial fixes (typos, renames, local one-liners — just do them).
+The bigger or riskier the change, the more of this is mandatory.
+
+- **Verify against the live code, not memory.** Re-read the actual file before
+  claiming what it does. Claims like "mirrors X", "ported verbatim", "matches old
+  behavior" assert equivalence — prove it by diffing/running both, or downgrade the
+  claim. (We have v1/v2 APIs, GroupOrderV2, and two revenue eras — easy to describe
+  the wrong one from memory.)
+- **A clean diff is not proof.** Before saying done, run the sanctioned gates and
+  paste failures: `npx tsc --noEmit`, `npm run lint`, `npm run test:run`.
+  (Per Forbidden Actions: never `next build`, Playwright, or screenshots.)
+- **Sweep beyond the diff.** A change to a shared type, webhook contract, config, or
+  helper can break files the diff never touches — check the other call sites.
+- **High-stakes → independent review.** Anything touching auth, Stripe/payments,
+  customer PII, affiliate payouts, or webhooks: run the `security-reviewer` agent and
+  `/code-review` before merge. Self-review can't see the framing error it's inside.
+- **Surface gaps honestly.** When done, name what you did NOT verify and what's out
+  of scope. A faithful "I couldn't test X" beats a confident wrong "done."
+
+---
+
 ## Analytics & Marketing Optimization
 
 - **Snapshot doc**: `docs/WEBSITE-ANALYTICS.md` — regenerated nightly by `/api/cron/analytics-snapshot` (07:00 UTC). Read this before any conversion/SEO/margin conversation.

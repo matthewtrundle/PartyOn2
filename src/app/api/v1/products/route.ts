@@ -13,6 +13,8 @@ import {
   getVendors,
 } from '@/lib/inventory/services/product-service';
 import type { ProductFilters, PaginationParams, ApiResponse } from '@/lib/inventory/types';
+import { requireOpsAuth } from '@/lib/auth/ops-session';
+import { stripVariantCosts } from '@/lib/products/sanitize';
 
 /**
  * GET /api/v1/products
@@ -72,9 +74,15 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     const { products, total } = await getProducts(filters, pagination);
 
-    const response: ApiResponse<typeof products> = {
+    // Public endpoint — strip internal cost data from variant rows
+    const sanitized = products.map((product) => ({
+      ...product,
+      variants: stripVariantCosts(product.variants),
+    }));
+
+    const response: ApiResponse<typeof sanitized> = {
       success: true,
-      data: products,
+      data: sanitized,
       meta: {
         total,
         page: pagination.page,
@@ -101,6 +109,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
  * Create a new product
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const auth = await requireOpsAuth();
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const body = await request.json();
 

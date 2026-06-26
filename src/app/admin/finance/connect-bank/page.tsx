@@ -38,6 +38,9 @@ export default function ConnectBankPage(): ReactElement {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [exchanging, setExchanging] = useState(false);
+  const [receivedRedirectUri, setReceivedRedirectUri] = useState<string | undefined>(
+    undefined
+  );
 
   async function fetchHealth(): Promise<void> {
     setLoading(true);
@@ -65,6 +68,8 @@ export default function ConnectBankPage(): ReactElement {
       const body = (await res.json()) as ApiResponse<{ linkToken: string }>;
       if (body.success) {
         setLinkToken(body.data.linkToken);
+        // Persist so the SAME token survives an OAuth redirect to the bank.
+        window.localStorage.setItem('plaid_link_token', body.data.linkToken);
       } else {
         setError(body.error);
       }
@@ -75,7 +80,17 @@ export default function ConnectBankPage(): ReactElement {
 
   useEffect(() => {
     void fetchHealth();
-    void fetchLinkToken();
+    // OAuth banks (Wells Fargo) redirect back here with ?oauth_state_id=… . On
+    // return, reuse the link_token that started the flow (Plaid requires the same
+    // one) and let the auto-open effect below resume Link.
+    if (window.location.href.includes('oauth_state_id=')) {
+      setReceivedRedirectUri(window.location.href);
+      const saved = window.localStorage.getItem('plaid_link_token');
+      if (saved) setLinkToken(saved);
+      else void fetchLinkToken();
+    } else {
+      void fetchLinkToken();
+    }
   }, []);
 
   const onSuccess = useCallback(
@@ -91,6 +106,7 @@ export default function ConnectBankPage(): ReactElement {
         if (!body.success) {
           setError(body.error);
         } else {
+          window.localStorage.removeItem('plaid_link_token');
           await fetchHealth();
         }
       } catch (e) {
@@ -105,7 +121,13 @@ export default function ConnectBankPage(): ReactElement {
   const { open, ready } = usePlaidLink({
     token: linkToken,
     onSuccess,
+    receivedRedirectUri,
   });
+
+  // Resume the OAuth flow automatically once Link is ready after the bank redirect.
+  useEffect(() => {
+    if (receivedRedirectUri && ready) open();
+  }, [receivedRedirectUri, ready, open]);
 
   return (
     <div className="p-4 md:p-8 max-w-3xl">

@@ -307,6 +307,97 @@ export async function getConversionByLandingPage(
   }
 }
 
+export interface PageTrafficPoint {
+  /** GA4 `date` as YYYY-MM-DD. */
+  date: string;
+  pageviews: number;
+  visitors: number;
+}
+
+/**
+ * Daily pageviews + unique visitors for a specific set of page paths, unioned.
+ * Used by the per-landing-page hub's traffic chart. Filters on GA4 `pagePath`
+ * (which excludes the query string), so the exact registry paths match cleanly.
+ * Each row aggregates across all the page's paths for that day.
+ */
+export async function getPageTrafficTimeseries(
+  paths: string[],
+  startDate: Date,
+  endDate: Date
+): Promise<PageTrafficPoint[]> {
+  const auth = getGoogleAuth();
+  if (!auth || !PROPERTY_ID || paths.length === 0) return [];
+  try {
+    const analyticsData = google.analyticsdata({ version: 'v1beta', auth });
+    const response = await analyticsData.properties.runReport({
+      property: `properties/${PROPERTY_ID}`,
+      requestBody: {
+        dateRanges: [{ startDate: formatDate(startDate), endDate: formatDate(endDate) }],
+        dimensions: [{ name: 'date' }],
+        metrics: [{ name: 'screenPageViews' }, { name: 'totalUsers' }],
+        dimensionFilter: {
+          filter: { fieldName: 'pagePath', inListFilter: { values: paths } },
+        },
+        orderBys: [{ dimension: { dimensionName: 'date' } }],
+        limit: '400',
+      },
+    });
+    return (response.data.rows || []).map((row) => {
+      const raw = row.dimensionValues?.[0].value || ''; // YYYYMMDD
+      const date = raw.length === 8 ? `${raw.slice(0, 4)}-${raw.slice(4, 6)}-${raw.slice(6, 8)}` : raw;
+      return {
+        date,
+        pageviews: parseInt(row.metricValues?.[0].value || '0', 10),
+        visitors: parseInt(row.metricValues?.[1].value || '0', 10),
+      };
+    });
+  } catch (error) {
+    console.error('GA4 page traffic timeseries error:', error);
+    return [];
+  }
+}
+
+export interface PageTrafficTotals {
+  pageviews: number;
+  visitors: number;
+}
+
+/**
+ * Period-level pageviews + unique visitors for a set of page paths, unioned.
+ * Unlike summing the daily timeseries, this returns the correct de-duplicated
+ * unique-visitor count for the whole window (a visitor on two days is one
+ * visitor here). Returns null when GA4 isn't configured.
+ */
+export async function getPageTrafficTotals(
+  paths: string[],
+  startDate: Date,
+  endDate: Date
+): Promise<PageTrafficTotals | null> {
+  const auth = getGoogleAuth();
+  if (!auth || !PROPERTY_ID || paths.length === 0) return null;
+  try {
+    const analyticsData = google.analyticsdata({ version: 'v1beta', auth });
+    const response = await analyticsData.properties.runReport({
+      property: `properties/${PROPERTY_ID}`,
+      requestBody: {
+        dateRanges: [{ startDate: formatDate(startDate), endDate: formatDate(endDate) }],
+        metrics: [{ name: 'screenPageViews' }, { name: 'totalUsers' }],
+        dimensionFilter: {
+          filter: { fieldName: 'pagePath', inListFilter: { values: paths } },
+        },
+      },
+    });
+    const row = response.data.rows?.[0];
+    return {
+      pageviews: parseInt(row?.metricValues?.[0].value || '0', 10),
+      visitors: parseInt(row?.metricValues?.[1].value || '0', 10),
+    };
+  } catch (error) {
+    console.error('GA4 page traffic totals error:', error);
+    return null;
+  }
+}
+
 export interface FunnelStep {
   eventName: string;
   users: number;

@@ -8,6 +8,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import { requireOpsAuth } from '@/lib/auth/ops-session';
+import { mirrorExperimentToVault } from '@/lib/analytics/experiment-mirror';
 
 // Validation schema for updating an experiment
 const UpdateExperimentSchema = z.object({
@@ -17,6 +19,7 @@ const UpdateExperimentSchema = z.object({
   goalMetric: z.enum(['cta_click', 'scroll_depth', 'conversion', 'revenue']).optional(),
   goalValue: z.string().optional(),
   winningVariant: z.string().optional(),
+  winnerReason: z.string().max(1000).optional(),
   confidence: z.number().min(0).max(100).optional(),
 });
 
@@ -32,6 +35,9 @@ export async function GET(
   request: NextRequest,
   { params }: RouteParams
 ): Promise<NextResponse> {
+  const auth = await requireOpsAuth();
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const { id } = await params;
 
@@ -122,6 +128,9 @@ export async function PATCH(
   request: NextRequest,
   { params }: RouteParams
 ): Promise<NextResponse> {
+  const auth = await requireOpsAuth();
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const { id } = await params;
     const body = await request.json();
@@ -158,6 +167,32 @@ export async function PATCH(
       },
     });
 
+    // On conclude (→ COMPLETED with a declared winner), log the result to the
+    // Obsidian vault via the marketing markdown pipeline. Fails soft.
+    if (validatedData.status === 'COMPLETED' && experiment.winningVariant) {
+      await mirrorExperimentToVault({
+        id: experiment.id,
+        name: experiment.name,
+        page: experiment.page,
+        elementId: experiment.elementId,
+        goalMetric: experiment.goalMetric,
+        winningVariant: experiment.winningVariant,
+        winnerReason: experiment.winnerReason,
+        confidence: experiment.confidence,
+        endDate: experiment.endDate,
+        variants: experiment.variants.map((v) => ({
+          id: v.id,
+          name: v.name,
+          isControl: v.isControl,
+          weight: v.weight,
+          impressions: v.impressions,
+          clicks: v.clicks,
+          conversions: v.conversions,
+          content: v.content,
+        })),
+      }).catch(() => undefined);
+    }
+
     return NextResponse.json(experiment);
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -182,6 +217,9 @@ export async function DELETE(
   request: NextRequest,
   { params }: RouteParams
 ): Promise<NextResponse> {
+  const auth = await requireOpsAuth();
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const { id } = await params;
 

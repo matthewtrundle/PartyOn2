@@ -4,10 +4,13 @@
  */
 
 import Stripe from 'stripe';
+import { Prisma } from '@prisma/client';
 import { stripe } from './client';
 import { CartWithItems } from '@/lib/inventory/services/cart-service';
 import { prisma } from '@/lib/database/client'; // Used for getOrCreateStripeCustomer
 import { getTaxRateForZip, DEFAULT_TAX_RATE } from '@/lib/tax';
+import { assertVariantsPurchasable } from '@/lib/products/availability';
+import { buildChargedLineItems, chargedLineItemToStripe } from './charge-snapshot';
 
 /**
  * Checkout session metadata stored with Stripe
@@ -79,23 +82,36 @@ export async function createCheckoutSession(
 ): Promise<Stripe.Checkout.Session> {
   const { cart, successUrl, cancelUrl, customerEmail, stripeCustomerId, affiliateCode, overrideDeliveryFee, tipAmount, attribution } = options;
 
-  // Build line items from cart
-  const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = cart.items.map((item) => ({
-    price_data: {
-      currency: 'usd',
-      product_data: {
-        name: item.product.title,
-        description: item.variant.title !== 'Default Title' ? item.variant.title : undefined,
-        metadata: {
-          productId: item.productId,
-          variantId: item.variantId,
-          sku: item.variant.sku || '',
-        },
-      },
-      unit_amount: Math.round(Number(item.price) * 100), // Convert to cents
-    },
-    quantity: item.quantity,
-  }));
+  // Defense-in-depth: refuse to charge for any product that isn't ACTIVE (or whose variant isn't
+  // availableForSale), re-read from the DB rather than trusting the cart snapshot. A product
+  // drafted/archived after it was added to the cart must not be purchasable here. Throws
+  // ProductNotPurchasableError, which the checkout route surfaces as a clear error.
+  await assertVariantsPurchasable(
+    prisma,
+    cart.items.map((item) => ({
+      productId: item.productId,
+      variantId: item.variantId,
+      title: item.product.title,
+    }))
+  );
+
+  // Build the immutable charge snapshot from the cart's products, then derive the Stripe
+  // product line items from it so the snapshot literally equals what's charged. OrderItems are
+  // later rebuilt from this snapshot (persisted on the cart below) — never from a re-read cart,
+  // which is what let items added/removed after this point drift from the charge.
+  const chargedLineItems = buildChargedLineItems(
+    cart.items.map((item) => ({
+      productId: item.productId,
+      variantId: item.variantId,
+      title: item.product.title,
+      variantTitle: item.variant.title,
+      sku: item.variant.sku,
+      price: item.price,
+      quantity: item.quantity,
+    }))
+  );
+  const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] =
+    chargedLineItems.map(chargedLineItemToStripe);
 
   // Add delivery fee as a line item (use override if provided, e.g. $0 for affiliate referrals)
   const deliveryFee = overrideDeliveryFee !== undefined ? overrideDeliveryFee : Number(cart.deliveryFee);
@@ -169,6 +185,13 @@ export async function createCheckoutSession(
       enabled: true,
     },
     billing_address_collection: 'required',
+    // SMS consent disclosure shown at the phone-number field (A2P 10DLC opt-in).
+    custom_text: {
+      submit: {
+        message:
+          'By providing your phone number, you agree to receive order and delivery text messages from Party On Delivery. Message and data rates may apply. Reply STOP to opt out. See our Privacy Policy at partyondelivery.com/privacy.',
+      },
+    },
   };
 
   // Add customer info if available
@@ -227,6 +250,14 @@ export async function createCheckoutSession(
 
   // Create the session
   const session = await stripe.checkout.sessions.create(sessionParams);
+
+  // Persist the immutable charge snapshot on the cart. createOrderFromCheckout rebuilds
+  // OrderItems from this (not a re-read of cart.items), closing the two-snapshot race where
+  // items edited after checkout-creation diverged from what Stripe charged.
+  await prisma.cart.update({
+    where: { id: cart.id },
+    data: { chargedLineItems: chargedLineItems as unknown as Prisma.InputJsonValue },
+  });
 
   // Note: We store session ID in Stripe metadata, not in cart
   // The order service will link the checkout session when order is created

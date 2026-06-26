@@ -10,6 +10,7 @@ import { OrderStatus, FinancialStatus, FulfillmentStatus } from '@prisma/client'
 import { linkOrderToAffiliate, voidCommissionForOrder } from '@/lib/affiliates/commission-engine';
 import { fulfillInventoryForOrder } from '@/lib/inventory/services/order-service';
 import { getStripeCapturedAmount } from '@/lib/stripe/refund-utils';
+import { isBoatAddress } from '@/lib/ops/boat-address';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -210,6 +211,25 @@ export async function GET(
       }));
     }
 
+    // Cruise type for the boat manifest. Shown ONLY when BOTH are true: the
+    // delivery is going to the boat (marina address) AND the order is matched
+    // on the boat manifest (DSC tab → disco, PVT → private). A guest booked on
+    // a cruise another day whose THIS order ships elsewhere is not a cruise, so
+    // there is deliberately no webhook-source fallback here. null = not a cruise.
+    const goingToBoat = isBoatAddress(deliveryAddress.address1);
+    const scheduleMatch = goingToBoat
+      ? await prisma.scheduleOrderMatch.findFirst({
+          where: { orderId: id, status: { in: ['matched', 'needs_review'] } },
+          orderBy: { matchConfidence: 'desc' },
+          select: { schedule: { select: { sheetTab: true, boat: true } } },
+        })
+      : null;
+    const matchedTab = scheduleMatch?.schedule?.sheetTab?.toUpperCase() ?? '';
+    let cruiseType: 'DISCO' | 'PRIVATE' | null = null;
+    if (matchedTab.includes('DSC')) cruiseType = 'DISCO';
+    else if (matchedTab.includes('PVT')) cruiseType = 'PRIVATE';
+    const cruiseBoat = cruiseType ? scheduleMatch?.schedule?.boat ?? null : null;
+
     return NextResponse.json({
       success: true,
       data: {
@@ -218,6 +238,8 @@ export async function GET(
         status: order.status,
         financialStatus: order.financialStatus,
         fulfillmentStatus: order.fulfillmentStatus,
+        cruiseType,
+        cruiseBoat,
         customer: {
           id: order.customer.id,
           email: order.customer.email,

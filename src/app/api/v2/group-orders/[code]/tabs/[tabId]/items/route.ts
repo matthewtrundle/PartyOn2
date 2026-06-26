@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AddDraftItemSchema } from '@/lib/group-orders-v2/validation';
 import { addDraftItem, getGroupOrderByCode } from '@/lib/group-orders-v2/service';
+import { ProductNotPurchasableError } from '@/lib/products/availability';
 import { prisma } from '@/lib/prisma';
 
 interface RouteParams {
@@ -61,6 +62,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       { status: 201 }
     );
   } catch (error) {
+    if (error instanceof ProductNotPurchasableError) {
+      return NextResponse.json({ success: false, error: error.message }, { status: 409 });
+    }
     const msg = error instanceof Error ? error.message : 'Failed to add item';
     const status = msg.includes('locked') || msg.includes('deadline') ? 403 : 500;
     return NextResponse.json({ success: false, error: msg }, { status });

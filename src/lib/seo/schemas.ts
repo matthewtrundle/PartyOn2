@@ -105,6 +105,45 @@ export function generateFAQSchema(faqs: Array<{ question: string; answer: string
   };
 }
 
+/**
+ * Recipe schema (schema.org/Recipe) — drives recipe rich results in Google.
+ * Used by cocktail-recipe blog posts that declare a `recipes:` frontmatter array.
+ */
+export function generateRecipeSchema(recipe: {
+  name: string;
+  description?: string;
+  recipeYield?: string;
+  prepTime?: string;
+  ingredients: string[];
+  instructions: string[];
+  image?: string;
+  author?: string;
+  url?: string;
+}) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Recipe',
+    name: recipe.name,
+    ...(recipe.description ? { description: recipe.description } : {}),
+    ...(recipe.image ? { image: recipe.image } : {}),
+    ...(recipe.url ? { url: recipe.url } : {}),
+    author: {
+      '@type': recipe.author ? 'Person' : 'Organization',
+      name: recipe.author || 'Party On Delivery',
+    },
+    recipeCategory: 'Cocktail',
+    recipeCuisine: 'American',
+    ...(recipe.recipeYield ? { recipeYield: recipe.recipeYield } : {}),
+    ...(recipe.prepTime ? { prepTime: recipe.prepTime } : {}),
+    recipeIngredient: recipe.ingredients,
+    recipeInstructions: recipe.instructions.map((step, i) => ({
+      '@type': 'HowToStep',
+      position: i + 1,
+      text: step,
+    })),
+  };
+}
+
 export function generateEventSchema(eventType: 'wedding' | 'party' | 'corporate' | 'boat' | 'keg') {
   // Generate future date range for ongoing service availability
   // Start from today, end 1 year from today (valid future date range)
