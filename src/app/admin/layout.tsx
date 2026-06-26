@@ -171,6 +171,7 @@ export default function AdminLayout({ children }: AdminLayoutProps): ReactElemen
     { href: '/admin/dashboard', label: 'Analytics' },
     { href: '/admin/customers', label: 'Customers' },
     { href: '/admin/emails', label: 'Emails' },
+    { href: '/admin/email-signups', label: 'Email Signups' },
     { href: '/admin/sync', label: 'Sync' },
     { href: '/admin/reports', label: 'Reports' },
     { href: '/admin/experiments', label: 'Experiments' },
