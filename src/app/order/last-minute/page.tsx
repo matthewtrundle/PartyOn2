@@ -13,6 +13,7 @@ import Image from 'next/image';
 import { createDashboardOrderV2 } from '@/lib/group-orders-v2/api-client';
 import type { PartyType, DashboardSource, DeliveryContextType } from '@/lib/group-orders-v2/types';
 import { getAffiliateDefaultAddress } from '@/lib/affiliates/presets';
+import { getAttributionForDashboard } from '@/lib/analytics/attribution';
 
 const PARTY_TYPE_MAP: Record<string, PartyType> = {
   bachelor: 'BACHELOR',
@@ -127,6 +128,8 @@ function LastMinuteRedirectInner(): ReactElement {
           name: nameParam ? `${nameParam}'s Order` : undefined,
           deliveryAddress: premierAddress || undefined,
           tabName: premierAddress ? 'Marina Delivery' : undefined,
+          // Host's first-touch attribution → stamped onto every Order in this group.
+          attribution: getAttributionForDashboard(),
         });
 
         const host = group.participants.find((p) => p.isHost);

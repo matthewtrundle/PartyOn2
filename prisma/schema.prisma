@@ -1850,6 +1850,21 @@ model GroupOrderV2 {
   externalBookingId String?           @map("external_booking_id")
   viewCount         Int               @default(0) @map("view_count")
   isLastMinute      Boolean           @default(false) @map("is_last_minute")
+
+  // Host's first-touch marketing attribution, captured when the host creates the
+  // group at /order (from the AttributionTracker localStorage payload). The
+  // group-payment webhook reads these back and stamps them onto every Order created
+  // from this group's SubOrder payments, so the per-landing-page analytics hub gets
+  // real conversion/revenue data for group orders (95% of volume). Written once at
+  // create, read only by PK in the webhook — no index needed.
+  landingPage String? @map("landing_page")
+  utmSource   String? @map("utm_source")
+  utmMedium   String? @map("utm_medium")
+  utmCampaign String? @map("utm_campaign")
+  utmTerm     String? @map("utm_term")
+  utmContent  String? @map("utm_content")
+  referrer    String? @map("referrer")
+
   expiresAt       DateTime           @map("expires_at")
   createdAt       DateTime           @default(now()) @map("created_at")
   updatedAt       DateTime           @updatedAt @map("updated_at")

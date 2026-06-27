@@ -17,6 +17,7 @@ import { getAffiliateByCode } from '@/lib/affiliates/affiliate-service';
 import { createOrderCalendarEvent } from '@/lib/calendar/google-calendar';
 import { commitInventoryForOrderItem } from '@/lib/inventory/services/order-service';
 import { snapshotItemCost } from '@/lib/analytics/margin-service';
+import { classifySegment } from '@/lib/analytics/segment-classifier';
 import { assertVariantsPurchasable } from '@/lib/products/availability';
 import {
   buildChargedLineItems,
@@ -460,6 +461,24 @@ export async function handleGroupV2PaymentCompleted(
     throw new Error(`[Group V2 Payment] Participant or SubOrder not found: participant=${participantId} subOrder=${subOrderId}`);
   }
 
+  // Fetch the group once: its host first-touch attribution is inherited by this Order
+  // (so the per-landing-page analytics hub attributes group revenue/conversion to the
+  // page that drove the party), and its affiliate is the fallback for commission linking
+  // further down. Missing attribution is fine — older groups carry none (null columns).
+  const group = await prisma.groupOrderV2.findUnique({
+    where: { id: groupOrderId },
+    select: {
+      landingPage: true,
+      utmSource: true,
+      utmMedium: true,
+      utmCampaign: true,
+      utmTerm: true,
+      utmContent: true,
+      referrer: true,
+      affiliate: { select: { code: true } },
+    },
+  });
+
   const purchasedItems = await prisma.purchasedItem.findMany({
     where: { paymentId: payment.id },
   });
@@ -584,6 +603,19 @@ export async function handleGroupV2PaymentCompleted(
       customerPhone: customerPhone || null,
       groupOrderId: null, // V2 doesn't use v1 group order FK
       groupOrderV2Id: groupOrderId,
+      // Inherit the host's first-touch attribution + derived segment from the group, so
+      // this Order rolls up to the landing page that drove the party. Every Order in a
+      // group inherits the same host attribution — accurate for revenue (each Order is a
+      // distinct charge counted once), and it leaves the channel rollup untouched (group
+      // orders bucket as 'group' before 'utm_*'). See landing-page-metrics.ts caveat.
+      landingPage: group?.landingPage ?? null,
+      utmSource: group?.utmSource ?? null,
+      utmMedium: group?.utmMedium ?? null,
+      utmCampaign: group?.utmCampaign ?? null,
+      utmTerm: group?.utmTerm ?? null,
+      utmContent: group?.utmContent ?? null,
+      referrer: group?.referrer ?? null,
+      segment: classifySegment(group?.landingPage, group?.utmCampaign),
       items: {
         create: orderItemCreates,
       },
@@ -653,10 +685,6 @@ export async function handleGroupV2PaymentCompleted(
   //      checkout without coming through the partner page)
   let resolvedAffiliateCode = session.metadata?.affiliateCode;
   if (!resolvedAffiliateCode) {
-    const group = await prisma.groupOrderV2.findUnique({
-      where: { id: groupOrderId },
-      select: { affiliate: { select: { code: true } } },
-    });
     resolvedAffiliateCode = group?.affiliate?.code;
   }
   if (!resolvedAffiliateCode && order.discountCode) {

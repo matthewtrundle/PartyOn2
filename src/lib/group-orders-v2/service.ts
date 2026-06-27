@@ -998,6 +998,15 @@ export async function createDashboardOrder(
       affiliateId: input.affiliateId || null,
       source: input.source || 'DIRECT',
       isLastMinute: input.isLastMinute ?? false,
+      // Host's first-touch attribution — the webhook stamps these onto every Order
+      // created from this group's payments, feeding the per-landing-page analytics hub.
+      landingPage: input.attribution?.landingPage || null,
+      utmSource: input.attribution?.utmSource || null,
+      utmMedium: input.attribution?.utmMedium || null,
+      utmCampaign: input.attribution?.utmCampaign || null,
+      utmTerm: input.attribution?.utmTerm || null,
+      utmContent: input.attribution?.utmContent || null,
+      referrer: input.attribution?.referrer || null,
       expiresAt: defaultExpiresAt(deliveryDate),
       tabs: {
         create: {

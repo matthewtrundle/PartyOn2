@@ -214,6 +214,23 @@ export interface UpdateDraftItemInput {
   quantity: number;
 }
 
+/**
+ * Host's first-touch marketing attribution, forwarded from the client's
+ * AttributionTracker localStorage payload when the host creates a dashboard.
+ * Persisted on the GroupOrderV2 and later stamped onto every Order created from
+ * the group's SubOrder payments. All fields optional/nullable — most groups
+ * (partner-page, AI-planner, organic) carry none.
+ */
+export interface DashboardAttributionInput {
+  landingPage?: string | null;
+  utmSource?: string | null;
+  utmMedium?: string | null;
+  utmCampaign?: string | null;
+  utmTerm?: string | null;
+  utmContent?: string | null;
+  referrer?: string | null;
+}
+
 export interface CreateDashboardInput {
   hostName: string;
   hostEmail?: string;
@@ -236,6 +253,8 @@ export interface CreateDashboardInput {
     zip: string;
     country?: string;
   };
+  /** Host's first-touch attribution (landingPage + UTMs + referrer). */
+  attribution?: DashboardAttributionInput;
 }
 
 export interface MultiTabPreset {

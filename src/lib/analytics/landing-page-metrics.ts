@@ -13,6 +13,15 @@
  * are separate sources joined only by path. Conversion uses first-touch
  * Order.landingPage, which has known attribution leaks — treat CVR as
  * approximate, not exact.
+ *
+ * Group-order caveat: ~95% of orders flow through the group dashboard, where every
+ * Order inherits the HOST's first-touch landing page (set on GroupOrderV2 at create,
+ * propagated in group-v2-payments.ts). This is accurate for REVENUE attribution — the
+ * page that drove the party gets credit for the whole party's spend, each Order counted
+ * once. But it can INFLATE conversion RATE (orders ÷ GA4 visitors): share-link
+ * participants pay without ever visiting the host's landing page, so a viral group can
+ * push orders above the page's visitor count. Read per-page revenue as solid, CVR as
+ * directional.
  */
 
 import { prisma } from '@/lib/database/client';

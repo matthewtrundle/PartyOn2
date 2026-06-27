@@ -109,6 +109,42 @@ export function captureFirstTouch(): void {
   }
 }
 
+/**
+ * First-touch attribution as the plain {landingPage, utm*, referrer} object the
+ * group-order create API expects (structurally matches DashboardAttributionInput).
+ * Returns undefined when nothing was captured, so the caller omits the field.
+ * Used by /order + /order/last-minute to stamp the host's first-touch onto the
+ * GroupOrderV2 (the webhook then propagates it to every Order in the group).
+ */
+export function getAttributionForDashboard():
+  | {
+      landingPage: string | null;
+      utmSource: string | null;
+      utmMedium: string | null;
+      utmCampaign: string | null;
+      utmTerm: string | null;
+      utmContent: string | null;
+      referrer: string | null;
+    }
+  | undefined {
+  const a = getAttribution();
+  if (!a) return undefined;
+  // Cap each field at 500 chars (same as attributionToMetadata) BEFORE it hits the
+  // create API. A real landingPage/referrer can exceed 500 (stacked UTM + gclid/fbclid,
+  // long referrer URLs); pre-slicing keeps the non-critical attribution from tripping
+  // validation and blocking order creation. cap() preserves null (absent field) as null.
+  const cap = (v: string | null): string | null => (v == null ? v : v.slice(0, 500));
+  return {
+    landingPage: cap(a.landingPage),
+    utmSource: cap(a.utmSource),
+    utmMedium: cap(a.utmMedium),
+    utmCampaign: cap(a.utmCampaign),
+    utmTerm: cap(a.utmTerm),
+    utmContent: cap(a.utmContent),
+    referrer: cap(a.referrer),
+  };
+}
+
 export function getAttribution(): AttributionPayload | null {
   if (!isClient()) return null;
   try {
