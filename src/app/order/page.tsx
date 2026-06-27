@@ -28,6 +28,7 @@ import { createDashboardOrderV2 } from '@/lib/group-orders-v2/api-client';
 import type { PartyType, DashboardSource, DeliveryContextType } from '@/lib/group-orders-v2/types';
 import { getAffiliateOrderDefaults } from '@/lib/affiliates/presets';
 import { trackCTAClick } from '@/lib/analytics/ga4-events';
+import { getAttributionForDashboard } from '@/lib/analytics/attribution';
 import { getEventPreset } from '@/lib/events/event-presets';
 
 const PARTY_TYPE_MAP: Record<string, PartyType> = {
@@ -241,6 +242,8 @@ function OrderRedirectInner(): ReactElement {
         tabName: eventPreset?.tabName ?? presets?.tabName,
         deliveryDate: eventPreset?.deliveryDate,
         deliveryTime: eventPreset?.deliveryTime,
+        // Host's first-touch attribution → stamped onto every Order in this group.
+        attribution: getAttributionForDashboard(),
       });
 
       const host = group.participants.find((p) => p.isHost);

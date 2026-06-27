@@ -122,6 +122,33 @@ export const UpdateGroupOrderSchema = z.object({
 });
 
 /** Create dashboard order (relaxed - no delivery details required) */
+/**
+ * Host first-touch attribution forwarded from the client. Untrusted external input —
+ * every field is a length-capped (500, matching the Stripe-metadata cap) optional/nullable
+ * string. `getAttribution()` sends explicit nulls for absent fields, so `.nullish()`.
+ *
+ * CRITICAL: this rides on the order-creation path. Attribution is a nice-to-have analytics
+ * field and must NEVER fail the parent schema — a real landingPage/referrer can exceed 500
+ * chars (stacked UTM + gclid/fbclid params, long referrer URLs), and a hard `.max()` reject
+ * would 400 the whole group-create and block the customer. `.catch(null)` coerces any
+ * over-long/malformed value to null instead of throwing (the client also pre-slices). The
+ * whole object is `.catch(undefined)` so a structurally bad payload drops attribution rather
+ * than failing the create.
+ */
+const attributionField = z.string().max(500).nullish().catch(null);
+const DashboardAttributionSchema = z
+  .object({
+    landingPage: attributionField,
+    utmSource: attributionField,
+    utmMedium: attributionField,
+    utmCampaign: attributionField,
+    utmTerm: attributionField,
+    utmContent: attributionField,
+    referrer: attributionField,
+  })
+  .optional()
+  .catch(undefined);
+
 export const CreateDashboardSchema = z.object({
   hostName: z.string().min(1, 'Name is required').max(100),
   hostEmail: z.string().email('Invalid email').optional().or(z.literal('')),
@@ -145,6 +172,7 @@ export const CreateDashboardSchema = z.object({
     )
     .optional(),
   deliveryTime: z.string().max(100).optional(),
+  attribution: DashboardAttributionSchema,
 });
 
 export {

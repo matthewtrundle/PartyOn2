@@ -211,6 +211,9 @@ export async function POST(req: NextRequest) {
       name: `${body.firstName}'s Order`,
       deliveryDate: body.deliveryDate,
       isLastMinute,
+      // Carry the lead's first-touch attribution onto the group so its Orders
+      // attribute back to the landing page (extra click-id/capturedAt fields ignored).
+      attribution: body.attribution ?? undefined,
     });
     shareCode = group.shareCode;
     const host = group.participants.find((p) => p.isHost);

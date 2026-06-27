@@ -27,6 +27,7 @@ import {
 import { recordDiscountUsage } from '@/lib/discounts/discount-engine';
 import { linkOrderToAffiliate } from '@/lib/affiliates/commission-engine';
 import { createOrderCalendarEvent } from '@/lib/calendar/google-calendar';
+import { classifySegment } from '@/lib/analytics/segment-classifier';
 import { Prisma } from '@prisma/client';
 import { snapshotItemCost } from '@/lib/analytics/margin-service';
 import {
@@ -268,6 +269,22 @@ export async function GET(request: NextRequest) {
           }
         }
 
+        // Inherit the group's host first-touch attribution (mirrors
+        // handleGroupV2PaymentCompleted) so cron-recovered orders feed the
+        // per-landing-page hub too. Null group/attribution falls through to null.
+        const group = await prisma.groupOrderV2.findUnique({
+          where: { id: subOrder.groupOrderId },
+          select: {
+            landingPage: true,
+            utmSource: true,
+            utmMedium: true,
+            utmCampaign: true,
+            utmTerm: true,
+            utmContent: true,
+            referrer: true,
+          },
+        });
+
         // Create Order record
         const order = await prisma.order.create({
           data: {
@@ -291,6 +308,14 @@ export async function GET(request: NextRequest) {
             customerName: participant.guestName || 'Guest',
             groupOrderId: null,
             groupOrderV2Id: payment.subOrder.groupOrderId,
+            landingPage: group?.landingPage ?? null,
+            utmSource: group?.utmSource ?? null,
+            utmMedium: group?.utmMedium ?? null,
+            utmCampaign: group?.utmCampaign ?? null,
+            utmTerm: group?.utmTerm ?? null,
+            utmContent: group?.utmContent ?? null,
+            referrer: group?.referrer ?? null,
+            segment: classifySegment(group?.landingPage, group?.utmCampaign),
             items: {
               create: orderItemCreates,
             },
