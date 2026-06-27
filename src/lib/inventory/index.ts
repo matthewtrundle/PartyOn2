@@ -104,5 +104,6 @@ export {
   updateOrderStatus,
   updateFulfillmentStatus,
   createRefund,
+  recomputeOrderFinancialStatus,
 } from './services/order-service';
 export type { OrderWithItems, OrderItemWithProduct } from './services/order-service';

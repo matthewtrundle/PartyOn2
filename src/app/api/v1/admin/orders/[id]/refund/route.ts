@@ -101,24 +101,19 @@ export async function POST(
       { idempotencyKey: `order-refund-${id}-${amendmentId ?? 'manual'}-${amountCents}` }
     );
 
-    // Create refund record in DB and update financial status
-    await createRefund(id, amount, reason || 'Order amendment refund');
-
-    // Update the refund record with the Stripe refund ID
-    const dbRefund = await prisma.refund.findFirst({
-      where: { orderId: id },
-      orderBy: { createdAt: 'desc' },
+    // Create refund record in DB and stamp it with the Stripe refund id.
+    // createRefund returns the new row's id so we stamp THAT row — looking it up
+    // afterward with findFirst(desc) could grab a different row if the
+    // charge.refunded webhook inserts one for this order in between.
+    const refundRowId = await createRefund(id, amount, reason || 'Order amendment refund');
+    await prisma.refund.update({
+      where: { id: refundRowId },
+      data: {
+        stripeRefundId: refund.id,
+        processedBy: 'admin',
+        processedAt: new Date(),
+      },
     });
-    if (dbRefund) {
-      await prisma.refund.update({
-        where: { id: dbRefund.id },
-        data: {
-          stripeRefundId: refund.id,
-          processedBy: 'admin',
-          processedAt: new Date(),
-        },
-      });
-    }
 
     // Update OrderAmendment resolution if linked
     if (amendmentId) {
@@ -126,7 +121,7 @@ export async function POST(
         where: { id: amendmentId },
         data: {
           resolution: 'REFUNDED',
-          refundId: dbRefund?.id || null,
+          refundId: refundRowId,
           resolvedAt: new Date(),
         },
       });
