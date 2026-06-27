@@ -51,7 +51,8 @@ vi.mock('@/lib/database/client', () => ({
 
 // --- Side-effectful services (no-ops here) ---
 vi.mock('@/lib/inventory/services/order-service', () => ({
-  createRefund: vi.fn().mockResolvedValue(undefined),
+  // Returns the new Refund row id — the route stamps THAT row by id.
+  createRefund: vi.fn().mockResolvedValue('rf_db_1'),
   releaseCommittedInventory: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock('@/lib/email/email-service', () => ({

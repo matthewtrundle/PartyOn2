@@ -815,7 +815,10 @@ export async function updateFulfillmentStatus(
 }
 
 /**
- * Create a refund for an order.
+ * Create a refund for an order. Returns the id of the new Refund row so callers
+ * can stamp it (stripeRefundId / processedBy) by id — looking it up afterward
+ * with findFirst(orderBy createdAt desc) can grab the wrong row if a concurrent
+ * webhook inserts another refund for the same order in between.
  *
  * The financialStatus decision compares against the Stripe-captured amount
  * when available. order.total alone gets rewritten by OrderAmendment when
@@ -827,7 +830,7 @@ export async function createRefund(
   orderId: string,
   amount: number,
   reason?: string
-): Promise<void> {
+): Promise<string> {
   const order = await prisma.order.findUnique({
     where: { id: orderId },
   });
@@ -837,7 +840,7 @@ export async function createRefund(
   }
 
   // Create refund record
-  await prisma.refund.create({
+  const refund = await prisma.refund.create({
     data: {
       orderId,
       amount: new Prisma.Decimal(amount),
@@ -846,7 +849,25 @@ export async function createRefund(
     },
   });
 
-  // Update order financial status based on total refunds vs originally captured.
+  await recomputeOrderFinancialStatus(orderId);
+
+  return refund.id;
+}
+
+/**
+ * Recompute and persist an order's financialStatus from its current Refund rows.
+ *
+ * Compares total refunded against what Stripe actually captured (falling back to
+ * order.total when the PaymentIntent can't be read). Extracted so both
+ * createRefund and the charge.refunded webhook reconciler converge on the same
+ * label instead of duplicating the comparison.
+ */
+export async function recomputeOrderFinancialStatus(orderId: string): Promise<void> {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+  });
+  if (!order) return;
+
   const totalRefunds = await prisma.refund.aggregate({
     where: { orderId },
     _sum: { amount: true },

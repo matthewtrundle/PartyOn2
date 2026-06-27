@@ -7,7 +7,7 @@ import Stripe from 'stripe';
 import { stripe, STRIPE_WEBHOOK_SECRET } from './client';
 import { getCheckoutSession } from './checkout';
 import { prisma } from '@/lib/database/client';
-import { createOrderFromCheckout, createRefund, getOrderByCheckoutSession, createOrderFromDraftOrder } from '@/lib/inventory/services/order-service';
+import { createOrderFromCheckout, getOrderByCheckoutSession, createOrderFromDraftOrder, recomputeOrderFinancialStatus } from '@/lib/inventory/services/order-service';
 import { getCartById } from '@/lib/inventory/services/cart-service';
 import { getDraftOrderById, updateDraftOrderStatus, DraftOrderWithTotal } from '@/lib/draft-orders';
 import {
@@ -434,8 +434,34 @@ async function handlePaymentIntentSucceeded(
 }
 
 /**
- * Handle charge.refunded event
- * Process refunds and update order status
+ * Postgres unique-constraint violation. We use it to treat a concurrent insert
+ * of the same stripeRefundId (admin route vs. this webhook racing) as
+ * "already recorded" rather than an error.
+ */
+function isUniqueViolation(err: unknown): boolean {
+  return Boolean(err && typeof err === 'object' && 'code' in err && (err as { code?: string }).code === 'P2002');
+}
+
+/**
+ * Handle charge.refunded event.
+ *
+ * IDEMPOTENT. This webhook fires ~0.5s after the admin cancel/refund routes have
+ * already created (and stamped) a Refund row for the same Stripe refund, and it
+ * can be re-delivered by Stripe at any time. So instead of blindly creating a
+ * row from charge.amount_refunded (a cumulative total, not a per-refund figure),
+ * we list the charge's actual refunds from Stripe — the source of truth — and
+ * reconcile each one into the DB exactly once:
+ *
+ *   1. A Refund row already carries this stripeRefundId  → nothing to do.
+ *   2. An unstamped row matches this order + amount (the route created it but the
+ *      webhook beat its stamping step, or a legacy orphan) → claim it by writing
+ *      the stripeRefundId. The route already emailed the customer.
+ *   3. No matching row → the refund was issued outside our app (Stripe
+ *      dashboard). Create a row AND notify the customer.
+ *
+ * Commission voiding is order-level and idempotent, so it runs whenever the
+ * charge has any live refund. The customer email is sent ONLY for refunds we
+ * newly recorded here, so admin-route refunds don't get double-emailed.
  */
 async function handleChargeRefunded(charge: Stripe.Charge): Promise<void> {
   console.log('[Stripe Webhook] Processing charge.refunded:', charge.id);
@@ -456,34 +482,119 @@ async function handleChargeRefunded(charge: Stripe.Charge): Promise<void> {
     return;
   }
 
-  // Calculate refund amount
-  const refundedAmount = charge.amount_refunded / 100; // Convert from cents
-
+  // Pull the authoritative per-refund breakdown from Stripe. We key off this
+  // charge (the event's subject) rather than the PaymentIntent so we reconcile
+  // exactly what this charge.refunded event is about; a sibling charge on the
+  // same PI gets its own event. Skip refunds that moved no money
+  // (failed/canceled) — they must not create rows or count.
+  const stripeRefunds: Stripe.Refund[] = [];
   try {
-    await createRefund(order.id, refundedAmount, 'Stripe refund');
-    console.log('[Stripe Webhook] Refund processed for order:', order.orderNumber);
+    for await (const r of stripe.refunds.list({ charge: charge.id, limit: 100 })) {
+      if (r.status === 'failed' || r.status === 'canceled') continue;
+      stripeRefunds.push(r);
+    }
+  } catch (error) {
+    console.error('[Stripe Webhook] Failed to list refunds for charge:', charge.id, error);
+    throw error;
+  }
 
-    // Void any affiliate commission for this order
-    try {
-      await voidCommissionForOrder(order.id, 'refund');
-    } catch (voidError) {
-      console.error('[Stripe Webhook] Failed to void affiliate commission:', voidError);
+  if (stripeRefunds.length === 0) {
+    console.log('[Stripe Webhook] No live refunds on charge:', charge.id);
+    return;
+  }
+
+  // Amounts newly recorded by THIS invocation (Stripe-dashboard refunds the
+  // routes never saw) — only these get a customer email.
+  const newlyRecorded: number[] = [];
+
+  for (const r of stripeRefunds) {
+    const amount = r.amount / 100;
+    const amountStr = amount.toFixed(2); // exact Decimal match, dodges float drift
+
+    // 1. Already reconciled (this id is unique in the DB) → idempotent no-op.
+    const existing = await prisma.refund.findUnique({
+      where: { stripeRefundId: r.id },
+    });
+    if (existing) continue;
+
+    // 2. Claim an unstamped row the admin route created for this same refund
+    //    (race) or a legacy orphan of the right amount, instead of duplicating.
+    const candidate = await prisma.refund.findFirst({
+      where: {
+        orderId: order.id,
+        stripeRefundId: null,
+        amount: amountStr,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (candidate) {
+      try {
+        await prisma.refund.update({
+          where: { id: candidate.id },
+          data: {
+            stripeRefundId: r.id,
+            status: 'SUCCEEDED',
+            processedAt: candidate.processedAt ?? new Date(),
+          },
+        });
+      } catch (error) {
+        // Another writer stamped this id between our read and write — safe to skip.
+        if (!isUniqueViolation(error)) throw error;
+      }
+      continue;
     }
 
-    // Send refund notification email
+    // 3. Refund originated outside our app (Stripe dashboard). Record it.
     try {
-      // Get customer info from order
+      await prisma.refund.create({
+        data: {
+          orderId: order.id,
+          stripeRefundId: r.id,
+          amount: amountStr,
+          reason: 'Stripe refund',
+          status: 'SUCCEEDED',
+          processedBy: 'stripe',
+          processedAt: new Date(),
+        },
+      });
+      newlyRecorded.push(amount);
+    } catch (error) {
+      // Lost the create race; the id now exists, so it's recorded. Skip.
+      if (!isUniqueViolation(error)) throw error;
+    }
+  }
+
+  // Recompute REFUNDED / PARTIALLY_REFUNDED from the full set of rows.
+  try {
+    await recomputeOrderFinancialStatus(order.id);
+  } catch (error) {
+    console.error('[Stripe Webhook] Failed to recompute financial status:', error);
+  }
+
+  // Void any affiliate commission for this order (idempotent).
+  try {
+    await voidCommissionForOrder(order.id, 'refund');
+  } catch (voidError) {
+    console.error('[Stripe Webhook] Failed to void affiliate commission:', voidError);
+  }
+
+  // Email only for refunds we recorded here. Admin-route refunds already sent
+  // their own email, so re-sending would double-notify the customer.
+  if (newlyRecorded.length > 0) {
+    try {
       const orderWithCustomer = await prisma.order.findUnique({
         where: { id: order.id },
         include: { customer: true },
       });
 
       if (orderWithCustomer?.customerEmail) {
+        const total = newlyRecorded.reduce((sum, a) => sum + a, 0);
         await sendRefundProcessedEmail(
           orderWithCustomer.customerEmail,
           orderWithCustomer.customerName,
           orderWithCustomer.orderNumber,
-          refundedAmount,
+          total,
           'Stripe refund'
         );
         console.log('[Stripe Webhook] Refund email sent for order:', order.orderNumber);
@@ -491,10 +602,9 @@ async function handleChargeRefunded(charge: Stripe.Charge): Promise<void> {
     } catch (emailError) {
       console.error('[Stripe Webhook] Failed to send refund email:', emailError);
     }
-  } catch (error) {
-    console.error('[Stripe Webhook] Failed to process refund:', error);
-    throw error;
   }
+
+  console.log('[Stripe Webhook] Refund reconciled for order:', order.orderNumber);
 }
 
 /**
