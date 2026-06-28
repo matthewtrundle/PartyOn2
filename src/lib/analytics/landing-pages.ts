@@ -67,7 +67,12 @@ export const LANDING_PAGES: LandingPageDef[] = [
     displayName: 'Weddings',
     navOrder: 2,
     canonicalPath: '/weddings',
-    aliasPaths: ['/austin-wedding-weekend-delivery'],
+    // /wedding-drink-calculator is the paid-ad landing for the wedding-bar
+    // calculator; its wedding_calc_* CTAs (and its traffic/conversion) are part
+    // of the weddings funnel — without it here the wedding_calc_package /
+    // wedding_calc_sticky sections declared below never receive any clicks
+    // (they only fire on the calculator route, not on /weddings itself).
+    aliasPaths: ['/austin-wedding-weekend-delivery', '/wedding-drink-calculator'],
     ctaSections: [
       { id: 'hero', label: 'Hero' },
       { id: 'packages', label: 'Packages' },
