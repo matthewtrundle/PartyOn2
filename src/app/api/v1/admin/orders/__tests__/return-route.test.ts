@@ -16,6 +16,7 @@ import { Prisma } from '@prisma/client';
 // --- Mocks --------------------------------------------------------------
 
 const txMock = vi.hoisted(() => ({
+  $queryRaw: vi.fn(),
   orderItem: { update: vi.fn() },
   refund: { create: vi.fn() },
   order: { update: vi.fn() },
@@ -92,6 +93,9 @@ beforeEach(() => {
   requireOpsAuthMock.mockResolvedValue({ role: 'admin' }); // not a NextResponse => authorized
   prismaMock.order.findUnique.mockResolvedValue(buildOrder());
   prismaMock.$transaction.mockImplementation(async (cb: (tx: typeof txMock) => unknown) => cb(txMock));
+  // Locked re-read (SELECT ... FOR UPDATE) returns the order's items at their
+  // current, unconsumed state by default.
+  txMock.$queryRaw.mockResolvedValue([{ id: 'oi_1', quantity: 2, refunded_quantity: 0 }]);
   txMock.orderItem.update.mockResolvedValue({});
   txMock.refund.create.mockResolvedValue({});
   txMock.order.update.mockResolvedValue({});
@@ -210,5 +214,75 @@ describe('POST /api/v1/admin/orders/[id]/return — refund amount integrity', ()
     expect(res.status).toBe(401);
     expect(stripeMock.refunds.create).not.toHaveBeenCalled();
     expect(prismaMock.order.findUnique).not.toHaveBeenCalled();
+  });
+
+  it('locks the order rows (SELECT ... FOR UPDATE) before refunding — the concurrency guard', async () => {
+    await callRoute(makeRequest({ items: [{ orderItemId: 'oi_1', returnQuantity: 1 }] }));
+
+    // The critical section must take a row lock and re-read fresh quantities
+    // inside the transaction before issuing the refund.
+    expect(txMock.$queryRaw).toHaveBeenCalledTimes(1);
+    const sqlArg = txMock.$queryRaw.mock.calls[0][0] as { sql?: string; strings?: string[] };
+    const sqlText = sqlArg.sql ?? (sqlArg.strings ?? []).join(' ');
+    expect(sqlText).toContain('FOR UPDATE');
+    // refundedQuantity is then incremented inside that same locked transaction.
+    expect(txMock.orderItem.update).toHaveBeenCalledWith({
+      where: { id: 'oi_1' },
+      data: { refundedQuantity: { increment: 1 } },
+    });
+  });
+
+  it('returns 409 and never refunds when the locked re-read shows the line already consumed', async () => {
+    // The snapshot loaded before the lock said oi_1 was unrefunded, but the
+    // locked re-read shows it now fully refunded (2 of 2) — a concurrent return
+    // won the race, so we must bail before any money moves.
+    txMock.$queryRaw.mockResolvedValue([{ id: 'oi_1', quantity: 2, refunded_quantity: 2 }]);
+
+    const res = await callRoute(
+      makeRequest({ items: [{ orderItemId: 'oi_1', returnQuantity: 1 }] }),
+    );
+    const json = await res.json();
+
+    expect(res.status).toBe(409);
+    expect(json.success).toBe(false);
+    expect(stripeMock.refunds.create).not.toHaveBeenCalled();
+    expect(txMock.refund.create).not.toHaveBeenCalled();
+  });
+
+  it('writes nothing when Stripe fails inside the transaction (atomic rollback, no compensation)', async () => {
+    stripeMock.refunds.create.mockRejectedValue({ type: 'api_error', message: 'boom' });
+
+    const res = await callRoute(
+      makeRequest({ items: [{ orderItemId: 'oi_1', returnQuantity: 1 }] }),
+    );
+
+    // The refund is issued inside the transaction, before the DB writes — a
+    // Stripe failure aborts the transaction, so refundedQuantity is never
+    // incremented and no Refund row is written. No manual compensation needed.
+    expect(stripeMock.refunds.create).toHaveBeenCalledTimes(1);
+    expect(txMock.orderItem.update).not.toHaveBeenCalled();
+    expect(txMock.refund.create).not.toHaveBeenCalled();
+    expect(res.status).toBe(400);
+  });
+
+  it('rejects a malformed JSON body with 400, not 500', async () => {
+    const req = new NextRequest(`http://localhost/api/v1/admin/orders/${ORDER_ID}/return`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: 'this is not json{',
+    });
+    const res = await POST(req, { params: Promise.resolve({ id: ORDER_ID }) });
+
+    expect(res.status).toBe(400);
+    expect(stripeMock.refunds.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects an over-long reason before refunding', async () => {
+    const res = await callRoute(
+      makeRequest({ items: [{ orderItemId: 'oi_1', returnQuantity: 1 }], reason: 'x'.repeat(451) }),
+    );
+
+    expect(res.status).toBe(400);
+    expect(stripeMock.refunds.create).not.toHaveBeenCalled();
   });
 });
