@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Product } from '@/lib/types'
+import { trackCTAClick } from '@/lib/analytics/ga4-events'
 
 interface ExpandableKitGridProps {
   kits: Product[]
@@ -27,7 +28,10 @@ export default function ExpandableKitGrid({ kits, onClickProduct }: ExpandableKi
       return (
         <button
           key={kit.id}
-          onClick={() => onClickProduct(kit)}
+          onClick={() => {
+            trackCTAClick(kit.title, '#', 'packages')
+            onClickProduct(kit)
+          }}
           className="group bg-white rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300 text-left"
         >
           {children}
@@ -38,6 +42,7 @@ export default function ExpandableKitGrid({ kits, onClickProduct }: ExpandableKi
       <Link
         key={kit.id}
         href={`/products/${kit.handle}`}
+        onClick={() => trackCTAClick(kit.title, `/products/${kit.handle}`, 'packages')}
         className="group bg-white rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300"
       >
         {children}

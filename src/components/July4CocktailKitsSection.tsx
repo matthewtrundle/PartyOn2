@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import { Product } from '@/lib/types'
 import ProductModal from '@/components/ProductModal'
+import { trackCTAClick } from '@/lib/analytics/ga4-events'
 
 /**
  * Seasonal "July 4th Cocktails!" section for the /cocktail-kits page.
@@ -55,7 +56,10 @@ export default function July4CocktailKitsSection({ kits }: { kits: Product[] }) 
             return (
               <button
                 key={kit.id}
-                onClick={() => setModalProduct(kit)}
+                onClick={() => {
+                  trackCTAClick(kit.title, '#', 'packages')
+                  setModalProduct(kit)
+                }}
                 className="group flex flex-col bg-white rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300 text-left"
               >
                 <div className="relative aspect-square overflow-hidden">

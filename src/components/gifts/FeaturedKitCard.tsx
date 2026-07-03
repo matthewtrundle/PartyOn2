@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Product } from '@/lib/types';
 import { formatPrice, getProductImageUrl, getFirstAvailableVariant, canPurchaseAlcohol } from '@/lib/utils';
 import { useCartContext } from '@/contexts/CartContext';
+import { trackCTAClick } from '@/lib/analytics/ga4-events';
 import AgeVerificationModal from '../AgeVerificationModal';
 
 // What's included for each kit type
@@ -104,6 +105,8 @@ export default function FeaturedKitCard({
 
   const handleAddToCart = async () => {
     if (!variant?.id || !variant.availableForSale) return;
+
+    trackCTAClick('ADD TO CART', '#', 'packages');
 
     if (!canPurchaseAlcohol()) {
       setShowAgeVerification(true);
@@ -275,7 +278,10 @@ export default function FeaturedKitCard({
 
           {onClickProduct ? (
             <button
-              onClick={() => onClickProduct(product)}
+              onClick={() => {
+                trackCTAClick('VIEW DETAILS', '#', 'packages');
+                onClickProduct(product);
+              }}
               className="px-10 py-5 border-2 border-gray-900 text-gray-900 hover:bg-gray-100 text-lg tracking-[0.1em] font-bold transition-colors duration-300 text-center"
             >
               VIEW DETAILS
@@ -283,6 +289,7 @@ export default function FeaturedKitCard({
           ) : (
             <Link
               href={`/products/${productHandle}`}
+              onClick={() => trackCTAClick('VIEW DETAILS', `/products/${productHandle}`, 'packages')}
               className="px-10 py-5 border-2 border-gray-900 text-gray-900 hover:bg-gray-100 text-lg tracking-[0.1em] font-bold transition-colors duration-300 text-center"
             >
               VIEW DETAILS
