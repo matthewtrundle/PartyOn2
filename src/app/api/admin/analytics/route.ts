@@ -251,7 +251,7 @@ export async function GET(request: NextRequest) {
 
           // Group by page for the quick-glance view
           const pageMap = new Map<string, ExperimentResult[]>();
-          const keyPages = ['/', '/weddings', '/order', '/boat-parties', '/bach-parties', '/corporate'];
+          const keyPages = ['/', '/weddings', '/order', '/boat-parties', '/bach-parties', '/austin-corporate-event-delivery'];
 
           for (const page of keyPages) {
             pageMap.set(page, []);
@@ -271,7 +271,7 @@ export async function GET(request: NextRequest) {
                 '/order': 'Order',
                 '/boat-parties': 'Boat Parties',
                 '/bach-parties': 'Bach Parties',
-                '/corporate': 'Corporate',
+                '/austin-corporate-event-delivery': 'Corporate',
               };
               return {
                 page,

@@ -63,7 +63,7 @@ export default function PlanEventPage() {
       title: 'Corporate',
       description: 'Professional service for business events',
       image: '/images/services/corporate/penthouse-suite-setup.webp',
-      link: '/corporate'
+      link: '/austin-corporate-event-delivery'
     }
   ];
 

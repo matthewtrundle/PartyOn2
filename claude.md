@@ -120,6 +120,15 @@ Nav is fixed, `h-24` (96px), `z-50`. ALL hero sections must account for it.
 - Mobile-specific margin hacks (`mt-[120px] md:mt-0`) — fix the parent section instead
 - `pt-24` alone — no breathing room below nav
 
+### SANCTIONED EXCEPTION — LandingPageTemplate paid landers
+Pages rendered through `src/components/landing/LandingPageTemplate.tsx`
+(bachelor, bachelorette, corporate, wedding-venue-boats, event-quiz, ai-test)
+intentionally do NOT render the global `<Navigation/>` — they use the
+template's slim sticky header (logo + phone CTA) to keep paid traffic focused,
+and their hero is `min-h-[88vh]` with no `mt-24` because there is no fixed nav
+on those pages. Decision confirmed 2026-07-02. Do not "fix" these pages to add
+Navigation or mt-24, and do not flag them in QA audits.
+
 ---
 
 ## Navbar Background Rules
@@ -128,6 +137,10 @@ Nav defaults to OPAQUE (white bg, dark text). Only routes in `NAV_TRANSPARENT_RO
 
 - Page WITH dark bg extending behind nav (no `mt-24`) → Add route to `NAV_TRANSPARENT_ROUTES`
 - Page with `mt-24` hero or light bg → Do nothing, opaque nav is automatic
+
+## Canonical marketing routes
+- Corporate: `/austin-corporate-event-delivery` (since 2026-07-02, `/corporate` 301s to it; subpages `/corporate/holiday-party` + `/corporate/products` remain live)
+- The landing-page registry (`src/lib/analytics/landing-pages.ts`) is the single source of truth for canonical + alias marketing routes — check it before adding links or campaigns.
 
 ---
 

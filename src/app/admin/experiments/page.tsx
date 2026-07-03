@@ -56,7 +56,6 @@ const KEY_PAGES = [
   { value: '/weddings', label: 'Weddings' },
   { value: '/boat-parties', label: 'Boat Parties' },
   { value: '/bach-parties', label: 'Bach Parties' },
-  { value: '/corporate', label: 'Corporate' },
   { value: '/order', label: 'Order Page' },
   { value: '/products', label: 'Products' },
 ];
