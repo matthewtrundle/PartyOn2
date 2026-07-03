@@ -95,17 +95,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/*
-        TODO: RESTORE THIS SECTION AROUND FEBRUARY 10, 2025 (2 weeks from removal)
-
-        "Top Picks (2-minute order)" section was temporarily removed on January 27, 2025
-        This section includes:
-        - Party Packs, Premium Spirits, Craft Beer, Wine Selection
-        - Cocktail Kits, Ice & Disposables, Coolers & Gear, Party Essentials
-
-        TO RESTORE: git show HEAD~1:src/app/page.tsx and copy lines 85-131
-      */}
-
       {/* Group Order / Split-Pay callout */}
       <section className="py-16 md:py-20 bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800">
         <div className="max-w-6xl mx-auto px-8 md:px-12">
