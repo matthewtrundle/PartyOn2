@@ -964,7 +964,7 @@ export default function CorporateHolidayPartyPage() {
               <h4 className="font-light text-gray-900 mb-4 tracking-[0.1em]">SERVICES</h4>
               <ul className="space-y-2">
                 <li>
-                  <Link href="/corporate" className="text-gray-600 hover:text-brand-yellow text-sm transition-colors">
+                  <Link href="/austin-corporate-event-delivery" className="text-gray-600 hover:text-brand-yellow text-sm transition-colors">
                     Corporate Events
                   </Link>
                 </li>

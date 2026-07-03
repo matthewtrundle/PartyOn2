@@ -124,7 +124,7 @@ export default function LuxuryRitzPage() {
                   spirits and complete bar setups. Professional presentation with 
                   white-glove service.
                 </p>
-                <Link href="/corporate">
+                <Link href="/austin-corporate-event-delivery">
                   <button className="text-brand-yellow hover:text-yellow-600 transition-colors flex items-center">
                     Explore Corporate Services
                     <svg className="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -246,7 +246,7 @@ export default function LuxuryRitzPage() {
             <div>
               <h4 className="font-medium mb-4 text-gray-900">Services</h4>
               <ul className="space-y-2 text-gray-600">
-                <li><Link href="/corporate" className="hover:text-gray-900">Corporate Events</Link></li>
+                <li><Link href="/austin-corporate-event-delivery" className="hover:text-gray-900">Corporate Events</Link></li>
                 <li><Link href="/weddings" className="hover:text-gray-900">Weddings</Link></li>
                 <li><Link href="/private" className="hover:text-gray-900">Private Events</Link></li>
                 <li><Link href="/consultation" className="hover:text-gray-900">Consultation</Link></li>

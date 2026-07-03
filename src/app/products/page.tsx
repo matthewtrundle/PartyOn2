@@ -565,7 +565,7 @@ function ProductsContent() {
             <div className="w-16 h-px bg-brand-yellow mx-auto mb-8" />
 
             <p className="text-gray-700 leading-relaxed mb-6">
-              Our carefully curated product catalog brings together the best of Austin&apos;s local craft scene with premium domestic and imported selections. Whether you&apos;re stocking a <Link href="/weddings" className="text-brand-yellow hover:text-yellow-600 underline">wedding bar</Link>, planning a <Link href="/corporate" className="text-brand-yellow hover:text-yellow-600 underline">corporate happy hour</Link>, or hosting an intimate dinner party, we provide the quality and variety your event deserves.
+              Our carefully curated product catalog brings together the best of Austin&apos;s local craft scene with premium domestic and imported selections. Whether you&apos;re stocking a <Link href="/weddings" className="text-brand-yellow hover:text-yellow-600 underline">wedding bar</Link>, planning a <Link href="/austin-corporate-event-delivery" className="text-brand-yellow hover:text-yellow-600 underline">corporate happy hour</Link>, or hosting an intimate dinner party, we provide the quality and variety your event deserves.
             </p>
 
             <h3 className="font-heading text-2xl text-gray-900 mt-8 mb-4 tracking-[0.08em]">
@@ -630,7 +630,7 @@ function ProductsContent() {
                 <li><Link href="/weddings" className="text-gray-600 hover:text-brand-yellow text-sm transition-colors">Weddings</Link></li>
                 <li><Link href="/boat-parties" className="text-gray-600 hover:text-brand-yellow text-sm transition-colors">Boat Parties</Link></li>
                 <li><Link href="/austin-bachelor-party-delivery" className="text-gray-600 hover:text-brand-yellow text-sm transition-colors">Celebrations</Link></li>
-                <li><Link href="/corporate" className="text-gray-600 hover:text-brand-yellow text-sm transition-colors">Corporate</Link></li>
+                <li><Link href="/austin-corporate-event-delivery" className="text-gray-600 hover:text-brand-yellow text-sm transition-colors">Corporate</Link></li>
               </ul>
             </div>
             <div>

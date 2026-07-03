@@ -158,7 +158,7 @@ export default function CorporateProductsPage() {
         <div className="max-w-7xl mx-auto px-8 py-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <Link href="/corporate" className="text-sm text-gray-600 hover:text-brand-yellow transition-colors">
+              <Link href="/austin-corporate-event-delivery" className="text-sm text-gray-600 hover:text-brand-yellow transition-colors">
                 ← Back to Corporate
               </Link>
               <span className="text-gray-400">|</span>

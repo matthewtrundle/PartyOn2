@@ -26,13 +26,21 @@ export function classifySegment(
 ): Segment {
   const path = (landingPage || '').toLowerCase().split('?')[0];
 
-  if (path.startsWith('/bach-parties') || path.startsWith('/bachelor') || path.startsWith('/bachelorette')) {
+  // The '/austin-…-delivery' prefixes are the paid landers; without them, organic
+  // and direct visits to those pages fell through to 'general' (the UTM fallback
+  // only rescued campaign traffic).
+  if (
+    path.startsWith('/bach-parties') ||
+    path.startsWith('/bachelor') ||
+    path.startsWith('/bachelorette') ||
+    path.startsWith('/austin-bachelor') // covers -bachelor- and -bachelorette-
+  ) {
     return 'bach';
   }
-  if (path.startsWith('/weddings') || path.startsWith('/wedding')) {
+  if (path.startsWith('/weddings') || path.startsWith('/wedding') || path.startsWith('/austin-wedding')) {
     return 'wedding';
   }
-  if (path.startsWith('/corporate')) {
+  if (path.startsWith('/corporate') || path.startsWith('/austin-corporate')) {
     return 'corporate';
   }
   if (path.startsWith('/boat-parties') || path.startsWith('/boat')) {

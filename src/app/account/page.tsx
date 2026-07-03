@@ -150,7 +150,7 @@ export default function AccountPage() {
           </div>
         </Link>
 
-        <Link href="/corporate" className="group">
+        <Link href="/austin-corporate-event-delivery" className="group">
           <div className="bg-white p-6 rounded-lg border border-gray-200 hover:border-brand-yellow hover:shadow-lg transition-all">
             <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mb-4 group-hover:bg-brand-yellow transition-colors">
               <svg className="w-6 h-6 text-brand-yellow group-hover:text-white transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -271,7 +271,7 @@ export default function AccountPage() {
               <Link href="/weddings" className="inline-block px-6 py-2 bg-white text-brand-yellow hover:bg-yellow-50 transition-colors rounded">
                 WEDDINGS
               </Link>
-              <Link href="/corporate" className="inline-block px-6 py-2 bg-white text-brand-yellow hover:bg-yellow-50 transition-colors rounded">
+              <Link href="/austin-corporate-event-delivery" className="inline-block px-6 py-2 bg-white text-brand-yellow hover:bg-yellow-50 transition-colors rounded">
                 CORPORATE
               </Link>
               <Link href="/austin-bachelor-party-delivery" className="inline-block px-6 py-2 bg-white text-brand-yellow hover:bg-yellow-50 transition-colors rounded">

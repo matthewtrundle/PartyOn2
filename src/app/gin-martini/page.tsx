@@ -209,7 +209,7 @@ export default function LuxuryGoyardPage() {
             <div>
               <h4 className="font-heading text-lg mb-4">Services</h4>
               <ul className="space-y-2 text-gray-600">
-                <li><Link href="/corporate" className="hover:text-gray-900 transition-colors">Corporate Delivery</Link></li>
+                <li><Link href="/austin-corporate-event-delivery" className="hover:text-gray-900 transition-colors">Corporate Delivery</Link></li>
                 <li><Link href="/cocktails" className="hover:text-gray-900 transition-colors">Cocktail Kits</Link></li>
                 <li><Link href="/packages" className="hover:text-gray-900 transition-colors">Party Packages</Link></li>
               </ul>

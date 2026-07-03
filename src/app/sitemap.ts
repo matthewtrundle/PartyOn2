@@ -73,7 +73,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/boat-parties',
     '/austin-bachelor-party-delivery',
     '/austin-bachelorette-party-delivery',
-    '/corporate',
     '/delivery-areas',
     '/terms',
     '/privacy',
