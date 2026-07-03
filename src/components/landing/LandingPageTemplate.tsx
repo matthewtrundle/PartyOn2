@@ -464,7 +464,7 @@ export default function LandingPageTemplate({
                   openBuilder();
                 }}
                 onBuyNow={(p) => {
-                  trackCTAClick(p.name, '#quickbuy', 'package_card');
+                  trackCTAClick(p.name, '#quickbuy', 'quick_buy');
                   onPackageClick(p, 'quickbuy');
                   setQuickBuyPkg(p);
                 }}
