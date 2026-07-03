@@ -227,6 +227,42 @@ export const bachelorConfig: LandingConfig = {
     },
   ],
 
+  popularProducts: {
+    heading: 'Crowd-pleasers for the bach weekend',
+    intro:
+      'The bottles and cans Austin bachelor groups add most — order any of them straight to the boat, Airbnb, or hotel.',
+    items: [
+      {
+        handle: 'pinthouse-electric-jellyfish-16oz-4-pack-can',
+        name: 'Pinthouse Electric Jellyfish IPA',
+        blurb:
+          "Austin's cult-favorite hazy IPA in 16oz cans — the local pour that makes a boat cooler feel like a brewery run.",
+        price: '$19.99',
+      },
+      {
+        handle: 'karbach-love-street-blonde-18-pack-12oz-can',
+        name: 'Karbach Love Street • 18-Pack',
+        blurb:
+          'Crushable Texas blonde by the 18-pack — the easy all-day beer for a Lake Travis dock day or Rainey pregame.',
+        price: '$26.99',
+      },
+      {
+        handle: 'aperol-spritz-party-pitcher-kit-16-drinks',
+        name: 'Aperol Spritz Kit • Serves 16',
+        blurb:
+          'Pre-batched spritz for 16 so nobody plays bartender at the Airbnb — pour, add ice, done.',
+        price: '$67.99',
+      },
+      {
+        handle: 'pineapple-cup-with-straw',
+        name: 'Pineapple Cup with Straw',
+        blurb:
+          'The boat-day photo op — tropical cups that turn any drink into a bachelor-trip highlight reel.',
+        price: '$2.49',
+      },
+    ],
+  },
+
   finalCtaHeadline: 'Lock it in.',
   finalCtaHeadlineAccent: 'Then go enjoy the trip you planned.',
   finalCtaSubhead:

@@ -9,6 +9,7 @@ import LuxuryCard from '@/components/LuxuryCard';
 import WeddingDrinkCalculator from '@/components/WeddingDrinkCalculator';
 import ScrollRevealCSS from '@/components/ui/ScrollRevealCSS';
 import WeddingsSchemas from '@/components/seo/WeddingsSchemas';
+import PopularProductsStrip from '@/components/landing/PopularProductsStrip';
 import { trackPageView, ANALYTICS_EVENTS } from '@/lib/analytics/track';
 import { trackCTAClick } from '@/lib/analytics/ga4-events';
 import { useHeroExperiment } from '@/hooks/useHeroExperiment';
@@ -656,6 +657,43 @@ export default function WeddingsPage() {
           </ScrollRevealCSS>
         </div>
       </section>
+
+      {/* Popular Products — contextual internal links to Tier-1/Tier-3 product pages */}
+      <PopularProductsStrip
+        heading="Popular for Austin weddings"
+        intro="The bubbly, cocktail kits, and local craft couples add most for toasts, cocktail hour, and the reception bar."
+        sectionClassName="py-24 bg-white"
+        products={[
+          {
+            handle: 'la-marca-prosecco-extra-dry-750ml-6-pack',
+            name: 'La Marca Prosecco • 6-Pack',
+            blurb:
+              'Crisp Italian prosecco by the six-pack — the toast and mimosa-bar staple for rehearsal dinner through send-off.',
+            price: '$99.99',
+          },
+          {
+            handle: 'aperol-spritz-party-pitcher-kit-16-drinks',
+            name: 'Aperol Spritz Kit • Serves 16',
+            blurb:
+              'A ready-to-pour spritz bar for 16 — the signature cocktail-hour drink that looks and tastes elevated.',
+            price: '$67.99',
+          },
+          {
+            handle: 'pinthouse-electric-jellyfish-16oz-4-pack-can',
+            name: 'Pinthouse Electric Jellyfish IPA',
+            blurb:
+              "Austin's local hazy IPA — the craft-beer pick that gives your reception bar a hometown touch.",
+            price: '$19.99',
+          },
+          {
+            handle: 'pineapple-cup-with-straw',
+            name: 'Pineapple Cup with Straw',
+            blurb:
+              'A playful serve for the welcome party or after-hours bar — signature sips guests remember.',
+            price: '$2.49',
+          },
+        ]}
+      />
 
       {/* Drink Calculator */}
       <section className="py-24">

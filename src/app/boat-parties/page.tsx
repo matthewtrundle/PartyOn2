@@ -8,6 +8,7 @@ import Navigation from "@/components/Navigation";
 import LuxuryCard from '@/components/LuxuryCard';
 import ScrollRevealCSS from '@/components/ui/ScrollRevealCSS';
 import BoatPartiesSchemas from '@/components/seo/BoatPartiesSchemas';
+import PopularProductsStrip from '@/components/landing/PopularProductsStrip';
 import { trackPageView, ANALYTICS_EVENTS } from '@/lib/analytics/track';
 import { trackCTAClick } from '@/lib/analytics/ga4-events';
 import { useHeroExperiment } from '@/hooks/useHeroExperiment';
@@ -497,6 +498,43 @@ export default function BoatPartiesPage() {
           </ScrollRevealCSS>
         </div>
       </section>
+
+      {/* Popular Products — contextual internal links to Tier-1/Tier-3 product pages */}
+      <PopularProductsStrip
+        heading="Popular for Lake Travis boat days"
+        intro="The cans, kits, and party touches boat groups add most — loaded onto your cooler dockside before you push off."
+        sectionClassName="py-24 bg-white"
+        products={[
+          {
+            handle: 'pinthouse-electric-jellyfish-16oz-4-pack-can',
+            name: 'Pinthouse Electric Jellyfish IPA',
+            blurb:
+              "Austin's local hazy IPA in 16oz cans — the craft pour that makes a lake cooler feel like a Pinthouse patio.",
+            price: '$19.99',
+          },
+          {
+            handle: 'karbach-love-street-blonde-18-pack-12oz-can',
+            name: 'Karbach Love Street • 18-Pack',
+            blurb:
+              'Crushable Texas blonde by the 18-pack — the easy all-day beer for eight hours on the water.',
+            price: '$26.99',
+          },
+          {
+            handle: 'aperol-spritz-party-pitcher-kit-16-drinks',
+            name: 'Aperol Spritz Kit • Serves 16',
+            blurb:
+              'Pre-batched spritz for 16 — a real cocktail on the boat with nobody stuck playing bartender.',
+            price: '$67.99',
+          },
+          {
+            handle: 'pineapple-cup-with-straw',
+            name: 'Pineapple Cup with Straw',
+            blurb:
+              'The lake-day photo op — tropical cups that turn any drink into a sunset-on-Travis highlight.',
+            price: '$2.49',
+          },
+        ]}
+      />
 
       {/* Safety Notice */}
       <section className="py-24 bg-gray-50">
