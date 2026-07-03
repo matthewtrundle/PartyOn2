@@ -8,12 +8,13 @@ import ProductDetailClient from '@/components/products/ProductDetailClient';
 import SneebergFAQ from '@/components/products/SneebergFAQ';
 import FatEsMatorMixFAQ from '@/components/products/FatEsMatorMixFAQ';
 import MillerLiteKegFAQ from '@/components/products/MillerLiteKegFAQ';
-import PinthouseElectricJellyfishFAQ from '@/components/products/PinthouseElectricJellyfishFAQ';
 import CoronaExtraKegFAQ from '@/components/products/CoronaExtraKegFAQ';
 import BorrascaBrutCavaFAQ from '@/components/products/BorrascaBrutCavaFAQ';
 import ProductBreadcrumbs from '@/components/products/ProductBreadcrumbs';
+import ProductFAQ from '@/components/products/ProductFAQ';
 import { getProductRobotsMeta } from '@/lib/noindex-products';
 import { buildProductMetadata } from '@/lib/seo/build-metadata';
+import { getProductEditorial } from '@/lib/products/editorial-content';
 
 interface Props {
   params: Promise<{ handle: string }>;
@@ -360,6 +361,14 @@ export default async function ProductDetailPage({ params }: Props) {
     category: product.productType || 'Beverage',
   };
 
+  // Tier-1 editorial rewrites (2026-07 SEO sprint): swap the short DB
+  // description for the long-form, internally-linked copy and render the
+  // matching FAQ + FAQPage schema. Handles without a rewrite are unchanged.
+  const editorial = getProductEditorial(handle);
+  const displayProduct = editorial
+    ? { ...product, descriptionHtml: editorial.descriptionHtml }
+    : product;
+
   const structuredData = isSchneebergProduct ? {
     ...baseStructuredData,
     name: 'Pöschl Schneeberg Weiss Tobacco-Free Herbal Snuff',
@@ -385,11 +394,17 @@ export default async function ProductDetailPage({ params }: Props) {
         category={product.productType}
       />
 
-      <ProductDetailClient product={product} />
+      <ProductDetailClient product={displayProduct} />
 
+      {editorial && (
+        <ProductFAQ
+          faqs={editorial.faqs}
+          heading={editorial.faqHeading}
+          schemaId={`faq-${handle}`}
+        />
+      )}
       {handle === 'fat-es-spicy-mator-mix' && <FatEsMatorMixFAQ />}
       {handle === 'miller-lite-keg' && <MillerLiteKegFAQ />}
-      {handle === 'pinthouse-electric-jellyfish-16oz-4-pack-can' && <PinthouseElectricJellyfishFAQ />}
       {handle === 'corona-extra-1-2-barrel' && <CoronaExtraKegFAQ />}
       {handle === 'borrasca-brut-cava' && <BorrascaBrutCavaFAQ />}
       {isSchneebergProduct && <SneebergFAQ />}
