@@ -50,7 +50,7 @@ export default function KegsPage() {
       <Navigation />
 
       {/* Hero Section */}
-      <section className="relative min-h-[100vh] pt-32 md:pt-24 flex items-center justify-center overflow-hidden">
+      <section className="relative h-[50vh] md:h-[60vh] mt-24 flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0">
           <Image
             src="/images/kegs/keg-party-hero.png"
@@ -63,7 +63,7 @@ export default function KegsPage() {
         </div>
         <div className="absolute inset-0 bg-gradient-to-b from-gray-900/60 via-gray-900/40 to-gray-900/90" />
 
-        <div className="hero-fade-in relative text-center text-white z-10 max-w-4xl mx-auto px-8 pt-24 pb-16">
+        <div className="hero-fade-in relative text-center text-white z-10 max-w-4xl mx-auto px-8">
           <h1 className="font-heading font-light text-5xl md:text-7xl mb-6 tracking-[0.08em]">
             Cold Beer Kegs
             <span className="block text-brand-yellow mt-2">DELIVERED TO YOUR DOOR</span>

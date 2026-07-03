@@ -118,7 +118,7 @@ export default function BoatPartiesPage() {
       <Navigation />
       
       {/* Hero Section with Image Slider */}
-      <section className="relative h-[90vh] pt-32 pb-32 md:pt-24 md:pb-24 flex items-center justify-center overflow-hidden">
+      <section className="relative h-[60vh] md:h-[70vh] mt-24 flex items-center justify-center overflow-hidden">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentHeroImage}
@@ -159,7 +159,7 @@ export default function BoatPartiesPage() {
           ))}
         </div>
 
-        <div className="hero-fade-in relative text-center text-white z-10 max-w-4xl mx-auto px-8 mt-[120px] mb-[80px] md:mt-0 md:mb-0">
+        <div className="hero-fade-in relative text-center text-white z-10 max-w-4xl mx-auto px-8">
           <h1 className="sr-only">Lake Travis Boat Party Alcohol Delivery</h1>
           <h2 className="font-heading font-light text-5xl md:text-7xl mb-6 tracking-[0.08em]">
             {hero.content?.headline ?? (
