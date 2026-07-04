@@ -21,6 +21,7 @@ import { prisma } from '@/lib/database/client';
 import { sendEmail } from '@/lib/email/resend-client';
 import { eventAbandonedCartEmail } from '@/lib/email/templates/event-abandoned-cart';
 import { getDemoEvent } from '@/lib/events/demoEvents';
+import { postToCoreLinq } from '@/lib/webhooks/ghl';
 import { EmailType } from '@prisma/client';
 
 export const runtime = 'nodejs';
@@ -131,27 +132,32 @@ export async function GET(req: NextRequest) {
         ],
       });
 
-      // Fire SMS via GHL if we have the webhook + a phone number.
-      if (GHL_WEBHOOK_URL && lead.phone) {
-        try {
-          await fetch(GHL_WEBHOOK_URL, {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({
-              event: 'event.abandoned_cart',
-              first_name: lead.firstName ?? '',
-              last_name: lead.lastName ?? '',
-              email: lead.email,
-              phone: lead.phone,
-              sms_message: `Hey ${lead.firstName ?? 'there'} — your drink order for ${ac.eventTitle} isn't locked in yet. Finish here: ${resumeUrl}`,
-              event_slug: ac.eventSlug,
-              event_title: ac.eventTitle,
-              resume_url: resumeUrl,
-            }),
-          });
-        } catch (err) {
-          console.warn('[event-abandoned-cart] GHL SMS failed', err);
+      // Fire SMS via GHL if we have the webhook + a phone number
+      // (+ CoreLinq fan-out during the GHL → CoreLinq migration).
+      if (lead.phone) {
+        const smsPayload = {
+          event: 'event.abandoned_cart',
+          first_name: lead.firstName ?? '',
+          last_name: lead.lastName ?? '',
+          email: lead.email,
+          phone: lead.phone,
+          sms_message: `Hey ${lead.firstName ?? 'there'} — your drink order for ${ac.eventTitle} isn't locked in yet. Finish here: ${resumeUrl}`,
+          event_slug: ac.eventSlug,
+          event_title: ac.eventTitle,
+          resume_url: resumeUrl,
+        };
+        if (GHL_WEBHOOK_URL) {
+          try {
+            await fetch(GHL_WEBHOOK_URL, {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify(smsPayload),
+            });
+          } catch (err) {
+            console.warn('[event-abandoned-cart] GHL SMS failed', err);
+          }
         }
+        await postToCoreLinq(smsPayload);
       }
 
       await prisma.lead.update({
