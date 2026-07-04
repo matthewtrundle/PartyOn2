@@ -188,6 +188,31 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
 
+      // 2026-07-02 orphaned design-exploration demo pages deleted (zombie
+      // catalog pattern — no inbound links, not in sitemap, no metadata,
+      // linked to a 404ing /heritage). GSC + GA4 confirmed zero
+      // impressions/clicks/pageviews in the prior 90 days before removal.
+      {
+        source: '/gin-martini',
+        destination: '/cocktail-kits',
+        permanent: true,
+      },
+      {
+        source: '/old-fashioned',
+        destination: '/cocktail-kits',
+        permanent: true,
+      },
+      {
+        source: '/negroni',
+        destination: '/cocktail-kits',
+        permanent: true,
+      },
+      {
+        source: '/aperol-spritz',
+        destination: '/cocktail-kits',
+        permanent: true,
+      },
+
       // Legacy Shopify blog URL space (/blogs/news/<slug>) → canonical /blog/<slug>.
       // The parallel route at src/app/blogs/news/[slug]/ was serving the same
       // JSON-backed posts as /blog/<slug>, creating duplicate content (143
