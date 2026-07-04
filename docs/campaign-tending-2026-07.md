@@ -1,108 +1,103 @@
-# Google Ads Campaign Tending — 2026-07-02
+# Google Ads Campaign Tending — 2026-07-03 (rev 2)
 
-Prepared as part of the full-site QA triage. Data sources: production Postgres
-(leads / orders / group dashboards), GA4 Data API (campaign-scoped sessions +
-events), GSC. Spend figures require the Ads UI — placeholders marked ⬜ for the
-operator.
+Prepared as part of the full-site QA triage; **rev 2 fully supersedes the
+2026-07-02 version**, which understated campaign traffic ~50× due to a filter
+artifact (GA4 `sessionCampaignName` holds the Ads display name, e.g.
+`Wedding · Search · ATX · 2026-06`, NOT the utm slug — autotagging overrides
+manual UTMs on GA4↔Ads-linked properties. Filtering on the slug missed nearly
+everything).
+
+Data: GA4 Data API (sessions/events/cost via the Ads link), production
+Postgres (leads/orders/dashboards), 2026-05-29 → 2026-07-02.
 
 ## TL;DR
 
-Both live Search campaigns are **failing on delivery, not on conversion
-economics**. Over their full lifetimes GA4 attributes just **17 sessions to
-bachelor** (live since 6/11) and **3 sessions to wedding** (live since 5/29),
-with **zero** attributed `generate_lead` / `purchase` events. The $25 CPL kill
-gate can't produce a meaningful verdict at this traffic level — the actionable
-problem is that "Eligible (Limited)" throttling plus narrow keyword coverage is
-strangling impression volume. Separately, the wedding-drink-calculator lead
-spike this week (~42 new contacts) is **not** paid traffic — it's organic/shared
-traffic wearing a copy-pasted gclid.
+**Wedding is spending real money and failing the kill gate: $877 for zero
+orders.** It serves fine (1,195 impressions, 150 clicks) and lands traffic on
+`/wedding-drink-calculator`, which captures partial emails but converts nobody.
+**Bachelor is delivery-starved**: $55 spent, 256 impressions — throttled into
+irrelevance, too little data to judge. Neither should keep running as-is.
 
-## 1. Delivery + conversion data (2026-05-29 → 2026-07-02)
+## 1. Lifetime performance (5/29 → 7/2)
 
-| Metric | Wedding (`wedding-search-atx-2026-06`) | Bachelor (`bachelor-search-atx-2026-06`) |
+| Metric | Wedding | Bachelor |
 |---|---|---|
-| GA4 sessions, lifetime | **3** | **17** |
-| GA4 `generate_lead` attributed | 0 | 0 |
-| GA4 `lead_bachelor` attributed | — | 0 |
-| GA4 `purchase` attributed | 0 | 0 |
-| DB leads w/ campaign utm | 0 | 0 |
-| DB orders / dashboards w/ campaign utm | 0 | 0 |
-| Unique ad clicks (gclid) seen in DB leads | ~6 (calculator) | 1 (lander) |
-| Spend (Ads UI) | ⬜ $____ | ⬜ $____ |
+| Spend (GA4 Ads link) | **$877.11** | **$55.08** |
+| Ad clicks / impressions | 150 / 1,195 | 16 / 256 |
+| GA4 sessions | ~168 (158 on the calculator) | ~15 |
+| GA4 `generate_lead` | 10 | 0 |
+| First-party lead contacts (distinct email/phone) | 59 — 57 PARTIAL, **2 SUBMITTED** | ~1 |
+| Orders / group dashboards attributed | **0 / 0** | 0 / 0 |
+| CPL vs the $25 gate | **$88** per GA4 lead; **$439** per submitted lead | n/a (no volume) |
 
-Notes:
-- GA4 `advertiserAdCost` returns $0 via the API — cost import isn't exposed to
-  the Data API for this property; read spend from the Ads UI.
-- Order/dashboard UTM stamping is wired and verified in code (PR #172); zero
-  rows is consistent with near-zero campaign traffic, not a tracking break.
+Reconciliation notes:
+- First-party contacts (59) > GA4 leads (10) because the calculator captures
+  emails progressively (PARTIAL rows) that never fire `generate_lead`.
+- The duplicate click IDs seen in lead metadata (42 contacts on ~2 IDs) are
+  consistent with iOS aggregated `gbraid` tokens, which are shared across
+  users by design — NOT evidence of link-sharing (rev 1's theory, retracted).
+  Traffic is genuine: referrer google.com, Ads clicks ≈ GA4 sessions.
+- Cities skew: Dallas ≈ Austin for calculator cpc traffic — check campaign geo
+  targeting; Dallas clicks can't order (delivery is Austin-only) and may be
+  half the wasted spend.
 
-## 2. Kill-gate verdicts
+## 2. Kill-gate verdicts (day-14 gates overdue since ~6/25)
 
-**Bachelor (day-14 gate was ~6/25, now overdue):** at ⬜ actual spend with 0-1
-attributable leads, CPL is far above $25 unless spend is trivially small.
-**Recommendation: pause OR restructure — do not continue as-is.** The page
-itself is healthy (quick_buy tracking live, age-gate exempt, attribution
-wired); the campaign simply isn't being served. If spend < ~$150 total, the
-cheaper move is restructure (below) before pausing.
+**Wedding — FAILS the gate. Act now.** $877 → 2 submitted leads, 0 orders.
+Options, cheapest lever first:
+1. **Fix geo waste**: exclude Dallas/non-deliverable metros (memory says the
+   confirmed footprint is Austin/Cedar Park/Westlake/Lake Travis + Gonzales).
+   If ~half the clicks are undeliverable cities, true Austin CPL ≈ $44/lead —
+   still failing, but less absurd.
+2. **Fix the landing experience**: ads land on the calculator, which is a
+   lead-capture tool, not an order path. Either point ads at `/weddings`
+   (order-focused) or add a strong order CTA + follow-up flow to calculator
+   results. 57 PARTIAL emails with no nurture = money left on the table.
+3. **Follow up the 59 captured emails** — they're real wedding planners in the
+   funnel RIGHT NOW. A single "want us to quote your date?" email may salvage
+   the spend.
+4. If neither materially moves CPL within ~2 weeks / ~$300 more spend: pause.
 
-**Wedding:** 3 sessions in 5 weeks means the campaign is effectively OFF.
-Verify in the Ads UI whether it's actually serving (status, budget pacing,
-keyword status after the 6/2 recovery). If spend ≈ $0, there's nothing to
-kill — fix serving or fold its keywords into a combined campaign.
+**Bachelor — starved, not failing.** $55 total spend can't clear any gate.
+Either unthrottle it (policy review below, budget/bid raise) or pause to stop
+the dribble. Don't judge the lander on this data.
 
-**Restructure options (pick in the Ads UI):**
-1. Submit the pending policy review for the 7 blocked high-intent
-   alcohol-delivery keywords (Tools → Policy manager) — the throttled AG2 is
-   where buyer intent lives.
-2. Raise bids/budget on the few serving keywords, or switch both campaigns to
-   a single combined "occasions" Search campaign to pool learning volume.
-3. Day-7/14 search-term hygiene has never been done — export search terms,
-   promote high-intent to exact, junk to negatives.
-4. If Search stays throttled after the policy review, test Performance Max
-   with the same assets (known workaround for alcohol-category Limited status).
+## 3. Operator checklist (Ads UI / GA4 Admin)
 
-## 3. Anomaly: calculator lead spike is NOT paid
-
-Week of 6/29: 50 leads, 44 rows carrying a gclid — but only **2 unique gclids**
-across **42 distinct contacts**, and GA4 shows 3 wedding-campaign sessions.
-Dozens of different people arrived carrying the *same* click ID → the
-calculator URL was shared (group chat / planner list / forwarded email) with a
-gclid baked in. Action: find the referrer (ask recent leads how they heard of
-us; check GA4 referrer for /wedding-drink-calculator this week) — something is
-organically distributing the calculator and it's converting. That channel is
-outperforming both paid campaigns combined.
-
-Lead quality caveat: 58 of 60 gclid lead rows are status PARTIAL (calculator
-step-captures); only 2 SUBMITTED.
-
-## 4. Attribution gaps found during this analysis (code-side)
-
-- `Lead.metadata.attribution` persists only click IDs (gclid/gbraid) — the UTM
-  set captured client-side is not persisted on leads, so campaign-level lead
-  attribution depends on gclid → Ads UI lookup. Worth a small follow-up PR to
-  persist the full attribution object on lead capture.
-- Fixed in this branch: segment classifier missed all `/austin-*` lander paths
-  (organic lander traffic classified as `general`); group-order funnel events
-  (create/join/lock) now fire; kit-card CTAs now tracked.
-
-## 5. Operator checklist (Ads UI / GA4 Admin — needs Allan or Brian)
-
-- [ ] Pull actual lifetime spend for both campaigns → fill ⬜ above; then apply
-      the §2 verdicts.
-- [ ] Submit policy review for the 7 rejected AG2 keywords (Tools → Policy
-      manager; 1–3 business days).
+- [ ] **Wedding geo audit**: campaign location targeting + "presence vs
+      interest" setting; add negative locations for non-deliverable metros
+      (Dallas!). Delivery-footprint exclusions also apply (Round Rock,
+      Pflugerville, Leander, Dripping Springs, Buda, Kyle).
+- [ ] **Wedding landing URL decision**: calculator vs /weddings (see §2.2).
+- [ ] Submit policy review for the 7 blocked high-intent alcohol-delivery
+      keywords (Tools → Policy manager; 1–3 business days) — main unthrottle
+      lever for bachelor.
 - [ ] Search-terms report on both campaigns → exact-match promotions +
-      negatives (first cleanup since launch).
-- [ ] Check wedding campaign serving status — 3 sessions/5 weeks suggests it is
-      not spending at all.
+      negatives (never done since launch).
 - [ ] GA4 Admin → Custom definitions: register `blog_topic`, `blog_slug`,
       `destination_url`, `experiment_id`, `variant_id`.
-- [ ] Investigate the calculator's organic spike channel (§3).
+- [ ] Consider one combined "occasions" campaign to pool learning volume if
+      both stay live.
 
-## 6. Analytics snapshot health
+## 4. Analysis gotchas (for future sessions)
 
-The nightly cron IS writing (rows exist through 2026-07-02, sessions
-populated). The committed `docs/WEBSITE-ANALYTICS.md` placeholder is just a
-stale file — prod regenerates it at runtime. One flag: the `orders`/`revenue`/
-`paidSessions` scalar columns are 0 on every recent row — verify the hub reads
-the JSON rollup fields instead, or the cron's order rollup is broken.
+- GA4 `sessionCampaignName` = **Ads display name** (`Wedding · Search · ATX ·
+  2026-06`) on linked properties; the utm slug appears only for a handful of
+  sessions where manual tagging won. Query `sessionMedium = cpc` grouped by
+  campaign, never filter by the slug.
+- `advertiserAdCost` IS available via `runReport` with plain metrics (no
+  Ads-specific dimension needed) — rev 1 claimed it wasn't; wrong query shape.
+- Lead UTM columns (`leads.utm_source/…`) populate correctly; click IDs live
+  in `metadata.attribution`. iOS `gbraid` tokens are shared across users —
+  count DISTINCT contacts, not distinct click IDs.
+- A handful of cpc-tagged sessions land on `/ops`, `/admin/finance`,
+  `/dashboard/*` with 1 user — that's internal browsing with stale utm params,
+  ignore.
+
+## 5. Attribution status (code-side, all landed)
+
+- Group-order attribution: capture confirmed (57/105 dashboards since 6/27).
+- Funnel events (create/join/lock), kit-card CTA tracking, segment-classifier
+  lander prefixes: shipped in PR #179.
+- Nightly snapshot cron writes daily; `orders/revenue` scalar columns read 0 —
+  under investigation (may be cosmetic if the hub reads JSON rollups).

@@ -195,10 +195,22 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     },
   };
 
+  // Scalar order totals (30d window, matching the sessions scalar). These
+  // columns were never written before — always 0 — which silently fed zeros
+  // into measure-recommendations' resultMetricBefore/After captures.
+  const totalOrders = (channels ?? []).reduce((sum, c) => sum + (c.orders ?? 0), 0);
+  const totalRevenue = (channels ?? []).reduce((sum, c) => sum + (c.revenue ?? 0), 0);
+  const orderScalars = {
+    orders: totalOrders,
+    revenue: totalRevenue,
+    averageOrderValue: totalOrders > 0 ? totalRevenue / totalOrders : 0,
+  };
+
   // Upsert snapshot
   const snapshot = await prisma.analyticsSnapshot.upsert({
     where: { date: today },
     update: {
+      ...orderScalars,
       sessions: traffic?.sessions ?? 0,
       users: traffic?.users ?? 0,
       pageviews: traffic?.pageviews ?? 0,
@@ -228,6 +240,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     },
     create: {
       date: today,
+      ...orderScalars,
       sessions: traffic?.sessions ?? 0,
       users: traffic?.users ?? 0,
       pageviews: traffic?.pageviews ?? 0,
