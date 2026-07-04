@@ -47,6 +47,12 @@ jobs:
       - name: Generate Prisma Client
         run: npx prisma generate
 
+      # Inside the same required "Test & Lint" check on purpose — gates
+      # typecheck without a branch-protection change. Main went type-green
+      # after the finance qb-pull realmId fix (2026-06).
+      - name: Typecheck
+        run: npx tsc --noEmit
+
       - name: Lint
         run: npm run lint
 
