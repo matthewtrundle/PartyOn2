@@ -9,6 +9,7 @@ const GHL_WEBHOOK_URL = process.env.GHL_ORDER_WEBHOOK_URL;
 const GHL_REVIEW_WEBHOOK_URL = process.env.GHL_REVIEW_WEBHOOK_URL;
 const GHL_DASHBOARD_WEBHOOK_URL = process.env.GHL_DASHBOARD_WEBHOOK_URL;
 const GHL_NEWSLETTER_WEBHOOK_URL = process.env.GHL_NEWSLETTER_WEBHOOK_URL;
+const CORELINQ_INGEST_URL = process.env.CORELINQ_INGEST_URL;
 
 // ──────────────────────────────────────────────
 // Types
@@ -110,6 +111,39 @@ function buildItemsSummary(
 }
 
 // ──────────────────────────────────────────────
+// CoreLinq CRM fan-out (GHL → CoreLinq migration)
+// ──────────────────────────────────────────────
+
+/**
+ * POST the same event to the CoreLinq CRM ingest route when
+ * CORELINQ_INGEST_URL is set. During the shadow-mode parallel run both GHL
+ * and CoreLinq receive every event; after cutover the GHL URLs are unset and
+ * only this fires. The payload must carry an `event` discriminator — the
+ * ingest route switches on it.
+ *
+ * Fire-and-forget: logs errors, never throws. No-ops silently when
+ * CORELINQ_INGEST_URL is not set.
+ */
+export async function postToCoreLinq(
+  payload: { event: string } & Record<string, unknown>
+): Promise<void> {
+  if (!CORELINQ_INGEST_URL) return;
+
+  try {
+    const res = await fetch(CORELINQ_INGEST_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      console.error('[CoreLinq Ingest] Failed:', payload.event, res.status, await res.text());
+    }
+  } catch (err) {
+    console.error('[CoreLinq Ingest] Error:', payload.event, err);
+  }
+}
+
+// ──────────────────────────────────────────────
 // Public API
 // ──────────────────────────────────────────────
 
@@ -177,6 +211,7 @@ export interface GhlReviewPayload {
 }
 
 export async function notifyNewOrder(payload: GhlOrderPayload): Promise<void> {
+  await postToCoreLinq(payload);
   if (!GHL_WEBHOOK_URL) return;
 
   try {
@@ -200,6 +235,7 @@ export async function notifyNewOrder(payload: GhlOrderPayload): Promise<void> {
  * Fire-and-forget: logs errors, never throws.
  */
 export async function sendReviewRequest(payload: GhlReviewPayload): Promise<void> {
+  await postToCoreLinq(payload);
   if (!GHL_REVIEW_WEBHOOK_URL) return;
 
   try {
@@ -240,6 +276,7 @@ export interface GhlDashboardPayload {
  * Fire-and-forget: logs errors, never throws.
  */
 export async function notifyDashboardCreated(payload: GhlDashboardPayload): Promise<void> {
+  await postToCoreLinq(payload);
   if (!GHL_DASHBOARD_WEBHOOK_URL) return;
 
   try {
@@ -285,6 +322,7 @@ export interface GhlNewsletterPayload {
  * the GHL inbound webhook/workflow and sets the env var.
  */
 export async function notifyNewsletterSignup(payload: GhlNewsletterPayload): Promise<void> {
+  await postToCoreLinq(payload);
   if (!GHL_NEWSLETTER_WEBHOOK_URL) return;
 
   try {

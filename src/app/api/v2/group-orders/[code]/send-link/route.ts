@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/database/client';
 import { sendEmail } from '@/lib/email/resend-client';
 import { dashboardLinkEmail } from '@/lib/email/templates/dashboard-link';
+import { postToCoreLinq } from '@/lib/webhooks/ghl';
 
 const SendLinkSchema = z.object({
   hostEmail: z.string().email('Valid email is required').optional().or(z.literal('')),
@@ -78,8 +79,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       }
     }
 
-    // Trigger GHL SMS if phone provided
+    // Trigger GHL SMS if phone provided (+ CoreLinq fan-out during migration)
     if (hostPhone) {
+      const smsMessage = `Here's your Party On Delivery dashboard link: ${dashboardUrl}`;
       try {
         const ghlWebhookUrl = process.env.GHL_WEBHOOK_URL;
         if (ghlWebhookUrl) {
@@ -88,7 +90,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               phone: hostPhone,
-              message: `Here's your Party On Delivery dashboard link: ${dashboardUrl}`,
+              message: smsMessage,
               source: 'dashboard-share',
             }),
           });
@@ -96,6 +98,14 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       } catch (smsErr) {
         console.error('[SendLink] SMS webhook failed:', smsErr);
       }
+      await postToCoreLinq({
+        event: 'dashboard.share',
+        phone: hostPhone,
+        message: smsMessage,
+        source: 'dashboard-share',
+        dashboard_url: dashboardUrl,
+        share_code: code,
+      });
     }
 
     return NextResponse.json({ success: true, data: { sent: true } });
