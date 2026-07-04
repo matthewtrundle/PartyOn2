@@ -124,8 +124,8 @@ function buildItemsSummary(
  * Fire-and-forget: logs errors, never throws. No-ops silently when
  * CORELINQ_INGEST_URL is not set.
  */
-export async function postToCoreLinq(
-  payload: { event: string } & Record<string, unknown>
+export async function postToCoreLinq<T extends { event: string }>(
+  payload: T
 ): Promise<void> {
   if (!CORELINQ_INGEST_URL) return;
 

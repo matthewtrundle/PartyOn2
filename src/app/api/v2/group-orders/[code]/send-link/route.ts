@@ -9,6 +9,7 @@ import { prisma } from '@/lib/database/client';
 import { sendEmail } from '@/lib/email/resend-client';
 import { dashboardLinkEmail } from '@/lib/email/templates/dashboard-link';
 import { postToCoreLinq } from '@/lib/webhooks/ghl';
+import { checkRateLimit } from '@/lib/security/rate-limit';
 
 const SendLinkSchema = z.object({
   hostEmail: z.string().email('Valid email is required').optional().or(z.literal('')),
@@ -20,6 +21,24 @@ type RouteParams = { params: Promise<{ code: string }> };
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     const { code } = await params;
+
+    // Public endpoint (keyed by shareCode) that sends real email/SMS — cap
+    // per IP and per dashboard so it can't be used as a send-spam primitive.
+    const ip =
+      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      request.headers.get('x-real-ip') ||
+      'unknown';
+    const [ipAllowed, codeAllowed] = await Promise.all([
+      checkRateLimit('send-link:ip', ip, 10, 60),
+      checkRateLimit('send-link:code', code, 6, 600),
+    ]);
+    if (!ipAllowed || !codeAllowed) {
+      return NextResponse.json(
+        { success: false, error: 'Too many requests — try again shortly' },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
     const parsed = SendLinkSchema.safeParse(body);
 

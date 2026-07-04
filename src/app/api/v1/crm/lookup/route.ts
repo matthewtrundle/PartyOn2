@@ -19,30 +19,18 @@ import { createHash, timingSafeEqual } from 'crypto';
 import { z } from 'zod';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/database/client';
+import { checkRateLimit } from '@/lib/security/rate-limit';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 const CRM_API_KEY = process.env.CRM_API_KEY;
 
-// Lightweight in-memory rate limit (per instance). The route is Bearer-key
-// authenticated; this is a backstop against a leaked key being used to
-// enumerate customers. Matches the pattern in /api/events/rsvp.
-const RATE_LIMIT_WINDOW_MS = 60_000;
-const RATE_LIMIT_MAX = 60;
-const hits = new Map<string, { count: number; resetAt: number }>();
-
-function rateLimited(ip: string): boolean {
-  const now = Date.now();
-  const entry = hits.get(ip);
-  if (entry && now < entry.resetAt) {
-    if (entry.count >= RATE_LIMIT_MAX) return true;
-    entry.count++;
-    return false;
-  }
-  hits.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
-  return false;
-}
+// KV-backed (global across instances) with in-memory fallback. The route is
+// Bearer-key authenticated; this is the backstop against a leaked key being
+// used to enumerate customers, so it must be a real cross-instance cap.
+const RATE_LIMIT_MAX = 60; // per IP per minute
+const RATE_LIMIT_WINDOW_SECONDS = 60;
 
 /** Constant-time comparison of the presented bearer token against CRM_API_KEY. */
 function isAuthorized(authHeader: string | null): boolean {
@@ -120,7 +108,8 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
     req.headers.get('x-real-ip') ||
     'unknown';
-  if (rateLimited(ip)) {
+  const allowed = await checkRateLimit('crm-lookup', ip, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_SECONDS);
+  if (!allowed) {
     return NextResponse.json({ ok: false, error: 'rate limited' }, { status: 429 });
   }
 
