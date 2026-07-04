@@ -64,10 +64,19 @@ the dribble. Don't judge the lander on this data.
 
 ## 3. Operator checklist (Ads UI / GA4 Admin)
 
-- [ ] **Wedding geo audit**: campaign location targeting + "presence vs
-      interest" setting; add negative locations for non-deliverable metros
-      (Dallas!). Delivery-footprint exclusions also apply (Round Rock,
-      Pflugerville, Leander, Dripping Springs, Buda, Kyle).
+- [x] **Wedding geo fix — DONE 2026-07-04 (via Ads UI):** added the 6
+      standing footprint exclusions (Round Rock, Pflugerville, Leander,
+      Dripping Springs, Buda, Kyle — Kyle/Buda/Dripping Springs carve the
+      undeliverable cities out of the targeted Hays County polygon).
+      **Deliberately NOT excluded: Dallas.** Per-city GA4 conversion data
+      reversed the rev-2 assumption — Dallas users are the campaign's TOP
+      lead source (4 of 10 generate_lead vs Austin's 3); they're
+      destination-wedding planners whose venues ARE deliverable. Left
+      "presence or interest" targeting untouched for the same reason.
+      Revisit at day-30: if Dallas leads still produce zero orders, exclude
+      it then. Campaign targeting for reference: Austin + Hays County +
+      Bee Cave + Wimberley (+1), AG1 is "Calculator Intent" (calculator
+      landing is deliberate).
 - [ ] **Wedding landing URL decision**: calculator vs /weddings (see §2.2).
 - [ ] Submit policy review for the 7 blocked high-intent alcohol-delivery
       keywords (Tools → Policy manager; 1–3 business days) — main unthrottle
