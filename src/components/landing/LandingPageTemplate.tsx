@@ -8,6 +8,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import PackageBuilderModal from './PackageBuilderModal';
 import QuickBuyModal from './QuickBuyModal';
+import PopularProductsStrip from './PopularProductsStrip';
 import HeroBackdrop from './sections/HeroBackdrop';
 import PackageCard from './sections/PackageCard';
 import { PhoneIcon, ChatIcon, CheckIcon } from './sections/icons';
@@ -488,6 +489,16 @@ export default function LandingPageTemplate({
           </p>
         </div>
       </section>
+
+      {/* POPULAR PRODUCTS — contextual internal links to Tier-1/Tier-3 product pages */}
+      {config.popularProducts && (
+        <PopularProductsStrip
+          heading={config.popularProducts.heading}
+          intro={config.popularProducts.intro}
+          products={config.popularProducts.items}
+          sectionClassName="py-16 md:py-20 bg-white"
+        />
+      )}
 
       {/* HOW IT WORKS — chevron accordion: stacked on mobile, staircase cascade on desktop */}
       <section className="py-12 md:py-20" style={{ background: T.cream }}>

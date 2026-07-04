@@ -74,6 +74,17 @@ export type Review = {
 
 export type Faq = { q: string; a: string };
 
+/** One product in the "popular for this event" internal-link strip. */
+export type PopularProductLink = {
+  /** Postgres product handle — card links to /products/<handle>. */
+  handle: string;
+  name: string;
+  /** Event-specific reason this product fits (doubles as anchor context). */
+  blurb: string;
+  /** Display price string, e.g. "$19.99". */
+  price?: string;
+};
+
 export type ModalStep = {
   key: string;
   label: string;
@@ -171,6 +182,17 @@ export type LandingConfig = {
   // FAQ
   faqHeadline: string;
   faqs: Faq[];
+
+  /**
+   * Optional "popular for this event" product strip — contextual internal
+   * links from the landing page down to Tier-1/Tier-3 product pages. When
+   * unset, nothing renders (pages without it are unchanged).
+   */
+  popularProducts?: {
+    heading: string;
+    intro?: string;
+    items: PopularProductLink[];
+  };
 
   // Final CTA
   finalCtaHeadline: string;

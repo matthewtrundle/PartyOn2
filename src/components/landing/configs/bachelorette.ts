@@ -202,6 +202,42 @@ export const bacheloretteConfig: LandingConfig = {
     },
   ],
 
+  popularProducts: {
+    heading: 'Crowd-pleasers for the bachelorette weekend',
+    intro:
+      'The bubbly, spritzes, and party touches Austin bachelorette groups add most — delivered cold to your weekend home base or boat.',
+    items: [
+      {
+        handle: 'aperol-spritz-party-pitcher-kit-16-drinks',
+        name: 'Aperol Spritz Kit • Serves 16',
+        blurb:
+          'A ready-to-pour spritz bar for 16 — the golden-hour drink for the rooftop, patio, or bridal-shower brunch.',
+        price: '$67.99',
+      },
+      {
+        handle: 'la-marca-prosecco-extra-dry-750ml-6-pack',
+        name: 'La Marca Prosecco • 6-Pack',
+        blurb:
+          'Six bottles of crisp Italian prosecco — the mimosa-bar and toast staple for the whole weekend.',
+        price: '$99.99',
+      },
+      {
+        handle: 'pineapple-cup-with-straw',
+        name: 'Pineapple Cup with Straw',
+        blurb:
+          'The bachelorette photo prop — tropical cups that make every drink (and every pic) pop on the boat.',
+        price: '$2.49',
+      },
+      {
+        handle: 'pinthouse-electric-jellyfish-16oz-4-pack-can',
+        name: 'Pinthouse Electric Jellyfish IPA',
+        blurb:
+          "Austin's local hazy IPA in 16oz cans — the craft-beer pick for the crew that isn't drinking bubbly.",
+        price: '$19.99',
+      },
+    ],
+  },
+
   finalCtaHeadline: 'Lock it in.',
   finalCtaHeadlineAccent: 'Then enjoy the weekend you actually planned.',
   finalCtaSubhead:
