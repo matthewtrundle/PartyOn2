@@ -1,7 +1,12 @@
 /**
  * Group Orders V2 - Frontend API Client
+ *
+ * Funnel events (create/join/lock) fire here, post-success, so every UI
+ * entry point is covered without per-call-site wiring. ~95% of revenue
+ * flows through this funnel; trackEvent is fail-safe (never throws).
  */
 
+import { trackEvent, ANALYTICS_EVENTS } from '@/lib/analytics/track';
 import type {
   GroupOrderV2Full,
   ParticipantSummary,
@@ -51,20 +56,31 @@ async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
 export async function createGroupOrderV2(
   input: CreateGroupOrderV2Input
 ): Promise<GroupOrderV2Full> {
-  return apiFetch<GroupOrderV2Full>(API_BASE, {
+  const group = await apiFetch<GroupOrderV2Full>(API_BASE, {
     method: 'POST',
     body: JSON.stringify(input),
   });
+  trackEvent(ANALYTICS_EVENTS.CREATE_GROUP_ORDER, {
+    flow: 'group_create',
+    share_code: group.shareCode,
+  });
+  return group;
 }
 
 /** Create a new dashboard order (simplified flow) */
 export async function createDashboardOrderV2(
   input: CreateDashboardInput
 ): Promise<GroupOrderV2Full> {
-  return apiFetch<GroupOrderV2Full>(`${API_BASE}/dashboard`, {
+  const group = await apiFetch<GroupOrderV2Full>(`${API_BASE}/dashboard`, {
     method: 'POST',
     body: JSON.stringify(input),
   });
+  trackEvent(ANALYTICS_EVENTS.CREATE_GROUP_ORDER, {
+    flow: 'dashboard',
+    party_type: input.partyType ?? null,
+    share_code: group.shareCode,
+  });
+  return group;
 }
 
 /** Fetch group order by share code */
@@ -112,10 +128,12 @@ export async function joinGroupOrderV2(
   code: string,
   input: JoinGroupOrderInput
 ): Promise<ParticipantSummary> {
-  return apiFetch<ParticipantSummary>(`${API_BASE}/${code}/join`, {
+  const participant = await apiFetch<ParticipantSummary>(`${API_BASE}/${code}/join`, {
     method: 'POST',
     body: JSON.stringify(input),
   });
+  trackEvent(ANALYTICS_EVENTS.JOIN_GROUP_ORDER, { share_code: code });
+  return participant;
 }
 
 /** Update participant email */
@@ -240,10 +258,16 @@ export async function checkoutAllV2(
   tipAmount?: number,
   email?: string
 ): Promise<{ checkoutUrl: string; sessionId: string }> {
-  return apiFetch(`${API_BASE}/${code}/tabs/${tabId}/checkout-all`, {
-    method: 'POST',
-    body: JSON.stringify({ participantId, discountCode, tipAmount, email }),
-  });
+  const session = await apiFetch<{ checkoutUrl: string; sessionId: string }>(
+    `${API_BASE}/${code}/tabs/${tabId}/checkout-all`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ participantId, discountCode, tipAmount, email }),
+    }
+  );
+  // Checkout is what locks a v2 tab, so this is the lock moment of the funnel.
+  trackEvent(ANALYTICS_EVENTS.LOCK_GROUP_ORDER, { share_code: code, scope: 'tab_all' });
+  return session;
 }
 
 /** Create checkout session for participant's items */
@@ -255,10 +279,15 @@ export async function checkoutParticipantV2(
   tipAmount?: number,
   email?: string
 ): Promise<{ checkoutUrl: string; sessionId: string; paymentId: string }> {
-  return apiFetch(`${API_BASE}/${code}/tabs/${tabId}/checkout`, {
-    method: 'POST',
-    body: JSON.stringify({ participantId, discountCode, tipAmount, email }),
-  });
+  const session = await apiFetch<{ checkoutUrl: string; sessionId: string; paymentId: string }>(
+    `${API_BASE}/${code}/tabs/${tabId}/checkout`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ participantId, discountCode, tipAmount, email }),
+    }
+  );
+  trackEvent(ANALYTICS_EVENTS.LOCK_GROUP_ORDER, { share_code: code, scope: 'participant' });
+  return session;
 }
 
 /** Validate a discount code */

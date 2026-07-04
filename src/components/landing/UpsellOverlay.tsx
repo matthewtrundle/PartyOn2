@@ -79,7 +79,7 @@ export default function UpsellOverlay({ open, products, theme: T, onAdd, onClose
         {/* Header */}
         <div className="flex-shrink-0 px-5 sm:px-7 pt-6 pb-3">
           <p
-            className="text-[10px] font-bold tracking-[0.22em] mb-1"
+            className="text-xs font-bold tracking-[0.22em] mb-1"
             style={{ color: T.primary }}
           >
             BEFORE YOU CHECK OUT
@@ -161,7 +161,7 @@ function UpsellGrid({
   return (
     <div>
       <div
-        className="text-[10px] font-bold tracking-[0.18em] mb-2"
+        className="text-xs font-bold tracking-[0.18em] mb-2"
         style={{ color: T.navy }}
       >
         {label}
@@ -199,7 +199,7 @@ function UpsellGrid({
                 )}
                 {isAdded && (
                   <div
-                    className="absolute top-1.5 right-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold shadow"
+                    className="absolute top-1.5 right-1.5 px-2 py-0.5 rounded-full text-xs font-bold shadow"
                     style={{ background: T.primary, color: T.primaryText }}
                   >
                     ×{qty}
@@ -208,7 +208,7 @@ function UpsellGrid({
               </div>
               <div className="p-2 flex flex-col flex-1">
                 <div
-                  className="text-[11px] font-bold leading-tight text-center mb-1"
+                  className="text-xs font-bold leading-tight text-center mb-1"
                   style={{
                     color: T.navy,
                     display: '-webkit-box',
@@ -221,7 +221,7 @@ function UpsellGrid({
                   {p.name}
                 </div>
                 <div className="flex items-baseline justify-between mb-1.5 px-0.5">
-                  <span className="text-[9px] text-gray-500 truncate">
+                  <span className="text-xs text-gray-500 truncate">
                     {p.detail || ' '}
                   </span>
                   <span className="font-bold text-xs whitespace-nowrap" style={{ color: T.blue }}>

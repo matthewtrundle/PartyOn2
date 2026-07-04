@@ -95,17 +95,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/*
-        TODO: RESTORE THIS SECTION AROUND FEBRUARY 10, 2025 (2 weeks from removal)
-
-        "Top Picks (2-minute order)" section was temporarily removed on January 27, 2025
-        This section includes:
-        - Party Packs, Premium Spirits, Craft Beer, Wine Selection
-        - Cocktail Kits, Ice & Disposables, Coolers & Gear, Party Essentials
-
-        TO RESTORE: git show HEAD~1:src/app/page.tsx and copy lines 85-131
-      */}
-
       {/* Group Order / Split-Pay callout */}
       <section className="py-16 md:py-20 bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800">
         <div className="max-w-6xl mx-auto px-8 md:px-12">
@@ -313,7 +302,7 @@ export default function HomePage() {
                 Professional office bars and team events with invoice billing available.
               </p>
               <div className="flex flex-col sm:flex-row gap-3">
-                <TrackedLink href="/corporate" section="services" buttonText="START CORPORATE ORDER">
+                <TrackedLink href="/austin-corporate-event-delivery" section="services" buttonText="START CORPORATE ORDER">
                   <button className="px-6 py-3 bg-brand-yellow text-gray-900 hover:bg-yellow-600 transition-colors tracking-[0.1em] text-sm">
                     START CORPORATE ORDER
                   </button>
@@ -619,7 +608,7 @@ export default function HomePage() {
               <div className="w-16 h-px bg-brand-yellow mx-auto mb-8" />
 
               <p className="text-gray-700 leading-relaxed mb-6">
-                Since 2023, Party On Delivery has been Austin&apos;s trusted partner for premium alcohol delivery and full-service bar coordination. Whether you&apos;re planning an intimate gathering, a <Link href="/corporate" className="text-brand-yellow hover:text-yellow-600 underline">corporate celebration</Link>, or a grand <Link href="/weddings" className="text-brand-yellow hover:text-yellow-600 underline">wedding reception</Link>, we provide the expertise, selection, and seamless execution that elevates every occasion.
+                Since 2023, Party On Delivery has been Austin&apos;s trusted partner for premium alcohol delivery and full-service bar coordination. Whether you&apos;re planning an intimate gathering, a <Link href="/austin-corporate-event-delivery" className="text-brand-yellow hover:text-yellow-600 underline">corporate celebration</Link>, or a grand <Link href="/weddings" className="text-brand-yellow hover:text-yellow-600 underline">wedding reception</Link>, we provide the expertise, selection, and seamless execution that elevates every occasion.
               </p>
 
               <h3 className="font-heading text-2xl text-gray-900 mt-8 mb-4 tracking-[0.08em]">
@@ -633,7 +622,7 @@ export default function HomePage() {
                 Full-Service Event Coordination
               </h3>
               <p className="text-gray-700 leading-relaxed mb-6">
-                Planning a <Link href="/weddings" className="text-brand-yellow hover:text-yellow-600 underline">wedding at a Lake Travis vineyard</Link>? Hosting a <Link href="/corporate" className="text-brand-yellow hover:text-yellow-600 underline">corporate retreat in the Hill Country</Link>? Throwing a <Link href="/austin-bachelor-party-delivery" className="text-brand-yellow hover:text-yellow-600 underline">bachelor party on Rainey Street</Link>? Our team coordinates directly with your venue to ensure flawless delivery timing, proper temperature control, and professional setup. We handle the logistics so you can focus on enjoying your event. Optional TABC-certified bartender staffing is available through our vetted partner network for full-service experiences.
+                Planning a <Link href="/weddings" className="text-brand-yellow hover:text-yellow-600 underline">wedding at a Lake Travis vineyard</Link>? Hosting a <Link href="/austin-corporate-event-delivery" className="text-brand-yellow hover:text-yellow-600 underline">corporate retreat in the Hill Country</Link>? Throwing a <Link href="/austin-bachelor-party-delivery" className="text-brand-yellow hover:text-yellow-600 underline">bachelor party on Rainey Street</Link>? Our team coordinates directly with your venue to ensure flawless delivery timing, proper temperature control, and professional setup. We handle the logistics so you can focus on enjoying your event. Optional TABC-certified bartender staffing is available through our vetted partner network for full-service experiences.
               </p>
 
               <h3 className="font-heading text-2xl text-gray-900 mt-8 mb-4 tracking-[0.08em]">
@@ -718,7 +707,7 @@ export default function HomePage() {
                 <li><Link href="/weddings" className="text-gray-600 hover:text-brand-yellow text-sm transition-colors">Weddings</Link></li>
                 <li><Link href="/boat-parties" className="text-gray-600 hover:text-brand-yellow text-sm transition-colors">Boat Parties</Link></li>
                 <li><Link href="/austin-bachelor-party-delivery" className="text-gray-600 hover:text-brand-yellow text-sm transition-colors">Celebrations</Link></li>
-                <li><Link href="/corporate" className="text-gray-600 hover:text-brand-yellow text-sm transition-colors">Corporate</Link></li>
+                <li><Link href="/austin-corporate-event-delivery" className="text-gray-600 hover:text-brand-yellow text-sm transition-colors">Corporate</Link></li>
               </ul>
             </div>
             <div>

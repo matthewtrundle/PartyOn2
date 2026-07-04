@@ -22,7 +22,6 @@ const KEY_PAGES = [
   { path: '/order', name: 'Order' },
   { path: '/boat-parties', name: 'Boat Parties' },
   { path: '/bach-parties', name: 'Bach Parties' },
-  { path: '/corporate', name: 'Corporate' },
 ];
 
 function getStatusIcon(status: string): string {

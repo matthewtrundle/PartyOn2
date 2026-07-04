@@ -126,11 +126,15 @@ export const LANDING_PAGES: LandingPageDef[] = [
     key: 'corporate',
     displayName: 'Corporate',
     navOrder: 6,
-    canonicalPath: '/corporate',
-    aliasPaths: ['/austin-corporate-event-delivery'],
+    // 2026-07-02 consolidation: /corporate (old custom page) now 301s to the
+    // LandingPageTemplate lander; kept as alias so historical rows still count.
+    canonicalPath: '/austin-corporate-event-delivery',
+    aliasPaths: ['/corporate'],
     ctaSections: [
       { id: 'hero', label: 'Hero' },
-      { id: 'packages', label: 'Packages' },
+      { id: 'package_card', label: 'Package card' },
+      { id: 'quick_buy', label: 'Quick buy' },
+      { id: 'package_builder', label: 'Package builder' },
       { id: 'final_cta', label: 'Final CTA' },
     ],
     defaultExperimentElementId: 'hero',

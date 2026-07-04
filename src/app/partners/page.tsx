@@ -215,7 +215,7 @@ export default function AustinPartnersPage() {
               </p>
               <p>
                 Planning a{' '}
-                <Link href="/corporate" className="text-brand-yellow hover:text-yellow-600">
+                <Link href="/austin-corporate-event-delivery" className="text-brand-yellow hover:text-yellow-600">
                   corporate event in Austin
                 </Link>
                 ? Our vendor network includes professional caterers specializing in Tex-Mex, BBQ,

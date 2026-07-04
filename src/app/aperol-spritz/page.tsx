@@ -91,7 +91,7 @@ export default function LuxuryPrabalPage() {
               <p className="text-lg mb-6">
                 Premium whiskeys, vodkas, tequilas & more. Curated selection delivered fast.
               </p>
-              <Link href="/corporate">
+              <Link href="/austin-corporate-event-delivery">
                 <button className="text-white font-bold hover:underline">
                   LEARN MORE →
                 </button>

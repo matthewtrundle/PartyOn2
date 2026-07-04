@@ -29,7 +29,7 @@ export const TOPIC_CLUSTERS: TopicCluster[] = [
     pillarSlug: 'ultimate-guide-austin-corporate-events',
     pillarTitle: 'The Ultimate Guide to Austin Corporate Events',
     category: 'Corporate Events',
-    serviceUrl: '/corporate',
+    serviceUrl: '/austin-corporate-event-delivery',
     clusterSlugs: [
       'how-to-choose-the-right-venue-for-your-austin-corporate-event',
       'top-corporate-catering-options-for-austin-business-events',

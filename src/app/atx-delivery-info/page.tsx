@@ -295,7 +295,7 @@ export default function AustinAlcoholDeliveryPage() {
                 {
                   title: 'Corporate Events',
                   description: 'Impress clients and employees with professional alcohol delivery for your corporate events. We offer invoice billing, bulk pricing, and reliable service for Austin businesses.',
-                  link: '/corporate',
+                  link: '/austin-corporate-event-delivery',
                   linkText: 'Corporate Solutions'
                 },
                 {

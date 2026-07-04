@@ -9,11 +9,11 @@ export const metadata: Metadata = {
     title: 'Corporate Event Alcohol Delivery – Party On Delivery Austin',
     description: 'Simplify your next Austin company event. Party On Delivery delivers alcohol, mixers, and ice for offices, venues, and offsites — cold and on time.',
     type: 'website',
-    url: 'https://partyondelivery.com/corporate',
   },
-  alternates: {
-    canonical: '/corporate',
-  },
+  // No canonical here: /corporate itself 301s to /austin-corporate-event-delivery
+  // (next.config.ts); a layout-level canonical would be inherited by the live
+  // /corporate/holiday-party and /corporate/products subpages and point them
+  // at a redirecting URL. Subpages set their own canonicals where needed.
   robots: {
     index: true,
     follow: true,

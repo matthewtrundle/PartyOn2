@@ -206,6 +206,17 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
 
+      // Corporate dual-route consolidation (2026-07-02): /corporate was the
+      // older custom page (873 GSC impressions/90d at pos ~23, zero clicks);
+      // /austin-corporate-event-delivery is the LandingPageTemplate paid
+      // lander the main nav links to. Exact-path redirect only — the
+      // /corporate/holiday-party and /corporate/products subpages stay live.
+      {
+        source: '/corporate',
+        destination: '/austin-corporate-event-delivery',
+        permanent: true,
+      },
+
       // Product slug rename: ping pong balls 10pcs → 6pcs (pack size changed)
       {
         source: '/products/ping-pong-balls-10pcs',
