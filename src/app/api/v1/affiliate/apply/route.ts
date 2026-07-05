@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createPartnerApplication } from '@/lib/affiliates/affiliate-service';
+import { enqueueJourney } from '@/lib/followups/enqueue';
 import { AffiliateCategory } from '@prisma/client';
 
 const VALID_CATEGORIES: AffiliateCategory[] = ['BARTENDER', 'BOAT', 'VENUE', 'PLANNER', 'OTHER'];
@@ -48,6 +49,23 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       notes,
       consent,
     });
+
+    // Queue the affiliate-apply follow-up (ack next tick, +120h check-in
+    // while still PENDING). Flag-gated; deduped on the application id, which
+    // the journey's shouldCancel reads back from the dedupe key.
+    try {
+      await enqueueJourney('affiliate-apply', {
+        email,
+        entityId: application.id,
+        phone: phone || null,
+        payload: {
+          firstName: String(contactName).split(/\s+/)[0] || null,
+          businessName: businessName || null,
+        },
+      });
+    } catch (err) {
+      console.warn('[Affiliate Apply API] follow-up enqueue failed:', err);
+    }
 
     return NextResponse.json({
       success: true,
