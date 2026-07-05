@@ -21,6 +21,16 @@
             "timeout": 5
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "input=$(cat); cmd=$(echo \"$input\" | jq -r '.tool_input.command // \"\"'); blocked=\"\"; case \"$cmd\" in *\"prisma db push\"*|*\"prisma migrate dev\"*|*\"npm run db:push\"*) blocked=1 ;; esac; if [ -z \"$blocked\" ]; then case \"$cmd\" in *\"db:migrate:\"*) : ;; *\"npm run db:migrate\"*) blocked=1 ;; esac; fi; if [ -n \"$blocked\" ]; then if [ -f \"$CLAUDE_PROJECT_DIR/.claude/.allow-prisma-migrate\" ]; then rm \"$CLAUDE_PROJECT_DIR/.claude/.allow-prisma-migrate\"; echo '[BYPASS] one-shot prisma push/migrate allowed (sentinel consumed)' >&2; exit 0; fi; echo '[BLOCK] prisma db push / prisma migrate dev (npm run db:push / db:migrate) are forbidden — prisma/schema.prisma is intentionally drifted and these would DROP production columns that still hold data (memory: prisma_schema_drift.md). Use the db-migration skill: additive SQL in prisma/migrations/manual/, then npm run db:migrate:manual + db:verify-schema. One-shot bypass: touch .claude/.allow-prisma-migrate' >&2; exit 2; fi",
+            "timeout": 5
+          }
+        ]
       }
     ],
     "PostToolUse": [
