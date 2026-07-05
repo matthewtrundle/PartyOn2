@@ -25,6 +25,7 @@ import { generateInvoiceEmail, generateInvoiceSubject } from '@/lib/email/templa
 import { getInvoiceTextOverrides } from '@/lib/email/template-content';
 import { sendEmail } from '@/lib/email/resend-client';
 import { attributionSchema, attributionNoteLine } from '@/lib/leads/attribution-schema';
+import { cancelJobsForEmail, enqueueJourney } from '@/lib/followups/enqueue';
 import { EmailType, DraftOrderStatus } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
@@ -208,10 +209,42 @@ export async function POST(request: NextRequest) {
           data: { status: DraftOrderStatus.SENT, sentAt: new Date() },
         });
         emailSent = true;
+
+        // Fast-path follow-up enqueue (the engine sweep would catch this
+        // draft anyway — this just gets the +24h clock started with a richer
+        // payload). Flag-gated at send time; deduped on draft id.
+        try {
+          await enqueueJourney('unpaid-invoice', {
+            email: draftOrder.customerEmail,
+            entityId: draftOrder.id,
+            draftOrderId: draftOrder.id,
+            phone: body.customerPhone || null,
+            payload: {
+              firstName: (draftOrder.customerName ?? '').trim().split(/\s+/)[0] || null,
+              deliveryDate: draftOrder.deliveryDate.toLocaleDateString('en-US', {
+                weekday: 'long',
+                month: 'long',
+                day: 'numeric',
+                timeZone: 'America/Chicago',
+              }),
+              invoicePath: `/invoice/${draftOrder.token}`,
+            },
+          });
+        } catch (err) {
+          console.warn('[landing/quote] unpaid-invoice enqueue failed:', err);
+        }
       } catch (err) {
         console.error('[landing/quote] Failed to send invoice email:', err);
         // Don't fail the request — the customer still got an invoiceUrl
       }
+    }
+
+    // Either mode: this email now has a real draft order, so any pending
+    // abandoned-quote nudge is moot — the invoice conversation owns the thread.
+    try {
+      await cancelJobsForEmail(body.customerEmail, 'draft-created', 'abandoned-quote');
+    } catch (err) {
+      console.warn('[landing/quote] abandoned-quote cancel failed:', err);
     }
 
     return NextResponse.json({
