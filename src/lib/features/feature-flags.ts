@@ -28,6 +28,19 @@ export const FEATURE_FLAGS = {
   AI_INVENTORY_COUNTING: 'ai_inventory_counting',
   AI_STOCK_PREDICTIONS: 'ai_stock_predictions',
   AI_QUERY_ASSISTANT: 'ai_query_assistant',
+
+  // Follow-up email system (src/lib/followups) — master kill switch + one
+  // flag per journey. All auto-create disabled; the engine checks the master
+  // first, then the journey flag per job.
+  FOLLOWUPS_MASTER: 'followups_master',
+  FOLLOWUPS_ABANDONED_QUOTE: 'followups_abandoned_quote',
+  FOLLOWUPS_UNPAID_INVOICE: 'followups_unpaid_invoice',
+  FOLLOWUPS_PARTNER_INQUIRY: 'followups_partner_inquiry',
+  FOLLOWUPS_CONTACT_FORM: 'followups_contact_form',
+  FOLLOWUPS_NEWSLETTER_WELCOME: 'followups_newsletter_welcome',
+  FOLLOWUPS_AFFILIATE_APPLY: 'followups_affiliate_apply',
+  FOLLOWUPS_EVENT_QUIZ: 'followups_event_quiz',
+  FOLLOWUPS_POST_PURCHASE_REVIEW: 'followups_post_purchase_review',
 } as const;
 
 export type FeatureFlagKey = (typeof FEATURE_FLAGS)[keyof typeof FEATURE_FLAGS];

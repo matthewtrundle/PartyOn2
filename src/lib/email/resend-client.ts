@@ -54,10 +54,57 @@ export interface SendEmailOptions {
 }
 
 /**
+ * Extended options for sendEmailDetailed.
+ */
+export interface SendEmailDetailedOptions extends SendEmailOptions {
+  /** Override the From mailbox (default: RESEND_FROM_EMAIL / orders@). */
+  from?: { email: string; name?: string };
+  /**
+   * Skip the send entirely (no EmailLog row) when the recipient is on the
+   * follow-up suppression list. Leave unset for transactional email —
+   * invoices and receipts must send regardless.
+   */
+  respectSuppression?: boolean;
+}
+
+/**
+ * Result of sendEmailDetailed — exposes the EmailLog id (which sendEmail
+ * does not) so callers like the follow-up engine can link the log row.
+ */
+export interface SendEmailDetailedResult {
+  sent: boolean;
+  emailLogId: string | null;
+  resendId: string | null;
+  /** True when the send was skipped because the recipient is suppressed. */
+  suppressed?: boolean;
+  error?: string;
+}
+
+/**
  * Send an email and log it
  */
 export async function sendEmail(options: SendEmailOptions): Promise<string | null> {
-  const { to, cc, subject, html, text, type, orderId, customerId, draftOrderId, metadata, attachments, tags, headers } = options;
+  const result = await sendEmailDetailed(options);
+  return result.resendId;
+}
+
+/**
+ * Send an email and log it, returning the EmailLog id and Resend id.
+ * Superset of sendEmail: optional From override + suppression check.
+ */
+export async function sendEmailDetailed(
+  options: SendEmailDetailedOptions
+): Promise<SendEmailDetailedResult> {
+  const { to, cc, subject, html, text, type, orderId, customerId, draftOrderId, metadata, attachments, tags, headers, from, respectSuppression } = options;
+
+  if (respectSuppression) {
+    // Lazy import keeps the common transactional path free of the check.
+    const { isSuppressed } = await import('@/lib/followups/suppression');
+    if (await isSuppressed(to)) {
+      console.log('[Email] Skipped (suppressed):', { to, subject, type });
+      return { sent: false, emailLogId: null, resendId: null, suppressed: true };
+    }
+  }
 
   // Create email log entry
   const emailLog = await prisma.emailLog.create({
@@ -83,12 +130,15 @@ export async function sendEmail(options: SendEmailOptions): Promise<string | nul
         errorMessage: 'RESEND_API_KEY not configured',
       },
     });
-    return null;
+    return { sent: false, emailLogId: emailLog.id, resendId: null, error: 'RESEND_API_KEY not configured' };
   }
+
+  const fromEmail = sanitizeEnv(from?.email) || FROM_EMAIL;
+  const fromName = sanitizeEnv(from?.name) || FROM_NAME;
 
   try {
     const result = await resend.emails.send({
-      from: `${FROM_NAME} <${FROM_EMAIL}>`,
+      from: `${fromName} <${fromEmail}>`,
       to,
       ...(cc && cc.length > 0 ? { cc } : {}),
       subject,
@@ -108,7 +158,7 @@ export async function sendEmail(options: SendEmailOptions): Promise<string | nul
         data: { status: EmailStatus.FAILED, errorMessage },
       });
       console.error('[Email] Failed to send:', { to, subject, type, error: result.error });
-      return null;
+      return { sent: false, emailLogId: emailLog.id, resendId: null, error: errorMessage };
     }
 
     // Update log with success
@@ -122,7 +172,7 @@ export async function sendEmail(options: SendEmailOptions): Promise<string | nul
     });
 
     console.log('[Email] Sent successfully:', { to, subject, type, resendId: result.data?.id });
-    return result.data?.id || null;
+    return { sent: true, emailLogId: emailLog.id, resendId: result.data?.id || null };
   } catch (error) {
     // Update log with error
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -135,7 +185,7 @@ export async function sendEmail(options: SendEmailOptions): Promise<string | nul
     });
 
     console.error('[Email] Failed to send:', { to, subject, type, error: errorMessage });
-    return null;
+    return { sent: false, emailLogId: emailLog.id, resendId: null, error: errorMessage };
   }
 }
 
