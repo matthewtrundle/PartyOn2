@@ -12,6 +12,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/database/client';
+import { checkRateLimit } from '@/lib/security/rate-limit';
 import {
   normalizeEmail,
   suppress,
@@ -26,6 +27,14 @@ const querySchema = z.object({
   email: z.string().email().max(320),
   token: z.string().min(16).max(128),
 });
+
+function clientIp(request: NextRequest): string {
+  return (
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    request.headers.get('x-real-ip') ||
+    'unknown'
+  );
+}
 
 /** Keep Customer.acceptsMarketing in step with the suppression list. */
 async function syncCustomerMarketing(email: string, accepts: boolean): Promise<void> {
@@ -45,6 +54,11 @@ function preferencesRedirect(request: NextRequest, email: string, token: string,
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  // Public endpoint with DB writes — throttle before any work.
+  if (!(await checkRateLimit('unsubscribe', clientIp(request), 20, 3600))) {
+    return NextResponse.json({ success: false, error: 'Too many requests' }, { status: 429 });
+  }
+
   const parsed = querySchema.safeParse({
     email: request.nextUrl.searchParams.get('email'),
     token: request.nextUrl.searchParams.get('token'),
@@ -93,6 +107,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 }
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
+  if (!(await checkRateLimit('unsubscribe-view', clientIp(request), 60, 3600))) {
+    return NextResponse.json({ success: false, error: 'Too many requests' }, { status: 429 });
+  }
+
   const email = request.nextUrl.searchParams.get('email') ?? '';
   const token = request.nextUrl.searchParams.get('token') ?? '';
   const url = new URL('/email/preferences', request.nextUrl.origin);

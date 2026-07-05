@@ -281,7 +281,11 @@ export async function processJob(job: FollowUpJob, journey: JourneyDef): Promise
     job,
     payload: (job.payload as Record<string, unknown> | null) ?? {},
     link: (path: string) => {
-      const url = new URL(path, SITE_BASE_URL);
+      // Open-redirect guard (CWE-601): payload paths may echo public route
+      // input, and new URL(path, base) IGNORES the base for absolute and
+      // protocol-relative paths. Only site-relative paths survive.
+      const safePath = path.startsWith('/') && !path.startsWith('//') ? path : '/';
+      const url = new URL(safePath, SITE_BASE_URL);
       url.searchParams.set('utm_source', 'email');
       url.searchParams.set('utm_medium', 'followup');
       url.searchParams.set('utm_campaign', journey.key);

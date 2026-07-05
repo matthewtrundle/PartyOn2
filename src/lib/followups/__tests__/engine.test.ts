@@ -297,6 +297,31 @@ describe('processJob pipeline', () => {
     );
   });
 
+  it('ctx.link refuses absolute and protocol-relative URLs (open-redirect guard)', async () => {
+    let captured: string[] = [];
+    const journey = makeJourney({
+      steps: [
+        {
+          delayHours: 0,
+          buildEmail: (ctx) => {
+            captured = [
+              ctx.link('https://evil.example.com/phish'),
+              ctx.link('//evil.example.com/phish'),
+              ctx.link('/order'),
+            ];
+            return { subject: 's', html: '<p>x</p>', text: 'x' };
+          },
+        },
+      ],
+    });
+    await processJob(makeJob(), journey);
+    expect(captured[0]).not.toContain('evil.example.com');
+    expect(captured[1]).not.toContain('evil.example.com');
+    expect(captured[2]).toContain('partyondelivery.com/order');
+    expect(captured[2]).toContain('utm_campaign=contact-form');
+    expect(captured[2]).toContain('utm_content=step-1');
+  });
+
   it('single-step journeys do not enqueue a step 2', async () => {
     const journey = makeJourney({
       steps: [{ delayHours: 1, buildEmail: () => ({ subject: 's', html: '<p>x</p>', text: 'x' }) }],

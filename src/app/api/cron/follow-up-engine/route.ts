@@ -22,8 +22,11 @@ export const maxDuration = 300;
 const CRON_SECRET = process.env.CRON_SECRET;
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
+  // Fail CLOSED when CRON_SECRET is unset (stricter than the repo's usual
+  // cron pattern): this route can send real customer email, so a
+  // misconfigured environment must not leave it open.
   const auth = req.headers.get('authorization');
-  if (CRON_SECRET && auth !== `Bearer ${CRON_SECRET}`) {
+  if (!CRON_SECRET || auth !== `Bearer ${CRON_SECRET}`) {
     return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 });
   }
 

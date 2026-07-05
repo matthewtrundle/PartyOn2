@@ -17,6 +17,30 @@ import { normalizeEmail } from './suppression';
 import { entityIdFromDedupeKey, type JourneyKey } from './types';
 
 const MAX_JITTER_MS = 45 * 60 * 1000;
+const MAX_PAYLOAD_STRING = 200;
+const MAX_PAYLOAD_DEPTH = 3;
+
+/**
+ * Clamp untrusted payload values before storage: route hooks snapshot
+ * public-form input here, and copy.ts interpolates it into outbound email.
+ * Truncating strings bounds both stored-JSON bloat and what a visitor can
+ * make "Allan" say in a follow-up.
+ */
+function clampPayload(value: unknown, depth = 0): unknown {
+  if (typeof value === 'string') return value.slice(0, MAX_PAYLOAD_STRING);
+  if (Array.isArray(value)) {
+    return depth >= MAX_PAYLOAD_DEPTH ? [] : value.slice(0, 50).map((v) => clampPayload(v, depth + 1));
+  }
+  if (value && typeof value === 'object') {
+    if (depth >= MAX_PAYLOAD_DEPTH) return {};
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>).slice(0, 50)) {
+      out[k.slice(0, 100)] = clampPayload(v, depth + 1);
+    }
+    return out;
+  }
+  return value;
+}
 
 /**
  * Send time for a step: base + delay + 0–45min jitter so sends don't all fire
@@ -95,7 +119,7 @@ export async function enqueueJourney(
         partnerInquiryId: opts.partnerInquiryId,
         orderId: opts.orderId,
         payload: opts.payload
-          ? (JSON.parse(JSON.stringify(opts.payload)) as Prisma.InputJsonValue)
+          ? (JSON.parse(JSON.stringify(clampPayload(opts.payload))) as Prisma.InputJsonValue)
           : undefined,
         dedupeKey: `${journeyKey}:${step}:${opts.entityId}`,
         scheduledFor,
