@@ -186,6 +186,7 @@ src/
 - **Draft Orders / Invoices**: Created in admin (`/ops/orders/create`) → customer pays via `/invoice/[token]` → Stripe
 - **Cart**: React Context + localStorage persistence
 - **Auth**: JWT tokens (`jose`) for customer + ops sessions; affiliate uses magic links
+- **Schema changes**: `db-migration` skill only — ADR-0008 manual additive SQL + `_manual_migrations` ledger (never `prisma db push`)
 
 ### Middleware (`src/middleware.ts`)
 - Canonical domain enforcement (www → non-www 301)
@@ -227,6 +228,8 @@ MDX-based blog stored in `content/blog/posts/` (134 posts). NOT database-backed.
 - Do not run `next build` to verify changes. Use `npx next lint` or `npx tsc --noEmit` for error checking.
 - Do not use Playwright or take screenshots to verify layouts.
 - Do not read or open image files. Reference images by path only.
+- Do not merge or declare a PR done outside the `ship` skill flow (post-merge verification is mandatory).
+- Do not run `prisma db push` or `prisma migrate dev` — schema changes go through the `db-migration` skill (a hook blocks these commands).
 
 ---
 
@@ -248,6 +251,9 @@ MDX-based blog stored in `content/blog/posts/` (134 posts). NOT database-backed.
 Skip all of this for trivial fixes (typos, renames, local one-liners — just do them).
 The bigger or riskier the change, the more of this is mandatory.
 
+- **Big tasks run on protocol.** For any multi-step/multi-file task, invoke the
+  `big-task` skill BEFORE starting; when continuing prior work at session start,
+  invoke `recall`. Merges go through the `ship` skill.
 - **Verify against the live code, not memory.** Re-read the actual file before
   claiming what it does. Claims like "mirrors X", "ported verbatim", "matches old
   behavior" assert equivalence — prove it by diffing/running both, or downgrade the
