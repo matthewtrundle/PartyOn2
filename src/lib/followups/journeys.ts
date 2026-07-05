@@ -74,7 +74,10 @@ export const JOURNEYS: JourneyDef[] = [
         if (lead.status !== 'PARTIAL') return `lead-${lead.status.toLowerCase()}`;
         if (lead.draftOrderId || lead.orderId) return 'lead-linked-to-order';
       }
-      if (await activeDraftExistsForEmail(job.email)) return 'draft-exists';
+      // Recent drafts only — a repeat customer's converted draft from months
+      // ago is not an active conversation and must not kill this journey.
+      const recentDraftSince = new Date(job.createdAt.getTime() - 30 * 24 * 3_600_000);
+      if (await activeDraftExistsForEmail(job.email, recentDraftSince)) return 'draft-exists';
       // Precedence: if an unpaid-invoice conversation is running for this
       // email, that journey owns the thread.
       const invoiceJob = await prisma.followUpJob.findFirst({
