@@ -61,6 +61,10 @@
       "schedule": "*/15 * * * *"
     },
     {
+      "path": "/api/cron/follow-up-engine",
+      "schedule": "*/15 * * * *"
+    },
+    {
       "path": "/api/cron/finance-stripe-sync",
       "schedule": "15 7 * * *"
     },

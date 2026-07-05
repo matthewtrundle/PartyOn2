@@ -16,6 +16,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Webhook } from 'svix';
 import { prisma } from '@/lib/database/client';
 import { EmailStatus } from '@prisma/client';
+import { suppress } from '@/lib/followups/suppression';
 
 interface ResendWebhookData {
   created_at: string;
@@ -105,6 +106,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       });
 
       console.log('[Resend Webhook] Updated email log:', emailLog.id, '->', newStatus);
+
+      // Auto-suppress on delivery problems: add the address to the follow-up
+      // suppression list and cancel its scheduled follow-up jobs. Idempotent,
+      // so webhook re-delivery is safe. Transactional email is unaffected —
+      // only the follow-up engine consults the suppression list.
+      if (type === 'email.bounced' || type === 'email.complained') {
+        const reason = type === 'email.bounced' ? 'bounce' : 'complaint';
+        const result = await suppress(emailLog.to, reason, 'resend-webhook', `resendId=${resendId}`);
+        console.log(
+          '[Resend Webhook] Suppressed', emailLog.to, `(${reason});`,
+          'canceled', result.canceledJobs, 'scheduled follow-up job(s)'
+        );
+      }
     } else {
       // delivery_delayed or unknown -- log but don't update status
       console.log('[Resend Webhook] Unhandled event type:', type);

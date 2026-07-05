@@ -1375,6 +1375,7 @@ enum EmailType {
   AFFILIATE_PAYOUT
   ORDER_CANCELLED
   RECEIPT
+  FOLLOW_UP
 }
 
 enum EmailStatus {
@@ -1385,6 +1386,67 @@ enum EmailStatus {
   BOUNCED
   COMPLAINED
   FAILED
+}
+
+/// Scheduled follow-up email send (site-wide follow-up system).
+/// One row per journey step per entity; dedupe_key makes re-enqueues free.
+/// Table created by prisma/migrations/manual/2026-07-06-followups-phase-0.sql.
+model FollowUpJob {
+  id         String @id @default(uuid())
+  journeyKey String @map("journey_key")
+  step       Int    @default(1)
+  /// Always lowercased at enqueue.
+  email      String
+  phone      String?
+  smsConsent Boolean @default(false) @map("sms_consent")
+
+  // Entity references (scalar ids, no FKs — jobs survive entity deletes).
+  leadId           String? @map("lead_id")
+  draftOrderId     String? @map("draft_order_id")
+  partnerInquiryId String? @map("partner_inquiry_id")
+  orderId          String? @map("order_id")
+
+  /// Render context snapshot at enqueue.
+  payload Json?
+  /// "<journey>:<step>:<entityId>"
+  dedupeKey String @unique @map("dedupe_key")
+
+  scheduledFor DateTime  @map("scheduled_for")
+  /// scheduled | processing | sent | canceled | suppressed | failed
+  status       String    @default("scheduled")
+  claimedAt    DateTime? @map("claimed_at")
+  attempts     Int       @default(0)
+  sentAt       DateTime? @map("sent_at")
+  canceledAt   DateTime? @map("canceled_at")
+  cancelReason String?   @map("cancel_reason")
+  lastError    String?   @map("last_error")
+  emailLogId   String?   @map("email_log_id")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@index([status, scheduledFor])
+  @@index([email])
+  @@index([journeyKey, status, createdAt])
+  @@index([draftOrderId])
+  @@index([leadId])
+  @@map("follow_up_jobs")
+}
+
+/// Global do-not-email list for follow-up sends (transactional emails bypass).
+/// Table created by prisma/migrations/manual/2026-07-06-followups-phase-0.sql.
+model EmailSuppression {
+  id     String @id @default(uuid())
+  /// Always lowercased.
+  email  String @unique
+  /// unsubscribe | bounce | complaint | manual
+  reason String
+  source String?
+  note   String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("email_suppressions")
 }
 
 // ==========================================
