@@ -68,6 +68,9 @@ export interface OrderItemWithProduct {
  * Increments committedQuantity on ProductVariant (does NOT decrement inventoryQuantity).
  * Physical stock is only decremented when the order is fulfilled/delivered.
  * If the product is a bundle, commits each component's inventory instead.
+ * Untracked variants (trackInventory=false) are skipped entirely — fulfillment
+ * never releases their committed units, so committing them would accumulate
+ * phantom committed stock that blocks checkout if tracking is ever re-enabled.
  */
 type TransactionClient = Omit<typeof prisma, '$connect' | '$disconnect' | '$on' | '$transaction' | '$use' | '$extends'>;
 
@@ -103,16 +106,16 @@ export async function commitInventoryForOrderItem(
       if (component.componentVariantId) {
         componentVariant = await tx.productVariant.findUnique({
           where: { id: component.componentVariantId },
-          select: { id: true, committedQuantity: true },
+          select: { id: true, committedQuantity: true, trackInventory: true },
         });
       } else {
         componentVariant = await tx.productVariant.findFirst({
           where: { productId: component.componentProductId },
-          select: { id: true, committedQuantity: true },
+          select: { id: true, committedQuantity: true, trackInventory: true },
         });
       }
 
-      if (componentVariant) {
+      if (componentVariant && componentVariant.trackInventory) {
         await tx.productVariant.update({
           where: { id: componentVariant.id },
           data: { committedQuantity: { increment: commitQty } },
@@ -136,10 +139,10 @@ export async function commitInventoryForOrderItem(
     // Regular product: commit variant directly
     const variant = await tx.productVariant.findUnique({
       where: { id: variantId },
-      select: { id: true, committedQuantity: true },
+      select: { id: true, committedQuantity: true, trackInventory: true },
     });
 
-    if (variant) {
+    if (variant && variant.trackInventory) {
       await tx.productVariant.update({
         where: { id: variant.id },
         data: { committedQuantity: { increment: orderQuantity } },
