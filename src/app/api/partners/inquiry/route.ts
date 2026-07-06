@@ -5,6 +5,7 @@ import type { PartnerInquiryData } from '@/lib/email/email-service'
 import { addContactToAudience } from '@/lib/email/resend-audiences'
 import { kv, isKVConfigured, prisma } from '@/lib/database/client'
 import { isHoneypotTripped } from '@/lib/forms/honeypot'
+import { enqueueJourney } from '@/lib/followups/enqueue'
 
 // Sources that trigger an automated outbound email with the partner one-pager
 // PDF + Calendly CTA (in addition to the existing ops notification).
@@ -330,6 +331,29 @@ export async function POST(request: NextRequest) {
       } catch (oneErr) {
         console.error('[Partner One-Pager] Outbound send pipeline error:', oneErr);
         // Don't fail the request — the row is in the DB and can be re-fired manually.
+      }
+    }
+
+    // Queue the partner-inquiry follow-up journey (flag-gated, deduped on
+    // the inquiry id). One-pager placements already send a first touch, so
+    // they start at step 2 (the +96h calendar nudge); everything else gets
+    // the personal ack on the next engine tick.
+    if (dbResult?.id) {
+      try {
+        const isOnePagerPlacement = Boolean(inquiry.source && ONEPAGER_SOURCES.has(inquiry.source));
+        await enqueueJourney('partner-inquiry', {
+          email: inquiry.email,
+          entityId: dbResult.id,
+          partnerInquiryId: dbResult.id,
+          phone: inquiry.phone || null,
+          startAtStep: isOnePagerPlacement ? 2 : 1,
+          payload: {
+            firstName: inquiry.contactName.split(/\s+/)[0] || null,
+            businessName: inquiry.businessName || null,
+          },
+        });
+      } catch (err) {
+        console.warn('[Partner Inquiry] follow-up enqueue failed:', err);
       }
     }
 

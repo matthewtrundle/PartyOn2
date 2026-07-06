@@ -24,11 +24,15 @@ import {
   markLeadStatus,
 } from '@/lib/leads/leadCapture';
 import { ensureVisitorCookie, COOKIE_NAME } from '@/lib/leads/cookie';
+import { enqueueJourney } from '@/lib/followups/enqueue';
 import type {
   LeadEventType,
   LeadSourceWidget,
   LeadStatus,
 } from '@prisma/client';
+
+/** Widgets whose partial captures feed the abandoned-quote follow-up journey. */
+const ABANDONED_QUOTE_WIDGETS = new Set(['DRINK_CALCULATOR', 'PACKAGE_BUILDER', 'QUICK_BUY']);
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -155,6 +159,44 @@ export async function POST(req: NextRequest) {
     await markLeadStatus(lead.id, parsed.setStatus as LeadStatus, {
       resumeCart: parsed.resumeCart,
     });
+  }
+
+  // Abandoned-quote follow-up: an email captured in a quote-building widget
+  // with no order behind it queues the +24h journey. Deduped on lead id, so
+  // repeated field-blur events are no-ops; the engine re-checks lead status,
+  // drafts, and orders with fresh reads before actually sending — and the
+  // journey's feature flag stays off until Allan enables it.
+  const email = lead?.email ?? parsed.identify?.email ?? null;
+  const promotedBeyondPartial = parsed.setStatus && parsed.setStatus !== 'PARTIAL';
+  if (
+    lead &&
+    email &&
+    lead.status === 'PARTIAL' &&
+    !promotedBeyondPartial &&
+    !lead.draftOrderId &&
+    !lead.orderId &&
+    parsed.widget &&
+    ABANDONED_QUOTE_WIDGETS.has(parsed.widget)
+  ) {
+    try {
+      const metadata = (parsed.metadata ?? {}) as Record<string, unknown>;
+      const rawGuestCount = String(metadata.guestCount ?? metadata.guests ?? '');
+      await enqueueJourney('abandoned-quote', {
+        email,
+        entityId: lead.id,
+        leadId: lead.id,
+        phone: lead.phone ?? parsed.identify?.phone ?? null,
+        payload: {
+          firstName: lead.firstName ?? parsed.identify?.firstName ?? null,
+          resumePath: parsed.page ?? '/order',
+          // Digits only — this value is quoted verbatim inside email copy.
+          guestCount: /^\d{1,4}$/.test(rawGuestCount) ? rawGuestCount : null,
+        },
+      });
+    } catch (err) {
+      // Follow-up queueing must never break lead capture.
+      console.warn('[lead-event] abandoned-quote enqueue failed', err);
+    }
   }
 
   const res = NextResponse.json({

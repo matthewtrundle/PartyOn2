@@ -30,6 +30,22 @@ import {
   upsertDispute,
   upsertPayout,
 } from '@/lib/finance/stripe-extended';
+import { cancelJobsForDraft, cancelJobsForEmail } from '@/lib/followups/enqueue';
+
+/**
+ * Advisory follow-up cleanup on payment success: the customer converted, so
+ * scheduled follow-up nudges to them are moot. The engine re-checks with
+ * fresh reads before every send anyway — this just tidies the queue early.
+ * Never throws; order creation must not depend on it.
+ */
+async function cancelFollowUpsForConversion(email: string | null | undefined, draftOrderId?: string): Promise<void> {
+  try {
+    if (draftOrderId) await cancelJobsForDraft(draftOrderId, 'invoice-paid');
+    if (email) await cancelJobsForEmail(email, 'converted-order');
+  } catch (err) {
+    console.warn('[Stripe Webhook] follow-up cancel failed:', err);
+  }
+}
 
 /**
  * Verify webhook signature and construct event
@@ -107,6 +123,8 @@ async function handleCheckoutSessionCompleted(
   try {
     const order = await createOrderFromCheckout(fullSession, cart);
     console.log('[Stripe Webhook] Order created:', order.orderNumber);
+
+    await cancelFollowUpsForConversion(order.customerEmail);
 
     // Link order to affiliate. Two paths:
     //   1. Cookie/ref attribution from session metadata (affiliateCode)
@@ -298,6 +316,8 @@ async function handleDraftOrderPayment(
       convertedOrderId: order.id,
     });
     console.log('[Stripe Webhook] Draft order marked as converted:', draftOrderId);
+
+    await cancelFollowUpsForConversion(order.customerEmail, draftOrderId);
 
     // Link order to affiliate. Try ref/draft-attached code first; fall back to
     // the discount code if the customer typed an affiliate code at checkout.

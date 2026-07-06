@@ -13,6 +13,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { recordEvent } from '@/lib/leads/leadCapture';
 import { notifyNewsletterSignup } from '@/lib/webhooks/ghl';
 import { prisma } from '@/lib/database/client';
+import { enqueueJourney } from '@/lib/followups/enqueue';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -70,6 +71,22 @@ export async function GET(request: NextRequest) {
       source: typeof nl.source === 'string' ? nl.source : 'newsletter',
       confirmedAt,
     });
+
+    // Queue the single welcome email (~1h after confirm; flag-gated,
+    // deduped on the lead id so a re-used link never double-welcomes).
+    if (lead.email) {
+      try {
+        await enqueueJourney('newsletter-welcome', {
+          email: lead.email,
+          entityId: lead.id,
+          leadId: lead.id,
+          phone: lead.phone ?? null,
+          payload: { firstName: lead.firstName ?? null },
+        });
+      } catch (err) {
+        console.warn('[newsletter] welcome enqueue failed', err);
+      }
+    }
 
     return done('ok');
   } catch (err) {

@@ -22,6 +22,7 @@ import { sendEmail } from '@/lib/email/resend-client';
 import { eventQuizWelcomeEmail } from '@/lib/email/templates/event-quiz-welcome';
 import { upsertLead, recordEvent } from '@/lib/leads/leadCapture';
 import { targetUrlFor } from '@/lib/eventQuiz/routing';
+import { enqueueJourney } from '@/lib/followups/enqueue';
 import { EmailType } from '@prisma/client';
 import { prisma } from '@/lib/database/client';
 
@@ -156,6 +157,23 @@ export async function POST(req: NextRequest) {
     });
   } catch (err) {
     console.error('[event-quiz] email send failed', err);
+  }
+
+  // Queue the +96h "did the plan land?" nudge. The instant welcome above is
+  // touch #1, so this journey starts at step 2 (flag-gated, deduped on lead).
+  if (leadId) {
+    try {
+      await enqueueJourney('event-quiz', {
+        email: body.email,
+        entityId: leadId,
+        leadId,
+        phone: body.phone ?? null,
+        startAtStep: 2,
+        payload: { firstName: body.firstName, resumePath },
+      });
+    } catch (err) {
+      console.warn('[event-quiz] follow-up enqueue failed', err);
+    }
   }
 
   return NextResponse.json({
