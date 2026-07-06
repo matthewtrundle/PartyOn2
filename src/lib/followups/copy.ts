@@ -14,11 +14,10 @@
 import type { JourneyEmailContext, RenderedEmail } from './types';
 
 /**
- * CAN-SPAM physical mailing address.
- * TODO(Allan): replace with the real street address BEFORE enabling any
- * journey feature flag — the engine sends this footer on every follow-up.
+ * CAN-SPAM physical mailing address — appears in the footer of every
+ * follow-up email. Confirmed by Allan 2026-07-06.
  */
-export const POSTAL_ADDRESS = 'Austin, TX — TODO: full mailing address';
+export const POSTAL_ADDRESS = '7600 N Lamar #A2, Austin, TX 78752';
 
 /**
  * Google review link for the post-purchase ask.
