@@ -1,17 +1,22 @@
 /**
  * Follow-up email system — copy.
  *
- * DRAFT STUBS in Allan's voice — plain text, personal, no branded HTML.
- * Allan does a copy pass on this file before journeys are enabled (open item
- * #2 in the build plan). Copy is written to survive edge cases: it never
- * asserts the reader hasn't ordered (they may have paid with another email)
- * and step-2 contact copy tolerates Allan having already replied by hand.
+ * Copy lives as plain-text TEMPLATES with {tokens}. The defaults below ship
+ * in code; Allan can override any subject/body per journey step from
+ * /admin/emails/followups (stored in EmailTemplateContent, read by the
+ * engine every tick — edits go live without a deploy).
+ *
+ * Template semantics (keep simple, documented in the editor UI):
+ *   - {token} is replaced with its value (see TOKEN_REFERENCE per journey)
+ *   - if a token has NO value for a given customer, the whole LINE containing
+ *     it is dropped — write optional info on its own line
+ *   - subjects never drop; unresolved tokens are removed instead
  *
  * Every email gets the CAN-SPAM footer: sender identity + physical mailing
  * address + unsubscribe link.
  */
 
-import type { JourneyEmailContext, RenderedEmail } from './types';
+import type { JourneyEmailContext, JourneyKey, RenderedEmail } from './types';
 
 /**
  * CAN-SPAM physical mailing address — appears in the footer of every
@@ -20,13 +25,187 @@ import type { JourneyEmailContext, RenderedEmail } from './types';
 export const POSTAL_ADDRESS = '7600 N Lamar #A2, Austin, TX 78752';
 
 /**
- * Google review link for the post-purchase ask.
- * TODO(Allan): confirm the canonical review URL before Phase 3 goes live
- * (same target the GHL review.request flow uses today).
+ * Review page for the post-purchase ask (GHL-managed subdomain, same target
+ * the planning-call links use). Confirmed by Allan 2026-07-06.
  */
-export const GOOGLE_REVIEW_URL = 'https://g.page/party-on-delivery/review';
+export const GOOGLE_REVIEW_URL = 'https://123.partyondelivery.com/reviews';
 
 const SIGNATURE = 'Allan\nParty On Delivery';
+
+/** One journey step's copy: a subject and a plain-text body template. */
+export interface StepCopy {
+  subject: string;
+  body: string;
+}
+
+/**
+ * Default copy for every journey step (index 0 = step 1). Drafted in Allan's
+ * voice; the admin editor overrides these per step without code changes.
+ */
+export const DEFAULT_COPY: Record<JourneyKey, StepCopy[]> = {
+  'abandoned-quote': [
+    {
+      subject: 'your drink numbers from Party On Delivery',
+      body: `Hey {firstName},
+
+You were running drink numbers on our site — I saved where you left off so you don't have to start over.
+Looks like you were planning for about {guestCount} people.
+
+Pick it back up here: {resumeLink}
+
+Or skip the clicking entirely — reply with your event date and headcount and I'll price it out for you personally.`,
+    },
+    {
+      subject: 'want me to price it out for you?',
+      body: `Hey {firstName},
+
+Still planning? No pressure either way — but if a drink order is still on your list, reply with your date and I'll put a quote together myself. Takes me about ten minutes and you'll get real delivery pricing, not a guess.`,
+    },
+  ],
+  'unpaid-invoice': [
+    {
+      subject: 'holding your date?',
+      body: `Hey {firstName},
+
+I sent over your quote for {deliveryDate} — just checking it landed. Want me to keep holding things on my end?
+
+Your quote is here whenever you're ready: {invoiceLink}
+
+If the date, headcount, or items changed, reply and I'll update it — takes two minutes.`,
+    },
+    {
+      subject: 'should I close this out?',
+      body: `Hey {firstName},
+
+Should I close this one out? If plans changed, no worries at all — happens all the time.
+
+If you still want delivery, grab it before I release the slot.
+
+Quote's still here: {invoiceLink}
+
+Either way, a one-line reply helps me keep the calendar straight.`,
+    },
+  ],
+  'partner-inquiry': [
+    {
+      subject: 'got your partnership inquiry',
+      body: `Hey {firstName},
+
+Thanks for reaching out about partnering — this lands directly with me, not a bot. I'll take a proper look at {businessName} and get back to you within a day or two.
+
+In the meantime, if you have questions about how the program works (commissions, delivery zones, how guests order), just reply here.`,
+    },
+    {
+      subject: 'still interested in partnering?',
+      body: `Hey {firstName},
+
+Following up on your partnership inquiry — still interested? If it's easier to talk it through, reply with a couple of times that work and I'll call you.
+
+If the timing's just not right, tell me and I'll check back down the road instead of nudging you.`,
+    },
+  ],
+  'contact-form': [
+    {
+      subject: 'got your message',
+      body: `Hey {firstName},
+
+Just confirming your message made it to me — I read these personally and I'll get back to you shortly.
+
+If it's time-sensitive (event this week, delivery question for an existing order), reply with "urgent" in the subject and I'll jump on it first.`,
+    },
+    {
+      subject: 'did my reply reach you?',
+      body: `Hey {firstName},
+
+Quick check — did my reply reach you? Email filters eat things sometimes.
+
+If you didn't see anything from me, check spam or just reply here and I'll resend. If we already connected, ignore this one.`,
+    },
+  ],
+  'newsletter-welcome': [
+    {
+      subject: "welcome — here's how this works",
+      body: `Hey {firstName},
+
+Thanks for confirming — you're on the list. Here's how this works: about once or twice a month I send party-planning ideas, seasonal picks, and early access to deals. No daily blasts, ever.
+
+Planning something right now? Reply and tell me about it — date, headcount, vibe — and I'll point you at the right setup.`,
+    },
+  ],
+  'affiliate-apply': [
+    {
+      subject: 'got your application',
+      body: `Hey {firstName},
+
+Got your partner program application — thanks for the interest. I review every application myself, so expect to hear from me within a couple of days.
+
+If you want to add anything (audience size, how you'd promote us, past partnerships), just reply to this email and it goes straight into your file.`,
+    },
+    {
+      subject: 'your application — quick check-in',
+      body: `Hey {firstName},
+
+Quick check-in on your partner application — it's still in my queue, not lost. If anything's changed on your end (or you have questions about commission structure), reply here.`,
+    },
+  ],
+  'event-quiz': [
+    // Step 1 is the instant welcome sent by /api/v1/event-quiz/submit —
+    // this journey only ever sends step 2. Slot kept for shape consistency.
+    { subject: '', body: '' },
+    {
+      subject: 'did the plan land?',
+      body: `Hey {firstName},
+
+You grabbed a drink plan from our event quiz a few days back — how's it looking?
+
+If you want a second set of eyes on quantities, or real delivery pricing for your date, reply with the date and headcount and I'll sort it out personally.`,
+    },
+  ],
+  'post-purchase-review': [
+    {
+      subject: "how'd we do?",
+      body: `Hey {firstName},
+
+Delivery's done — hope the party was a good one.
+
+If we earned it, a quick review genuinely helps us more than any ad: {reviewLink}
+
+And if anything was off — late, wrong item, anything — reply and tell me first. I'll make it right.`,
+    },
+  ],
+};
+
+/** Tokens available per journey, shown in the admin editor. */
+export const TOKEN_REFERENCE: Record<JourneyKey, Array<{ token: string; description: string }>> = {
+  'abandoned-quote': [
+    { token: 'firstName', description: 'Customer first name ("there" when unknown)' },
+    { token: 'guestCount', description: 'Headcount from the calculator — line drops when unknown' },
+    { token: 'resumeLink', description: 'Link back to where they left off' },
+  ],
+  'unpaid-invoice': [
+    { token: 'firstName', description: 'Customer first name ("there" when unknown)' },
+    { token: 'deliveryDate', description: 'Delivery date on the quote — line drops when unknown' },
+    { token: 'invoiceLink', description: 'Pay/view link for the quote — line drops when unknown' },
+  ],
+  'partner-inquiry': [
+    { token: 'firstName', description: 'Contact first name ("there" when unknown)' },
+    { token: 'businessName', description: 'Their business ("your business" when unknown)' },
+  ],
+  'contact-form': [{ token: 'firstName', description: 'First name ("there" when unknown)' }],
+  'newsletter-welcome': [{ token: 'firstName', description: 'First name ("there" when unknown)' }],
+  'affiliate-apply': [
+    { token: 'firstName', description: 'Applicant first name ("there" when unknown)' },
+    { token: 'businessName', description: 'Their business ("your business" when unknown)' },
+  ],
+  'event-quiz': [
+    { token: 'firstName', description: 'First name ("there" when unknown)' },
+    { token: 'resumeLink', description: 'Link to their recommended landing page' },
+  ],
+  'post-purchase-review': [
+    { token: 'firstName', description: 'Customer first name ("there" when unknown)' },
+    { token: 'reviewLink', description: 'The review page (123.partyondelivery.com/reviews)' },
+  ],
+};
 
 function escapeHtml(s: string): string {
   return s
@@ -44,9 +223,45 @@ function linkify(escaped: string): string {
   );
 }
 
+const TOKEN_RE = /\{([a-zA-Z0-9_]+)\}/g;
+
 /**
- * Wrap plain-text body copy into the minimal HTML + text pair every follow-up
- * uses: paragraphs only, no branding, CAN-SPAM footer at the bottom.
+ * Substitute {tokens} into a body template. Lines referencing a token with
+ * no value are dropped entirely; leftover blank runs collapse. Exported for
+ * tests and the editor's live preview.
+ */
+export function renderTemplate(
+  template: string,
+  tokens: Record<string, string | null | undefined>
+): string {
+  const kept = template.split('\n').filter((line) => {
+    const refs = [...line.matchAll(TOKEN_RE)].map((m) => m[1]);
+    return refs.every((name) => {
+      const value = tokens[name];
+      return value !== null && value !== undefined && value !== '';
+    });
+  });
+  return kept
+    .map((line) => line.replace(TOKEN_RE, (_, name) => String(tokens[name] ?? '')))
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+/** Subjects never drop — unresolved tokens are removed and spaces tidied. */
+function renderSubject(
+  template: string,
+  tokens: Record<string, string | null | undefined>
+): string {
+  return template
+    .replace(TOKEN_RE, (_, name) => String(tokens[name] ?? ''))
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+}
+
+/**
+ * Wrap rendered plain-text body copy into the minimal HTML + text pair every
+ * follow-up uses: paragraphs only, no branding, CAN-SPAM footer at the bottom.
  */
 export function renderFollowUpEmail(
   subject: string,
@@ -75,215 +290,61 @@ function str(payload: Record<string, unknown>, key: string): string | null {
   return typeof v === 'string' && v.trim() ? v.trim() : null;
 }
 
-function firstName(ctx: JourneyEmailContext): string {
-  return str(ctx.payload, 'firstName') ?? 'there';
+/** Token values for a journey step, built from the job payload at send time. */
+export function buildTokens(
+  journeyKey: JourneyKey,
+  ctx: JourneyEmailContext
+): Record<string, string | null> {
+  const tokens: Record<string, string | null> = {
+    firstName: str(ctx.payload, 'firstName') ?? 'there',
+  };
+  switch (journeyKey) {
+    case 'abandoned-quote':
+      tokens.guestCount = str(ctx.payload, 'guestCount');
+      tokens.resumeLink = ctx.link(str(ctx.payload, 'resumePath') ?? '/order');
+      break;
+    case 'unpaid-invoice': {
+      const invoicePath = str(ctx.payload, 'invoicePath');
+      tokens.invoiceLink = invoicePath ? ctx.link(invoicePath) : null;
+      tokens.deliveryDate = str(ctx.payload, 'deliveryDate');
+      break;
+    }
+    case 'partner-inquiry':
+    case 'affiliate-apply':
+      tokens.businessName = str(ctx.payload, 'businessName') ?? 'your business';
+      break;
+    case 'event-quiz':
+      tokens.resumeLink = ctx.link(str(ctx.payload, 'resumePath') ?? '/order');
+      break;
+    case 'post-purchase-review':
+      // External subdomain (GHL-managed) — used verbatim, no UTM appending.
+      tokens.reviewLink = GOOGLE_REVIEW_URL;
+      break;
+    default:
+      break;
+  }
+  return tokens;
 }
 
-// ---------------------------------------------------------------------------
-// abandoned-quote — calculator/package-builder email captured, no order
-// ---------------------------------------------------------------------------
-
-export function abandonedQuoteStep1(ctx: JourneyEmailContext): RenderedEmail {
-  const name = firstName(ctx);
-  const resumePath = str(ctx.payload, 'resumePath') ?? '/order';
-  const guestCount = str(ctx.payload, 'guestCount');
-  const numbersLine = guestCount
-    ? `You were running drink numbers for about ${guestCount} people — I saved where you left off so you don't have to start over.`
-    : `You were running drink numbers on our site — I saved where you left off so you don't have to start over.`;
-
-  const body = `Hey ${name},
-
-${numbersLine}
-
-Pick it back up here: ${ctx.link(resumePath)}
-
-Or skip the clicking entirely — reply with your event date and headcount and I'll price it out for you personally.`;
-
-  return renderFollowUpEmail(
-    'your drink numbers from Party On Delivery',
-    body,
-    ctx.unsubscribeUrl
-  );
-}
-
-export function abandonedQuoteStep2(ctx: JourneyEmailContext): RenderedEmail {
-  const name = firstName(ctx);
-  const body = `Hey ${name},
-
-Still planning? No pressure either way — but if a drink order is still on your list, reply with your date and I'll put a quote together myself. Takes me about ten minutes and you'll get real delivery pricing, not a guess.`;
-
-  return renderFollowUpEmail(
-    'want me to price it out for you?',
-    body,
-    ctx.unsubscribeUrl
-  );
-}
-
-// ---------------------------------------------------------------------------
-// unpaid-invoice — quote/invoice sent, not paid
-// ---------------------------------------------------------------------------
-
-export function unpaidInvoiceStep1(ctx: JourneyEmailContext): RenderedEmail {
-  const name = firstName(ctx);
-  const invoicePath = str(ctx.payload, 'invoicePath');
-  const eventLine = str(ctx.payload, 'deliveryDate')
-    ? ` for ${str(ctx.payload, 'deliveryDate')}`
-    : '';
-  const payLine = invoicePath
-    ? `Your quote is here whenever you're ready: ${ctx.link(invoicePath)}`
-    : `Reply here and I'll resend your quote.`;
-
-  const body = `Hey ${name},
-
-I sent over your quote${eventLine} — just checking it landed. Want me to keep holding things on my end?
-
-${payLine}
-
-If the date, headcount, or items changed, reply and I'll update it — takes two minutes.`;
-
-  return renderFollowUpEmail('holding your date?', body, ctx.unsubscribeUrl);
-}
-
-export function unpaidInvoiceStep2(ctx: JourneyEmailContext): RenderedEmail {
-  const name = firstName(ctx);
-  const invoicePath = str(ctx.payload, 'invoicePath');
-  const payLine = invoicePath ? `\n\nQuote's still here: ${ctx.link(invoicePath)}` : '';
-
-  const body = `Hey ${name},
-
-Should I close this one out? If plans changed, no worries at all — happens all the time.
-
-If you still want delivery, grab it before I release the slot.${payLine}
-
-Either way, a one-line reply helps me keep the calendar straight.`;
-
-  return renderFollowUpEmail('should I close this out?', body, ctx.unsubscribeUrl);
-}
-
-// ---------------------------------------------------------------------------
-// partner-inquiry — B2B partnership form
-// ---------------------------------------------------------------------------
-
-export function partnerInquiryStep1(ctx: JourneyEmailContext): RenderedEmail {
-  const name = firstName(ctx);
-  const businessName = str(ctx.payload, 'businessName');
-  const aboutLine = businessName
-    ? `I'll take a proper look at ${businessName} and get back to you within a day or two.`
-    : `I'll take a proper look and get back to you within a day or two.`;
-
-  const body = `Hey ${name},
-
-Thanks for reaching out about partnering — this lands directly with me, not a bot. ${aboutLine}
-
-In the meantime, if you have questions about how the program works (commissions, delivery zones, how guests order), just reply here.`;
-
-  return renderFollowUpEmail('got your partnership inquiry', body, ctx.unsubscribeUrl);
-}
-
-export function partnerInquiryStep2(ctx: JourneyEmailContext): RenderedEmail {
-  const name = firstName(ctx);
-  const body = `Hey ${name},
-
-Following up on your partnership inquiry — still interested? If it's easier to talk it through, reply with a couple of times that work and I'll call you.
-
-If the timing's just not right, tell me and I'll check back down the road instead of nudging you.`;
-
-  return renderFollowUpEmail('still interested in partnering?', body, ctx.unsubscribeUrl);
-}
-
-// ---------------------------------------------------------------------------
-// contact-form — general contact form ack + reply-check
-// ---------------------------------------------------------------------------
-
-export function contactFormStep1(ctx: JourneyEmailContext): RenderedEmail {
-  const name = firstName(ctx);
-  const body = `Hey ${name},
-
-Just confirming your message made it to me — I read these personally and I'll get back to you shortly.
-
-If it's time-sensitive (event this week, delivery question for an existing order), reply with "urgent" in the subject and I'll jump on it first.`;
-
-  return renderFollowUpEmail('got your message', body, ctx.unsubscribeUrl);
-}
-
-export function contactFormStep2(ctx: JourneyEmailContext): RenderedEmail {
-  const name = firstName(ctx);
-  const body = `Hey ${name},
-
-Quick check — did my reply reach you? Email filters eat things sometimes.
-
-If you didn't see anything from me, check spam or just reply here and I'll resend. If we already connected, ignore this one.`;
-
-  return renderFollowUpEmail('did my reply reach you?', body, ctx.unsubscribeUrl);
-}
-
-// ---------------------------------------------------------------------------
-// newsletter-welcome — post-double-opt-in welcome
-// ---------------------------------------------------------------------------
-
-export function newsletterWelcomeStep1(ctx: JourneyEmailContext): RenderedEmail {
-  const name = firstName(ctx);
-  const body = `Hey ${name},
-
-Thanks for confirming — you're on the list. Here's how this works: about once or twice a month I send party-planning ideas, seasonal picks, and early access to deals. No daily blasts, ever.
-
-Planning something right now? Reply and tell me about it — date, headcount, vibe — and I'll point you at the right setup.`;
-
-  return renderFollowUpEmail('welcome — here\'s how this works', body, ctx.unsubscribeUrl);
-}
-
-// ---------------------------------------------------------------------------
-// affiliate-apply — partner program application ack + check-in
-// ---------------------------------------------------------------------------
-
-export function affiliateApplyStep1(ctx: JourneyEmailContext): RenderedEmail {
-  const name = firstName(ctx);
-  const body = `Hey ${name},
-
-Got your partner program application — thanks for the interest. I review every application myself, so expect to hear from me within a couple of days.
-
-If you want to add anything (audience size, how you'd promote us, past partnerships), just reply to this email and it goes straight into your file.`;
-
-  return renderFollowUpEmail('got your application', body, ctx.unsubscribeUrl);
-}
-
-export function affiliateApplyStep2(ctx: JourneyEmailContext): RenderedEmail {
-  const name = firstName(ctx);
-  const body = `Hey ${name},
-
-Quick check-in on your partner application — it's still in my queue, not lost. If anything's changed on your end (or you have questions about commission structure), reply here.`;
-
-  return renderFollowUpEmail('your application — quick check-in', body, ctx.unsubscribeUrl);
-}
-
-// ---------------------------------------------------------------------------
-// event-quiz — quiz completed (instant welcome already exists; step 2 only)
-// ---------------------------------------------------------------------------
-
-export function eventQuizStep2(ctx: JourneyEmailContext): RenderedEmail {
-  const name = firstName(ctx);
-  const body = `Hey ${name},
-
-You grabbed a drink plan from our event quiz a few days back — how's it looking?
-
-If you want a second set of eyes on quantities, or real delivery pricing for your date, reply with the date and headcount and I'll sort it out personally.`;
-
-  return renderFollowUpEmail('did the plan land?', body, ctx.unsubscribeUrl);
-}
-
-// ---------------------------------------------------------------------------
-// post-purchase-review — delivered order, single review ask
-// ---------------------------------------------------------------------------
-
-export function postPurchaseReviewStep1(ctx: JourneyEmailContext): RenderedEmail {
-  const name = firstName(ctx);
-  const body = `Hey ${name},
-
-Delivery's done — hope the party was a good one.
-
-If we earned it, a quick Google review genuinely helps us more than any ad: ${GOOGLE_REVIEW_URL}
-
-And if anything was off — late, wrong item, anything — reply and tell me first. I'll make it right.`;
-
-  return renderFollowUpEmail('how\'d we do?', body, ctx.unsubscribeUrl);
+/**
+ * Render one journey step: admin override (ctx.copyOverrides) wins over the
+ * code default; token substitution + line-drop; CAN-SPAM footer. Returns
+ * null when the step has no copy (e.g. event-quiz step 1).
+ */
+export function buildStepEmail(
+  journeyKey: JourneyKey,
+  step: number,
+  ctx: JourneyEmailContext
+): RenderedEmail | null {
+  const defaults = DEFAULT_COPY[journeyKey]?.[step - 1];
+  const override = ctx.copyOverrides?.[journeyKey]?.[step];
+  const subjectTpl = override?.subject?.trim() || defaults?.subject || '';
+  const bodyTpl = override?.body?.trim() || defaults?.body || '';
+  if (!subjectTpl || !bodyTpl) return null;
+
+  const tokens = buildTokens(journeyKey, ctx);
+  const body = renderTemplate(bodyTpl, tokens);
+  const subject = renderSubject(subjectTpl, tokens);
+  if (!body || !subject) return null;
+  return renderFollowUpEmail(subject, body, ctx.unsubscribeUrl);
 }

@@ -13,6 +13,7 @@ import { EmailType, type FollowUpJob } from '@prisma/client';
 import { requireOpsAuth } from '@/lib/auth/ops-session';
 import { sendEmailDetailed } from '@/lib/email/resend-client';
 import { getJourney, JOURNEY_KEYS } from '@/lib/followups/journeys';
+import { getFollowUpCopyOverrides } from '@/lib/followups/copy-overrides';
 import { buildPreferencesUrl, normalizeEmail } from '@/lib/followups/suppression';
 import { SITE_BASE_URL } from '@/lib/followups/types';
 
@@ -77,6 +78,8 @@ export async function POST(request: NextRequest) {
         return url.toString();
       },
       unsubscribeUrl: buildPreferencesUrl(to),
+      // Test sends render with saved overrides — what you see is what ships.
+      copyOverrides: await getFollowUpCopyOverrides(),
     });
     if (!rendered) {
       return NextResponse.json(

@@ -15,21 +15,14 @@ import type { FollowUpJob } from '@prisma/client';
 import { prisma } from '@/lib/database/client';
 import { FEATURE_FLAGS } from '@/lib/features/feature-flags';
 import { entityIdFromDedupeKey, type JourneyDef, type JourneyKey } from './types';
-import {
-  abandonedQuoteStep1,
-  abandonedQuoteStep2,
-  unpaidInvoiceStep1,
-  unpaidInvoiceStep2,
-  partnerInquiryStep1,
-  partnerInquiryStep2,
-  contactFormStep1,
-  contactFormStep2,
-  newsletterWelcomeStep1,
-  affiliateApplyStep1,
-  affiliateApplyStep2,
-  eventQuizStep2,
-  postPurchaseReviewStep1,
-} from './copy';
+import { buildStepEmail } from './copy';
+
+/**
+ * Step renderer: default copy lives in copy.ts (DEFAULT_COPY); admin
+ * overrides arrive via ctx.copyOverrides (fetched once per engine tick).
+ */
+const step = (journeyKey: JourneyKey, n: number) => (ctx: Parameters<typeof buildStepEmail>[2]) =>
+  buildStepEmail(journeyKey, n, ctx);
 
 /** Draft statuses that mean "this email is already in an active sales motion". */
 const ACTIVE_DRAFT_STATUSES = ['SENT', 'VIEWED', 'PAID', 'CONVERTED'] as const;
@@ -64,8 +57,8 @@ export const JOURNEYS: JourneyDef[] = [
     featureFlag: FEATURE_FLAGS.FOLLOWUPS_ABANDONED_QUOTE,
     phase: 1,
     steps: [
-      { delayHours: 24, buildEmail: abandonedQuoteStep1 },
-      { delayHours: 96, buildEmail: abandonedQuoteStep2 },
+      { delayHours: 24, buildEmail: step('abandoned-quote', 1) },
+      { delayHours: 96, buildEmail: step('abandoned-quote', 2) },
     ],
     shouldCancel: async (job: FollowUpJob) => {
       if (job.leadId) {
@@ -100,8 +93,8 @@ export const JOURNEYS: JourneyDef[] = [
     featureFlag: FEATURE_FLAGS.FOLLOWUPS_UNPAID_INVOICE,
     phase: 1,
     steps: [
-      { delayHours: 24, buildEmail: unpaidInvoiceStep1 },
-      { delayHours: 120, buildEmail: unpaidInvoiceStep2 },
+      { delayHours: 24, buildEmail: step('unpaid-invoice', 1) },
+      { delayHours: 120, buildEmail: step('unpaid-invoice', 2) },
     ],
     shouldCancel: async (job: FollowUpJob) => {
       if (!job.draftOrderId) return 'missing-draft-ref';
@@ -127,8 +120,8 @@ export const JOURNEYS: JourneyDef[] = [
     // kill the partnership conversation.
     skipGlobalPaidGuard: true,
     steps: [
-      { delayHours: 0, buildEmail: partnerInquiryStep1 },
-      { delayHours: 96, buildEmail: partnerInquiryStep2 },
+      { delayHours: 0, buildEmail: step('partner-inquiry', 1) },
+      { delayHours: 96, buildEmail: step('partner-inquiry', 2) },
     ],
     shouldCancel: async (job: FollowUpJob) => {
       if (!job.partnerInquiryId) return 'missing-inquiry-ref';
@@ -149,8 +142,8 @@ export const JOURNEYS: JourneyDef[] = [
     featureFlag: FEATURE_FLAGS.FOLLOWUPS_CONTACT_FORM,
     phase: 2,
     steps: [
-      { delayHours: 0, buildEmail: contactFormStep1 },
-      { delayHours: 72, buildEmail: contactFormStep2 },
+      { delayHours: 0, buildEmail: step('contact-form', 1) },
+      { delayHours: 72, buildEmail: step('contact-form', 2) },
     ],
     shouldCancel: async (job: FollowUpJob) => {
       if (job.leadId) {
@@ -172,7 +165,7 @@ export const JOURNEYS: JourneyDef[] = [
       'Single welcome ~1h after double-opt-in confirmation. Cancels only on suppression.',
     featureFlag: FEATURE_FLAGS.FOLLOWUPS_NEWSLETTER_WELCOME,
     phase: 2,
-    steps: [{ delayHours: 1, buildEmail: newsletterWelcomeStep1 }],
+    steps: [{ delayHours: 1, buildEmail: step('newsletter-welcome', 1) }],
     shouldCancel: async () => null,
   },
   {
@@ -185,8 +178,8 @@ export const JOURNEYS: JourneyDef[] = [
     // B2B thread, same rationale as partner-inquiry.
     skipGlobalPaidGuard: true,
     steps: [
-      { delayHours: 0, buildEmail: affiliateApplyStep1 },
-      { delayHours: 120, buildEmail: affiliateApplyStep2 },
+      { delayHours: 0, buildEmail: step('affiliate-apply', 1) },
+      { delayHours: 120, buildEmail: step('affiliate-apply', 2) },
     ],
     shouldCancel: async (job: FollowUpJob) => {
       const applicationId = entityIdFromDedupeKey(job.dedupeKey);
@@ -211,7 +204,7 @@ export const JOURNEYS: JourneyDef[] = [
       // Step 1 slot exists for shape consistency but is never enqueued —
       // the instant welcome in /api/v1/event-quiz/submit is touch #1.
       { delayHours: 0, buildEmail: () => null },
-      { delayHours: 96, buildEmail: eventQuizStep2 },
+      { delayHours: 96, buildEmail: step('event-quiz', 2) },
     ],
     shouldCancel: async (job: FollowUpJob) => {
       if (job.leadId) {
@@ -230,7 +223,7 @@ export const JOURNEYS: JourneyDef[] = [
     phase: 3,
     // The trigger IS a paid order — the global paid guard would cancel every job.
     skipGlobalPaidGuard: true,
-    steps: [{ delayHours: 48, buildEmail: postPurchaseReviewStep1 }],
+    steps: [{ delayHours: 48, buildEmail: step('post-purchase-review', 1) }],
     shouldCancel: async (job: FollowUpJob) => {
       if (!job.orderId) return 'missing-order-ref';
       const order = await prisma.order.findUnique({ where: { id: job.orderId } });

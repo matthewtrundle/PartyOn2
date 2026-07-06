@@ -11,6 +11,7 @@
 
 import Link from 'next/link';
 import type { ReactElement } from 'react';
+import CopyEditorPanel from '@/components/admin/followups/CopyEditorPanel';
 import FlagsPanel from '@/components/admin/followups/FlagsPanel';
 import QueuePanel from '@/components/admin/followups/QueuePanel';
 import SentLogPanel from '@/components/admin/followups/SentLogPanel';
@@ -35,6 +36,7 @@ export default function FollowupsAdminPage(): ReactElement {
       </div>
 
       <FlagsPanel />
+      <CopyEditorPanel />
       <TestSendPanel />
       <StatsPanel />
       <QueuePanel />
