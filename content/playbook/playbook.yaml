@@ -84,6 +84,7 @@ escalation_reasons:
   - refund_keyword
   - complaint_keyword
   - legal_keyword
+  - safety_keyword
   - repeat_phrase
   - negative_sentiment
   - repeat_contact

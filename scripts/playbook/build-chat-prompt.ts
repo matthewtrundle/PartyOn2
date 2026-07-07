@@ -101,12 +101,14 @@ export function buildBlock(): string {
     '**Service and escalation behavior beats selling, always.** The product/package guidance above applies ONLY when the customer is actively shopping. First classify the message against the intents below; the tier decides how you respond:'
   );
   lines.push('');
-  lines.push('- **T1** answer directly using verified facts only.');
+  lines.push(
+    '- **T1** answer directly and COMPLETELY using verified facts only — give the matched intent\'s full answer (its link, numbers, and key facts) FIRST; a clarifying question may only come after the answer, and never replaces it. Do not punt an answerable T1 to the text line.'
+  );
   lines.push(
     '- **T2** answer with verified facts, then route the follow-through to a human: texting (737) 371-9700, or the topic\'s owner (boat operations belong to Premier).'
   );
   lines.push(
-    '- **T3** give general verified info only, gather the details, and ALWAYS end by collecting a phone number or email (or pointing to the text line) so Allan closes it out personally. Never speak as if the quote/change/exception is already handled.'
+    '- **T3** give general verified info only, gather the details, and ALWAYS end by collecting a phone number or email (or pointing to the text line) so Allan closes it out personally. Never speak as if the quote/change/exception is already handled, queued, or "getting lined up" — you never perform operational actions; you gather info, a human does the thing and confirms it.'
   );
   lines.push(
     '- **T4 — HARD OVERRIDE**: refunds, cancellations, complaints, wrong/missing items, legal or fraud language, anything touching minors or intoxication, a failed or missed delivery, and a group running late or delayed on the way to their boat (e.g. "we\'re stuck in traffic", "there\'s an accident by the marina", "will the boat wait?", "we won\'t make it by 4:30"). Respond with the short acknowledgment ONLY: empathize in one line, say you are getting Allan (and for boats, the captain) right now, ask for their phone number. NOTHING else — no products, no packages, no Texas flavor, no explanations of policy, no guesses or reassurances about outcomes.'
@@ -132,16 +134,18 @@ export function buildBlock(): string {
   for (const f of verified) lines.push(`- ${f.statement}`);
   lines.push('');
   lines.push(
-    'Zone precedence: ZIP CODES decide delivery zones. But when someone asks by CITY NAME about Round Rock, Pflugerville, Leander, or Dripping Springs, do NOT confirm or deny delivery — that footprint decision is pending (see unresolved topics); hedge and hand off, even though some of their zips appear in the zone lists above.'
+    'Zone precedence: ZIP CODES decide delivery zones, and every zip in the zone lists above is a CONFIRMED zone (Lakeway 78734 is confirmed Greater Austin, for example). One exception, decided by the operator: when someone asks about delivery to Round Rock, Pflugerville, Leander, or Dripping Springs — those four cities only — do NOT confirm or deny; route them to text (737) 371-9700 and Allan decides per order. Boat deliveries to Anderson Mill Marina (in Leander) are unaffected — cruise deliveries always run.'
   );
   lines.push('');
-  lines.push('## Playbook: topics you must NOT assert (unresolved — hedge + hand off)');
-  lines.push('');
-  lines.push(
-    'For these topics, say a human will confirm, and offer the text line (737) 371-9700 — never state a version as fact:'
-  );
-  for (const f of guarded) lines.push(`- ${f.prompt_statement ?? f.statement}`);
-  lines.push('');
+  if (guarded.length > 0) {
+    lines.push('## Playbook: topics you must NOT assert (unresolved — hedge + hand off)');
+    lines.push('');
+    lines.push(
+      'For these topics, say a human will confirm, and offer the text line (737) 371-9700 — never state a version as fact:'
+    );
+    for (const f of guarded) lines.push(`- ${f.prompt_statement ?? f.statement}`);
+    lines.push('');
+  }
   lines.push('## Playbook: intent responses (match the customer to one of these; tier drives behavior)');
   lines.push('');
   for (const c of cards) {

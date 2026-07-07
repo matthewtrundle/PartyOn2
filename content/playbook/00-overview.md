@@ -66,16 +66,16 @@ volume case for the Phase-5 receptionist.
 | 12 | pickup-request | T2 | 4 | pickup exists (PR #113); returns = policy no |
 | 13 | partner-affiliate-inquiry | T3 | 17† | †includes B2B cruise-invite RSVPs; payout money-asks escalate |
 | 14 | product-availability | T1 | 3 | tool-backed catalog lookup |
-| 15 | shipping-outside-austin | T3 | 3 | policy unknown → open question |
-| 16 | cruise-premier-redirect | T2 | 6 | photos, Fetii, music, misc boat ops (merged card) |
+| 15 | shipping-outside-austin | T1 | 3 | verified 2026-07-07: never ship — clean no + local alternative |
+| 16 | cruise-premier-redirect | T2 | 6 | music + Fetii answered directly (2026-07-07); photos/fleet stay redirects |
 | 17 | cruise-order-deadline | T2 | 2 | 48h fact; near-cutoff → flag |
 | 18 | cruise-weather-reschedule | T4 | 2 | day-of + money implications |
 | 19 | cruise-guest-update | T2 | 2 | manifest changes → log + Premier |
 | 20 | order-cancellation | T4 | 0‡ | ‡no clean last-message sample; real threads exist |
 | 21 | complaint-issue | T4 | 2 | |
-| 22 | hours-availability | T1 | 2 | Sunday = unknown fact, hedge |
+| 22 | hours-availability | T1 | 2 | fully verified: closed Sundays + Thanksgiving/Christmas |
 | 23 | delivery-zones-minimums | T1 | 1 | facts-generated.yaml |
-| 24 | bartender-services | T3 | 2 | rates unknown |
+| 24 | bartender-services | T3 | 2 | $600 package floor verified; quotes stay Allan's |
 | 25 | corporate-event-inquiry | T3 | 1 | |
 | 26 | order-confirmation-ack | T1 | 124 | biggest real bucket; includes declines ("we'll bring our own") |
 | 27 | callback-request | T2 | ~3 | "call me back at…" → ack + notify |
@@ -104,6 +104,13 @@ Excluded from cards (corpus noise, no reply behavior needed): `short-ack` (70),
 
 ## Changelog
 
+- **2026-07-07 v1.1** — operator review round: all 18 open questions answered and
+  applied. Highlights: hours fully verified (closed Sundays; Thanksgiving + Christmas
+  only blackouts), shipping = never (card T3→T1), reschedule≠cancel reconciled (free
+  ≤6h reschedule / 48h refund window), refund SOP (original card, 5–10 business days,
+  Allan-only), bartending $600 floor, NET terms removed everywhere, THC "coming soon",
+  PREMIER25 retired, Premier handoff split (music/Fetii/parking/arrival/waiver/weather
+  now POD-answered), TABC permit P-200084398 recorded.
 - **2026-07-06 v1** — initial build from the 2026-07-06 GHL corpus export (13.6k
   conversations, full threads for dialogue subset), FAQ/terms/landing-config facts audit,
   and the fork's escalation engine. Author: Claude session for Allan; pending Allan's

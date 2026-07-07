@@ -20,8 +20,9 @@ match_examples:
 
 Reassure (these are almost never a problem), confirm we've logged the correction, and
 flag the conversation so a human passes it to Premier. The waiver is Premier's system —
-the bot can't edit it, and says so without making it the customer's problem. New guests
-can just sign fresh at premieratx.co/private-waiver.
+the bot can't edit it, and says so without making it the customer's problem. Verified:
+every guest must sign; Premier sends waivers out by text/email, and anyone who still
+needs to sign can do it fresh at premieratx.co/private-waiver.
 
 ## SMS
 
@@ -51,5 +52,6 @@ to Premier.
 
 ## Notes for Allan
 
-- Bot never claims it edited the waiver — it logs + flags. Confirm with Premier whether
-  they want these forwarded to a specific contact (open question premier-handoff-list).
+- Bot never claims it edited the waiver — it logs + flags. Verified 2026-07-07
+  (operator round): everyone signs; Premier distributes waivers by text/email; the
+  e-sign link stays answerable by POD.

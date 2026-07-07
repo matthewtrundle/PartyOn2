@@ -5,88 +5,113 @@ and unlocks better auto-replies on the intent cards listed. Until answered, thos
 either hedge ("Allan will confirm") or escalate. Answer inline, check the box, and
 re-run the ingest — nothing here blocks the rest of the playbook.
 
+**2026-07-07: ALL 18 ANSWERED** in the operator review round (this session). Every fact
+below is now `verified` in facts.yaml and the named cards are updated. Answers recorded
+inline for the audit trail.
+
 ## Policy decisions (customers are actively asking these)
 
-- [ ] **sunday-hours** — Are we closed Sundays, or open different hours? Site copy says
-  "10AM - 9PM (except Sundays)" which reads both ways.
-  → unlocks `hours-availability` for Sunday asks.
+- [x] **sunday-hours** — ANSWERED 2026-07-07: **Closed Sundays** for standard delivery.
+  Special events (Sunday cruises, big parties) can be arranged — bot offers the text
+  line. Site "(except Sundays)" copy clarified to "closed Sundays" the same day.
+  → `hours-availability` updated.
 
-- [ ] **same-day-cutoff** — What's the latest a same-day order can come in and still be
-  delivered (e.g. "order by 6 PM for same-day")? Corpus shows real same-day requests.
-  → upgrades `hours-availability`, `cruise-order-deadline`, `quote-request`.
+- [x] **same-day-cutoff** — ANSWERED 2026-07-07: **No hard cutoff — case-by-case by
+  design.** Bot never promises same-day and never invents a cutoff; it routes to text
+  (737) 371-9700 to confirm before paying.
+  → `hours-availability`, `cruise-order-deadline`, `quote-request` updated.
 
-- [ ] **shipping-policy** — A customer said they "left a tip to be able to ship to Kansas
-  City" and another saw a note saying "text us if outside Austin." Do we ever ship, or is
-  the answer always "local delivery only"? (TABC local-delivery license likely means no.)
-  → unlocks `shipping-outside-austin` as a clean T1 "no, but here's what we can do."
+- [x] **shipping-policy** — ANSWERED 2026-07-07: **Never ship — local delivery only**
+  (TABC local-delivery license, no exceptions). Card upgraded to clean T1 "no, but we
+  can deliver to a local recipient." Residual: find + kill the "text us if outside
+  Austin" note wherever it lives; the Kansas City tipper's order was a one-off to fix.
+  → `shipping-outside-austin` upgraded T3 → T1.
 
-- [ ] **outlying-cities** — Checkout accepts Round Rock / Pflugerville / Leander /
-  Dripping Springs zips, but the marketing footprint excludes them. If someone from
-  Round Rock asks "do you deliver here?", what's the answer?
-  → unlocks `delivery-zones-minimums` for those zips.
+- [x] **outlying-cities** — ANSWERED 2026-07-07: **Case-by-case — text us.** Bot
+  neither confirms nor denies Round Rock / Pflugerville / Leander / Dripping Springs;
+  routes to the text line and Allan decides per order. Footprint rule (never advertise
+  there) unchanged.
+  → `delivery-zones-minimums` updated.
 
-- [ ] **reschedule-vs-cancellation** — Bachelor page promises free reschedule up to
-  **6 hours** before delivery; terms say cancellations within **48 hours** may incur a
-  fee. Which is the policy (reschedule ≠ cancel? different windows?)?
-  → unlocks `order-cancellation` ack copy + a landing-copy fix.
+- [x] **reschedule-vs-cancellation** — ANSWERED 2026-07-07: **Both are real — they're
+  different things.** Reschedule (move the date/time) = free up to 6 hours before
+  delivery. Cancel (money back) = 48-hour policy. No landing-copy fix needed.
+  → `order-cancellation` updated (now offers the reschedule alternative).
 
-- [ ] **cancellation-fee** — What is the within-48-hours cancellation fee (flat, %, or
-  case-by-case)?
-  → upgrades `order-cancellation`.
+- [x] **cancellation-fee** — ANSWERED 2026-07-07: **Case-by-case, usually waived.**
+  No fixed amount exists; bot says a fee "may apply" and never quotes a number.
+  → `order-cancellation` updated.
 
-- [ ] **refund-sop** — When a refund is approved, what do we tell customers about method
-  and timeline? (One real email said "2 weeks for full refund.") Who besides you can
-  approve one?
-  → upgrades the `refund-credit-request` ack ("here's what happens next").
+- [x] **refund-sop** — ANSWERED 2026-07-07: **Original card via Stripe, 5–10 business
+  days, only Allan approves.** Bot states the mechanics but never promises approval,
+  amount, or eligibility.
+  → `refund-credit-request` ack upgraded.
 
-- [ ] **lake-travis-minimum** — Bachelor page says Lake Travis/far-out ranches "start at
-  $250" minimum; rates.ts has Lakeway at $125. Which is right?
-  → unlocks `delivery-zones-minimums` for lake zips + a landing-copy fix.
+- [x] **lake-travis-minimum** — ANSWERED 2026-07-07: **Both numbers are real and
+  different.** Checkout zone minimum (Lakeway $125) applies to address delivery;
+  the $250 is a real event-logistics minimum for Lake Travis boat/ranch EVENT
+  deliveries. Bachelor-page copy stays.
+  → `delivery-zones-minimums` updated.
 
-- [ ] **holiday-blackouts** — Any dates we don't deliver (Thanksgiving, Christmas, New
-  Year's Day...)? Any dates with special hours?
-  → upgrades `hours-availability`.
+- [x] **holiday-blackouts** — ANSWERED 2026-07-07: **Closed Thanksgiving Day and
+  Christmas Day only.** Every other holiday runs normal hours.
+  → `hours-availability` updated.
 
 ## Pricing & services
 
-- [ ] **bartender-rates** — Ballpark bartender pricing (hourly? per-event minimum?) so
-  the bot can pre-qualify instead of only escalating.
-  → upgrades `bartender-services` from pure T3 to informed T3.
+- [x] **bartender-rates** — ANSWERED 2026-07-07: **Packages start at $600 (event
+  minimum).** Exact quote stays Allan's — card pre-qualifies with the floor, stays T3.
+  → `bartender-services` updated.
 
-- [ ] **corporate-net-terms** — FAQ advertises corporate accounts with NET terms. How
-  does a company actually get one (who approves, NET-15/30, minimum volume)?
-  → upgrades `corporate-event-inquiry`.
+- [x] **corporate-net-terms** — ANSWERED 2026-07-07: **NET terms are NOT offered —
+  remove every mention.** Invoices are paid before the event (corporate card / ACH /
+  wire). FAQ copy + landing-pages directory description fixed the same day.
+  → `corporate-event-inquiry` updated.
 
-- [ ] **tip-presets** — Checkout tip presets (e.g. 10/15/20%)? Referenced by vault
-  Open-Questions; affects `gratuity` answers only marginally.
+- [x] **tip-presets** — ANSWERED 2026-07-07: **5% / 10% / 20%** (confirmed from
+  DashboardCheckoutModal; operator keeps them).
+  → fact `tip-presets` verified.
 
-- [ ] **card-fee-policy** — Do we ever pass a card-processing fee to customers?
-  → upgrades `payment-methods` answers.
+- [x] **card-fee-policy** — ANSWERED 2026-07-07: **Never — no card or processing fees
+  passed to customers.** The price shown is the price (plus tax/delivery/optional tip).
+  → fact `card-processing-fee` verified.
 
-- [ ] **thc-kratom** — Customers ask for THC seltzers / kratom drinks. Do we carry or
-  plan to carry them? If never, the bot should say so cleanly.
-  → unlocks `product-availability` for these asks.
+- [x] **thc-kratom** — ANSWERED 2026-07-07: **THC seltzers coming soon** (not yet
+  orderable — bot says so + captures contact info to notify at launch). **Kratom: no,
+  and no plans.** Flip the THC line to a catalog answer once products land.
+  → `product-availability` updated.
 
 ## Premier cruise partnership
 
-- [ ] **premier25-validity** — Is PREMIER25 (free delivery for Premier cruise groups)
-  still the active code? The drip copy advertises it.
-  → needed before any card quotes it. Related: per-customer credit codes
-  (memory: premiere_cruise_pod_credits) are invoiced to Premier only when redeemed.
+- [x] **premier25-validity** — ANSWERED 2026-07-07: **Retired.** Premier guests now get
+  per-customer credit codes by text/email (invoiced to Premier only when redeemed —
+  memory: premiere_cruise_pod_credits). Bot never quotes any code; missing-code asks
+  escalate for a re-send.
+  → fact `premier25-code` verified as retired.
 
-- [ ] **premier-handoff-list** — Confirm the exact list of topics we always redirect to
-  Premier (boarding time, gate codes, parking, waivers, photos, music, Fetii, weather
-  calls) and the right Premier contact/number to hand customers.
-  → tightens all `cruise-*` redirect cards.
+- [x] **premier-handoff-list** — ANSWERED 2026-07-07 topic-by-topic:
+  - **POD answers directly now:** arrival time (30 min before departure — supersedes
+    the 15-min line), parking (free on-site lot), waivers (everyone signs; Premier
+    sends by text/email; premieratx.co/private-waiver), music (disco cruise = DJ;
+    private cruise = Bluetooth, bring playlist), transport (Fetii, code PARTYON = 25%
+    off, schedulable only within 48 hrs of pickup), weather policy (Premier + captain
+    call it, usually rain or shine; drinks move free on a Premier reschedule).
+  - **Still redirect to Premier:** boat photos, which-boat/fleet questions, captain
+    contact, amenity specifics, gate codes (Premier texts the booking contact).
+  → `cruise-day-logistics`, `cruise-premier-redirect`, `cruise-waiver-fix`,
+  `cruise-weather-reschedule` updated.
 
 ## Compliance blockers (from the compliance doc, not customer-facing copy)
 
-- [ ] **tabc-license-number** — TABC permit number + licensed entity name (for
-  compliance.md and any footer disclosure requirements).
+- [x] **tabc-license-number** — ANSWERED 2026-07-07: **TABC permit P-200084398.**
+  (Licensed entity name still not captured — record it when handy; nothing
+  customer-facing blocks on it.)
+  → compliance.md updated.
 
-- [ ] **can-spam-postal-address** — Full business mailing address for email footers
-  (`src/lib/followups/copy.ts:21` still says "Austin, TX — TODO: full mailing address").
-  Blocks flipping any automated email sending.
+- [x] **can-spam-postal-address** — RESOLVED 2026-07-07: **7600 N Lamar #A2, Austin,
+  TX 78752** — already shipped in `src/lib/followups/copy.ts` by PR #193; operator
+  confirmed it's correct this round.
+  → fact `business-mailing-address` added.
 
 ## Data-access unblocks (2-minute operator tasks)
 

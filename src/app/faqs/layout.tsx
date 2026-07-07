@@ -24,7 +24,7 @@ const faqData = [
   },
   {
     question: "What are your delivery hours?",
-    answer: "We deliver 10AM - 9PM (except Sundays). Special arrangements can be made for events with advance notice."
+    answer: "We deliver 10AM - 9PM Mon-Sat (closed Sundays). Special arrangements can be made for events with advance notice."
   },
   {
     question: "Can I schedule a recurring delivery?",

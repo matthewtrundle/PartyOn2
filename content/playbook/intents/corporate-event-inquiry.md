@@ -8,8 +8,9 @@ variables: [first_name]
 tools: []
 escalation_reason: null
 confidence_instruction: >
-  Output CONFIDENCE: 0.5 or lower — corporate deals are custom (invoices, NET terms,
-  volume); drafts gather specifics and are held for approval.
+  Output CONFIDENCE: 0.5 or lower — corporate deals are custom (invoices, volume);
+  drafts gather specifics and are held for approval. NEVER offer NET payment terms —
+  we don't do them; invoices are paid before the event.
 match_examples:
   - "We're planning a company offsite for 70 guests"
   - "Can you invoice our company for a client event?"
@@ -19,10 +20,11 @@ match_examples:
 ## Answer (canonical)
 
 Verified: we do corporate events end-to-end — itemized quote/invoice to approve (finance
-teams like it), delivery + optional bartenders + setup; corporate accounts with NET terms
-and consolidated billing are advertised. Details of NET terms are an open question, so
-drafts confirm the offering, gather date/headcount/venue/budget, and promise Allan's
-follow-up with an itemized proposal — no terms promised.
+teams like it), delivery + optional bartenders + setup; invoices are payable by
+corporate card, ACH, or wire before the event. We do NOT offer NET payment terms — if
+asked directly, say invoices are paid up front, warmly and without apology. Drafts
+confirm the offering, gather date/headcount/venue/budget, and promise Allan's follow-up
+with an itemized proposal.
 
 ## SMS
 
@@ -34,11 +36,11 @@ Hi {{first_name}},
 
 We handle corporate events end-to-end: premium spirits and curated wine, full bar setups
 and TABC-certified bartenders if you want them, and an itemized quote/invoice your
-finance team can approve before anything's locked.
+finance team can approve before anything's locked. Invoices can be paid by corporate
+card, ACH, or wire.
 
 Reply with your date, headcount, venue, and rough budget per person, and Allan will send
-over a proposal. Corporate accounts (consolidated billing, payment terms) are available
-for teams that order regularly — he'll walk you through it.
+over a proposal.
 
 Party On Delivery
 
@@ -55,5 +57,6 @@ proposal.
 
 ## Notes for Allan
 
-- NET-terms specifics stay out of drafts until open question `corporate-net-terms` is
-  answered (FAQ already advertises them publicly, FYI).
+- Verified 2026-07-07: NET terms are NOT offered — removed from this card and from the
+  /faqs copy + landing-pages directory description the same day. Invoices are paid
+  before the event (corporate card / ACH / wire, per the corporate landing config).

@@ -8,8 +8,9 @@ variables: [first_name]
 tools: [search_products]
 escalation_reason: null
 confidence_instruction: >
-  High confidence when the catalog (search_products) answers it. THC/kratom asks touch
-  an UNKNOWN policy fact — hedge + flag, never a flat yes/no.
+  High confidence when the catalog (search_products) answers it. THC asks: verified —
+  "coming soon, not yet orderable"; take contact info to notify at launch. Kratom asks:
+  verified — clean no, we don't carry it and have no plans to.
 match_examples:
   - "Hello! I was wondering if you guys sold any THC or Kratom drinks?"
   - "Do y'all carry Casamigos?"
@@ -21,8 +22,10 @@ match_examples:
 
 Tool-backed: search the catalog and answer with what's actually orderable (product page
 links). If it's not in the catalog: say so and offer the closest thing + note that
-special requests are often possible with lead time (flag). THC/kratom: policy is an open
-question — "not something I can promise from here; flagging for Allan."
+special requests are often possible with lead time (flag). THC seltzers: verified —
+coming soon but not yet orderable; say so and take contact info to notify at launch.
+Kratom: verified — we don't carry it and have no plans to; offer the non-alcoholic
+range instead.
 
 ## SMS
 
@@ -52,4 +55,6 @@ Point to the products page; take special requests as a message with the event da
 
 - When the CRM search_products tool is live this card answers by name with links; until
   then it routes to the catalog rather than guessing stock.
-- THC/kratom stays hedged until open question `thc-kratom` is answered.
+- THC/kratom verified 2026-07-07: THC seltzers coming soon (bot may say so + capture
+  contact info); kratom is a permanent no. Flip the THC line to a catalog answer once
+  the products land.
