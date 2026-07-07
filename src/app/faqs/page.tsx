@@ -21,7 +21,7 @@ export default function FAQsPage() {
         },
         {
           q: "What is your minimum order requirement?",
-          a: "TESTING MODE: Currently no minimum order requirements. Normally $100 for central Austin, $150 for outer areas."
+          a: "Minimum orders depend on your delivery zone: $100 for central Austin, $125 for greater Austin, and $150 for extended areas like Cedar Park and Georgetown. Enter your zip at checkout to see your exact minimum — and orders over $250, $300, or $400 (by zone) get free standard delivery."
         },
         {
           q: "What are your delivery hours?",
