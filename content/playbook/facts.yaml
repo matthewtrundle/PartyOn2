@@ -1,0 +1,279 @@
+# Curated facts registry for the Customer Communication Playbook.
+#
+# Every fact an auto-reply may state MUST exist here (or in facts-generated.yaml)
+# with status: verified. Facts with status conflicting or unknown are NEVER
+# ingested into any prompt — they exist to make the gap visible and are paired
+# with an entry in open-questions.md for Allan to adjudicate.
+#
+# Numeric delivery-zone facts live in facts-generated.yaml (code-authoritative,
+# regenerated from src/lib/delivery/rates.ts). This file holds everything else.
+#
+# status: verified    → safe to state to a customer
+#         conflicting → two live sources disagree; do not state either version
+#         unknown     → asked by customers but no authoritative source exists
+facts:
+  # ---- contact & identity ----
+  - id: contact-phone
+    statement: "Party On Delivery's phone number is (737) 371-9700 (call or text)."
+    status: verified
+    sources: ["src/app/faqs/page.tsx footer", "landing configs CTA"]
+    last_verified: 2026-07-06
+
+  - id: contact-email
+    statement: "The customer-service email is info@partyondelivery.com."
+    status: verified
+    sources: ["src/app/faqs/page.tsx footer", "src/lib/followups/copy.ts"]
+    last_verified: 2026-07-06
+
+  - id: founded-2020
+    statement: "Party On Delivery has served Austin since 2020."
+    status: verified
+    sources: ["src/app/faqs/page.tsx footer"]
+    last_verified: 2026-07-06
+
+  # ---- hours & lead time ----
+  - id: hours-mon-sat
+    statement: "Delivery hours are 10 AM – 9 PM Monday through Saturday. Early-morning or late-night deliveries can be arranged with advance notice."
+    status: verified
+    sources: ["src/app/faqs/page.tsx:28,250", "src/app/terms/page.tsx:176"]
+    last_verified: 2026-07-06
+
+  - id: hours-sunday
+    statement: "Site copy says '10AM - 9PM (except Sundays)' — unclear whether Sundays are closed or have different hours."
+    status: unknown
+    sources: ["src/app/faqs/page.tsx:250"]
+    open_question: sunday-hours
+    last_verified: 2026-07-06
+
+  - id: lead-time-48h
+    statement: "48-hour notice is the standard ordering window for guaranteed availability and cold delivery; same-day is often possible — call or text to check."
+    status: verified
+    sources: ["src/components/landing/configs/bachelor.ts", "src/components/landing/PackageBuilderModal.tsx"]
+    last_verified: 2026-07-06
+
+  - id: same-day-cutoff
+    statement: "No documented cutoff time for same-day orders exists; Allan handles these case-by-case."
+    status: unknown
+    open_question: same-day-cutoff
+    last_verified: 2026-07-06
+
+  - id: holiday-blackouts
+    statement: "No documented holiday schedule or blackout dates."
+    status: unknown
+    open_question: holiday-blackouts
+    last_verified: 2026-07-06
+
+  # ---- age & compliance ----
+  - id: age-verification
+    statement: "A valid government-issued photo ID showing 21+ (driver's license, passport, or military ID) is required and checked at delivery. Someone other than the purchaser may receive the order if they are 21+ with valid ID. Alcohol is never left unattended."
+    status: verified
+    sources: ["src/app/faqs/page.tsx:37,41", "TABC requirement"]
+    last_verified: 2026-07-06
+
+  - id: tabc-licensed
+    statement: "Party On Delivery is licensed by the Texas Alcoholic Beverage Commission (TABC) and carries liability insurance; drivers and bartenders are TABC-certified."
+    status: verified
+    sources: ["src/app/faqs/page.tsx:45,54", "landing configs"]
+    last_verified: 2026-07-06
+
+  - id: tabc-license-number
+    statement: "The TABC license/permit number and licensed entity name are not documented anywhere accessible."
+    status: unknown
+    open_question: tabc-license-number
+    last_verified: 2026-07-06
+
+  # ---- cancellation, refunds, returns ----
+  - id: cancellation-48h
+    statement: "Orders/events cancelled 48+ hours before the scheduled time receive a full refund. Cancellations within 48 hours may be subject to a cancellation fee."
+    status: verified
+    sources: ["src/app/terms/page.tsx:75", "src/app/faqs/page.tsx:66"]
+    last_verified: 2026-07-06
+
+  - id: cancellation-fee-amount
+    statement: "The within-48-hours cancellation fee amount is not documented."
+    status: unknown
+    open_question: cancellation-fee
+    last_verified: 2026-07-06
+
+  - id: reschedule-window
+    statement: "The bachelor landing page promises 'Reschedule free up to 6 hours before delivery' while terms/FAQ state a 48-hour cancellation policy. The two windows have never been reconciled."
+    status: conflicting
+    sources: ["src/components/landing/configs/bachelor.ts", "src/app/terms/page.tsx:75"]
+    open_question: reschedule-vs-cancellation
+    last_verified: 2026-07-06
+
+  - id: no-returns-delivered-alcohol
+    statement: "Due to alcohol regulations, delivered products cannot be returned or exchanged. If something is wrong with an order, contact us immediately and we'll make it right."
+    status: verified
+    sources: ["src/app/faqs/page.tsx:83", "src/app/terms/page.tsx"]
+    last_verified: 2026-07-06
+
+  - id: refund-processing-sop
+    statement: "No documented refund SOP (method, timeline, who approves). One real email mentioned '2 weeks for full refund'."
+    status: unknown
+    open_question: refund-sop
+    last_verified: 2026-07-06
+
+  # ---- service area (beyond the generated zone facts) ----
+  - id: service-area-cities
+    statement: "Delivery covers the greater Austin metro: downtown Austin, Lake Travis, Westlake, Bee Cave, Lakeway, Cedar Park and surrounding communities (zip-code validated at checkout)."
+    status: verified
+    sources: ["src/app/faqs/page.tsx:20", "src/lib/delivery/rates.ts"]
+    last_verified: 2026-07-06
+
+  - id: outlying-cities-policy
+    statement: "Checkout accepts Round Rock, Pflugerville, Leander, and Dripping Springs zips (rates.ts Greater/Extended zones), but the confirmed marketing footprint excludes those areas (never advertise/geo-target them). What to tell a customer who asks for delivery there is unresolved."
+    status: conflicting
+    sources: ["src/lib/delivery/rates.ts", "memory delivery_footprint_exclusions"]
+    open_question: outlying-cities
+    last_verified: 2026-07-06
+
+  - id: lake-travis-250-minimum
+    statement: "The bachelor landing page claims 'Lake Travis and far-out ranches start at $250' minimum, but rates.ts puts Lakeway (78734) in Greater Austin at a $125 minimum."
+    status: conflicting
+    sources: ["src/components/landing/configs/bachelor.ts", "src/lib/delivery/rates.ts"]
+    open_question: lake-travis-minimum
+    last_verified: 2026-07-06
+
+  - id: shipping-outside-austin
+    statement: "Customers ask about shipping to other cities/states (one believed a note said 'text us if outside Austin'). No shipping service is documented, and shipping alcohol likely isn't permitted under the local delivery license."
+    status: unknown
+    open_question: shipping-policy
+    last_verified: 2026-07-06
+
+  # ---- boat / cruise service ----
+  - id: boat-dock-delivery
+    statement: "Lake Travis boat-dock delivery: tell us the marina and departure time — Volente, Lakeway, Hurst Harbor, Emerald Point, Rough Hollow and others. We coordinate with the captain and have the cooler loaded before departure."
+    status: verified
+    sources: ["src/components/landing/configs/bachelor.ts", "GHL outbound corpus"]
+    last_verified: 2026-07-06
+
+  - id: premier-cruise-partnership
+    statement: "Groups booked with Premier Party Cruises get drink delivery with Party On Delivery — cooler stocked on the boat, plus Airbnb delivery for the weekend."
+    status: verified
+    sources: ["GHL drip copy", "memory premiere_cruise_pod_credits"]
+    last_verified: 2026-07-06
+
+  - id: premier25-code
+    statement: "Drip messages advertise code PREMIER25 for free delivery on Premier cruise orders — current validity unconfirmed."
+    status: unknown
+    open_question: premier25-validity
+    last_verified: 2026-07-06
+
+  - id: premier-marina-address
+    statement: "Premier Party Cruises departs from Anderson Mill Marina, 13993 FM 2769, Leander, TX 78641 (NOT Cypress Creek). Boat orders use this as the delivery address."
+    status: verified
+    sources: ["Allan's outbound GHL texts (repeated)", "event-presets rodeo-cruise"]
+    last_verified: 2026-07-06
+
+  - id: premier-waiver-link
+    statement: "Every Premier cruise guest must e-sign the waiver before arrival: premieratx.co/private-waiver."
+    status: verified
+    sources: ["Allan's outbound GHL texts", "Premier drip copy"]
+    last_verified: 2026-07-06
+
+  - id: review-link
+    statement: "The review-request link is 123.partyondelivery.com/reviews."
+    status: verified
+    sources: ["Allan's outbound review-request texts (dozens in corpus)"]
+    last_verified: 2026-07-06
+
+  - id: cruise-operations-premier-owned
+    statement: "Boat operations questions (boarding time, marina gate codes, parking, waivers, boat photos, music, Fetii shuttles, weather calls) are owned by Premier Party Cruises, not Party On Delivery; POD only handles the drinks."
+    status: verified
+    sources: ["GHL corpus (Allan's replies redirect to Premier)", "memory centex/premier notes"]
+    last_verified: 2026-07-06
+
+  # ---- ordering features ----
+  - id: group-ordering-split-pay
+    statement: "Group ordering: one shared link, everyone adds their own drinks to the same cart and pays for exactly what they added — separate cards, separate receipts."
+    status: verified
+    sources: ["src/components/landing/configs/bachelor.ts", "GroupOrderV2 feature"]
+    last_verified: 2026-07-06
+
+  - id: in-store-pickup
+    statement: "In-store pickup is available as a checkout option (shipped 2026-06-10)."
+    status: verified
+    sources: ["PR #113", "vault session 2026-06-10-pickup-and-hero-shipped"]
+    last_verified: 2026-07-06
+
+  - id: corporate-invoicing
+    statement: "Corporate events get an itemized quote/invoice to approve (draft-order flow); FAQ advertises corporate accounts with NET payment terms and consolidated billing."
+    status: verified
+    sources: ["src/app/faqs/page.tsx:96", "src/components/landing/configs/corporate.ts", "draft-orders feature"]
+    last_verified: 2026-07-06
+
+  - id: corporate-net-terms-detail
+    statement: "How a customer actually gets NET terms (approval, limits, terms length) is not documented."
+    status: unknown
+    open_question: corporate-net-terms
+    last_verified: 2026-07-06
+
+  - id: payment-methods
+    statement: "We accept all major credit and debit cards, and corporate purchase orders; payment is processed through a secure encrypted checkout (Stripe)."
+    status: verified
+    sources: ["src/app/faqs/page.tsx:92"]
+    last_verified: 2026-07-06
+
+  - id: card-processing-fee
+    statement: "Whether a card-processing fee is ever passed to customers is undecided."
+    status: unknown
+    open_question: card-fee-policy
+    last_verified: 2026-07-06
+
+  - id: gratuity
+    statement: "Delivery fees do not include gratuity. Tips for drivers and bartenders are appreciated but not required; suggested 15–20% for exceptional service."
+    status: verified
+    sources: ["src/app/faqs/page.tsx:100"]
+    last_verified: 2026-07-06
+
+  - id: tip-presets
+    statement: "Checkout tip presets (amounts/percentages) are undecided."
+    status: unknown
+    open_question: tip-presets
+    last_verified: 2026-07-06
+
+  # ---- services & products ----
+  - id: bartending-offered
+    statement: "Professional bartending services are offered for weddings, corporate events, and private parties; bartenders are TABC-certified and insured."
+    status: verified
+    sources: ["src/app/faqs/page.tsx:54"]
+    last_verified: 2026-07-06
+
+  - id: bartender-rates
+    statement: "Bartender pricing/rates are not documented."
+    status: unknown
+    open_question: bartender-rates
+    last_verified: 2026-07-06
+
+  - id: custom-cocktail-menus
+    statement: "Custom cocktail menus are offered — signature cocktails, themed drinks, seasonal specialties, and mocktails."
+    status: verified
+    sources: ["src/app/faqs/page.tsx:58"]
+    last_verified: 2026-07-06
+
+  - id: equipment-rental
+    statement: "Complete bar setups are available: premium glassware, ice, garnishes, mixers, and professional bar tools — rentable separately or in full-service packages."
+    status: verified
+    sources: ["src/app/faqs/page.tsx:62"]
+    last_verified: 2026-07-06
+
+  - id: non-alcoholic-options
+    statement: "A full range of non-alcoholic options is available: craft sodas, fresh juices, mocktail ingredients, and premium water."
+    status: verified
+    sources: ["src/app/faqs/page.tsx:79"]
+    last_verified: 2026-07-06
+
+  - id: thc-kratom-policy
+    statement: "Customers ask for THC/kratom drinks; whether POD sells or will sell them is undecided (catalog + compliance question)."
+    status: unknown
+    open_question: thc-kratom
+    last_verified: 2026-07-06
+
+  # ---- known data quirks (context for humans, never ingested) ----
+  - id: zip-zone-anomalies
+    statement: "78741 (Riverside, ~3 mi from downtown) is deliberately in the Greater Austin tier, and 78726 is in Extended while its neighbors are Greater — operator chose to keep as-is on 2026-05-01."
+    status: verified
+    sources: ["vault Open-Questions", "src/lib/delivery/rates.ts"]
+    internal_only: true
+    last_verified: 2026-07-06
