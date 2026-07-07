@@ -49,6 +49,9 @@ image-generator-tool/
 .firecrawl/
 .playwright-mcp/
 
+# communication-playbook corpus exports (customer PII — never commit)
+data/comms-corpus/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

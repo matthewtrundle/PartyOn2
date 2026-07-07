@@ -1,0 +1,127 @@
+# Customer Communication Playbook — manifest
+# Machine-read by:
+#   - PartyOn2 scripts/playbook/build-chat-prompt.ts   (PartyChat / reginald.md)
+#   - partyon-crm scripts/ingest-playbook.ts            (chat widget, email AI inbox, SMS templates)
+# Humans: read 00-overview.md first.
+
+version: 1
+updated: 2026-07-06
+
+# ---------------------------------------------------------------------------
+# Autonomy tiers. Every intent card declares exactly one tier.
+# ---------------------------------------------------------------------------
+tiers:
+  T1:
+    name: auto-answer
+    rule: >
+      Answer immediately using verified facts and tool-backed lookups only.
+      No human review. If a needed fact is missing/unknown, behave as T3.
+  T2:
+    name: auto-answer-and-flag
+    rule: >
+      Answer immediately, but flag the conversation for same-day human review
+      (day-of logistics, anything time-sensitive, redirects to Premier).
+  T3:
+    name: draft-and-hold
+    rule: >
+      Never auto-send. Compose a draft reply and hold for human approval
+      (custom quotes, money-touching changes, partner conversations, any
+      question that touches a fact with status unknown/conflicting).
+  T4:
+    name: escalate-ack-only
+    rule: >
+      Send ONLY the per-channel acknowledgment (never a substantive answer),
+      then escalate to a human immediately. Refunds, cancellations,
+      complaints, legal/fraud, anything involving intoxication or minors,
+      day-of delivery failures. 100% escalation is a hard gate.
+
+# ---------------------------------------------------------------------------
+# How each tier behaves per channel (the same brain, different actuators).
+# ---------------------------------------------------------------------------
+channels:
+  chat: # PartyChat widget (live now) + CRM web chat widget (post-Supabase)
+    T1: answer
+    T2: answer_then_suggest_text_channel   # chat is anonymous; nudge to SMS for day-of items
+    T3: hedge_and_capture_contact          # give general info only + ask for phone/email for Allan
+    T4: ack_and_capture_contact            # ack + urgent handoff line, collect phone number
+  email: # CRM ai_inboxes (info@) — starts in auto_reply_mode='draft'
+    T1: auto_send_when_enabled
+    T2: auto_send_when_enabled_and_flag
+    T3: draft_hold                          # via confidence_instruction => CONFIDENCE < 0.6
+    T4: escalation_trigger_draft_hold       # engine holds reply as draft + escalations row
+  sms: # GHL today (manual), CRM Twilio pipeline later — sending BLOCKED until A2P approval
+    T1: auto_send_when_enabled
+    T2: auto_send_when_enabled_and_flag
+    T3: draft_hold
+    T4: ack_then_escalate
+  voice: # Phase-5 receptionist — cards carry a "Voice" section as script guidance only
+    T1: answer_from_script
+    T2: answer_from_script_and_flag
+    T3: take_message
+    T4: warm_handoff_or_urgent_message
+
+limits:
+  sms_segment_chars: 160
+  sms_block_max_chars: 320        # every card's "## SMS" block must fit 2 segments
+  sms_footer_required_on_marketing: "Reply STOP to opt out"
+  email_subject_prefix: ""        # replies thread onto the customer's subject
+  chat_max_paragraphs: 3
+
+# ---------------------------------------------------------------------------
+# Escalation destinations (interim — swaps to the CRM escalations queue +
+# ai_inboxes notify once Supabase is deployed; see escalation.md).
+# ---------------------------------------------------------------------------
+escalation_destinations:
+  urgent:      # T4 day-of: running late, delivery failure, safety, minors/intoxication
+    - sms_to_allan_cell: "512-576-7975"
+  standard:    # all other T4 + T3 drafts awaiting approval
+    - email: info@partyondelivery.com
+
+# Valid escalation reasons — MUST stay a subset of EscalationReason in
+# partyon-crm/apps/web/lib/ai-inbox/escalation-triggers.ts (lint enforces).
+escalation_reasons:
+  - low_confidence
+  - refund_keyword
+  - complaint_keyword
+  - legal_keyword
+  - repeat_phrase
+  - negative_sentiment
+  - repeat_contact
+
+# ---------------------------------------------------------------------------
+# Intent card registry: every intents/*.md file must be listed here (lint).
+# freq_rank source: 2026-07-06 GHL corpus, 624 labeled inbound last-messages
+# (see 00-overview.md); confidence: provisional until full-thread relabel.
+# ---------------------------------------------------------------------------
+intents:
+  - cruise-drink-setup
+  - cruise-day-logistics
+  - cruise-running-late
+  - post-event-thanks
+  - delivery-access-info
+  - cruise-whats-allowed
+  - refund-credit-request
+  - delivery-eta
+  - order-change-add
+  - quote-request
+  - cruise-waiver-fix
+  - pickup-request
+  - partner-affiliate-inquiry
+  - product-availability
+  - shipping-outside-austin
+  - cruise-premier-redirect
+  - cruise-order-deadline
+  - cruise-weather-reschedule
+  - cruise-guest-update
+  - order-cancellation
+  - complaint-issue
+  - hours-availability
+  - delivery-zones-minimums
+  - bartender-services
+  - corporate-event-inquiry
+  - order-confirmation-ack
+  - callback-request
+  - opt-out-stop
+  - spam-vendor
+  - internal-partner-ops
+  - unknown-low-confidence
