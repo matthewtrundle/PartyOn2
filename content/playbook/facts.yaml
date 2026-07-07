@@ -31,6 +31,12 @@ facts:
     sources: ["src/app/faqs/page.tsx footer"]
     last_verified: 2026-07-06
 
+  - id: business-mailing-address
+    statement: "Party On Delivery's business mailing address is 7600 N Lamar #A2, Austin, TX 78752 (the CAN-SPAM footer address on every email)."
+    status: verified
+    sources: ["src/lib/followups/copy.ts POSTAL_ADDRESS (PR #193)", "operator confirmed 2026-07-07"]
+    last_verified: 2026-07-07
+
   # ---- hours & lead time ----
   - id: hours-mon-sat
     statement: "Delivery hours are 10 AM – 9 PM Monday through Saturday. Early-morning or late-night deliveries can be arranged with advance notice."
@@ -39,11 +45,10 @@ facts:
     last_verified: 2026-07-06
 
   - id: hours-sunday
-    statement: "Site copy says '10AM - 9PM (except Sundays)' — unclear whether Sundays are closed or have different hours."
-    status: unknown
-    sources: ["src/app/faqs/page.tsx:250"]
-    open_question: sunday-hours
-    last_verified: 2026-07-06
+    statement: "Closed Sundays for standard delivery. Special events (e.g. Sunday Premier cruises) can be arranged with Allan — text (737) 371-9700 with the date."
+    status: verified
+    sources: ["operator answer 2026-07-07 (open question sunday-hours)"]
+    last_verified: 2026-07-07
 
   - id: lead-time-48h
     statement: "48-hour notice is the standard ordering window for guaranteed availability and cold delivery; same-day is often possible — call or text to check."
@@ -52,16 +57,16 @@ facts:
     last_verified: 2026-07-06
 
   - id: same-day-cutoff
-    statement: "No documented cutoff time for same-day orders exists; Allan handles these case-by-case."
-    status: unknown
-    open_question: same-day-cutoff
-    last_verified: 2026-07-06
+    statement: "There is no hard same-day cutoff — same-day delivery is handled case-by-case and is often possible. Customers should text (737) 371-9700 to confirm before paying; the bot never promises same-day."
+    status: verified
+    sources: ["operator answer 2026-07-07 (open question same-day-cutoff)"]
+    last_verified: 2026-07-07
 
   - id: holiday-blackouts
-    statement: "No documented holiday schedule or blackout dates."
-    status: unknown
-    open_question: holiday-blackouts
-    last_verified: 2026-07-06
+    statement: "Closed Thanksgiving Day and Christmas Day. All other holidays run normal hours — holidays are big party days, so order ahead on busy weekends."
+    status: verified
+    sources: ["operator answer 2026-07-07 (open question holiday-blackouts)"]
+    last_verified: 2026-07-07
 
   # ---- age & compliance ----
   - id: age-verification
@@ -77,10 +82,10 @@ facts:
     last_verified: 2026-07-06
 
   - id: tabc-license-number
-    statement: "The TABC license/permit number and licensed entity name are not documented anywhere accessible."
-    status: unknown
-    open_question: tabc-license-number
-    last_verified: 2026-07-06
+    statement: "The TABC permit number is P-200084398. (Licensed entity name not yet documented — do not state one.)"
+    status: verified
+    sources: ["operator answer 2026-07-07 (open question tabc-license-number)"]
+    last_verified: 2026-07-07
 
   # ---- cancellation, refunds, returns ----
   - id: cancellation-48h
@@ -90,17 +95,16 @@ facts:
     last_verified: 2026-07-06
 
   - id: cancellation-fee-amount
-    statement: "The within-48-hours cancellation fee amount is not documented."
-    status: unknown
-    open_question: cancellation-fee
-    last_verified: 2026-07-06
+    statement: "There is no fixed cancellation fee — inside 48 hours it's case-by-case and usually waived. The bot may say a fee 'may apply' but never quotes an amount."
+    status: verified
+    sources: ["operator answer 2026-07-07 (open question cancellation-fee)"]
+    last_verified: 2026-07-07
 
   - id: reschedule-window
-    statement: "The bachelor landing page promises 'Reschedule free up to 6 hours before delivery' while terms/FAQ state a 48-hour cancellation policy. The two windows have never been reconciled."
-    status: conflicting
-    sources: ["src/components/landing/configs/bachelor.ts", "src/app/terms/page.tsx:75"]
-    open_question: reschedule-vs-cancellation
-    last_verified: 2026-07-06
+    statement: "Rescheduling and cancelling are different policies, and both are real: moving your delivery date/time (reschedule) is free up to 6 hours before delivery; cancelling outright follows the 48-hour refund policy (48+ hours = full refund; inside 48 hours a fee may apply)."
+    status: verified
+    sources: ["operator answer 2026-07-07 (open question reschedule-vs-cancellation)", "src/components/landing/configs/bachelor.ts", "src/app/terms/page.tsx:75"]
+    last_verified: 2026-07-07
 
   - id: no-returns-delivered-alcohol
     statement: "Due to alcohol regulations, delivered products cannot be returned or exchanged. If something is wrong with an order, contact us immediately and we'll make it right."
@@ -109,10 +113,10 @@ facts:
     last_verified: 2026-07-06
 
   - id: refund-processing-sop
-    statement: "No documented refund SOP (method, timeline, who approves). One real email mentioned '2 weeks for full refund'."
-    status: unknown
-    open_question: refund-sop
-    last_verified: 2026-07-06
+    statement: "Approved refunds go back to the original payment method via Stripe and typically appear in 5–10 business days. Only Allan approves refunds — the bot acknowledges and escalates, and never promises eligibility, amount, or approval."
+    status: verified
+    sources: ["operator answer 2026-07-07 (open question refund-sop)"]
+    last_verified: 2026-07-07
 
   # ---- service area (beyond the generated zone facts) ----
   - id: service-area-cities
@@ -122,24 +126,22 @@ facts:
     last_verified: 2026-07-06
 
   - id: outlying-cities-policy
-    statement: "Checkout accepts Round Rock, Pflugerville, Leander, and Dripping Springs zips (rates.ts Greater/Extended zones), but the confirmed marketing footprint excludes those areas (never advertise/geo-target them). What to tell a customer who asks for delivery there is unresolved."
-    status: conflicting
-    sources: ["src/lib/delivery/rates.ts", "memory delivery_footprint_exclusions"]
-    open_question: outlying-cities
-    last_verified: 2026-07-06
+    statement: "Delivery to Round Rock, Pflugerville, Leander, and Dripping Springs — those four cities ONLY — is case-by-case: the bot neither confirms nor denies; route the customer to text (737) 371-9700 and Allan decides per order. Every other zip in the delivery-zone tables is a confirmed zone (e.g. Lakeway 78734 is confirmed Greater Austin), and boat deliveries to Anderson Mill Marina (in Leander) always run. (Checkout may accept the four cities' zips; never advertise or geo-target them.)"
+    status: verified
+    sources: ["operator answer 2026-07-07 (open question outlying-cities)", "memory delivery_footprint_exclusions"]
+    last_verified: 2026-07-07
 
   - id: lake-travis-250-minimum
-    statement: "The bachelor landing page claims 'Lake Travis and far-out ranches start at $250' minimum, but rates.ts puts Lakeway (78734) in Greater Austin at a $125 minimum."
-    status: conflicting
-    sources: ["src/components/landing/configs/bachelor.ts", "src/lib/delivery/rates.ts"]
-    open_question: lake-travis-minimum
-    last_verified: 2026-07-06
+    statement: "Two different minimums, both real: standard ADDRESS delivery always follows the confirmed checkout zone minimum (Lakeway 78734 = Greater Austin, $125), while Lake Travis boat/ranch EVENT deliveries start at a $250 minimum (event logistics). The bachelor page's 'start at $250' refers to event deliveries; it does not change any zone minimum."
+    status: verified
+    sources: ["operator answer 2026-07-07 (open question lake-travis-minimum)", "src/components/landing/configs/bachelor.ts", "src/lib/delivery/rates.ts"]
+    last_verified: 2026-07-07
 
   - id: shipping-outside-austin
-    statement: "Customers ask about shipping to other cities/states (one believed a note said 'text us if outside Austin'). No shipping service is documented, and shipping alcohol likely isn't permitted under the local delivery license."
-    status: unknown
-    open_question: shipping-policy
-    last_verified: 2026-07-06
+    statement: "We never ship — local Austin-area delivery only under our TABC local-delivery license. No interstate or parcel shipping, no exceptions. We can deliver to a local Austin-area recipient instead."
+    status: verified
+    sources: ["operator answer 2026-07-07 (open question shipping-policy)"]
+    last_verified: 2026-07-07
 
   # ---- boat / cruise service ----
   - id: boat-dock-delivery
@@ -155,20 +157,28 @@ facts:
     last_verified: 2026-07-06
 
   - id: premier25-code
-    statement: "Drip messages advertise code PREMIER25 for free delivery on Premier cruise orders — current validity unconfirmed."
-    # prompt_statement is what gets ingested for unresolved facts — never put a
-    # quotable code/number in the prompt version (round-7 replay caught the bot
-    # quoting the code straight out of the must-not-assert list).
-    prompt_statement: "A legacy Premier-cruise free-delivery promo code exists but its validity is unconfirmed — never quote, confirm, or invent any promo code."
-    status: unknown
-    open_question: premier25-validity
-    last_verified: 2026-07-06
+    statement: "The old PREMIER25 free-delivery code is retired. Premier cruise guests each receive a personal credit code by text/email; if a guest's code is missing, escalate so Allan can re-send it. Never invent, quote, or promise any other promo code."
+    status: verified
+    sources: ["operator answer 2026-07-07 (open question premier25-validity)", "memory premiere_cruise_pod_credits"]
+    last_verified: 2026-07-07
 
   - id: cruise-byo-allowed
     statement: "Bringing your own drinks on a cruise is fine — no purchase required; POD delivery is the convenient option, not a rule."
     status: verified
     sources: ["Allan's real replies (corpus: 'we will just bring our own' → 'no worries at all')"]
     last_verified: 2026-07-06
+
+  - id: cruise-glass-policy
+    statement: "Glass on the boat: liquor and champagne bottles are allowed; beer bottles are not — go with cans for beer."
+    status: verified
+    sources: ["operator answer 2026-07-07 (red-pen round)"]
+    last_verified: 2026-07-07
+
+  - id: order-immediately-link
+    statement: "The page for placing a NEW order right away is partyondelivery.com/order. Changes or additions to an EXISTING order, and custom quotes, go to the text line (737) 371-9700 — never the website."
+    status: verified
+    sources: ["operator answer 2026-07-07 (red-pen round)"]
+    last_verified: 2026-07-07
 
   - id: marina-delivery-exclusivity
     statement: "Party On Delivery is the only delivery service that delivers to Premier's marina."
@@ -182,11 +192,47 @@ facts:
     sources: ["Allan's outbound GHL texts (repeated)", "event-presets rodeo-cruise"]
     last_verified: 2026-07-06
 
-  - id: premier-waiver-link
-    statement: "Every Premier cruise guest must e-sign the waiver before arrival: premieratx.co/private-waiver."
+  - id: cruise-arrival-time
+    statement: "Plan to arrive at Anderson Mill Marina 30 minutes before your scheduled departure — allow for traffic and other delays."
     status: verified
-    sources: ["Allan's outbound GHL texts", "Premier drip copy"]
-    last_verified: 2026-07-06
+    sources: ["operator answer 2026-07-07 (open question premier-handoff-list)"]
+    last_verified: 2026-07-07
+
+  - id: marina-parking
+    statement: "There is a free parking lot on site at Anderson Mill Marina; carpooling or a Fetii group ride is smart for big groups."
+    status: verified
+    sources: ["operator answer 2026-07-07 (open question premier-handoff-list)"]
+    last_verified: 2026-07-07
+
+  - id: marina-gate-code-delivery
+    statement: "Marina gate codes rotate per event; Premier typically texts the code to the group's booking contact before the cruise. The bot never quotes a gate code."
+    status: verified
+    sources: ["operator answer 2026-07-07 (open question premier-handoff-list)", "GHL corpus (codes rotate: 7561#, 1007#)"]
+    last_verified: 2026-07-07
+
+  - id: cruise-music-policy
+    statement: "Disco cruises come with a DJ. Private cruises have Bluetooth speakers on board — bring your own playlist."
+    status: verified
+    sources: ["operator answer 2026-07-07 (open question premier-handoff-list)"]
+    last_verified: 2026-07-07
+
+  - id: fetii-discount
+    statement: "For group transport to the marina we recommend Fetii group rideshare — code PARTYON gets 25% off. Fetii rides can only be scheduled starting 48 hours before pickup."
+    status: verified
+    sources: ["operator answer 2026-07-07 (open question premier-handoff-list)"]
+    last_verified: 2026-07-07
+
+  - id: cruise-weather-call
+    statement: "Premier and the captain make weather calls close to departure — cruises usually run rain or shine unless conditions are unsafe. If Premier reschedules a cruise, the drink delivery moves with it at no charge."
+    status: verified
+    sources: ["operator answer 2026-07-07 (open question premier-handoff-list)", "GHL corpus (Allan: 'everyone is swimming in the rain, it's amazing')"]
+    last_verified: 2026-07-07
+
+  - id: premier-waiver-link
+    statement: "Every Premier cruise guest must e-sign the waiver before arrival — Premier sends it out by text/email; the link is premieratx.co/private-waiver."
+    status: verified
+    sources: ["Allan's outbound GHL texts", "Premier drip copy", "operator confirmed 2026-07-07"]
+    last_verified: 2026-07-07
 
   - id: review-link
     statement: "The review-request link is 123.partyondelivery.com/reviews."
@@ -195,10 +241,10 @@ facts:
     last_verified: 2026-07-06
 
   - id: cruise-operations-premier-owned
-    statement: "Boat operations questions (boarding time, marina gate codes, parking, waivers, boat photos, music, Fetii shuttles, weather calls) are owned by Premier Party Cruises, not Party On Delivery; POD only handles the drinks."
+    statement: "Premier Party Cruises owns: boat photos, which-boat/fleet questions, boat amenity specifics (glass rules, what's provided), gate-code delivery, and go/no-go weather calls — redirect those to Premier's site or the booking confirmation. POD answers directly: arrival time, parking, waivers, music setup, group transport (Fetii), and what happens to drinks on a weather reschedule."
     status: verified
-    sources: ["GHL corpus (Allan's replies redirect to Premier)", "memory centex/premier notes"]
-    last_verified: 2026-07-06
+    sources: ["operator answer 2026-07-07 (open question premier-handoff-list)", "GHL corpus (Allan's replies redirect to Premier)"]
+    last_verified: 2026-07-07
 
   # ---- ordering features ----
   - id: group-ordering-split-pay
@@ -214,28 +260,28 @@ facts:
     last_verified: 2026-07-06
 
   - id: corporate-invoicing
-    statement: "Corporate events get an itemized quote/invoice to approve (draft-order flow); FAQ advertises corporate accounts with NET payment terms and consolidated billing."
+    statement: "Corporate events get an itemized quote/invoice to approve before anything is locked (draft-order flow), payable by corporate card, ACH, or wire. We do NOT offer NET payment terms."
     status: verified
-    sources: ["src/app/faqs/page.tsx:96", "src/components/landing/configs/corporate.ts", "draft-orders feature"]
-    last_verified: 2026-07-06
+    sources: ["operator answer 2026-07-07 (open question corporate-net-terms)", "src/components/landing/configs/corporate.ts", "draft-orders feature"]
+    last_verified: 2026-07-07
 
   - id: corporate-net-terms-detail
-    statement: "How a customer actually gets NET terms (approval, limits, terms length) is not documented."
-    status: unknown
-    open_question: corporate-net-terms
-    last_verified: 2026-07-06
+    statement: "NET payment terms are not offered — invoices are paid before the event by corporate card, ACH, or wire. (FAQ copy that advertised NET terms was removed 2026-07-07.)"
+    status: verified
+    sources: ["operator answer 2026-07-07 (open question corporate-net-terms)"]
+    last_verified: 2026-07-07
 
   - id: payment-methods
-    statement: "We accept all major credit and debit cards, and corporate purchase orders; payment is processed through a secure encrypted checkout (Stripe)."
+    statement: "We accept all major credit and debit cards; corporate invoices can be paid by corporate card, ACH, or wire. Payment is processed through a secure encrypted checkout (Stripe). No purchase orders or NET terms."
     status: verified
-    sources: ["src/app/faqs/page.tsx:92"]
-    last_verified: 2026-07-06
+    sources: ["src/app/faqs/page.tsx:92", "operator answer 2026-07-07 (POs removed with NET terms)"]
+    last_verified: 2026-07-07
 
   - id: card-processing-fee
-    statement: "Whether a card-processing fee is ever passed to customers is undecided."
-    status: unknown
-    open_question: card-fee-policy
-    last_verified: 2026-07-06
+    statement: "No card or processing fees are ever passed to customers — the price shown is the price (plus tax, delivery, and optional tip)."
+    status: verified
+    sources: ["operator answer 2026-07-07 (open question card-fee-policy)"]
+    last_verified: 2026-07-07
 
   - id: gratuity
     statement: "Delivery fees do not include gratuity. Tips for drivers and bartenders are appreciated but not required; suggested 15–20% for exceptional service."
@@ -244,10 +290,10 @@ facts:
     last_verified: 2026-07-06
 
   - id: tip-presets
-    statement: "Checkout tip presets (amounts/percentages) are undecided."
-    status: unknown
-    open_question: tip-presets
-    last_verified: 2026-07-06
+    statement: "Checkout offers tip presets of 5%, 10%, and 20% of subtotal; tipping is optional."
+    status: verified
+    sources: ["src/components/dashboard/DashboardCheckoutModal.tsx", "operator confirmed 2026-07-07"]
+    last_verified: 2026-07-07
 
   # ---- services & products ----
   - id: bartending-offered
@@ -257,10 +303,10 @@ facts:
     last_verified: 2026-07-06
 
   - id: bartender-rates
-    statement: "Bartender pricing/rates are not documented."
-    status: unknown
-    open_question: bartender-rates
-    last_verified: 2026-07-06
+    statement: "Bartending packages start at $600 (event minimum); the exact quote depends on the event — Allan prices it personally."
+    status: verified
+    sources: ["operator answer 2026-07-07 (open question bartender-rates)"]
+    last_verified: 2026-07-07
 
   - id: custom-cocktail-menus
     statement: "Custom cocktail menus are offered — signature cocktails, themed drinks, seasonal specialties, and mocktails."
@@ -281,10 +327,10 @@ facts:
     last_verified: 2026-07-06
 
   - id: thc-kratom-policy
-    statement: "Customers ask for THC/kratom drinks; whether POD sells or will sell them is undecided (catalog + compliance question)."
-    status: unknown
-    open_question: thc-kratom
-    last_verified: 2026-07-06
+    statement: "THC seltzers are coming soon but not yet orderable — the bot may say 'coming soon' and take contact info to notify at launch. Kratom drinks: we don't carry them and have no plans to."
+    status: verified
+    sources: ["operator answer 2026-07-07 (open question thc-kratom)"]
+    last_verified: 2026-07-07
 
   # ---- known data quirks (context for humans, never ingested) ----
   - id: zip-zone-anomalies

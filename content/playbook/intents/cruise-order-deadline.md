@@ -20,7 +20,8 @@ match_examples:
 
 The verified policy: 48+ hours guarantees delivery. Inside 48 hours: often still
 possible — never promise, always hand to a human fast (flag the conversation, tell them
-a human is checking). Same-day cutoff is an open question — the bot must not invent one.
+a human is checking). Verified 2026-07-07: there IS no same-day cutoff — it's
+case-by-case by design, so the bot must never invent or imply one.
 
 ## SMS
 
@@ -33,7 +34,7 @@ Hi {{first_name}},
 Ordering 48+ hours ahead guarantees your delivery. Inside 48 hours we can often still
 pull it off depending on the schedule — I've flagged your date and someone will confirm
 shortly. If you want to get ahead of it, fill your cart now at
-partyondelivery.com/pages/boat-parties and we'll take it from there.
+partyondelivery.com/order and we'll take it from there.
 
 Party On Delivery
 
@@ -50,5 +51,5 @@ promise a fast callback.
 
 ## Notes for Allan
 
-- Card refuses to invent a same-day cutoff (open question same-day-cutoff). Answer that
-  and this card gets sharper.
+- Same-day cutoff resolved 2026-07-07: none exists by design — case-by-case is the
+  policy, so the current "human is checking" behavior is exactly right and permanent.

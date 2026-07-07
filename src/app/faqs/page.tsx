@@ -25,7 +25,7 @@ export default function FAQsPage() {
         },
         {
           q: "What are your delivery hours?",
-          a: "We deliver 10AM - 9PM (except Sundays). Special arrangements can be made for early morning or late-night events with advance notice."
+          a: "We deliver 10AM - 9PM Mon-Sat (closed Sundays). Special arrangements can be made for early morning or late-night events with advance notice."
         }
       ]
     },
@@ -89,11 +89,11 @@ export default function FAQsPage() {
       questions: [
         {
           q: "What payment methods do you accept?",
-          a: "We accept all major credit cards, debit cards, and corporate purchase orders. Payment is processed securely through our encrypted checkout system."
+          a: "We accept all major credit and debit cards, and corporate clients can pay invoices by corporate card, ACH, or wire. Payment is processed securely through our encrypted checkout system."
         },
         {
           q: "Do you offer corporate accounts?",
-          a: "Yes, we offer corporate accounts with NET payment terms, consolidated billing, and dedicated account management for businesses with regular orders."
+          a: "Yes, we work with companies all the time — itemized quotes and invoices your finance team can approve before anything is locked, payable by corporate card, ACH, or wire, with dedicated support for businesses that order regularly."
         },
         {
           q: "Is gratuity included?",
@@ -247,7 +247,7 @@ export default function FAQsPage() {
               <ul className="space-y-2 text-gray-600 text-sm">
                 <li>Phone: (737) 371-9700</li>
                 <li>Email: info@partyondelivery.com</li>
-                <li>Hours: 10AM - 9PM (except Sundays)</li>
+                <li>Hours: 10AM - 9PM Mon-Sat (closed Sundays)</li>
               </ul>
             </div>
           </div>

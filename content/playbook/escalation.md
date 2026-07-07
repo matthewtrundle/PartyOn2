@@ -54,20 +54,35 @@ lawyer, attorney, legal, lawsuit, sue, dispute, scam, fraud,
 better business bureau, bbb
 ```
 
+### safety_keyword
+```
+underage, under age, under 21, not 21, fake id, minors, teenager, high school,
+drunk, wasted, hammered, intoxicated, blacked out, passed out, overserved,
+over served, alcohol poisoning, too much to drink,
+got hurt, injured, injury, ambulance, hospital, emergency
+```
+
 ### repeat_phrase
 ```
-fourth attempt, fourth time, third time, third attempt, again, still no response,
-no response, follow up, following up, as i mentioned, like i said
+fourth attempt, fourth time, third time, third attempt, once again, yet again,
+asked again, asking again, texted again, called again, messaged again,
+still no response, no response, follow up, following up, as i mentioned, like i said
 ```
 
 ### Other engine reasons (no keyword list)
 `low_confidence` (< 0.6), `negative_sentiment`, `repeat_contact`
 
-## Known gaps to raise in review
+## Known gaps — resolved 2026-07-07 (operator review round)
 
-- The `repeat_phrase` list contains the bare word "again" — it will over-trigger on
-  benign messages ("can't wait to do it again!"). Flagged for a future CRM PR; the
-  playbook does not work around it.
-- The engine has no explicit minors/intoxication trigger — the playbook covers this via
-  T4 intent cards + the compliance prompt block, but a keyword class in code would be
-  more robust. Candidate future CRM PR.
+Both gaps raised at v1 were fixed in a partyon-crm PR the same day this mirror updated:
+
+- Bare "again" removed from `repeat_phrase` (it over-triggered on "can't wait to do it
+  again!"); replaced with qualified variants (once/yet/asked/asking/texted/called/
+  messaged again).
+- New `safety_keyword` class: minors + intoxication + injury language now escalates by
+  keyword, not just via the compliance prompt + T4 cards. Bare "minor" is deliberately
+  excluded ("a minor issue" would false-positive) — the AI judgment override remains
+  the primary net for phrasings like "he is 19."
+
+NOTE: this mirror and the fork's `escalation-triggers.ts` must merge together — the
+ingest lint fails on either side alone.

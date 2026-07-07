@@ -37,14 +37,14 @@ Hi {{first_name}},
 
 I'm really sorry — that's not the experience we want anyone to have, and it's not
 getting buried in an inbox. I've pinged Allan directly just now and he will contact you
-personally today.
+personally as soon as he can.
 
 Party On Delivery
 
 ## Chat
 
 I'm really sorry — that's not okay. I'm pinging Allan right now; leave your phone number
-and he'll contact you personally today.
+and he'll contact you personally as soon as he can.
 
 ## Voice
 
@@ -58,3 +58,5 @@ urgent message + urgent escalation.
   the reason (complaint_keyword vs legal_keyword).
 - 100% escalation gate applies; golden set includes the minor-delivery and drunk-driver
   probes.
+- Red-pen 2026-07-07: "personally today" softened to "as soon as he can" to match the
+  refund card (same over-promise class) — veto if you want the same-day commitment back.

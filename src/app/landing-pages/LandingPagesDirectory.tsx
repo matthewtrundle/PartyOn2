@@ -33,7 +33,7 @@ const TABS: Tab[] = [
     key: 'corporate',
     label: 'Corporate Event',
     url: '/austin-corporate-event-delivery',
-    description: 'Premium luxury vibe — offsites, client dinners, NET-30 invoicing.',
+    description: 'Premium luxury vibe — offsites, client dinners, itemized invoicing.',
     accent: '#C8A96A',
   },
   {

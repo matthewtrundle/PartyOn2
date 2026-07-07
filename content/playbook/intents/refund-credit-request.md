@@ -20,30 +20,36 @@ match_examples:
 
 ## Answer (canonical)
 
-Ack only: apologize for the hassle, confirm a human owns it now, give a time
-expectation. Never confirm eligibility, amount, or timeline (refund SOP is an open
-question; the refund cap and processing are Stripe-authoritative and human-gated).
+Ack + escalate: apologize for the hassle, confirm a human owns it now, give a time
+expectation. Verified SOP the bot may state: once a refund is approved it goes back to
+the original payment method and typically appears in 5–10 business days. Only Allan
+approves — the bot never confirms eligibility, amount, or approval (the refund cap and
+processing are Stripe-authoritative and human-gated).
 Fraud/chargeback wording also matches legal_keyword — same destination, higher urgency.
 
 ## SMS
 
-Hey {{first_name}}, sorry for the hassle — refunds go straight to Allan and I've flagged yours right now. He'll text you today with where it stands. Thanks for your patience!
+Hey {{first_name}}, sorry for the hassle — refunds go straight to Allan and I've flagged yours right now. He'll get back to you as soon as he can with where it stands. (If approved, it goes back to your card — usually shows in 5–10 business days.)
 
 ## Email
 
 Hi {{first_name}},
 
 Sorry for the hassle — I've flagged this straight to Allan just now, and he'll get back
-to you today with exactly where your refund stands. If you have the order number or any
-photos handy, reply with them and it'll speed things up.
+to you as soon as he can with exactly where your refund stands. If you have the order
+number or any photos handy, reply with them and it'll speed things up.
+
+For reference: approved refunds go back to your original payment method and typically
+show up in 5–10 business days.
 
 Party On Delivery
 
 ## Chat
 
 Sorry about that — refunds get handled personally, so I've flagged this for Allan right
-now. Drop your phone number or email and he'll get back to you today with where it
-stands.
+now. Drop your phone number or email and he'll get back to you as soon as he can with
+where it stands. (Approved refunds go back to your card, usually within 5–10 business
+days.)
 
 ## Voice
 
@@ -53,6 +59,7 @@ number, order info; urgent escalation.
 ## Notes for Allan
 
 - 100% escalation here is a release gate (golden set enforces it).
-- "He'll text you today" sets the expectation you asked the interim policy to meet —
-  loosen the promise if that's too aggressive.
-- Answering open question `refund-sop` upgrades the ack with "here's what happens next."
+- Red-pen 2026-07-07: the same-day "he'll text you today" promise softened to "as soon
+  as he can" at your call (complaint-issue softened to match).
+- Refund SOP verified 2026-07-07: original card via Stripe, 5–10 business days, only
+  Allan approves — the ack now states the mechanics but still never promises approval.

@@ -6,8 +6,8 @@ we already operate under.
 
 ## TABC (alcohol)
 
-- We sell and deliver alcohol under a TABC license. **License/permit number + licensed
-  entity name are not yet documented** — open question `tabc-license-number`.
+- We sell and deliver alcohol under TABC permit **P-200084398** (operator-confirmed
+  2026-07-07; licensed entity name still to be recorded when handy).
 - 21+ only. Valid government photo ID is checked at delivery, every delivery. Someone
   other than the purchaser may receive only if 21+ with valid ID. Never left unattended.
 - **Never sell or promise delivery to anyone we know is under 21, and never continue a
@@ -18,8 +18,8 @@ we already operate under.
   made right by replacement/refund through a human (T4).
 - Marketing copy hard-stops: no "FREE alcohol" framing, no drink-price claims designed to
   induce over-consumption; "free delivery" (the service) is fine, "free beer" is not.
-- Delivery only inside our licensed local footprint — no interstate shipping; see the
-  `shipping-policy` open question before promising anything beyond local delivery.
+- Delivery only inside our licensed local footprint — **we never ship, period**
+  (operator-confirmed 2026-07-07): no interstate or parcel shipping, no exceptions.
 
 ## SMS: A2P 10DLC + SHAFT
 
@@ -39,9 +39,9 @@ we already operate under.
 - 1:1 conversational replies are exempt from most CAN-SPAM mechanics, but anything bulk
   (drips, digests, promos) requires: accurate From, truthful subject, **physical postal
   address**, and a working unsubscribe honored within 10 days.
-- **The postal address is still a TODO** (`src/lib/followups/copy.ts:21` — "Austin, TX —
-  TODO: full mailing address"). This BLOCKS enabling any automated bulk email. Open
-  question `can-spam-postal-address`.
+- **The postal address is set and operator-confirmed** (2026-07-07): 7600 N Lamar #A2,
+  Austin, TX 78752, shipped in `src/lib/followups/copy.ts` by PR #193. This compliance
+  blocker is closed — remaining email-flag gates are the followups system's own.
 - The follow-ups email system (PRs #183–#187) ships with all flags OFF partly for this
   reason — do not flip flags from playbook work.
 
@@ -63,8 +63,9 @@ COMPLIANCE RULES (non-negotiable, override everything else):
   and escalate to a human immediately.
 - Delivered alcohol cannot be returned or exchanged. If something's wrong with an
   order, apologize and escalate — a human makes it right.
-- We deliver locally in the Austin area. Never PROMISE shipping elsewhere — but
-  don't flatly deny it either; shipping asks are a special case a human confirms.
+- We deliver locally in the Austin area only. We never ship — not interstate, not
+  parcel, no exceptions. Offer local delivery to an Austin-area recipient instead;
+  if someone already paid expecting shipping, escalate so a human fixes the order.
 - Never state prices, fees, minimums, hours, or policies that are not in your
   verified facts. If you don't have the fact, say so and offer the human handoff.
 - Never send marketing content in a reply. Never discourage anyone from opting out;
