@@ -23,12 +23,13 @@ import { sendEmailDetailed } from '@/lib/email/resend-client';
 import { FEATURE_FLAGS, isFeatureEnabled } from '@/lib/features/feature-flags';
 import { enqueueJourney, enqueueNextStep } from './enqueue';
 import { JOURNEYS } from './journeys';
+import { getFollowUpCopyOverrides } from './copy-overrides';
 import {
   buildOneClickUnsubscribeUrl,
   buildPreferencesUrl,
   isSuppressed,
 } from './suppression';
-import type { EngineRunResult, JourneyDef, JourneyKey } from './types';
+import type { EngineRunResult, FollowUpCopyOverrides, JourneyDef, JourneyKey } from './types';
 import { SITE_BASE_URL } from './types';
 
 const CLAIM_BATCH_SIZE = 50;
@@ -229,7 +230,11 @@ async function markCanceled(job: FollowUpJob, reason: string, status = 'canceled
 }
 
 /** Process one claimed job through the full pre-send pipeline. Exported for tests. */
-export async function processJob(job: FollowUpJob, journey: JourneyDef): Promise<JobOutcome> {
+export async function processJob(
+  job: FollowUpJob,
+  journey: JourneyDef,
+  copyOverrides?: FollowUpCopyOverrides
+): Promise<JobOutcome> {
   // 1. Suppression list (unsubscribe/bounce/complaint).
   if (await isSuppressed(job.email)) {
     await markCanceled(job, 'suppressed', 'suppressed');
@@ -293,6 +298,7 @@ export async function processJob(job: FollowUpJob, journey: JourneyDef): Promise
       return url.toString();
     },
     unsubscribeUrl: buildPreferencesUrl(job.email),
+    copyOverrides,
   });
   if (!rendered) {
     await markCanceled(job, 'no-content');
@@ -424,6 +430,10 @@ export async function runFollowUpEngine(opts: { now?: Date } = {}): Promise<Engi
   const jobs = await claimDueJobs(enabled.map((j) => j.key));
   result.claimed = jobs.length;
 
+  // Admin copy overrides — one read per tick, so a save in the dashboard
+  // affects the very next send.
+  const copyOverrides = jobs.length > 0 ? await getFollowUpCopyOverrides() : undefined;
+
   const journeyByKey = new Map(enabled.map((j) => [j.key as string, j]));
   for (const job of jobs) {
     const journey = journeyByKey.get(job.journeyKey);
@@ -436,7 +446,7 @@ export async function runFollowUpEngine(opts: { now?: Date } = {}): Promise<Engi
       continue;
     }
     try {
-      const outcome = await processJob(job, journey);
+      const outcome = await processJob(job, journey, copyOverrides);
       if (outcome === 'sent') result.sent++;
       else if (outcome === 'canceled') result.canceled++;
       else if (outcome === 'suppressed') result.suppressed++;

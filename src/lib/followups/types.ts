@@ -48,6 +48,21 @@ export interface RenderedEmail {
   text: string;
 }
 
+/** Admin override for one journey step's copy (empty/missing = use default). */
+export interface StepCopyOverride {
+  subject?: string;
+  body?: string;
+}
+
+/**
+ * All copy overrides, keyed by journey then step number (1-based).
+ * Stored in EmailTemplateContent under templateType 'followups' and edited
+ * at /admin/emails/followups.
+ */
+export type FollowUpCopyOverrides = Partial<
+  Record<JourneyKey, Record<number, StepCopyOverride>>
+>;
+
 /** Context handed to a journey step's buildEmail at send time. */
 export interface JourneyEmailContext {
   job: FollowUpJob;
@@ -57,6 +72,8 @@ export interface JourneyEmailContext {
   link: (path: string) => string;
   /** Token-signed /email/preferences URL for the job's email (CAN-SPAM footer). */
   unsubscribeUrl: string;
+  /** Admin copy overrides, fetched once per engine tick. Absent = defaults. */
+  copyOverrides?: FollowUpCopyOverrides;
 }
 
 /** One touch in a journey (2-touch max per Allan's locked decision). */
