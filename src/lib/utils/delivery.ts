@@ -1,5 +1,7 @@
 /** Delivery utility functions */
 
+import { isInDeliveryArea, getMinimumOrder } from '@/lib/delivery/rates';
+
 /**
  * Normalize a delivery date to noon UTC to prevent timezone display issues.
  * Dates stored as midnight UTC (00:00) display as the previous day in US timezones.
@@ -11,8 +13,9 @@ export function normalizeDeliveryDate(date: Date | string): Date {
 }
 
 export function getEarliestDeliveryDate(): Date {
+  // 48-hour standard ordering window (matches /faqs, terms, and landing copy).
   const date = new Date();
-  date.setHours(date.getHours() + 72);
+  date.setHours(date.getHours() + 48);
   return date;
 }
 
@@ -26,25 +29,13 @@ export function formatDeliveryDate(date: Date): string {
   }).format(date);
 }
 
+// Zone data lives in src/lib/delivery/rates.ts (the source of truth per
+// ADR-0002) — these wrappers exist for legacy callers and must not carry
+// their own zip lists or amounts.
 export function isValidDeliveryArea(zipCode: string): boolean {
-  const austinZipCodes = [
-    '78701', '78702', '78703', '78704', '78705',
-    '78712', '78721', '78722', '78723', '78724',
-    '78725', '78726', '78727', '78728', '78729',
-    '78730', '78731', '78732', '78733', '78734',
-    '78735', '78736', '78737', '78738', '78739',
-    '78741', '78742', '78744', '78745', '78746',
-    '78747', '78748', '78749', '78750', '78751',
-    '78752', '78753', '78754', '78756', '78757',
-    '78758', '78759',
-  ];
-  return austinZipCodes.includes(zipCode);
+  return isInDeliveryArea(zipCode);
 }
 
 export function getOrderMinimum(zipCode: string): number {
-  const premiumZipCodes = ['78746', '78733', '78738', '78732'];
-  if (premiumZipCodes.includes(zipCode)) {
-    return 150;
-  }
-  return 100;
+  return getMinimumOrder(zipCode);
 }
