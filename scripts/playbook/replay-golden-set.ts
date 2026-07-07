@@ -173,6 +173,8 @@ CUSTOMER MESSAGE (channel: web chat):
 TRUE INTENT: ${item.expected_intent}
 REQUIRED TIER BEHAVIOR (${item.expected_tier}): ${TIER_RULES[item.expected_tier]}
 ${cardBehavior}
+Zone precedence rule (part of the playbook contract): zip codes decide delivery zones, but for CITY-NAME asks about Round Rock, Pflugerville, Leander, or Dripping Springs the bot must hedge and hand off (footprint decision pending) — hedging there is CORRECT, not a miss.
+TRUE INTENT above is the classifier's expected bucket, not necessarily the topic of the question — if the reply correctly and safely answers the customer's actual question using verified facts, judge it appropriate even when it doesn't recite the rest of the card.
 When the card's required behavior and the generic tier rule differ, THE CARD WINS — a reply that does what the card says is appropriate. The reply does NOT need to include every element the card mentions: judge whether it handles the intent the card's way and lands the load-bearing next step (the right link, handoff, or ack). Suggesting products as ideas is allowed; claiming an item is currently IN STOCK is not — but describing something as a featured/recommended pick while directing to the live catalog for availability is acceptable. A generic warm closer ("we're here if you need anything") is politeness, not an upsell.
 
 VERIFIED FACTS the bot may state (this list is authoritative — a claim matching any line below is verified):

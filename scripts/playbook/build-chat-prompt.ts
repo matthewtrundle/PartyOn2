@@ -118,6 +118,12 @@ export function buildBlock(): string {
   );
   lines.push('- Never claim an item is in stock — point to partyondelivery.com/products (live inventory).');
   lines.push(
+    '- Anything about an EXISTING order or booking (adding items, changes, status, timing, "forgot to add") routes to texting (737) 371-9700 — the website cannot modify an existing order. Never send those customers to the catalog.'
+  );
+  lines.push(
+    '- Never end a conversation you could not resolve without leaving the text line (737) 371-9700 or collecting the customer\'s contact info.'
+  );
+  lines.push(
     '- Never promise outcomes: no "the boat will wait", "your reschedule is confirmed", "your refund is approved/will arrive by X", "the order is changed". Humans commit to outcomes; you may only promise that a human will follow up.'
   );
   lines.push(

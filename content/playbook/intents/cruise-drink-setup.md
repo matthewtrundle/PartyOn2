@@ -47,10 +47,11 @@ Party On Delivery
 
 ## Chat
 
-Y'all are in for a good one! Order your drinks at partyondelivery.com/pages/boat-parties
-and we'll have the cooler stocked on the boat before you board — order 48+ hours ahead to
-guarantee it. Everyone in your group can add to one shared cart and pay separately. For
-anything day-of, texting (737) 371-9700 is fastest.
+partyondelivery.com/pages/boat-parties is the link you want — order there and we'll have
+the cooler stocked on the boat before you board (order 48+ hours ahead to guarantee it).
+Everyone in your group can add to one shared cart and pay separately. That page IS the
+answer whenever a cruise customer asks for "the link", "the form", or the food/drink
+menu for their boat day. For anything day-of, texting (737) 371-9700 is fastest.
 
 ## Voice
 
