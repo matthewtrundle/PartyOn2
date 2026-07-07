@@ -90,13 +90,13 @@ re-run the ingest — nothing here blocks the rest of the playbook.
 
 ## Data-access unblocks (2-minute operator tasks)
 
-- [ ] **ghl-message-scope** — Add the *conversations/message read* scope to the GHL
-  private integration (Settings → Private Integrations → edit → scopes). Verified still
-  401 on 2026-07-06. Then re-run
-  `node scripts/playbook/export-ghl-conversations.mjs` to upgrade the corpus from
-  last-messages to full threads (better frequency ranks + Allan-reply golden pairs).
+- [x] **ghl-message-scope** — DONE 2026-07-06 ~21:35 UTC (Allan added "View Conversation
+  Messages" to the Claude private integration). Full-thread corpus exported same day:
+  15,401 messages across 1,826 dialogue conversations
+  (`data/comms-corpus/ghl/messages-*.jsonl`). Re-run
+  `node scripts/playbook/export-ghl-conversations.mjs` any time to refresh.
 
-- [ ] **gmail-mcp-access** — No Gmail MCP is connected in Claude Code (only ghl +
-  postgres). Either connect one (`claude mcp add` in an interactive session) or run the
-  Gmail mining pass (`in:sent` voice corpus + "New SMS:" inbound mirrors) from a Cowork
-  session that has the Google connector.
+- [x] **gmail-mcp-access** — DONE 2026-07-06 (Gmail MCP connected to the session;
+  verified: 201 "New SMS:" mirror threads searchable via `in:sent "New SMS:"`).
+  The deep Gmail mining pass (in:sent voice corpus for email renderings) is still
+  worth a future session — tracked as an upgrade, not a blocker.

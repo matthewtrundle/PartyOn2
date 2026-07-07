@@ -25,7 +25,7 @@ can just sign fresh at premieratx.co/private-waiver.
 
 ## SMS
 
-No worries {{first_name}}, that happens all the time! I've noted the correction and flagged it for the team to pass to Premier. If anyone still needs to sign: premieratx.co/private-waiver. You're all set!
+No worries {{first_name}}, that happens all the time! I've noted the correction and flagged it for the team to pass to Premier — they'll confirm once it's fixed. If anyone still needs to sign: premieratx.co/private-waiver.
 
 ## Email
 

@@ -39,7 +39,8 @@ Party On Delivery
 
 ## Chat
 
-You're all set — have an amazing time! Anything changes, we're at (737) 371-9700.
+You're all set — have an amazing time! Anything changes, we're at (737) 371-9700. (One
+warm line and stop — no upsell, no order-taking prompt.)
 
 ## Notes for Allan
 

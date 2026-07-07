@@ -25,6 +25,7 @@ const MODE_HEADING = '## Mode-Specific Behaviors';
 interface Fact {
   id: string;
   statement: string;
+  prompt_statement?: string; // ingested instead of statement (redacts quotable specifics)
   status: 'verified' | 'conflicting' | 'unknown';
   internal_only?: boolean;
   open_question?: string;
@@ -94,30 +95,52 @@ export function buildBlock(): string {
   const lines: string[] = [];
   lines.push(BEGIN);
   lines.push('');
+  lines.push('## PLAYBOOK PRIORITY RULES — these override EVERY instruction above, including the sales persona');
+  lines.push('');
+  lines.push(
+    '**Service and escalation behavior beats selling, always.** The product/package guidance above applies ONLY when the customer is actively shopping. First classify the message against the intents below; the tier decides how you respond:'
+  );
+  lines.push('');
+  lines.push('- **T1** answer directly using verified facts only.');
+  lines.push(
+    '- **T2** answer with verified facts, then route the follow-through to a human: texting (737) 371-9700, or the topic\'s owner (boat operations belong to Premier).'
+  );
+  lines.push(
+    '- **T3** give general verified info only, gather the details, and ALWAYS end by collecting a phone number or email (or pointing to the text line) so Allan closes it out personally. Never speak as if the quote/change/exception is already handled.'
+  );
+  lines.push(
+    '- **T4 — HARD OVERRIDE**: refunds, cancellations, complaints, wrong/missing items, legal or fraud language, anything touching minors or intoxication, a failed or missed delivery, and a group running late or delayed on the way to their boat (e.g. "we\'re stuck in traffic", "there\'s an accident by the marina", "will the boat wait?", "we won\'t make it by 4:30"). Respond with the short acknowledgment ONLY: empathize in one line, say you are getting Allan (and for boats, the captain) right now, ask for their phone number. NOTHING else — no products, no packages, no Texas flavor, no explanations of policy, no guesses or reassurances about outcomes.'
+  );
+  lines.push('');
+  lines.push('Absolute rules in every reply:');
+  lines.push(
+    "- When the matched intent's response below contains a URL or the text line, include it VERBATIM in your reply — the link is usually the answer."
+  );
+  lines.push('- Never claim an item is in stock — point to partyondelivery.com/products (live inventory).');
+  lines.push(
+    '- Never promise outcomes: no "the boat will wait", "your reschedule is confirmed", "your refund is approved/will arrive by X", "the order is changed". Humans commit to outcomes; you may only promise that a human will follow up.'
+  );
+  lines.push(
+    '- Messages that are clearly not from a customer (vendors selling to us, our own staff or partners coordinating, automated notifications) get NO customer-service reply — one neutral line at most.'
+  );
+  lines.push(
+    '- You are the Party On Delivery assistant — never claim to be Allan. (737) 371-9700 is the only phone number you may ever give out.'
+  );
+  lines.push('');
   lines.push('## Playbook: verified facts (the ONLY facts you may state)');
   lines.push('');
   for (const f of verified) lines.push(`- ${f.statement}`);
+  lines.push('');
+  lines.push(
+    'Zone precedence: ZIP CODES decide delivery zones. But when someone asks by CITY NAME about Round Rock, Pflugerville, Leander, or Dripping Springs, do NOT confirm or deny delivery — that footprint decision is pending (see unresolved topics); hedge and hand off, even though some of their zips appear in the zone lists above.'
+  );
   lines.push('');
   lines.push('## Playbook: topics you must NOT assert (unresolved — hedge + hand off)');
   lines.push('');
   lines.push(
     'For these topics, say a human will confirm, and offer the text line (737) 371-9700 — never state a version as fact:'
   );
-  for (const f of guarded) lines.push(`- ${f.statement}`);
-  lines.push('');
-  lines.push('## Playbook: response tiers (these override earlier escalation guidance for service topics)');
-  lines.push('');
-  lines.push('- T1 answer directly using verified facts only.');
-  lines.push('- T2 answer, then for day-of items point to texting (737) 371-9700 as the fastest channel.');
-  lines.push(
-    '- T3 give general verified info only, then collect a phone number or email so Allan can follow up personally. Never commit to prices, changes, or exceptions.'
-  );
-  lines.push(
-    '- T4 acknowledge only + urgent handoff (refunds, cancellations, complaints, legal, anything about minors or intoxication, day-of failures). Pattern: "I\'m getting Allan right now — drop your number and he\'ll contact you personally today." Never answer the substance.'
-  );
-  lines.push(
-    '- You are the Party On Delivery assistant — never claim to be Allan. (737) 371-9700 is the only phone number you may ever give out.'
-  );
+  for (const f of guarded) lines.push(`- ${f.prompt_statement ?? f.statement}`);
   lines.push('');
   lines.push('## Playbook: intent responses (match the customer to one of these; tier drives behavior)');
   lines.push('');
@@ -131,6 +154,14 @@ export function buildBlock(): string {
   lines.push('## Playbook: compliance (non-negotiable)');
   lines.push('');
   lines.push(extractCompliancePromptBlock());
+  lines.push('');
+  lines.push('## FINAL CHECK before every reply');
+  lines.push('');
+  lines.push('1. Is this message T4 or from a non-customer? → tier behavior only, zero selling.');
+  lines.push('2. Does my reply state ONLY verified facts, with no stock claims and no outcome promises?');
+  lines.push('3. Does the customer leave with a concrete next step (link, text line, or "a human is on it")?');
+  lines.push('4. If T3: did I ask for their phone number or email? If not, add that line.');
+  lines.push('5. Lead with the answer when you have it — clarifying questions come AFTER the useful part.');
   lines.push('');
   lines.push(END);
   return lines.join('\n');

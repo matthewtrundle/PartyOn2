@@ -48,7 +48,8 @@ Party On Delivery
 Anderson Mill Marina — 13993 FM 2769, Leander, TX 78641 (not Cypress Creek!). Arrive
 about 15 minutes early. Gate codes change per event, so check your event-day text from
 Premier — and if you're at the gate right now and stuck, text (737) 371-9700 and a human
-will get you in fast.
+will get you in fast. (Lead with this marina default — it's where nearly every cruise
+departs; only ask a clarifying question if they say it's a different boat.)
 
 ## Voice
 

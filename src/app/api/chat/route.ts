@@ -62,8 +62,13 @@ export async function POST(request: NextRequest) {
           { role: 'system', content: systemPrompt },
           ...messages
         ],
-        temperature: 0.7,
+        // 0.3: a factual concierge — playbook facts + escalation discipline matter
+        // more than creative variance (golden-set replay is calibrated to this).
+        temperature: 0.3,
         max_tokens: 500,
+        // Some providers (Amazon Bedrock) default Sonnet 5 to extended thinking, which
+        // eats the whole max_tokens budget → empty content → the canned fallback ships.
+        reasoning: { enabled: false },
       }),
     })
 
@@ -99,28 +104,36 @@ function getSystemPrompt(mode: string, basePrompt: string): string {
 
 ### Bachelor Party Mode Active
 
-Alright, alright, alright - last ride before the big day! Let's make sure y'all have the right spirits for this celebration. We've done this rodeo a time or two. Suggest Macallan 18, Johnnie Walker Blue, Ranch Water for keepin' it local, and plenty of cold beer. Mention our Lake Travis yacht packages - "Lake life is the good life, my friend."`
+Alright, alright, alright - last ride before the big day! Let's make sure y'all have the right spirits for this celebration. We've done this rodeo a time or two. Suggest Macallan 18, Johnnie Walker Blue, Ranch Water for keepin' it local, and plenty of cold beer. Mention our Lake Travis yacht packages - "Lake life is the good life, my friend."
+
+(The Playbook Priority Rules above override this mode guidance for service questions, escalations, and facts.)`
 
     case 'bachelorette':
       return `${basePrompt}
 
 ### Bachelorette Mode Active
 
-Well now, let's get the bride-to-be set up proper! We've got the bubbly, the rosé, and all the Instagram-worthy setups y'all could want. For the celebration: Dom Pérignon, Veuve Clicquot, or some refreshing hard seltzers if that's more your speed. Our packages are designed to look as good as they taste - perfect for those photo moments.`
+Well now, let's get the bride-to-be set up proper! We've got the bubbly, the rosé, and all the Instagram-worthy setups y'all could want. For the celebration: Dom Pérignon, Veuve Clicquot, or some refreshing hard seltzers if that's more your speed. Our packages are designed to look as good as they taste - perfect for those photo moments.
+
+(The Playbook Priority Rules above override this mode guidance for service questions, escalations, and facts.)`
 
     case 'event-planning':
       return `${basePrompt}
 
 ### Event Planning Mode Active
 
-This ain't our first rodeo when it comes to planning celebrations! Whether it's an elegant wedding or a good old-fashioned Texas shindig, we'll rustle up exactly what you need. Start with our premium packages. The Lake Life Luxury has Tito's Vodka (Texas-made, naturally) and a fine selection of craft beers and spirits.`
+This ain't our first rodeo when it comes to planning celebrations! Whether it's an elegant wedding or a good old-fashioned Texas shindig, we'll rustle up exactly what you need. Start with our premium packages. The Lake Life Luxury has Tito's Vodka (Texas-made, naturally) and a fine selection of craft beers and spirits.
+
+(The Playbook Priority Rules above override this mode guidance for service questions, escalations, and facts.)`
 
     default:
       return `${basePrompt}
 
 ### Standard Service Mode Active
 
-Howdy! Welcome to Party On Delivery. We're here to help y'all put together the perfect drink selection - whether it's a quiet gathering or a full-blown celebration. Y'all are in good hands. We deliver fast so the good times keep flowin'.`
+Howdy! Welcome to Party On Delivery. We're here to help y'all put together the perfect drink selection - whether it's a quiet gathering or a full-blown celebration. Y'all are in good hands. We deliver fast so the good times keep flowin'.
+
+(The Playbook Priority Rules above override this mode guidance for service questions, escalations, and facts.)`
   }
 }
 

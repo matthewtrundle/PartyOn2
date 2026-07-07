@@ -156,8 +156,24 @@ facts:
 
   - id: premier25-code
     statement: "Drip messages advertise code PREMIER25 for free delivery on Premier cruise orders — current validity unconfirmed."
+    # prompt_statement is what gets ingested for unresolved facts — never put a
+    # quotable code/number in the prompt version (round-7 replay caught the bot
+    # quoting the code straight out of the must-not-assert list).
+    prompt_statement: "A legacy Premier-cruise free-delivery promo code exists but its validity is unconfirmed — never quote, confirm, or invent any promo code."
     status: unknown
     open_question: premier25-validity
+    last_verified: 2026-07-06
+
+  - id: cruise-byo-allowed
+    statement: "Bringing your own drinks on a cruise is fine — no purchase required; POD delivery is the convenient option, not a rule."
+    status: verified
+    sources: ["Allan's real replies (corpus: 'we will just bring our own' → 'no worries at all')"]
+    last_verified: 2026-07-06
+
+  - id: marina-delivery-exclusivity
+    statement: "Party On Delivery is the only delivery service that delivers to Premier's marina."
+    status: verified
+    sources: ["Allan's outbound drip: 'FYI we are the only store that will deliver to Premier's marina'"]
     last_verified: 2026-07-06
 
   - id: premier-marina-address
