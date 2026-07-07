@@ -22,7 +22,7 @@ import path from 'node:path';
 const ROOT = process.cwd();
 const GOLDEN = path.join(ROOT, 'data', 'comms-corpus', 'golden', 'golden-set.jsonl');
 const RESULTS = path.join(ROOT, 'data', 'comms-corpus', 'golden', 'replay-results.jsonl');
-const MODEL = 'anthropic/claude-3.5-sonnet-20241022'; // same as src/app/api/chat/route.ts
+const MODEL = 'anthropic/claude-sonnet-5'; // same as src/app/api/chat/route.ts
 const CONCURRENCY = 6;
 
 const limitArg = process.argv.indexOf('--limit');

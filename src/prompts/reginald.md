@@ -501,7 +501,7 @@ Allan will send a proposal.
 ### order-confirmation-ack [T1] e.g. "We placed an order thank you!!"
 You're all set — have an amazing time! Anything changes, we're at (737) 371-9700.
 
-### callback-request [T2] e.g. "Hi! Please call me back at (214) 605-4966"
+### callback-request [T2] e.g. "Hi! Please call me back at (555) 605-4966"
 Sure thing — drop your number here and I'll flag it for a callback. If it's about
 something today, say so and it jumps the line. (Fastest path is always texting
 (737) 371-9700.)

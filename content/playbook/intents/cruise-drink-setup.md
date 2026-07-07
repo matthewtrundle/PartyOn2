@@ -13,7 +13,7 @@ confidence_instruction: >
   booking itself — that's not this intent.
 match_examples:
   - "Hi! We have a cruise booked for 7/31. How do we set up the drink delivery?"
-  - "Hello, I booked a cruise for 9/11 under John, confirmation A14C89. When can I order alcohol for the cruise?"
+  - "Hello, I booked a cruise for 9/11 under John, confirmation ABC123. When can I order alcohol for the cruise?"
   - "We're going on the disco cruise tomorrow, want to make sure the booze will go there!"
   - "Can you share a form? I'm happy to order whenever"
   - "I can't find the link to view the food available for delivery??"

@@ -12,7 +12,7 @@ confidence_instruction: >
   These are Premier's system — ack, reassure, flag for a human to pass along.
 match_examples:
   - "Hi I accidentally selected Saturday 11-3 boat instead of Friday 12-4 on my waiver! The other girls know it's Friday!"
-  - "For my waiver I accidentally put .col for the email, it should be lala@gmail.com"
+  - "For my waiver I accidentally put .col for the email, it should be name@gmail.com"
   - "I put a different last name on the waiver for the host, it was supposed to be Escobar — hope that's not a biggie"
 ---
 

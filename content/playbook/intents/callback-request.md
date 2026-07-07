@@ -11,7 +11,7 @@ confidence_instruction: >
   High confidence when the customer asks for a call or leaves a number to be called.
   Ack + flag so a human actually calls — never pretend a call is scheduled by a system.
 match_examples:
-  - "Hi! Please call me back at (214) 605-4966"
+  - "Hi! Please call me back at (555) 605-4966"
   - "Can someone give me a call about an order for this weekend?"
   - "Yes, sorry, I will give you a call back in a few minutes"
 ---

@@ -55,7 +55,9 @@ export async function POST(request: NextRequest) {
         'X-Title': 'Party On Delivery AI Concierge',
       },
       body: JSON.stringify({
-        model: 'anthropic/claude-3.5-sonnet-20241022', // Updated model name
+        // claude-3.5-sonnet-20241022 was removed from OpenRouter (404 → every chat
+        // silently served the canned fallback). Keep in sync with scripts/playbook/replay-golden-set.ts.
+        model: 'anthropic/claude-sonnet-5',
         messages: [
           { role: 'system', content: systemPrompt },
           ...messages
