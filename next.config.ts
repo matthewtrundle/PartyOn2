@@ -188,6 +188,14 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
 
+      // 2026-07-10 event page rename — /buckaroo-rodeo → /buckarodeo.
+      // Preserves the invite links Brian already sent out.
+      {
+        source: '/buckaroo-rodeo',
+        destination: '/buckarodeo',
+        permanent: true,
+      },
+
       // 2026-07-02 orphaned design-exploration demo pages deleted (zombie
       // catalog pattern — no inbound links, not in sitemap, no metadata,
       // linked to a 404ing /heritage). GSC + GA4 confirmed zero

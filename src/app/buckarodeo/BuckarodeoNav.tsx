@@ -6,12 +6,12 @@ import type { ReactElement } from 'react';
 const ORDER_HREF = '/order?event=rodeo-cruise&ref=PREMIER&p=boat&d=boat';
 
 /**
- * Sticky event nav for the Buckaroo Rodeo invite. Transparent over the hero,
+ * Sticky event nav for the Buckarodeo invite. Transparent over the hero,
  * then solidifies to a white bar with a border + shadow once the page scrolls.
  * Self-contained (this route lives outside the (main) layout, so there is no
  * global nav here).
  */
-export default function BuckarooNav(): ReactElement {
+export default function BuckarodeoNav(): ReactElement {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -34,7 +34,7 @@ export default function BuckarooNav(): ReactElement {
           href="#top"
           className="font-heading text-2xl font-bold uppercase tracking-[0.14em] text-navy"
         >
-          Buckaroo <span className="text-brand-blue">◆</span> Rodeo
+          Buckarodeo
         </a>
         <a
           href={ORDER_HREF}
