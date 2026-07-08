@@ -36,7 +36,7 @@ export default function PixelMount() {
         <FormCaptureWatcher />
       </Suspense>
       {/* Lead-magnet trigger controller — watches the current path and
-          fires the matching magnet's triggers (time/scroll/exit-intent). */}
+          fires the matching magnet's triggers (time/scroll). */}
       <LeadMagnetController />
       {/* Floating chat bubble — appears on the homepage + landing pages.
           Hidden on admin/ops/dashboard/checkout/event-quiz. */}

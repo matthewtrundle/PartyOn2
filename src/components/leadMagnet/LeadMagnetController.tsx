@@ -6,7 +6,7 @@
  * Mounted in the root layout. On every page load:
  *   1. Reads LEAD_MAGNETS from config
  *   2. Filters down to magnets that apply to the current pathname
- *   3. Wires up triggers (time-on-page, scroll depth, exit-intent)
+ *   3. Wires up triggers (time-on-page, scroll depth)
  *   4. First trigger that fires → opens the LeadMagnetModal
  *
  * Cooldown lives in localStorage as `lm_seen_<id>` (timestamp). If the
@@ -104,13 +104,6 @@ export default function LeadMagnetController() {
         };
         window.addEventListener('scroll', onScroll, { passive: true });
         cleanupFns.push(() => window.removeEventListener('scroll', onScroll));
-      } else if (t.type === 'exit-intent') {
-        const onMouseOut = (e: MouseEvent) => {
-          // Mouse left the top of the viewport — classic desktop exit intent.
-          if (!e.relatedTarget && e.clientY <= 0) fire('exit-intent');
-        };
-        document.addEventListener('mouseout', onMouseOut);
-        cleanupFns.push(() => document.removeEventListener('mouseout', onMouseOut));
       }
     }
 

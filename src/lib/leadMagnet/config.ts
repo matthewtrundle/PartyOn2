@@ -13,7 +13,6 @@
 export type TriggerRule =
   | { type: 'time'; seconds: number }
   | { type: 'scroll'; percent: number } // 0–100 of page scroll height
-  | { type: 'exit-intent' }
   | { type: 'manual' }; // only opens when something calls openLeadMagnet()
 
 export type LeadMagnet = {
@@ -105,7 +104,6 @@ export const LEAD_MAGNETS: LeadMagnet[] = [
     triggers: [
       { type: 'time', seconds: 25 },
       { type: 'scroll', percent: 55 },
-      { type: 'exit-intent' },
       { type: 'manual' },
     ],
     cooldownDays: 7,
