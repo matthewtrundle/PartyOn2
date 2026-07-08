@@ -38,26 +38,28 @@ export default function Hero({ onGetTicket }: HeroProps): ReactElement {
             </h1>
             <p className={styles.heroSub}>{HERO.sub}</p>
 
-            <div className={styles.datestamp}>
-              {DATESTAMP.map((cell) => (
-                <div key={cell.key} className={styles.dsCell}>
-                  <span className={styles.dsKey}>{cell.key}</span>
-                  <span className={styles.dsVal}>
-                    {cell.value}
-                    {cell.suffix ? <small>{cell.suffix}</small> : null}
-                  </span>
-                </div>
-              ))}
-            </div>
+            <div className={styles.heroStamps}>
+              <div className={styles.datestamp}>
+                {DATESTAMP.map((cell) => (
+                  <div key={cell.key} className={styles.dsCell}>
+                    <span className={styles.dsKey}>{cell.key}</span>
+                    <span className={styles.dsVal}>
+                      {cell.value}
+                      {cell.suffix ? <small>{cell.suffix}</small> : null}
+                    </span>
+                  </div>
+                ))}
+              </div>
 
-            <div className={styles.whereBox}>
-              <span className={styles.whereIcon} aria-hidden="true">
-                <Icon name="pin" strokeWidth={1.7} />
-              </span>
-              <div className={styles.dsCell}>
-                <span className={styles.dsKey}>Where</span>
-                <span className={styles.whereVal}>{LOCATION.name}</span>
-                <span className={styles.whereAddr}>{LOCATION.address}</span>
+              <div className={styles.whereBox}>
+                <span className={styles.whereIcon} aria-hidden="true">
+                  <Icon name="pin" strokeWidth={1.7} />
+                </span>
+                <div className={styles.dsCell}>
+                  <span className={styles.dsKey}>Where</span>
+                  <span className={styles.whereVal}>{LOCATION.name}</span>
+                  <span className={styles.whereAddr}>{LOCATION.address}</span>
+                </div>
               </div>
             </div>
 
