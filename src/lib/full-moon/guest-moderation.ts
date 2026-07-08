@@ -20,10 +20,12 @@
  * to avoid the "assassin contains ass" class of false positives.
  */
 const DENY_TOKENS: ReadonlySet<string> = new Set([
-  'fuck', 'fucker', 'fuckface', 'shit', 'bitch', 'cunt', 'dick', 'cock',
+  // Note: no 'dick'/'cock' etc. that are also legitimate names — they'd hide a
+  // real guest. The operator override (FULL_MOON_GUEST_HIDE) covers edge cases.
+  'fuck', 'fucker', 'fuckface', 'shit', 'bitch', 'cunt',
   'pussy', 'asshole', 'bastard', 'slut', 'whore', 'nigger', 'nigga',
-  'faggot', 'fag', 'retard', 'rape', 'rapist', 'nazi', 'hitler',
-  'penis', 'vagina', 'cum', 'jizz', 'twat', 'wanker',
+  'faggot', 'faggy', 'retard', 'rape', 'rapist', 'nazi',
+  'jizz', 'twat', 'wanker',
 ]);
 
 /**
@@ -45,6 +47,32 @@ function hiddenNameSet(): ReadonlySet<string> {
   );
 }
 
+function hasDenyToken(tokens: string[]): boolean {
+  return tokens.some((t) => DENY_TOKENS.has(t));
+}
+
+/**
+ * Joins runs of single-character tokens into one token so profanity spelled out
+ * letter-by-letter ("f u c k", "a s s h o l e") is caught — without merging
+ * whole words, so "Scunthorpe"/"Shitanshu" (single multi-char tokens) are left
+ * intact and not false-flagged.
+ */
+function mergeSingleCharRuns(tokens: string[]): string[] {
+  const out: string[] = [];
+  let run = '';
+  for (const t of tokens) {
+    if (t.length === 1) {
+      run += t;
+    } else {
+      if (run) out.push(run);
+      run = '';
+      out.push(t);
+    }
+  }
+  if (run) out.push(run);
+  return out;
+}
+
 /**
  * Whether a buyer's raw name is safe to show on the public guest list.
  * Returns false for empty, denylisted, or operator-hidden names.
@@ -62,9 +90,10 @@ export function isGuestNameAllowed(rawName: string | null | undefined): boolean 
   const collapsed = lower.replace(/[^a-z0-9]/g, '');
   if (DENY_SUBSTRINGS.some((s) => collapsed.includes(s))) return false;
 
-  // Token-level profanity match.
+  // Token-level profanity match, plus a pass that re-joins single-letter runs
+  // so "f u c k" doesn't slip through.
   const tokens = lower.split(/[^a-z0-9]+/).filter(Boolean);
-  if (tokens.some((t) => DENY_TOKENS.has(t))) return false;
+  if (hasDenyToken(tokens) || hasDenyToken(mergeSingleCharRuns(tokens))) return false;
 
   return true;
 }

@@ -32,10 +32,17 @@ describe('isGuestNameAllowed', () => {
     expect(isGuestNameAllowed('Faggot99')).toBe(false);
   });
 
-  it('does not false-positive on innocent substrings', () => {
+  it('catches profanity spelled out with single-letter spacing', () => {
+    expect(isGuestNameAllowed('f u c k you')).toBe(false);
+    expect(isGuestNameAllowed('a s s h o l e')).toBe(false);
+  });
+
+  it('does not false-positive on innocent substrings or legit names', () => {
     expect(isGuestNameAllowed('Cassandra Assante')).toBe(true); // contains "ass"
-    expect(isGuestNameAllowed('Dickinson')).toBe(true); // surname, not the token "dick"
-    expect(isGuestNameAllowed('Scunthorpe')).toBe(true);
+    expect(isGuestNameAllowed('Dick Johnson')).toBe(true); // "Dick" is a real name
+    expect(isGuestNameAllowed('Scunthorpe')).toBe(true); // contains "cunt"
+    expect(isGuestNameAllowed('Shitanshu Verma')).toBe(true); // contains "shit"
+    expect(isGuestNameAllowed('Allan M')).toBe(true); // single trailing initial
   });
 
   it('honors the operator hide-list (case-insensitive, exact name)', () => {
