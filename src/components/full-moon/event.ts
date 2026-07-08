@@ -321,3 +321,12 @@ export const SECTIONS = {
 
 /** Open-graph image for the preview (existing asset; regenerate per event at launch). */
 export const OG_IMAGE = '/images/hero/austin-skyline-night-lake.webp';
+
+/**
+ * Ticketing (real Stripe checkout). The ticket is a DRAFT Product created by
+ * scripts/full-moon/upsert-ticket-product.mjs; the purchase endpoint is gated
+ * by the FULL_MOON_TICKETS_LIVE env flag so nothing is publicly purchasable
+ * until an operator flips it on.
+ */
+export const TICKET_PRODUCT_HANDLE = 'full-moon-party-ticket';
+export const MAX_TICKETS_PER_ORDER = 8;

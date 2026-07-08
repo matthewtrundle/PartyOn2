@@ -1,6 +1,6 @@
 'use client';
 
-import type { CSSProperties, ReactElement } from 'react';
+import { useEffect, type CSSProperties, type ReactElement } from 'react';
 import { FullMoonUIProvider, useFullMoonUI } from './ui-context';
 import { THEME } from './event';
 import SkyBackdrop from './SkyBackdrop';
@@ -21,18 +21,29 @@ import StickyCta from './StickyCta';
 import FabShare from './FabShare';
 import ShareSheet from './ShareSheet';
 import SuccessModal from './SuccessModal';
+import TicketModal from './TicketModal';
 import Toast from './Toast';
 import styles from './full-moon.module.css';
 
-/** Everything inside the UI provider so sections/overlays can trigger sharing + success. */
+/** Everything inside the UI provider so sections/overlays can trigger sharing + tickets. */
 function Experience(): ReactElement {
-  const { openSuccess } = useFullMoonUI();
+  const { openTicket, openSuccess, showToast } = useFullMoonUI();
 
-  // Ticket seam. For this preview the CTA opens the success/share flow.
-  // TODO(launch): sell the $69 ticket as a Product in its own category and route
-  // this through the pay-now DraftOrder flow (POST /api/v1/landing/quote →
-  // /invoice/<token>/checkout), the same path the disco-cruise event uses.
-  const onGetTicket = openSuccess;
+  // The Get-a-Ticket CTA opens the purchase form (→ Stripe Checkout).
+  const onGetTicket = openTicket;
+
+  // Returning from Stripe: /full-moon?ticket=success|cancelled.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get('ticket');
+    if (status === 'success') openSuccess();
+    else if (status === 'cancelled') showToast('Checkout canceled — your spot is still open.');
+    if (status) {
+      params.delete('ticket');
+      const qs = params.toString();
+      window.history.replaceState({}, '', window.location.pathname + (qs ? `?${qs}` : '') + window.location.hash);
+    }
+  }, [openSuccess, showToast]);
 
   return (
     <>
@@ -56,6 +67,7 @@ function Experience(): ReactElement {
       <FabShare />
       <ShareSheet />
       <SuccessModal />
+      <TicketModal />
       <Toast />
     </>
   );

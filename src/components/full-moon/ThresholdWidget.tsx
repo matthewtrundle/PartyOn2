@@ -13,22 +13,44 @@ interface ThresholdWidgetProps {
   onGetTicket: () => void;
 }
 
+type TicketState = 'working' | 'met' | 'cancelled';
+
 /**
- * The ticket-threshold widget. For this preview it renders a static snapshot
- * from `THRESHOLD` (production wires `sold`/`state` to real ticket data). Three
- * states: working (default), met (celebratory), cancelled (refund messaging).
+ * The ticket-threshold widget. Reads the live sold count from
+ * /api/v1/full-moon/count and flips from "filling up" to "we're sailing" once
+ * the 32-guest minimum is met. There is no hard cap — sales can exceed 50.
+ * (`THRESHOLD.state === 'cancelled'` is a manual override for a postponed date.)
  */
 export default function ThresholdWidget({ onGetTicket }: ThresholdWidgetProps): ReactElement {
-  const { state, sold } = THRESHOLD;
   const { capacity, minimum } = EVENT;
+  const [sold, setSold] = useState(THRESHOLD.sold);
+  const [inView, setInView] = useState(false);
+  const [fillPct, setFillPct] = useState(0);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const confettiFired = useRef(false);
+  const reduced = useReducedMotion();
+
+  const forcedCancelled = THRESHOLD.state === 'cancelled';
+  const state: TicketState = forcedCancelled ? 'cancelled' : sold >= minimum ? 'met' : 'working';
   const pct = Math.min(100, Math.round((sold / capacity) * 100));
   const markerPct = Math.round((minimum / capacity) * 100);
   const toGo = Math.max(0, minimum - sold);
 
-  const [fillPct, setFillPct] = useState(0);
-  const cardRef = useRef<HTMLDivElement>(null);
-  const reduced = useReducedMotion();
+  // Live count.
+  useEffect(() => {
+    let active = true;
+    fetch('/api/v1/full-moon/count')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (active && data && typeof data.sold === 'number') setSold(data.sold);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, []);
 
+  // Reveal → animate the bar into place.
   useEffect(() => {
     const el = cardRef.current;
     if (!el) return;
@@ -36,8 +58,7 @@ export default function ThresholdWidget({ onGetTicket }: ThresholdWidgetProps): 
       (entries) => {
         entries.forEach((e) => {
           if (e.isIntersecting) {
-            setFillPct(pct);
-            if (state === 'met' && !reduced) fireConfetti(el, 26, 30);
+            setInView(true);
             io.disconnect();
           }
         });
@@ -46,7 +67,19 @@ export default function ThresholdWidget({ onGetTicket }: ThresholdWidgetProps): 
     );
     io.observe(el);
     return () => io.disconnect();
-  }, [pct, state, reduced]);
+  }, []);
+
+  useEffect(() => {
+    if (inView) setFillPct(pct);
+  }, [inView, pct]);
+
+  // Celebrate the moment the minimum is met (once).
+  useEffect(() => {
+    if (inView && state === 'met' && !reduced && !confettiFired.current && cardRef.current) {
+      confettiFired.current = true;
+      fireConfetti(cardRef.current, 26, 30);
+    }
+  }, [inView, state, reduced]);
 
   const eyebrow = state === 'met' ? "We're sailing" : state === 'cancelled' ? 'Postponed' : 'Filling up';
   const cardClass = [

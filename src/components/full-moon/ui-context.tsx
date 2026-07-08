@@ -5,11 +5,14 @@ import { createContext, useCallback, useContext, useMemo, useRef, useState, type
 interface FullMoonUI {
   shareOpen: boolean;
   successOpen: boolean;
+  ticketOpen: boolean;
   toast: string | null;
   openShare: () => void;
   closeShare: () => void;
   openSuccess: () => void;
   closeSuccess: () => void;
+  openTicket: () => void;
+  closeTicket: () => void;
   showToast: (message: string) => void;
 }
 
@@ -22,6 +25,7 @@ const Ctx = createContext<FullMoonUI | null>(null);
 export function FullMoonUIProvider({ children }: { children: ReactNode }): ReactElement {
   const [shareOpen, setShareOpen] = useState(false);
   const [successOpen, setSuccessOpen] = useState(false);
+  const [ticketOpen, setTicketOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -35,10 +39,36 @@ export function FullMoonUIProvider({ children }: { children: ReactNode }): React
   const closeShare = useCallback(() => setShareOpen(false), []);
   const openSuccess = useCallback(() => setSuccessOpen(true), []);
   const closeSuccess = useCallback(() => setSuccessOpen(false), []);
+  const openTicket = useCallback(() => setTicketOpen(true), []);
+  const closeTicket = useCallback(() => setTicketOpen(false), []);
 
   const value = useMemo<FullMoonUI>(
-    () => ({ shareOpen, successOpen, toast, openShare, closeShare, openSuccess, closeSuccess, showToast }),
-    [shareOpen, successOpen, toast, openShare, closeShare, openSuccess, closeSuccess, showToast],
+    () => ({
+      shareOpen,
+      successOpen,
+      ticketOpen,
+      toast,
+      openShare,
+      closeShare,
+      openSuccess,
+      closeSuccess,
+      openTicket,
+      closeTicket,
+      showToast,
+    }),
+    [
+      shareOpen,
+      successOpen,
+      ticketOpen,
+      toast,
+      openShare,
+      closeShare,
+      openSuccess,
+      closeSuccess,
+      openTicket,
+      closeTicket,
+      showToast,
+    ],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

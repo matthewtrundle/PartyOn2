@@ -338,3 +338,73 @@
 
 /* Confetti particle (animated inline via Web Animations API) */
 .confetti { position: absolute; width: 7px; height: 7px; border-radius: 2px; pointer-events: none; z-index: 5; }
+
+/* ---------- Ticket purchase form ---------- */
+.ticketForm { display: flex; flex-direction: column; gap: 14px; margin-top: 6px; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.fieldLabel {
+  font-family: var(--font-inter), sans-serif;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.72);
+  letter-spacing: 0.02em;
+}
+.input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #fff;
+  font-family: var(--font-inter), sans-serif;
+  font-size: 16px;
+  outline: none;
+  transition: border-color 200ms var(--ease);
+}
+.input:focus { border-color: color-mix(in oklch, var(--neon-a) 60%, transparent); }
+.input::placeholder { color: rgba(255, 255, 255, 0.4); }
+.qtyRow { display: flex; align-items: center; gap: 12px; }
+.qtyBtn {
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: background 200ms var(--ease);
+}
+.qtyBtn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.12); }
+.qtyBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+.qtyVal {
+  min-width: 44px;
+  text-align: center;
+  font-family: var(--font-barlow-condensed), sans-serif;
+  font-weight: 700;
+  font-size: 26px;
+  color: #fff;
+}
+.qtyTotal {
+  margin-left: auto;
+  font-family: var(--font-barlow-condensed), sans-serif;
+  font-weight: 700;
+  font-size: 24px;
+  color: #fff;
+  letter-spacing: 0.02em;
+}
+.check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.72);
+  line-height: 1.45;
+  cursor: pointer;
+}
+.check input { margin-top: 2px; accent-color: var(--neon-a); width: 16px; height: 16px; flex-shrink: 0; }
+.ticketError { color: #fca5a5; font-size: 14px; line-height: 1.4; }
+.ticketSubmit { margin-top: 6px; }
+.ticketFine { font-size: 12px; color: rgba(255, 255, 255, 0.5); text-align: center; margin-top: 2px; }
