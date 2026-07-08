@@ -64,6 +64,18 @@ export interface FaqItem {
   a: string;
 }
 
+/** One line of the hero headline + its color treatment. */
+export interface HeadlineLine {
+  text: string;
+  /**
+   * Color treatment:
+   * - `moon`   → one solid moonlight color (like the moon)
+   * - `water`  → one solid lake-cyan color (like the water)
+   * - `groovy` → the animated rainbow gradient
+   */
+  tone: 'moon' | 'water' | 'groovy';
+}
+
 /** The full per-event config. */
 export interface FullMoonEvent {
   /** ISO date of the event, for machine use. */
@@ -114,8 +126,16 @@ export const SHARE = {
 
 /** Hero copy. */
 export const HERO = {
-  /** H1 rendered one line per entry; a flowing gradient spans the whole title. */
-  headlineLines: ['FULL MOON', 'ON THE WATER', 'DANCE PARTY', "Y'ALL"] as string[],
+  /**
+   * H1 rendered one line per entry. Per-line color: "FULL MOON" solid moonlight,
+   * "ON THE WATER" solid lake-cyan, "DANCE PARTY" / "Y'ALL" the animated rainbow.
+   */
+  headlineLines: [
+    { text: 'FULL MOON', tone: 'moon' },
+    { text: 'ON THE WATER', tone: 'water' },
+    { text: 'DANCE PARTY', tone: 'groovy' },
+    { text: "Y'ALL", tone: 'groovy' },
+  ] as HeadlineLine[],
   sub: 'Watch the sun set over Lake Travis. Dance under a bright, nearly-full moon. This is what summer is for.',
   primaryCta: `Get Your Ticket — $${EVENT.price}`,
 };

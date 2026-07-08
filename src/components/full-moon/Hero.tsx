@@ -7,12 +7,19 @@ import NeonHalo from './NeonHalo';
 import Wordmark from './Wordmark';
 import HeroCarousel from './HeroCarousel';
 import { Icon } from './icons';
-import { DATESTAMP, HERO, LOCATION, SECTIONS } from './event';
+import { DATESTAMP, HERO, LOCATION, SECTIONS, type HeadlineLine } from './event';
 
 interface HeroProps {
   /** Primary "Get Your Ticket" action (opens the purchase form). */
   onGetTicket: () => void;
 }
+
+/** Maps a headline line's tone to its color-treatment CSS class. */
+const TONE_CLASS: Record<HeadlineLine['tone'], string> = {
+  moon: styles.hlMoon,
+  water: styles.hlWater,
+  groovy: styles.hlGroovy,
+};
 
 /** The hero: copy stack + datestamp + single CTA (with logo), and the carousel. */
 export default function Hero({ onGetTicket }: HeroProps): ReactElement {
@@ -23,9 +30,9 @@ export default function Hero({ onGetTicket }: HeroProps): ReactElement {
           <div className={styles.heroContent} data-fm-parallax="content">
             <h1 className={styles.heroTitle}>
               {HERO.headlineLines.map((line, i) => (
-                <span key={line}>
+                <span key={line.text} className={TONE_CLASS[line.tone]}>
                   {i > 0 ? <br /> : null}
-                  {line}
+                  {line.text}
                 </span>
               ))}
             </h1>
@@ -43,14 +50,16 @@ export default function Hero({ onGetTicket }: HeroProps): ReactElement {
               ))}
             </div>
 
-            <p className={styles.heroLocation}>
-              <span className={styles.heroLocationIcon} aria-hidden="true">
+            <div className={styles.whereBox}>
+              <span className={styles.whereIcon} aria-hidden="true">
                 <Icon name="pin" strokeWidth={1.7} />
               </span>
-              <span>
-                <strong>{LOCATION.name}</strong> · {LOCATION.address}
-              </span>
-            </p>
+              <div className={styles.dsCell}>
+                <span className={styles.dsKey}>Where</span>
+                <span className={styles.whereVal}>{LOCATION.name}</span>
+                <span className={styles.whereAddr}>{LOCATION.address}</span>
+              </div>
+            </div>
 
             <div className={styles.heroCta}>
               <span className={styles.heroCtaLogo} aria-hidden="true">

@@ -40,9 +40,9 @@ export default function DrinksViaPod(): ReactElement {
                 </Button>
               </div>
             </div>
-            <div className={styles.podMark} aria-hidden="true">
-              <Wordmark height={58} />
-            </div>
+          </div>
+          <div className={styles.podCorner} aria-hidden="true">
+            <Wordmark height={120} className={styles.podCornerLogo} />
           </div>
         </div>
       </ScrollReveal>

@@ -4,7 +4,6 @@ import { useEffect, type CSSProperties, type ReactElement } from 'react';
 import { FullMoonUIProvider, useFullMoonUI } from './ui-context';
 import { THEME } from './event';
 import SkyBackdrop from './SkyBackdrop';
-import FullMoonNav from './FullMoonNav';
 import Hero from './Hero';
 import QuickFacts from './QuickFacts';
 import ShareInline from './ShareInline';
@@ -46,7 +45,6 @@ function Experience(): ReactElement {
   return (
     <>
       <SkyBackdrop />
-      <FullMoonNav />
       <main className={styles.content}>
         <Hero onGetTicket={onGetTicket} />
         <QuickFacts />
