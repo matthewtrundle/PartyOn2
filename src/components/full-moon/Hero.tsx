@@ -8,18 +8,17 @@ import HeroCarousel from './HeroCarousel';
 import { DATESTAMP, HERO, SECTIONS } from './event';
 
 interface HeroProps {
-  /** Primary "Get Your Ticket" action (the ticket seam). */
+  /** Primary "Get Your Ticket" action (opens the purchase form). */
   onGetTicket: () => void;
 }
 
-/** The hero: copy stack + datestamp + CTAs on the left, image carousel on the right. */
+/** The hero: copy stack + datestamp + single CTA, with the image carousel. */
 export default function Hero({ onGetTicket }: HeroProps): ReactElement {
   return (
     <section className={styles.hero} id={SECTIONS.top}>
       <div className="container-custom" style={{ width: '100%' }}>
         <div className={styles.heroGrid}>
           <div className={styles.heroContent} data-fm-parallax="content">
-            <p className={[styles.eyebrow, styles.eyebrowNeon].join(' ')}>{HERO.eyebrow}</p>
             <h1 className={styles.heroTitle}>
               {HERO.headlineLead}
               <br />
@@ -45,9 +44,6 @@ export default function Hero({ onGetTicket }: HeroProps): ReactElement {
                   {HERO.primaryCta}
                 </Button>
               </NeonHalo>
-              <a className={styles.ghostNeon} href={`#${SECTIONS.vibe}`}>
-                {HERO.secondaryCta}
-              </a>
             </div>
           </div>
 

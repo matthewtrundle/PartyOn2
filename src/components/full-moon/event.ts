@@ -9,6 +9,8 @@
  * Verified: sunset in Austin on Aug 1 is 8:26 PM. Aug 1 is a ~88%-lit waning
  * gibbous (the actual August full moon is Aug 28), so the datestamp intentionally
  * shows Date / Cast Off / Back at Dock rather than a precise moonrise time.
+ * $59 ticket includes light bites, water + ice on board. No dinner, no drinks —
+ * drinks are ordered ahead through Party On Delivery (iced in a cooler on board).
  */
 
 /** A single hero-carousel slide. */
@@ -35,9 +37,6 @@ export interface IncludedItem {
   icon: 'boat' | 'taco' | 'dj' | 'lights' | 'people' | 'captain';
   title: string;
   body: string;
-  /** The featured (taco) card gets elevated treatment + pill. */
-  featured?: boolean;
-  pill?: string;
 }
 
 /** A schedule-timeline stop. */
@@ -99,7 +98,7 @@ export const EVENT: FullMoonEvent = {
   castOff: '8:00 PM',
   backAtDock: '11:00 PM',
   sunset: '8:26 PM',
-  price: 69,
+  price: 59,
   capacity: 50,
   minimum: 32,
   deadlineDays: 7,
@@ -109,19 +108,17 @@ export const EVENT: FullMoonEvent = {
 
 export const SHARE = {
   title: 'Lake Travis Full Moon Party',
-  text: `Sunset cruise, moonrise dance party, tacos on deck — ${EVENT.shortDate} on Lake Travis. Come with me?`,
+  text: `Sunset cruise, moonrise dance party on Lake Travis — ${EVENT.shortDate}. Come with me?`,
   url: EVENT.shareUrl,
 } as const;
 
 /** Hero copy. */
 export const HERO = {
-  eyebrow: 'Lake Travis · Once a month, when the moon is full',
   /** H1 rendered as two lines; `glow` gets the white glow span. */
   headlineLead: 'DANCE UNDER',
   headlineGlow: 'THE FULL MOON.',
   sub: 'Watch the sun set over Lake Travis. Dance under a bright, nearly-full moon. This is what summer is for.',
   primaryCta: `Get Your Ticket — $${EVENT.price}`,
-  secondaryCta: 'See the Night',
 } as const;
 
 /** Datestamp cells (3-cell visual hierarchy). */
@@ -147,7 +144,7 @@ export const CAROUSEL: CarouselSlide[] = [
   {
     src: '/images/boat-heroes/boat-party-epic-cove.webp',
     step: 'On deck',
-    caption: 'Tacos hot off the griddle, included',
+    caption: 'String lights, deck lounge, room to roam',
     alt: 'Guests gathered on the deck of a party boat',
   },
   {
@@ -171,27 +168,15 @@ export const FACTS: FactItem[] = [
   },
   {
     icon: 'taco',
-    title: 'Taco Bar Included',
-    body: 'Tacos hot off the griddle, on deck. Built into every ticket — not an add-on.',
+    title: 'Light Bites Included',
+    body: 'Chips, salsa & dips, plus water and ice on board. No dinner — eat beforehand.',
   },
   {
     icon: 'bottle',
     title: 'Drinks via POD',
-    body: 'Order beer, wine and spirits straight to the dock through Party On Delivery.',
+    body: "Order beer, wine, spirits & mixers ahead — we'll have them iced in a cooler on board.",
   },
 ];
-
-export const VIBE_LINES: { text: string; accent?: string; tail?: string }[] = [
-  { text: 'Cast off at golden hour.' },
-  { text: 'Watch the sky turn ', accent: 'coral, then violet,', tail: ' then deep navy.' },
-  { text: 'And when the moon owns the water,' },
-  { text: 'the deck becomes a dance floor.' },
-];
-
-export const VIBE_PHOTO = {
-  src: '/images/lake-travis/the-oasis-sunset.webp',
-  alt: 'Lake Travis at blue hour from a boat deck',
-};
 
 export const INCLUDED: IncludedItem[] = [
   {
@@ -201,25 +186,18 @@ export const INCLUDED: IncludedItem[] = [
   },
   {
     icon: 'taco',
-    title: 'The Taco Bar',
-    body: 'Hot off the griddle, served on deck. Every ticket eats — no upsell, no surprise line item.',
-    featured: true,
-    pill: 'Included — not +$25',
+    title: 'Light Bites Included',
+    body: 'Chips, salsa, and dips to nibble on — plus water and ice on board. No dinner, so we recommend eating beforehand.',
   },
   {
     icon: 'dj',
-    title: 'Live DJ & Dance Floor',
-    body: 'A DJ reads the deck as the light fades — easy at sunset, full tilt once the moon is up.',
-  },
-  {
-    icon: 'lights',
-    title: 'String Lights & Deck Lounge',
-    body: "Warm bulbs overhead, soft seating along the rail. A resort feeling that doesn't take itself too seriously.",
+    title: 'Moonlit Dance Deck',
+    body: 'A moonlit dance deck and feel-good beats by DJ Vic — easy at sunset, full tilt once the moon is up. String lights overhead, soft seating along the rail.',
   },
   {
     icon: 'people',
     title: '50 of Your Soon-to-Be Favorites',
-    body: 'Capped at 50 guests. Big enough for a party, small enough to actually meet people.',
+    body: 'Capped at 50 guests. Big enough for a party, small enough to actually meet people. Bring your crew and mingle!',
   },
   {
     icon: 'captain',
@@ -231,34 +209,23 @@ export const INCLUDED: IncludedItem[] = [
 export const SCHEDULE: ScheduleStop[] = [
   { time: '8:00', label: 'Board at the marina. Cast off into the last warm light.', skyColor: '#f0913f' },
   { time: '8:26', label: 'Sunset over the hills. The sky does its best work.', skyColor: '#d24a6e' },
-  { time: '9:15', label: 'Tacos hit the deck and the moon takes the lake.', skyColor: '#cfd9ee', moonlight: true },
+  { time: '9:15', label: 'The moon takes the lake and the deck lights up.', skyColor: '#cfd9ee', moonlight: true },
   { time: '10:00', label: 'Full dance floor under the moon. Peak glow.', skyColor: '#7a3a86' },
   { time: '11:00', label: 'Back to the dock, glowing. Same time next moon.', skyColor: '#2a3566' },
 ];
 
-export const TACO = {
-  src: '/images/gallery/sunset-champagne-pontoon.webp',
-  alt: 'A warm spread on the deck of a boat at sunset',
-  tag: 'Included with every ticket',
-  headlineLead: 'TACOS, HOT OFF',
-  headlineTail: 'THE GRIDDLE.',
-  body: "Right as the moon takes the lake, the griddle fires up on deck. Real tacos, made on the boat, handed to you warm — no line item, no add-on, no catch. It's the brightest light on the water and it's already yours.",
-};
-
 export const DRINKS = {
-  eyebrow: 'Bring your own bar, handled',
-  headlineLead: 'DRINKS, DELIVERED',
-  headlineTail: 'TO THE DOCK.',
-  body: "Party On Delivery is how Austin stocks the boat. Order beer, wine, spirits, mixers and ice, and we'll have it dockside before you cast off — cold, no markup, no corkage.",
-  note: "A quick heads-up, friend to friend: outside alcohol can't come aboard — it's a Coast Guard rule the captain has to keep. Ordering through POD ahead of time is the easy way to make sure your drinks are waiting at the dock.",
-  cta: 'Order Drinks from Party On Delivery',
+  eyebrow: 'The bar, handled',
+  headlineLead: 'DRINKS —',
+  headlineTail: 'ORDER AHEAD & CHILL.',
+  body: "Party On Delivery is how Austin stocks the boat. Order beer, wine, spirits, and mixers, and we'll have it in a cooler on board on ice, ready to go at cast off.",
+  cta: 'Order Now',
 };
 
 /**
  * Threshold widget state. For the preview this is a static snapshot — production
- * should wire `sold` to real ticket data and derive `state` from it.
- * (working while sold < min before deadline; met once sold >= min; cancelled if
- * sold < min at deadline or on a weather call.)
+ * derives `sold` from the live count endpoint (working while sold < min; met
+ * once sold >= min). `cancelled` is a manual override for a postponed date.
  */
 export const THRESHOLD = {
   state: 'working' as 'working' | 'met' | 'cancelled',
@@ -277,15 +244,15 @@ export const GALLERY: GalleryItem[] = [
 export const FAQS: FaqItem[] = [
   {
     q: "What's the ticket price, exactly?",
-    a: `$${EVENT.price} per person. That covers the 3-hour cruise, the DJ, and the taco bar. Drinks are the only thing ordered separately, through Party On Delivery.`,
+    a: `$${EVENT.price} per person. That covers the 3-hour cruise, the DJ, and light bites (chips, salsa & dips) with water and ice. Drinks are ordered separately through Party On Delivery — we ice them in a cooler on board.`,
   },
   {
     q: 'Where do we board?',
     a: 'A Lake Travis marina — the exact dock and a pin drop go out by text two days before the cruise. Plan to arrive 15 minutes before the 8:00 PM cast-off.',
   },
   {
-    q: 'Can I bring my own drinks?',
-    a: "Outside alcohol can't come aboard — it's a Coast Guard rule the captain has to keep. Order through POD ahead of time and your drinks will be waiting at the dock, cold and markup-free.",
+    q: 'How do drinks work?',
+    a: "No drinks or dinner are included. Order beer, wine, spirits, and mixers through Party On Delivery ahead of time and we'll have them iced in a cooler on board, ready to go at cast off.",
   },
   {
     q: "What happens if it doesn't fill up?",
@@ -311,7 +278,6 @@ export const FOOTER = {
 export const SECTIONS = {
   top: 'top',
   facts: 'facts',
-  vibe: 'vibe',
   included: 'included',
   schedule: 'schedule',
   tickets: 'tickets',

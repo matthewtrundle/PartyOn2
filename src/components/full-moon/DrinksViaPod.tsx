@@ -23,7 +23,6 @@ export default function DrinksViaPod(): ReactElement {
               {DRINKS.headlineTail}
             </h2>
             <p className={styles.drinksBody}>{DRINKS.body}</p>
-            <div className={styles.note}>{DRINKS.note}</div>
             <div style={{ marginTop: 24 }}>
               <Button variant="primary" size="lg" href={EVENT.ordersUrl} className="uppercase">
                 {DRINKS.cta} &rarr;
@@ -31,7 +30,7 @@ export default function DrinksViaPod(): ReactElement {
             </div>
           </div>
           <div className={styles.podMark} aria-hidden="true">
-            <Wordmark variant="stacked" height={150} />
+            <Wordmark height={58} />
           </div>
         </div>
       </ScrollReveal>

@@ -24,10 +24,10 @@ export default function Gallery(): ReactElement {
   return (
     <Section id={SECTIONS.gallery}>
       <ScrollReveal>
-        <p className={[styles.eyebrow, styles.eyebrowNeon].join(' ')}>From past moons</p>
+        <p className={[styles.eyebrow, styles.eyebrowNeon].join(' ')}>Premier Party Cruises</p>
       </ScrollReveal>
       <ScrollReveal>
-        <h2 className={styles.sectionTitle}>NIGHTS ON THE WATER.</h2>
+        <h2 className={styles.sectionTitle}>OTHER PREMIER PARTIES.</h2>
       </ScrollReveal>
       <ScrollReveal>
         <span className={styles.ruleNeon} />

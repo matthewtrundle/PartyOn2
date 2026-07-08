@@ -22,8 +22,7 @@ export default function WhatsIncluded(): ReactElement {
       <div className={styles.incGrid}>
         {INCLUDED.map((item, i) => (
           <ScrollReveal key={item.title} delay={(i % 3) * 0.08}>
-            <div className={[styles.inc, item.featured ? styles.incFeatured : ''].filter(Boolean).join(' ')}>
-              {item.pill ? <span className={styles.incPill}>{item.pill}</span> : null}
+            <div className={styles.inc}>
               <span className={styles.badgeIc}>
                 <Icon name={item.icon} strokeWidth={1.7} />
               </span>

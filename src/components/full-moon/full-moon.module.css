@@ -243,7 +243,11 @@
   transition: color 200ms var(--ease);
 }
 .navLinks a:hover { color: #fff; }
-@media (max-width: 860px) { .navLinks { display: none; } }
+@media (max-width: 860px) {
+  .navLinks { display: none; }
+  /* With the links + button gone on mobile, center the lone logo. */
+  .navInner { justify-content: center; }
+}
 
 /* ---------- HERO ---------- */
 .hero {
@@ -279,32 +283,35 @@
   font-style: italic;
   font-weight: 500;
   font-size: clamp(18px, 2.1vw, 25px);
-  color: #ffe9c2;
+  /* White with a strong shadow so it reads over the bright sun (was cream). */
+  color: #ffffff;
   max-width: 500px;
   line-height: 1.35;
   margin: 22px 0 0;
-  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.5);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7), 0 2px 22px rgba(0, 0, 0, 0.85);
 }
 
 .datestamp {
   display: inline-flex;
   align-items: stretch;
   margin-top: 30px;
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.28);
   border-radius: 14px;
-  background: rgba(8, 12, 30, 0.42);
-  backdrop-filter: blur(6px);
+  background: rgba(6, 10, 26, 0.74);
+  backdrop-filter: blur(8px);
   overflow: hidden;
 }
 .dsCell { padding: 14px 22px; display: flex; flex-direction: column; gap: 3px; }
 .dsCell + .dsCell { border-left: 1px solid rgba(255, 255, 255, 0.16); }
 .dsKey {
   font-family: var(--font-barlow-condensed), sans-serif;
-  font-weight: 600;
-  font-size: 11px;
-  letter-spacing: 0.18em;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--neon-a);
+  /* Brighter than the raw neon so it's legible on the darker pill. */
+  color: #a9edff;
+  text-shadow: 0 0 10px color-mix(in oklch, var(--neon-a) 45%, transparent);
 }
 .dsVal {
   font-family: var(--font-barlow-condensed), sans-serif;
@@ -474,8 +481,10 @@
 /* ---------- QUICK FACTS ---------- */
 .factsGrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
 .fact {
-  background: rgba(255, 255, 255, 0.055);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  /* Dark glass so white text stays readable over the backlit sun/moon. */
+  background: rgba(9, 13, 30, 0.62);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 12px;
   padding: 26px 24px;
   display: flex;
@@ -488,7 +497,7 @@
 .fact:hover {
   transform: translateY(-4px);
   border-color: color-mix(in oklch, var(--neon-a) 50%, transparent);
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(14, 19, 40, 0.74);
   box-shadow: 0 14px 40px rgba(0, 0, 0, 0.3);
 }
 .factIc { width: 34px; height: 34px; color: var(--neon-a); }
@@ -527,8 +536,9 @@
 /* ---------- WHAT'S INCLUDED ---------- */
 .incGrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 8px; }
 .inc {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(9, 13, 30, 0.62);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 12px;
   padding: 30px 28px;
   display: flex;
@@ -707,8 +717,9 @@
 
 /* ---------- DRINKS ---------- */
 .drinksCard {
-  background: linear-gradient(160deg, rgba(11, 116, 184, 0.16), rgba(255, 255, 255, 0.03));
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(160deg, rgba(11, 116, 184, 0.32), rgba(8, 12, 28, 0.66));
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 16px;
   padding: clamp(32px, 5vw, 56px);
   display: grid;
@@ -745,8 +756,9 @@
 /* ---------- THRESHOLD ---------- */
 .thresholdWrap { max-width: 760px; margin: 0 auto; text-align: center; }
 .threshold {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(9, 13, 30, 0.66);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 16px;
   padding: clamp(30px, 5vw, 48px);
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.4);
@@ -802,10 +814,10 @@
   margin-top: 14px;
   font-family: var(--font-inter), sans-serif;
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.66);
+  color: rgba(255, 255, 255, 0.82);
 }
 .ctaLine { margin-top: 28px; display: flex; justify-content: center; }
-.thresholdHelper { color: rgba(255, 255, 255, 0.55); margin-top: 18px; font-size: 13px; }
+.thresholdHelper { color: rgba(255, 255, 255, 0.75); margin-top: 18px; font-size: 13px; }
 .thresholdMet { border-color: color-mix(in oklch, var(--neon-a) 45%, transparent); }
 .thresholdMet .count { text-shadow: 0 0 30px color-mix(in oklch, var(--neon-a) 60%, transparent); }
 .thresholdCancelled { filter: saturate(0.5); opacity: 0.92; }
@@ -856,8 +868,18 @@
 }
 
 /* ---------- FAQ ---------- */
-.faqList { max-width: 820px; margin: 8px auto 0; }
+/* Dark glass panel so the white FAQ text is readable over the risen moon. */
+.faqList {
+  max-width: 820px;
+  margin: 8px auto 0;
+  background: rgba(9, 13, 30, 0.66);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 4px 26px;
+}
 .faqItem { border-bottom: 1px solid rgba(255, 255, 255, 0.12); }
+.faqItem:last-child { border-bottom: none; }
 .faqQ {
   width: 100%;
   background: transparent;
@@ -937,10 +959,32 @@
   .tacoGrid { grid-template-columns: 1fr; }
 }
 @media (max-width: 900px) {
-  .hero { padding-top: 104px; min-height: auto; }
-  .heroGrid { grid-template-columns: 1fr; gap: 38px; }
-  .heroMedia { max-width: 460px; margin: 0 auto; width: 100%; }
+  /* Pull the hero up so the top of the carousel peeks above the fold. */
+  .hero { padding: 78px 0 36px; min-height: auto; }
+  .heroGrid { grid-template-columns: 1fr; gap: 22px; }
+  .heroTitle { margin-top: 8px; }
+  .heroSub { margin-top: 16px; }
+  .datestamp { margin-top: 20px; }
+  .heroCta { margin-top: 22px; }
+  .heroMedia { max-width: 440px; margin: 0 auto; width: 100%; }
   .carousel { aspect-ratio: 5 / 4; }
+  /* The scroll hint eats vertical space on short screens — hide it on mobile. */
+  .scrollInd { display: none; }
+}
+
+/* ---------- MOBILE CENTERING ---------- */
+@media (max-width: 760px) {
+  .section, .sectionTight { text-align: center; }
+  .ruleNeon, .ruleYellow { margin-left: auto; margin-right: auto; }
+  .heroContent { text-align: center; }
+  .heroCta { justify-content: center; }
+  .heroSub, .datestamp { margin-left: auto; margin-right: auto; }
+  .fact, .inc { align-items: center; text-align: center; }
+  .drinksCard { text-align: center; }
+  .drinksBody { margin-left: auto; margin-right: auto; }
+  .ctaLine { justify-content: center; }
+  /* Left-align FAQ text for readability even though the section centers. */
+  .faqAInner, .faqQ { text-align: left; }
 }
 
 /* ---------- REDUCED MOTION ---------- */

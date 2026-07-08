@@ -8,16 +8,13 @@ import FullMoonNav from './FullMoonNav';
 import Hero from './Hero';
 import QuickFacts from './QuickFacts';
 import ShareInline from './ShareInline';
-import Vibe from './Vibe';
 import WhatsIncluded from './WhatsIncluded';
 import ScheduleTimeline from './ScheduleTimeline';
-import TacoBar from './TacoBar';
 import DrinksViaPod from './DrinksViaPod';
 import ThresholdWidget from './ThresholdWidget';
 import Gallery from './Gallery';
 import Faq from './Faq';
 import SiteFooter from './SiteFooter';
-import StickyCta from './StickyCta';
 import FabShare from './FabShare';
 import ShareSheet from './ShareSheet';
 import SuccessModal from './SuccessModal';
@@ -53,17 +50,14 @@ function Experience(): ReactElement {
         <Hero onGetTicket={onGetTicket} />
         <QuickFacts />
         <ShareInline />
-        <Vibe />
         <WhatsIncluded />
         <ScheduleTimeline />
-        <TacoBar />
         <DrinksViaPod />
         <ThresholdWidget onGetTicket={onGetTicket} />
         <Gallery />
         <Faq />
         <SiteFooter />
       </main>
-      <StickyCta />
       <FabShare />
       <ShareSheet />
       <SuccessModal />

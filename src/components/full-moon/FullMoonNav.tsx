@@ -2,23 +2,21 @@
 
 import Link from 'next/link';
 import { useEffect, useState, type ReactElement } from 'react';
-import Button from '@/components/Button';
 import styles from './full-moon.module.css';
-import NeonHalo from './NeonHalo';
 import Wordmark from './Wordmark';
 import { SECTIONS } from './event';
 
 const LINKS: { href: string; label: string }[] = [
-  { href: `#${SECTIONS.vibe}`, label: 'The Night' },
   { href: `#${SECTIONS.included}`, label: "What's Included" },
   { href: `#${SECTIONS.schedule}`, label: 'Schedule' },
   { href: `#${SECTIONS.tickets}`, label: 'Tickets' },
+  { href: `#${SECTIONS.gallery}`, label: 'Gallery' },
   { href: `#${SECTIONS.faq}`, label: 'FAQ' },
 ];
 
 /**
- * Slim sticky header for the Full Moon Party page (its own, per the design —
- * the global site nav is intentionally not rendered on this immersive lander).
+ * Slim sticky header. Just the logo (centered on mobile) + section anchors on
+ * desktop — the single "Get Your Ticket" CTA lives in the hero, above the fold.
  * Transparent over the hero, opaque with a blur after 60px of scroll.
  */
 export default function FullMoonNav(): ReactElement {
@@ -35,7 +33,7 @@ export default function FullMoonNav(): ReactElement {
     <header className={[styles.nav, scrolled ? styles.navScrolled : ''].filter(Boolean).join(' ')}>
       <div className={styles.navInner}>
         <Link href={`#${SECTIONS.top}`} aria-label="Party On Delivery" style={{ display: 'flex', flexShrink: 0 }}>
-          <Wordmark variant="horizontal" height={30} />
+          <Wordmark height={26} />
         </Link>
         <nav className={styles.navLinks}>
           {LINKS.map((l) => (
@@ -44,11 +42,6 @@ export default function FullMoonNav(): ReactElement {
             </a>
           ))}
         </nav>
-        <NeonHalo>
-          <Button variant="cart" size="sm" href={`#${SECTIONS.tickets}`} className="uppercase">
-            Get Ticket
-          </Button>
-        </NeonHalo>
       </div>
     </header>
   );

@@ -11,10 +11,16 @@
   justify-content: space-between;
   gap: 24px;
   flex-wrap: wrap;
-  background: linear-gradient(135deg, color-mix(in oklch, var(--neon-b) 14%, transparent), rgba(255, 255, 255, 0.03));
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(135deg, color-mix(in oklch, var(--neon-b) 22%, rgba(8, 12, 28, 0.66)), rgba(8, 12, 28, 0.62));
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 16px;
   padding: clamp(22px, 3.4vw, 34px) clamp(24px, 4vw, 42px);
+}
+@media (max-width: 760px) {
+  .shareInline { flex-direction: column; text-align: center; }
+  .siCopy { max-width: none; }
+  .siActions { justify-content: center; }
 }
 .siCopy { max-width: 560px; }
 .siEyebrow { color: var(--neon-b); text-shadow: 0 0 18px color-mix(in oklch, var(--neon-b) 60%, transparent); }
