@@ -22,12 +22,13 @@ const CATEGORY_LABEL: Record<string, string> = {
  * Result panel — editorial layout with a monumental drink count as the
  * hero number and a hairline-organized shopping list.
  *
- * The previous in-result email-capture form was removed 2026-05-27: it
- * posted to /api/leads/drink-calculator (lead-only, no email, no draft
- * order), creating user confusion (people thought they'd submitted a
- * real quote). The single conversion goal now lives in QuoteFormCard,
- * rendered inline below the calculator AND at the bottom of the page
- * via QuoteFormSection.
+ * An earlier in-result email-capture form was removed 2026-05-27: it
+ * created a dead-end lead (no draft order) and made visitors think they'd
+ * submitted a real quote. Its capture endpoint (/api/leads/drink-calculator)
+ * was later confirmed unused — zero writes after the form removal — and
+ * deleted 2026-07-08. The single conversion goal now lives in
+ * ResultsQuoteCapture (rendered below), which turns the plan into a real,
+ * editable draft order + emailed invoice.
  *
  * Counts only — no pricing claims (hard-stop rule).
  */
