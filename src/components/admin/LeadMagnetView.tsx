@@ -27,7 +27,7 @@ export default function LeadMagnetView() {
         </p>
         <p className="text-xs text-amber-800 mt-2 italic">
           Triggers supported: <strong>time on page</strong>,{' '}
-          <strong>scroll depth</strong>, <strong>exit intent</strong>, and{' '}
+          <strong>scroll depth</strong>, and{' '}
           <strong>manual</strong> (any button can force-open via{' '}
           <code>window.dispatchEvent</code>).
         </p>
@@ -139,8 +139,8 @@ export default function LeadMagnetView() {
             <code>&apos;/austin-*-party-delivery&apos;</code>.
           </li>
           <li>
-            Pick one or more <code>triggers</code> — time, scroll, exit-intent,
-            and/or manual.
+            Pick one or more <code>triggers</code> — time, scroll, and/or
+            manual.
           </li>
           <li>
             Set <code>rewardUrl</code> to the page or PDF you want the user to
