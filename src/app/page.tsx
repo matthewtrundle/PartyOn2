@@ -56,22 +56,6 @@ export default function HomePage() {
       {/* Hero Section - Client Component with A/B Testing */}
       <HeroSectionExperimental />
 
-      {/* Seasonal: 4th of July landing-page CTA (sits directly under the hero) */}
-      <section className="bg-white py-8 border-b border-gray-100">
-        <div className="container-custom flex flex-col items-center justify-center gap-4 text-center sm:flex-row">
-          <span aria-hidden="true" className="hidden h-8 w-1.5 rounded-full bg-gradient-to-b from-red-600 via-white to-blue-600 sm:block" />
-          <p className="text-sm font-semibold tracking-[0.08em] text-gray-700">HOSTING FOR THE FOURTH?</p>
-          <TrackedLink href="/austin-4th-of-july-delivery" section="choose_path" buttonText="4th of July Drinks">
-            <button className="inline-flex items-center gap-2 rounded-lg bg-brand-blue px-8 py-4 text-sm font-semibold tracking-[0.08em] text-white transition-colors hover:bg-blue-700">
-              4th of July Drinks
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-              </svg>
-            </button>
-          </TrackedLink>
-        </div>
-      </section>
-
       {/* Start Order CTA */}
       <section className="py-16 bg-gray-50">
         <div className="max-w-4xl mx-auto px-8 text-center">
