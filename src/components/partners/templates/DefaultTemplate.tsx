@@ -184,23 +184,18 @@ export function DefaultTemplate({ affiliate, partnerLogo, partnerHeroImage, hero
     <div className="bg-white min-h-screen">
       <Navigation hidden />
 
-      {/* HERO */}
+      {/* HERO — Austin-skyline background for all partners (Allan 2026-07-08);
+          STR pages keep the drinks-carousel card, no logo, no forms. */}
       <section className="relative overflow-hidden">
-        {strConfig ? (
-          <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800" />
-        ) : (
-          <>
-            <Image
-              src="/images/hero/austin-skyline-night-lake.webp"
-              alt={`${businessName} x Party On Delivery - Austin skyline at night`}
-              fill
-              className="object-cover"
-              priority
-              sizes="100vw"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-gray-900/90 via-gray-900/70 to-gray-900/50" />
-          </>
-        )}
+        <Image
+          src="/images/hero/austin-skyline-night-lake.webp"
+          alt={`${businessName} x Party On Delivery - Austin skyline at night`}
+          fill
+          className="object-cover"
+          priority
+          sizes="100vw"
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-gray-900/90 via-gray-900/70 to-gray-900/50" />
 
         <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 pt-24 md:pt-28 pb-16 md:pb-20">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-12 items-center">
