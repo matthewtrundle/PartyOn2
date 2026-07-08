@@ -72,7 +72,10 @@ export function CartProvider({ children }: { children: React.ReactNode }): React
 
   const checkAgeVerification = (): boolean => {
     const ageVerified = localStorage.getItem('age_verified') || localStorage.getItem('ageVerified');
-    return ageVerified === 'true';
+    // Accept both stamps: the main age gate (AgeVerification.tsx) writes '1',
+    // while product/quick-buy modals write 'true'. Requiring only 'true' made
+    // Add to Cart silently reload for anyone verified via the main gate.
+    return ageVerified === 'true' || ageVerified === '1';
   };
 
   const openCart = (): void => {
