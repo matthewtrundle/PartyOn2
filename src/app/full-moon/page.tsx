@@ -18,8 +18,7 @@ export const metadata: Metadata = {
     description: `Sunset cruise + moonrise dance party on Lake Travis. $${EVENT.price}, BYOB via Party On Delivery.`,
     images: [OG_IMAGE],
   },
-  // Preview build — hold out of the search index until the launch checklist runs.
-  robots: { index: false, follow: false },
+  robots: { index: true, follow: true },
 };
 
 /** /full-moon — Lake Travis Full Moon Party landing page (preview). */
