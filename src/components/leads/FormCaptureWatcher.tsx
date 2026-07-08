@@ -33,6 +33,7 @@
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { sendLeadEvent, type LeadWidget } from '@/lib/leads/client';
+import { isCompleteEmail } from '@/lib/leads/email-validation';
 
 const SKIP_PATH_PATTERNS = [
   /^\/admin(\/|$)/,
@@ -147,8 +148,13 @@ export default function FormCaptureWatcher() {
       recentByField.set(dedupeKey, entry.value);
       pending.delete(dedupeKey);
 
+      // Keep the event + raw fieldValue for funnel analysis, but never let a
+      // mid-typing email fragment (`an@`) anchor a Lead — leave it out of
+      // identify so the upsert has nothing to key on.
       const identify: Record<string, string> = {};
-      identify[entry.fieldKind] = entry.value;
+      if (entry.fieldKind !== 'email' || isCompleteEmail(entry.value)) {
+        identify[entry.fieldKind] = entry.value;
+      }
 
       void sendLeadEvent({
         type: eventType,
@@ -206,8 +212,7 @@ export default function FormCaptureWatcher() {
         // see a fully-formed email so we don't lose it if they close the
         // tab mid-debounce.
         pending.set(fieldName, entry);
-        const looksLikeEmail =
-          fieldKind === 'email' && /.+@.+\..+/.test(value);
+        const looksLikeEmail = fieldKind === 'email' && isCompleteEmail(value);
         const looksLikePhone =
           fieldKind === 'phone' && value.replace(/\D/g, '').length >= 10;
         if (looksLikeEmail || looksLikePhone) {
@@ -232,7 +237,10 @@ export default function FormCaptureWatcher() {
         page: pathname,
         fieldName: entry.fieldName,
         fieldValue: entry.value,
-        identify: { [entry.fieldKind]: entry.value },
+        identify:
+          entry.fieldKind === 'email' && !isCompleteEmail(entry.value)
+            ? {}
+            : { [entry.fieldKind]: entry.value },
         metadata: { source: 'global-form-watcher', via: 'beacon' },
       }));
       try {

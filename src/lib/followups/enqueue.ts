@@ -14,6 +14,7 @@ import { Prisma, type FollowUpJob } from '@prisma/client';
 import { prisma } from '@/lib/database/client';
 import { getJourney } from './journeys';
 import { normalizeEmail } from './suppression';
+import { isCompleteEmail } from '@/lib/leads/email-validation';
 import { entityIdFromDedupeKey, type JourneyKey } from './types';
 
 const MAX_JITTER_MS = 45 * 60 * 1000;
@@ -102,7 +103,12 @@ export async function enqueueJourney(
   if (!stepDef) return { enqueued: false, reason: 'no-such-step' };
 
   const email = normalizeEmail(opts.email);
-  if (!email || !email.includes('@')) return { enqueued: false, reason: 'invalid-email' };
+  // Completeness backstop: only a full address may anchor an email-sending
+  // journey, regardless of caller. Stops keystroke fragments / garbage from
+  // being queued (they'd hard-bounce) even if a future caller skips the
+  // route-level pre-check. `normalizeEmail` here (from ./suppression) only
+  // trims + lowercases + checks for '@'; isCompleteEmail is the strict gate.
+  if (!email || !isCompleteEmail(email)) return { enqueued: false, reason: 'invalid-email' };
 
   const scheduledFor = computeSendAt(opts.baseTime ?? new Date(), stepDef.delayHours);
 
