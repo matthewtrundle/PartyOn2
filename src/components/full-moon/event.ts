@@ -155,6 +155,12 @@ export const DATESTAMP: { key: string; value: string; suffix?: string }[] = [
 
 export const CAROUSEL: CarouselSlide[] = [
   {
+    src: '/images/full-moon/moonrise-dance-hero.webp',
+    step: 'Full moon',
+    caption: 'The dance floor under a Lake Travis full moon',
+    alt: 'A crowd dancing on a party boat deck as a full moon rises over Lake Travis',
+  },
+  {
     src: '/images/boat-heroes/boat-party-epic-sunset.webp',
     step: 'Golden hour',
     caption: 'Cast off as the sky turns to fire',
@@ -256,12 +262,11 @@ export const THRESHOLD = {
 };
 
 export const GALLERY: GalleryItem[] = [
-  { src: '/images/boat-heroes/boat-party-epic-night.webp', alt: 'Boat party at night on Lake Travis', wide: true, tall: true },
-  { src: '/images/lake-travis/devils-cove-party.webp', alt: 'Boats rafted together at Devils Cove' },
-  { src: '/images/hero/neon-nights-hero.webp', alt: 'Neon-lit dance floor' },
-  { src: '/images/boat-heroes/boat-party-epic-sunset.webp', alt: 'Party boat at sunset', wide: true },
-  { src: '/images/services/boat-parties/multiple-yachts-party.webp', alt: 'Multiple yachts at a lake party' },
-  { src: '/images/lake-travis/the-oasis-sunset.webp', alt: 'Sunset over Lake Travis at The Oasis' },
+  { src: '/images/full-moon/confetti-dance.webp', alt: 'Guests dancing in a shower of confetti on a Lake Travis party boat', wide: true, tall: true },
+  { src: '/images/full-moon/crowd-dance.webp', alt: 'A packed crowd dancing with hands up on a Lake Travis party cruise' },
+  { src: '/images/full-moon/champagne-moon-night.webp', alt: 'Champagne-spray celebration on a night cruise under a full moon' },
+  { src: '/images/full-moon/lake-party.webp', alt: 'Guests enjoying a party cruise on Lake Travis', wide: true },
+  { src: '/images/full-moon/party-crowd.webp', alt: 'A group of guests partying on the deck of a Lake Travis cruise' },
 ];
 
 export const FAQS: FaqItem[] = [
