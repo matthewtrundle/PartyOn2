@@ -273,14 +273,24 @@
 }
 .heroGlow { color: inherit; }
 
+/* Datestamp + location pill stack — sized to the (wider) datestamp so the
+   location pill centers directly under the three timing tiles, left/desktop
+   and centered/mobile alike. */
+.heroStamps {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: fit-content;
+}
+
 /* Location pill — same glass box as the datestamp, sitting just below it. */
 .whereBox {
   display: flex;
   width: fit-content;
   align-items: center;
   gap: 10px;
-  /* Centered horizontally within the hero content column. */
-  margin: 16px auto 0;
+  /* Horizontal centering handled by .heroStamps (align-items: center). */
+  margin-top: 16px;
   padding: 6px 20px 6px 14px;
   border: 1px solid rgba(255, 255, 255, 0.28);
   border-radius: 14px;
@@ -1181,7 +1191,7 @@
   .ruleNeon, .ruleYellow { margin-left: auto; margin-right: auto; }
   .heroContent { text-align: center; }
   .heroCta { justify-content: center; }
-  .heroSub, .datestamp { margin-left: auto; margin-right: auto; }
+  .heroSub, .heroStamps { margin-left: auto; margin-right: auto; }
   .fact, .inc { align-items: center; text-align: center; }
   .drinksCard { text-align: center; }
   .drinksBody { margin-left: auto; margin-right: auto; }
