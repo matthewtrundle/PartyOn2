@@ -1,9 +1,10 @@
 'use client';
 
-import { useMemo, useState, type ReactElement } from 'react';
+import { useMemo, useRef, useState, type ReactElement } from 'react';
 import { useRouter } from 'next/navigation';
 import { createDashboardOrderV2 } from '@/lib/group-orders-v2/api-client';
 import { getAttributionForDashboard } from '@/lib/analytics/attribution';
+import { trackCTAClick } from '@/lib/analytics/ga4-events';
 import type { StrPartnerConfig } from '@/lib/partners/str-partners';
 
 interface PropertyPickerProps {
@@ -46,6 +47,9 @@ export default function PropertyPicker({
   const [zip, setZip] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  // Re-entry guard: a fast double-tap can beat the `busy` re-render and
+  // create two dashboards (same race /order guards with creating.current).
+  const creating = useRef(false);
 
   const isCustom = selectedId === CUSTOM;
   const selectedProperty = useMemo(
@@ -55,6 +59,7 @@ export default function PropertyPicker({
 
   async function handleStart(): Promise<void> {
     setError('');
+    trackCTAClick('Start Your Order', `/partners/${config.slug}`, 'property_picker');
 
     let deliveryAddress:
       | { address1: string; address2?: string; city: string; province: string; zip: string; country: string }
@@ -64,6 +69,10 @@ export default function PropertyPicker({
     if (isCustom) {
       if (!address1.trim() || !city.trim() || !zip.trim()) {
         setError('Enter your rental address, city, and ZIP.');
+        return;
+      }
+      if (!/^\d{5}/.test(zip.trim())) {
+        setError('Enter a valid 5-digit ZIP code.');
         return;
       }
       deliveryAddress = {
@@ -89,6 +98,8 @@ export default function PropertyPicker({
       return;
     }
 
+    if (creating.current) return;
+    creating.current = true;
     setBusy(true);
     try {
       // Resolve the affiliate id server-side (ACTIVE affiliates only) — never
@@ -130,6 +141,7 @@ export default function PropertyPicker({
     } catch (err) {
       console.error('PropertyPicker: failed to start order', err);
       setError('Something went wrong. Please try again.');
+      creating.current = false;
       setBusy(false);
     }
   }
@@ -144,7 +156,7 @@ export default function PropertyPicker({
           <select
             value={selectedId}
             onChange={(e) => setSelectedId(e.target.value)}
-            className="input-premium w-full"
+            className="input-premium w-full bg-white text-gray-900"
             aria-label="Choose your rental"
           >
             <option value="">Select your rental…</option>
@@ -163,7 +175,7 @@ export default function PropertyPicker({
       {isCustom && (
         <div className="text-left space-y-2 mb-3">
           <input
-            className="input-premium w-full"
+            className="input-premium w-full bg-white text-gray-900"
             placeholder="Rental street address"
             value={address1}
             onChange={(e) => setAddress1(e.target.value)}
@@ -171,14 +183,14 @@ export default function PropertyPicker({
           />
           <div className="flex gap-2">
             <input
-              className="input-premium w-full"
+              className="input-premium w-full bg-white text-gray-900"
               placeholder="City"
               value={city}
               onChange={(e) => setCity(e.target.value)}
               aria-label="City"
             />
             <input
-              className="input-premium w-32"
+              className="input-premium w-32 bg-white text-gray-900"
               placeholder="ZIP"
               value={zip}
               onChange={(e) => setZip(e.target.value)}

@@ -15,7 +15,13 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const refCode = cookieStore.get('ref_code')?.value;
     const queryCode = request.nextUrl.searchParams.get('code');
 
-    const code = refCode || queryCode;
+    // Explicit beats inferred: an explicit ?code= (a real Affiliate.code from
+    // /order?ref= or the partner-page PropertyPicker) must win over the
+    // middleware's path-derived cookie, which holds an UPPERCASED SLUG
+    // ("FIVE-STAR") that getAffiliateByCode can't resolve when it differs
+    // from the code ("FIVESTAR"). Cookie-first shadowed the valid code and
+    // silently dropped attribution (code review 2026-07-08).
+    const code = queryCode || refCode;
 
     if (!code) {
       return NextResponse.json({ success: true, data: { active: false } });

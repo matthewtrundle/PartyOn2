@@ -19,6 +19,9 @@ vi.mock('@/lib/group-orders-v2/api-client', () => ({
 vi.mock('@/lib/analytics/attribution', () => ({
   getAttributionForDashboard: mocks.getAttributionForDashboard,
 }));
+vi.mock('@/lib/analytics/ga4-events', () => ({
+  trackCTAClick: vi.fn(),
+}));
 
 const config: StrPartnerConfig = {
   code: 'TESTCO',
@@ -131,5 +134,42 @@ describe('PropertyPicker', () => {
 
     expect(screen.getByText(/enter your rental address/i)).toBeInTheDocument();
     expect(mocks.createDashboardOrderV2).not.toHaveBeenCalled();
+  });
+
+  it('rejects a malformed ZIP before hitting the API', () => {
+    render(<PropertyPicker config={config} affiliateCode="TESTCO" />);
+    fireEvent.change(screen.getByLabelText('Choose your rental'), { target: { value: '__custom__' } });
+    fireEvent.change(screen.getByLabelText('Rental street address'), { target: { value: '99 Custom Ln' } });
+    fireEvent.change(screen.getByLabelText('City'), { target: { value: 'Austin' } });
+    fireEvent.change(screen.getByLabelText('ZIP code'), { target: { value: '787' } });
+    fireEvent.click(screen.getByRole('button', { name: /start your order/i }));
+
+    expect(screen.getByText(/valid 5-digit zip/i)).toBeInTheDocument();
+    expect(mocks.createDashboardOrderV2).not.toHaveBeenCalled();
+  });
+
+  it('shows an error and re-enables the button when dashboard creation fails', async () => {
+    mockAttribution('aff-1');
+    mocks.createDashboardOrderV2.mockRejectedValue(new Error('boom'));
+    render(<PropertyPicker config={config} affiliateCode="TESTCO" />);
+
+    fireEvent.change(screen.getByLabelText('Choose your rental'), { target: { value: 'prop-1' } });
+    fireEvent.click(screen.getByRole('button', { name: /start your order/i }));
+
+    expect(await screen.findByText(/something went wrong/i)).toBeInTheDocument();
+    expect(mocks.push).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: /start your order/i })).not.toBeDisabled();
+  });
+
+  it('renders custom-address-only when the partner has no roster yet (Five Star launch state)', () => {
+    render(
+      <PropertyPicker
+        config={{ ...config, properties: [] }}
+        affiliateCode="TESTCO"
+      />
+    );
+    // No dropdown — straight to the address form.
+    expect(screen.queryByLabelText('Choose your rental')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Rental street address')).toBeInTheDocument();
   });
 });

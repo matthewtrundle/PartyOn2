@@ -48,9 +48,12 @@ export interface StrPartnerConfig {
 /**
  * Registry of STR partners, keyed by route slug.
  *
- * NOTE: Five Star's `properties` below are PLACEHOLDERS — swap them for the real
- * roster (names + addresses) once Lucas sends it. Until then the picker still
- * works via the "enter your own address" path.
+ * Five Star's `properties` roster is intentionally EMPTY until Lucas sends the
+ * real list — the picker then renders the "enter your address" path only, so
+ * guests never see fake data. To add a property, follow this shape:
+ *
+ *   { id: 'lake-travis-estate', label: 'Lake Travis Estate — 5BR',
+ *     address1: '123 Real St', city: 'Austin', province: 'TX', zip: '78732' }
  */
 const STR_PARTNERS: Record<string, StrPartnerConfig> = {
   'five-star': {
@@ -59,25 +62,7 @@ const STR_PARTNERS: Record<string, StrPartnerConfig> = {
     name: 'Five Star Vacation Home Rentals',
     deliveryContextType: 'HOUSE',
     allowCustomAddress: true,
-    properties: [
-      // --- PLACEHOLDER PROPERTIES — replace with Five Star's real listings ---
-      {
-        id: 'placeholder-lake-travis',
-        label: 'PLACEHOLDER — Lake Travis Estate (replace me)',
-        address1: '1 Example Ranch Rd',
-        city: 'Austin',
-        province: 'TX',
-        zip: '78732',
-      },
-      {
-        id: 'placeholder-hill-country',
-        label: 'PLACEHOLDER — Hill Country Villa (replace me)',
-        address1: '2 Example Vista Dr',
-        city: 'Austin',
-        province: 'TX',
-        zip: '78738',
-      },
-    ],
+    properties: [],
   },
 };
 

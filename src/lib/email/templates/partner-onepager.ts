@@ -166,7 +166,7 @@ export function generatePartnerOnePagerEmail(data: PartnerOnePagerEmailData): st
           A branded link that earns you revenue.
         </h2>
         <p style="margin:0; font-family: -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif; font-size:15px; line-height:24px; color:#5A6671;">
-          We give you a white-label ordering link for your guest welcome packet &mdash; looks like your concierge, powered by us. You earn a revenue share on every order: <strong style="color:#11181C;">5% to start, rising to 8% and 10%</strong> as your booking volume grows. No upfront cost, no monthly minimums.
+          We give you a white-label ordering link for your guest welcome packet &mdash; looks like your concierge, powered by us. You earn a revenue share on every order: <strong style="color:#11181C;">5% to start, rising to 8% and 10%</strong> as order volume through your link grows. No upfront cost, no monthly minimums.
         </p>
       </td>
     </tr>
@@ -427,7 +427,7 @@ Schedule a 15-min meeting:
 ${calendlyUrl}
 
 How partnership works:
-We give you a white-label ordering link for your guest welcome packet — looks like your concierge, powered by us. You earn a revenue share on every order: 5% to start, rising to 8% and 10% as your booking volume grows. No upfront cost, no monthly minimums.
+We give you a white-label ordering link for your guest welcome packet — looks like your concierge, powered by us. You earn a revenue share on every order: 5% to start, rising to 8% and 10% as order volume through your link grows. No upfront cost, no monthly minimums.
 
 What POD handles:
   01. TABC-licensed delivery — beer, wine, spirits, mixers, ice. Direct to the property. ID checks at handoff.

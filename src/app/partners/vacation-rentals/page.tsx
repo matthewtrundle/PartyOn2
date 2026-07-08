@@ -44,7 +44,7 @@ const COCKTAILS = [
 const FAQS = [
   {
     q: 'How does the partnership work financially?',
-    a: 'Property managers earn a revenue share on every order placed through their branded link — 5% to start, rising to 8% and 10% as your booking volume grows. No upfront cost, no monthly minimums.',
+    a: 'Property managers earn a revenue share on every order placed through their branded link — 5% to start, rising to 8% and 10% as order volume through your link grows. No upfront cost, no monthly minimums.',
   },
   {
     q: 'Can we white-label the experience?',

@@ -296,8 +296,7 @@
       "heroImage": null,
       "category": "lodging",
       "featured": true,
-      "order": 24,
-      "partnerPage": "/partners/five-star"
+      "order": 24
     },
     {
       "id": "25",
