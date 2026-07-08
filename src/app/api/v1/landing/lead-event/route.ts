@@ -24,6 +24,7 @@ import {
   markLeadStatus,
 } from '@/lib/leads/leadCapture';
 import { ensureVisitorCookie, COOKIE_NAME } from '@/lib/leads/cookie';
+import { normalizeEmail } from '@/lib/leads/email-validation';
 import { enqueueJourney } from '@/lib/followups/enqueue';
 import type {
   LeadEventType,
@@ -166,7 +167,10 @@ export async function POST(req: NextRequest) {
   // repeated field-blur events are no-ops; the engine re-checks lead status,
   // drafts, and orders with fresh reads before actually sending — and the
   // journey's feature flag stays off until Allan enables it.
-  const email = lead?.email ?? parsed.identify?.email ?? null;
+  // `lead.email` is already normalized server-side; the raw client fallback
+  // must be re-validated so a keystroke fragment (`an@`) can never anchor an
+  // abandoned-quote journey and hard-bounce.
+  const email = lead?.email ?? normalizeEmail(parsed.identify?.email);
   const promotedBeyondPartial = parsed.setStatus && parsed.setStatus !== 'PARTIAL';
   if (
     lead &&
@@ -188,7 +192,13 @@ export async function POST(req: NextRequest) {
         phone: lead.phone ?? parsed.identify?.phone ?? null,
         payload: {
           firstName: lead.firstName ?? parsed.identify?.firstName ?? null,
-          resumePath: parsed.page ?? '/order',
+          // Store only a clean site-relative pathname; anything else (absolute,
+          // protocol-relative, or backslash/tab tricks that WHATWG URL parsing
+          // would normalize into a foreign host) falls back to /order. This is
+          // defense-in-depth behind the engine's ctx.link() origin check, and
+          // keeps the queued payload clean for the pre-flip queue audit.
+          resumePath:
+            parsed.page && /^\/[\w\-/.]*$/.test(parsed.page) ? parsed.page : '/order',
           // Digits only — this value is quoted verbatim inside email copy.
           guestCount: /^\d{1,4}$/.test(rawGuestCount) ? rawGuestCount : null,
         },

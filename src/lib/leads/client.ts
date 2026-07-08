@@ -14,6 +14,7 @@
 import { useCallback, useMemo } from 'react';
 
 import { getAttribution } from '@/lib/analytics/attribution';
+import { isCompleteEmail } from './email-validation';
 
 const LEAD_EVENT_URL = '/api/v1/landing/lead-event';
 const PIXEL_URL = '/api/v1/landing/visitor-pixel';
@@ -169,6 +170,22 @@ export async function fireVisitorPixel(page: string) {
 }
 
 /**
+ * Drop `identify.email` when it is still a mid-typing fragment (`an@`,
+ * `@gmail.com`). The field-blur event + its raw `fieldValue` still fire so
+ * funnel/drop-off analysis is unchanged — we only refuse to let an
+ * incomplete address anchor a Lead row (and, downstream, an abandoned-quote
+ * follow-up that would hard-bounce).
+ */
+function stripIncompleteEmail(identify?: Identify): Identify | undefined {
+  if (!identify || identify.email == null || isCompleteEmail(identify.email)) {
+    return identify;
+  }
+  const rest: Identify = { ...identify };
+  delete rest.email;
+  return rest;
+}
+
+/**
  * React hook bound to a widget + page slug. Returns convenience functions
  * for the most common form-instrumentation patterns.
  */
@@ -184,7 +201,7 @@ export function useLeadCapture(opts: { widget: LeadWidget; page?: string }) {
         page,
         fieldName,
         fieldValue: value,
-        identify,
+        identify: stripIncompleteEmail(identify),
       });
     },
     [widget, page],

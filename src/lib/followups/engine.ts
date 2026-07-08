@@ -31,6 +31,7 @@ import {
 } from './suppression';
 import type { EngineRunResult, FollowUpCopyOverrides, JourneyDef, JourneyKey } from './types';
 import { SITE_BASE_URL } from './types';
+import { resolveSameOriginUrl } from './links';
 
 const CLAIM_BATCH_SIZE = 50;
 const STUCK_PROCESSING_MINUTES = 30;
@@ -286,11 +287,10 @@ export async function processJob(
     job,
     payload: (job.payload as Record<string, unknown> | null) ?? {},
     link: (path: string) => {
-      // Open-redirect guard (CWE-601): payload paths may echo public route
-      // input, and new URL(path, base) IGNORES the base for absolute and
-      // protocol-relative paths. Only site-relative paths survive.
-      const safePath = path.startsWith('/') && !path.startsWith('//') ? path : '/';
-      const url = new URL(safePath, SITE_BASE_URL);
+      // Open-redirect guard (CWE-601): resolveSameOriginUrl rejects any path
+      // that escapes our origin — the payload path echoes public,
+      // unauthenticated route input. See links.ts + link-safety.test.ts.
+      const url = resolveSameOriginUrl(path, SITE_BASE_URL);
       url.searchParams.set('utm_source', 'email');
       url.searchParams.set('utm_medium', 'followup');
       url.searchParams.set('utm_campaign', journey.key);

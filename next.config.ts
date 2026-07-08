@@ -188,6 +188,14 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
 
+      // 2026-07-10 event page rename — /buckaroo-rodeo → /buckarodeo.
+      // Preserves the invite links Brian already sent out.
+      {
+        source: '/buckaroo-rodeo',
+        destination: '/buckarodeo',
+        permanent: true,
+      },
+
       // 2026-07-02 orphaned design-exploration demo pages deleted (zombie
       // catalog pattern — no inbound links, not in sitemap, no metadata,
       // linked to a 404ing /heritage). GSC + GA4 confirmed zero
@@ -500,13 +508,16 @@ const nextConfig: NextConfig = {
     ];
 
     return [
-      // Security headers for all routes EXCEPT /partners/* (strict iframe policy).
-      // The negative lookahead keeps this rule from matching /partners so the
-      // partner-specific rule below can relax X-Frame-Options and frame-ancestors
-      // without conflicting (Next.js merges matching header rules, and duplicate
-      // X-Frame-Options headers cause browsers to block embedding).
+      // ─── STRICT iframe policy — internal tools only ────────────────
+      // /admin/* and /ops/* stay locked to SAMEORIGIN + frame-ancestors
+      // 'self' so an attacker can't UI-redress a logged-in operator's
+      // session (clickjacking). These are the only routes that carry
+      // ops auth cookies + admin capabilities, so opening them to
+      // arbitrary embedders is a real risk. Everything else on the site
+      // is safe to embed because it's either public or requires an
+      // explicit token/share-code in the URL.
       {
-        source: '/:path((?!partners).*)',
+        source: '/:path(admin|admin/.*|ops|ops/.*)',
         headers: [
           {
             key: 'X-Frame-Options',
@@ -519,13 +530,19 @@ const nextConfig: NextConfig = {
           },
         ],
       },
-      // Partner landing pages: allow any origin to iframe-embed them so
-      // affiliates can drop the POD store iframe into their own websites.
-      // X-Frame-Options is intentionally omitted (the header has no spec-
-      // compliant "allow all" value, and modern browsers honor CSP
-      // frame-ancestors instead).
+      // ─── OPEN iframe policy — every customer-facing surface ────────
+      // Homepage, landing pages, dashboard, invoice, products, blog,
+      // event invites, partner pages, order flow, etc. Partners
+      // (Premier Party Cruises, event hosts) can drop the POD site into
+      // an iframe on their own web pages so guests never leave the
+      // partner's brand experience.
+      //
+      // X-Frame-Options is intentionally omitted (the header has no
+      // spec-compliant "allow all" value, and duplicating it after the
+      // rule above would cause browsers to block embedding). Modern
+      // browsers honor CSP `frame-ancestors *` instead.
       {
-        source: '/partners/:path*',
+        source: '/:path((?!admin|ops).*)',
         headers: [
           ...commonSecurityHeaders,
           {

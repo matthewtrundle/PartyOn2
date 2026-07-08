@@ -25,21 +25,35 @@ export const bacheloretteConfig: LandingConfig = {
   heroHeadline: 'Champagne Popped',
   heroHeadlineAccent: 'Before The Bride Lands.',
   heroSubhead:
-    "Bubbly, rosé, cocktail pitcher kits, and brunch mimosa bars — delivered to your Airbnb, hotel suite, or Lake Travis pontoon. You handle the sashes. We handle the rest.",
+    "Bubbly, rosé, cocktail pitcher kits, and brunch mimosa bars — delivered to your Airbnb, hotel suite, or Lake Travis pontoon. You handle the sashes; we handle the rest. Reschedule free up to 6 hours out.",
   heroBullets: [
-    'Champagne, rosé, seltzers & ready-to-pour pitcher kits',
-    'Group ordering & split pay — every girl picks her own',
-    'Airbnb, hotel suite, brunch venue, pontoon — wherever',
-    'Locally owned. 500+ Austin groups served. 5.0★ on Google.',
+    'Pre-stocked at the Airbnb before the bride even lands',
+    'One MOH link — every girl adds her own and pays her share',
+    'Dropped dockside to your Lake Travis pontoon, iced & ready',
+    'Brunch mimosa kits for the morning after — pour and go',
   ],
   heroImage: '/images/services/bach-parties/bachelorette-champagne-tower.webp',
+  heroImages: [
+    {
+      src: '/images/services/bach-parties/bachelorette-champagne-tower.webp',
+      alt: 'Champagne tower at an Austin bachelorette party stocked by Party On Delivery',
+    },
+    {
+      src: '/images/gallery/sunset-champagne-pontoon.webp',
+      alt: 'Bachelorette group toasting on a Lake Travis pontoon at sunset',
+    },
+    {
+      src: '/images/services/bach-parties/brunch-mimosa-bar.webp',
+      alt: 'Brunch mimosa bar delivered for an Austin bachelorette weekend',
+    },
+  ],
   heroTrustBadges: ['✓ TABC-licensed', '✓ 500+ Austin bach weekends', '★ 5.0 on Google', '✓ Split pay built-in'],
 
   trustStats: [
-    { stat: 'Group ordering', label: 'Girls add to one shared cart' },
-    { stat: 'Split pay', label: 'Each pays her share' },
-    { stat: 'Cocktail kits', label: 'Mimosa bars, espresso martinis, ready to pour' },
-    { stat: '500+', label: 'Groups served' },
+    { stat: '500+', label: 'Austin bach & bachelorette groups served' },
+    { stat: '5.0★', label: 'Google rating — see reviews below' },
+    { stat: '$0', label: 'Split-pay fees — every girl pays her share' },
+    { stat: '48-hr', label: 'Notice locks guaranteed pricing' },
   ],
 
   painHeadline: "You're the maid of honor — not the liquor runner.",
@@ -138,13 +152,15 @@ export const bacheloretteConfig: LandingConfig = {
 
   venuesEyebrow: 'EVERYWHERE THE GIRLS GO',
   venuesHeadline: 'Hotel suite. Lake pontoon. Brunch table. We deliver.',
+  // Footprint guard: only name the confirmed delivery footprint (Austin, Cedar
+  // Park, Westlake, Bee Cave, Lakeway, Lake Travis) in paid landing copy.
   venues: [
     { area: 'Downtown Hotel Suites', detail: 'Fairmont, JW Marriott, Line — discreet to your room' },
     { area: 'Rainey & East Austin Airbnbs', detail: 'Front door, kitchen-counter setup' },
     { area: 'Lake Travis Pontoons & Yachts', detail: 'Dockside loading, ice & coolers included' },
     { area: 'Brunch Spots', detail: 'Bring-your-own-bubbly venues — we time it to brunch' },
     { area: 'Spa & Pool Days', detail: 'Cabana drop-off at hotels with poolside service' },
-    { area: 'Wedding-Adjacent Houses', detail: 'Wimberley, Dripping Springs, Spicewood' },
+    { area: 'Wedding-Adjacent Houses', detail: 'Westlake, Bee Cave, Lakeway — straight to the big house' },
   ],
   venuesImage: '/images/hero/bach-hero-rainey.webp',
 
@@ -241,7 +257,7 @@ export const bacheloretteConfig: LandingConfig = {
   finalCtaHeadline: 'Lock it in.',
   finalCtaHeadlineAccent: 'Then enjoy the weekend you actually planned.',
   finalCtaSubhead:
-    "Most groups book 1–3 weeks out. Lake Travis weekends and Saturday brunches fill up fast.",
+    "Most groups book 1–3 weeks out, and Lake Travis weekends and Saturday brunches fill up fast. Reschedule free up to 6 hours before delivery — lock the date now and tweak later.",
   finalCtaImage: '/images/services/bach-parties/brunch-mimosa-bar.webp',
 
   planningCallUrl: 'https://123.partyondelivery.com/planning-call',

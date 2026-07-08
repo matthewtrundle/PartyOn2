@@ -426,7 +426,6 @@ These are **parallel namespaces, not a migration** — neither supersedes the ot
 | `/api/chat` | `src/app/api/chat/route.ts` | General chat (AI concierge). |
 | `/api/contact` | `src/app/api/contact/route.ts` | Contact form. |
 | `/api/newsletter` | `src/app/api/newsletter/route.ts` | Newsletter signup. |
-| `/api/leads/drink-calculator` | `.../leads/drink-calculator/route.ts` | Drink calculator lead capture. |
 | `/api/v1/landing/visitor-pixel` | `.../v1/landing/visitor-pixel/route.ts` | Page-view beacon fired from the root layout. Sets the `pod_vsid` cookie + creates/updates a `VisitorSession`, writes a `LeadEvent(PAGE_VIEW)`. Added 2026-05. |
 | `/api/v1/landing/lead-event` | `.../v1/landing/lead-event/route.ts` | Generic form-field / step / submit event. Upserts `Lead` if any identifiable field is captured. Returns `{ leadId, sessionId }`. Added 2026-05. |
 | `/api/v1/landing/quote` | `.../v1/landing/quote/route.ts` | Landing-page quote submission — converts a captured cart into a `DraftOrder` + invoice email. Added 2026-05. |

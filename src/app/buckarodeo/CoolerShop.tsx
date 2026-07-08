@@ -16,7 +16,7 @@ interface CoolerShopProps {
 }
 
 /**
- * Inline shop for the Buckaroo Rodeo page — a curated grid of crowd-pleasers
+ * Inline shop for the Buckarodeo page — a curated grid of crowd-pleasers
  * (3 across on mobile, 4 across on desktop) rendered with the site's
  * CompactProductCard + solo cart (CartContext). Items added here check out via
  * the normal /cart → /checkout flow — free delivery to the boat, no minimum.

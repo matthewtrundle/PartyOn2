@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import type { ReactElement, ReactNode, SVGProps } from 'react';
-import BuckarooNav from './BuckarooNav';
+import Image from 'next/image';
+import BuckarodeoNav from './BuckarodeoNav';
 import CoolerShop from './CoolerShop';
 import Faq from './Faq';
 import TexasBackdrop from './TexasBackdrop';
@@ -11,7 +12,7 @@ const MAP_URL =
   'https://www.google.com/maps/search/?api=1&query=13993+FM+2769+Leander+TX+78641';
 
 const HERO_SUBHEAD =
-  'You’re booked for the Buckaroo Rodeo — this is where you order the drinks. We deliver them straight to your boat, iced and ready. Free, and no minimum.';
+  'You’re booked for the Buckarodeo — this is where you order the drinks. We deliver them straight to your boat, iced and ready. Free, and no minimum.';
 const CTA_SUBHEAD =
   'Order your drinks now — we’ll have them iced and waiting on your boat. Free delivery, no minimum.';
 
@@ -51,7 +52,7 @@ interface DetailItem {
 }
 
 const DETAILS: DetailItem[] = [
-  { n: '01', label: 'When', main: 'Sunday, July 12, 2026', sub: 'Boarding at noon' },
+  { n: '01', label: 'When', main: 'Sunday, July 12, 2026', sub: 'Boarding at 11:00 AM' },
   {
     n: '02',
     label: 'Where',
@@ -90,13 +91,13 @@ const CROWD_PLEASER_HANDLES = [
 ];
 
 export const metadata: Metadata = {
-  title: 'Buckaroo Rodeo · Order Your Drinks | Party On Delivery',
+  title: 'Buckarodeo · Order Your Drinks | Party On Delivery',
   description:
-    'Order your drinks for the Buckaroo Rodeo — Sunday, July 12 on Lake Travis. Free delivery straight to your boat, no minimum. Questions? Text or call (737) 371-9700.',
-  alternates: { canonical: '/buckaroo-rodeo' },
+    'Order your drinks for the Buckarodeo — Sunday, July 12 on Lake Travis. Free delivery straight to your boat, no minimum. Questions? Text or call (737) 371-9700.',
+  alternates: { canonical: '/buckarodeo' },
   robots: { index: false, follow: false },
   openGraph: {
-    title: 'Buckaroo Rodeo · Order Your Drinks',
+    title: 'Buckarodeo · Order Your Drinks',
     description:
       'Sunday, July 12 on Lake Travis. Order your drinks — free delivery straight to your boat, no minimum.',
     type: 'website',
@@ -204,7 +205,7 @@ const iconProps: SVGProps<SVGSVGElement> = {
 };
 
 /**
- * Buckaroo Rodeo event order landing page (served at /buckaroo-rodeo).
+ * Buckarodeo event order landing page (served at /buckarodeo).
  *
  * A one-off invite for guests of the July 12 Premier Party Cruises boat party:
  * the single job is to start a drink order (CTA → /order?ref=PREMIER&p=boat&d=boat,
@@ -213,11 +214,11 @@ const iconProps: SVGProps<SVGSVGElement> = {
  * backdrop (contour-filled silhouette + Lone Star) parallax-scrolls behind every
  * section. Ported from the Claude Design handoff onto the project design system.
  */
-export default async function BuckarooRodeoPage(): Promise<ReactElement> {
+export default async function BuckarodeoPage(): Promise<ReactElement> {
   const crowdPleasers = await getProductsByHandles(CROWD_PLEASER_HANDLES);
   return (
     <main className="overflow-x-hidden bg-white font-sans text-gray-900">
-      <BuckarooNav />
+      <BuckarodeoNav />
 
       {/* ===== Hero ===== */}
       <section
@@ -237,7 +238,7 @@ export default async function BuckarooRodeoPage(): Promise<ReactElement> {
                 ◆ Sunday · July 12 · Lake Travis ◆
               </p>
               <h1 className="mt-5 font-heading text-5xl font-bold uppercase leading-[0.95] tracking-[0.08em] text-navy md:text-6xl lg:text-7xl">
-                Buckaroo Rodeo
+                Buckarodeo
               </h1>
               <p className="mx-auto mt-5 max-w-[520px] text-xl leading-relaxed text-gray-700 lg:mx-0">
                 {HERO_SUBHEAD}
@@ -261,7 +262,7 @@ export default async function BuckarooRodeoPage(): Promise<ReactElement> {
                   }
                 />
                 <Chip
-                  label="Boarding noon"
+                  label="Boarding 11 AM"
                   icon={
                     <svg {...iconProps}>
                       <circle cx="12" cy="12" r="9" />
@@ -286,32 +287,20 @@ export default async function BuckarooRodeoPage(): Promise<ReactElement> {
               </div>
             </div>
 
-            {/* Hero media slot — right of the headline on desktop, below it on mobile.
-                Replace the inner placeholder with an <Image>, <video>, or GIF. */}
+            {/* Hero media — cowgirl with cocktails on the boat. Source
+                image should be dropped at
+                /public/images/events/buckarodeo-cowgirl.jpg. Uses
+                next/image + priority=true so it lands in the LCP. */}
             <div className="w-full">
-              <div className="relative flex aspect-video items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-brand-blue/30 bg-white/55 shadow-[0_12px_44px_rgba(11,31,51,0.14)]">
-                <div className="text-center text-gray-500">
-                  <svg
-                    width="40"
-                    height="40"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={1.4}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="mx-auto text-brand-blue"
-                    aria-hidden="true"
-                  >
-                    <rect x="3" y="5" width="18" height="14" rx="2" />
-                    <circle cx="8.5" cy="10" r="1.5" />
-                    <path d="M21 16l-5-5L5 21" />
-                  </svg>
-                  <p className="mt-3 font-heading text-sm font-semibold uppercase tracking-[0.14em] text-gray-700">
-                    Photo · Video · GIF
-                  </p>
-                  <p className="mt-1 text-xs text-gray-500">Hero media goes here</p>
-                </div>
+              <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl shadow-[0_18px_50px_rgba(11,31,51,0.22)] sm:aspect-video">
+                <Image
+                  src="/images/events/buckarodeo-cowgirl.jpg"
+                  alt="Cowgirl with cocktails on the boat, ready for the Buckarodeo on Lake Travis"
+                  fill
+                  priority
+                  sizes="(max-width: 1024px) 100vw, 560px"
+                  className="object-cover"
+                />
               </div>
             </div>
           </div>
@@ -437,7 +426,7 @@ export default async function BuckarooRodeoPage(): Promise<ReactElement> {
         <TexasBackdrop tone="dark" idKey="footer" />
         <div className="relative z-[1] mx-auto max-w-[1180px]">
           <p className="font-heading text-[22px] font-bold uppercase tracking-[0.12em] text-white">
-            Buckaroo <span className="text-gold">◆</span> Rodeo
+            Buckarodeo
           </p>
           <p className="mt-1.5 font-fraunces text-[17px] font-medium italic text-gold">
             Party On Delivery × Premier Party Cruises
