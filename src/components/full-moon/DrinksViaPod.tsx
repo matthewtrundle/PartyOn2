@@ -1,0 +1,40 @@
+import type { ReactElement } from 'react';
+import Button from '@/components/Button';
+import ScrollReveal from '@/components/ui/ScrollReveal';
+import Section from './Section';
+import Wordmark from './Wordmark';
+import { DRINKS, EVENT } from './event';
+import styles from './full-moon.module.css';
+
+/**
+ * The "drinks, delivered to the dock" card — POD's own product plug. Blue
+ * (secondary) CTA so it stays subordinate to the yellow ticket CTA.
+ */
+export default function DrinksViaPod(): ReactElement {
+  return (
+    <Section>
+      <ScrollReveal>
+        <div className={styles.drinksCard}>
+          <div>
+            <p className={[styles.eyebrow, styles.eyebrowNeon].join(' ')}>{DRINKS.eyebrow}</p>
+            <h2 className={styles.drinksTitle}>
+              {DRINKS.headlineLead}
+              <br />
+              {DRINKS.headlineTail}
+            </h2>
+            <p className={styles.drinksBody}>{DRINKS.body}</p>
+            <div className={styles.note}>{DRINKS.note}</div>
+            <div style={{ marginTop: 24 }}>
+              <Button variant="primary" size="lg" href={EVENT.ordersUrl} className="uppercase">
+                {DRINKS.cta} &rarr;
+              </Button>
+            </div>
+          </div>
+          <div className={styles.podMark} aria-hidden="true">
+            <Wordmark variant="stacked" height={150} />
+          </div>
+        </div>
+      </ScrollReveal>
+    </Section>
+  );
+}
