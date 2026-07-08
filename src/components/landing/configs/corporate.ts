@@ -33,13 +33,27 @@ export const corporateConfig: LandingConfig = {
     'White-glove delivery — coordinated with your venue',
   ],
   heroImage: '/images/products/premium-spirits-lifestyle.webp',
+  heroImages: [
+    {
+      src: '/images/hero/corporate-hero-conference.webp',
+      alt: 'Corporate conference reception bar stocked by Party On Delivery in Austin',
+    },
+    {
+      src: '/images/hero/corporate-hero-gala.webp',
+      alt: 'Austin corporate gala with premium wine and champagne service',
+    },
+    {
+      src: '/images/hero/corporate-hero-tech.webp',
+      alt: 'Austin tech company happy hour with craft beer and cocktails delivered',
+    },
+  ],
   heroTrustBadges: ['✓ TABC-licensed', '✓ $1M insured', '✓ COI available', '✓ Corporate cards / ACH / wire'],
 
   trustStats: [
-    { stat: 'TABC-licensed', label: 'Packaged-store license' },
-    { stat: '$1M insured', label: 'GL + liquor liability' },
-    { stat: 'Invoices', label: 'Available on request' },
-    { stat: 'Free returns', label: 'On unopened product' },
+    { stat: '500+', label: 'Austin events served' },
+    { stat: '5.0★', label: 'Google rating — see reviews below' },
+    { stat: '$1M', label: 'GL + liquor liability insured · COI on request' },
+    { stat: '72-hr', label: 'Standard lead time — faster when needed' },
   ],
 
   painHeadline:
@@ -102,7 +116,7 @@ export const corporateConfig: LandingConfig = {
   customLine:
     "Larger event or recurring need? Let's set up an account — call us.",
 
-  stepsHeadline: 'From PO to pour in three steps.',
+  stepsHeadline: 'From brief to pour in three steps.',
   steps: [
     {
       n: '1',
@@ -126,11 +140,13 @@ export const corporateConfig: LandingConfig = {
 
   venuesEyebrow: 'EVERYWHERE AUSTIN COMPANIES MEET',
   venuesHeadline: 'Office. Hotel ballroom. Lake ranch. We handle it.',
+  // Footprint guard: only name the confirmed delivery footprint (Austin, Cedar
+  // Park, Westlake, Bee Cave, Lakeway, Lake Travis) in paid landing copy.
   venues: [
     { area: 'Downtown Office Towers', detail: 'Loading dock or front desk — we know the buildings' },
     { area: 'Hotel Conference & Ballrooms', detail: 'Driskill, Fairmont, JW Marriott — coordinated with banquet teams' },
     { area: 'Lake Travis Event Venues', detail: 'Vintage Villas, Lakeway Resort, private estates' },
-    { area: 'Wine Country & Hill Country', detail: 'Driftwood, Wimberley, Dripping Springs ranches' },
+    { area: 'Westlake & Lakeway Venues', detail: 'Westlake, Bee Cave, Lakeway, Cedar Park offices & estates' },
     { area: 'SXSW & Conference Activations', detail: 'Brand activations, hospitality suites, panel sponsorships' },
     { area: 'Recurring Office Stocking', detail: 'Quarterly happy hours, kitchen restocks, client gifts' },
   ],
@@ -138,24 +154,30 @@ export const corporateConfig: LandingConfig = {
 
   reviewsEyebrow: '★★★★★ 5.0 ON GOOGLE',
   reviewsHeadline: 'The vendor your finance team approves of.',
+  // Real Google reviews (verbatim — harvested from the Business Profile reviews
+  // manager, same pool as bachelor.ts). The prior three entries were fabricated
+  // personas and were removed.
+  // TODO(operator): swap the two non-corporate reviews below for corporate-
+  // specific GBP quotes when harvested (approve verbatim — never paraphrase a
+  // real review), same flow as PR #121.
   reviews: [
     {
       quote:
-        "Booked them for a board dinner with 36 hours notice. Premium wine, perfect timing, paid invoice in our inbox same day. Now our default vendor for client events.",
-      author: 'Patricia L.',
-      detail: 'Chief of Staff, Austin SaaS company',
+        'Fast, fair and convenient. Very hard to get all 3 in any business. Will use again for our next visit to Austin!',
+      author: 'Tim Nappi',
+      detail: '★★★★★ via Google',
     },
     {
       quote:
-        'Stocked our SXSW activation across four days. Re-stocked twice on the fly. Invoice came through clean — finance loved it.',
-      author: 'Marcus D.',
-      detail: 'Head of Brand Marketing',
+        'Awesome delivery service! Drinks showed up cold and on time for stocking our rental for the weekend',
+      author: 'Bayne Pettinger',
+      detail: '★★★★★ via Google',
     },
     {
       quote:
-        "Holiday party for 80. They handled everything from the welcome champagne to the post-dinner whiskey flight. The CEO asked who they were.",
-      author: 'Andrea K.',
-      detail: 'VP People Ops',
+        'Used for a boat day on Lake Travis and it made it SO easy! Just showed up and our cooler was stocked with ice and all of the drinks we ordered ahead of time. 10/10 would recommend',
+      author: 'Rivajoy Giannitsis',
+      detail: '★★★★★ via Google · Lake Travis event',
     },
   ],
 
@@ -186,6 +208,42 @@ export const corporateConfig: LandingConfig = {
       a: 'Yes — free returns on any unopened product. If your event ends with full bottles untouched, send them back.',
     },
   ],
+
+  popularProducts: {
+    heading: 'Crowd-pleasers for Austin corporate events',
+    intro:
+      'The bottles and kits Austin companies add most for receptions, offsites, and office happy hours — invoiced and delivered cold to your venue.',
+    items: [
+      {
+        handle: 'veuve-clicquot-champagne-brut-750ml',
+        name: 'Veuve Clicquot Brut • 750ml',
+        blurb:
+          'The toast bottle for client dinners and milestones — the label your guests recognize.',
+        price: '$74.99',
+      },
+      {
+        handle: 'la-marca-prosecco-extra-dry-750ml-6-pack',
+        name: 'La Marca Prosecco • 6-Pack',
+        blurb:
+          'Six bottles of crowd-friendly Italian bubbly — the reception and mimosa-bar workhorse by the case.',
+        price: '$99.99',
+      },
+      {
+        handle: 'aperol-spritz-party-pitcher-kit-16-drinks',
+        name: 'Aperol Spritz Kit • Serves 16',
+        blurb:
+          'A ready-to-pour spritz bar for 16 — a polished welcome cocktail with zero bartender required.',
+        price: '$67.99',
+      },
+      {
+        handle: 'pinthouse-electric-jellyfish-16oz-4-pack-can',
+        name: 'Pinthouse Electric Jellyfish IPA',
+        blurb:
+          "Austin's cult hazy IPA in 16oz cans — the locally owned pick that makes an office happy hour feel like a brewery run.",
+        price: '$19.99',
+      },
+    ],
+  },
 
   finalCtaHeadline: 'Bring us the brief.',
   finalCtaHeadlineAccent: 'We deliver the rest.',

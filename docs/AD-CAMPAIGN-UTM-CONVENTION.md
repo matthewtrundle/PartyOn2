@@ -37,6 +37,16 @@ Each campaign maps to one slug. Don't invent new ones — extend this table firs
 
 **Bachelor vs bachelorette gotcha:** `'bachelorette-party-delivery'.includes('bach')` returns true, so the segment classifier maps both campaigns to the `'bach'` segment. This is intentional — both are the bach-party business category. To split bachelor vs bachelorette in reporting, query `Order.utmCampaign`, NOT `Order.segment`.
 
+### 2026-07 update — live Search campaigns use date-stamped slugs
+
+The live Google Ads **Search** campaigns use `{vertical}-search-atx-YYYY-MM` (display name `{Vertical} · Search · ATX · YYYY-MM`), not the older un-dated slugs above. `classifySegment`'s UTM fallback substring-matches (`.includes('bach')` / `'corporate'` / `'wedding'`), so these still classify correctly — verified: `bachelorette-search-atx-2026-07` → `bach`, `corporate-search-atx-2026-07` → `corporate`, `bachelor-search-atx-2026-06` → `bach`. The un-dated slugs above remain valid for legacy / non-Search campaigns.
+
+| Live Search campaign | Canonical slug | Lands on |
+|---|---|---|
+| Bachelor · Search · ATX · 2026-06 | `bachelor-search-atx-2026-06` | `/austin-bachelor-party-delivery` |
+| Bachelorette · Search · ATX · 2026-07 | `bachelorette-search-atx-2026-07` | `/austin-bachelorette-party-delivery` |
+| Corporate · Search · ATX · 2026-07 | `corporate-search-atx-2026-07` | `/austin-corporate-event-delivery` |
+
 ## Example URLs
 
 **Wedding campaign #1 (first launch, calculator-targeted):**

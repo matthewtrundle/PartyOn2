@@ -125,11 +125,13 @@ export const weddingConfig: LandingConfig = {
 
   venuesEyebrow: 'EVERY AUSTIN WEDDING VENUE',
   venuesHeadline: 'Hill Country ranch. Downtown ballroom. Lakefront estate.',
+  // Footprint guard: only name the confirmed delivery footprint (Austin, Cedar
+  // Park, Westlake, Bee Cave, Lakeway, Lake Travis) in paid landing copy.
   venues: [
-    { area: 'Hill Country Ranches', detail: 'Wimberley, Dripping Springs, Driftwood, Spicewood' },
+    { area: 'Westlake & Hill Country Estates', detail: 'Westlake, Bee Cave, Lakeway estate venues' },
     { area: 'Downtown Hotel Ballrooms', detail: 'Driskill, Fairmont, JW Marriott, Line' },
     { area: 'Lakefront Estates', detail: 'Lake Travis, Lake Austin, private peninsulas' },
-    { area: 'Vineyard & Winery Venues', detail: 'Driftwood Estate, Duchman Family, William Chris' },
+    { area: 'Lakeside & Waterfront Venues', detail: 'Lakeway, Bee Cave, Lake Travis waterfront venues' },
     { area: 'Garden & Outdoor Venues', detail: 'Mercury Hall, Vista West Ranch, Barr Mansion' },
     { area: 'Welcome Houses & Airbnbs', detail: 'Stocked separately for guests on arrival' },
   ],
