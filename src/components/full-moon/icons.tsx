@@ -27,7 +27,8 @@ export type IconName =
   | 'chevronLeft'
   | 'chevronRight'
   | 'plus'
-  | 'check';
+  | 'check'
+  | 'pin';
 
 const PATHS: Record<IconName, ReactNode> = {
   sun: (
@@ -99,6 +100,12 @@ const PATHS: Record<IconName, ReactNode> = {
   chevronRight: <path d="M9 18l6-6-6-6" />,
   plus: <path d="M12 5v14M5 12h14" />,
   check: <path d="M20 6 9 17l-5-5" />,
+  pin: (
+    <>
+      <path d="M12 21s-6-5.7-6-10a6 6 0 0 1 12 0c0 4.3-6 10-6 10Z" />
+      <circle cx="12" cy="11" r="2.2" />
+    </>
+  ),
 };
 
 /** Icons rendered with a solid fill instead of a stroke. */

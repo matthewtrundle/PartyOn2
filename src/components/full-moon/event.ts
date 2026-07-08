@@ -114,11 +114,16 @@ export const SHARE = {
 
 /** Hero copy. */
 export const HERO = {
-  /** H1 rendered one line per entry; the line at `glowLine` gets the glow. */
+  /** H1 rendered one line per entry; a flowing gradient spans the whole title. */
   headlineLines: ['FULL MOON', 'ON THE WATER', 'DANCE PARTY', "Y'ALL"] as string[],
-  glowLine: 0,
   sub: 'Watch the sun set over Lake Travis. Dance under a bright, nearly-full moon. This is what summer is for.',
   primaryCta: `Get Your Ticket — $${EVENT.price}`,
+};
+
+/** Where we board (shown under the datestamp). Verify the exact street number before launch. */
+export const LOCATION = {
+  name: 'Anderson Mill Marina',
+  address: '13993 FM 2769, Leander, TX 78641',
 };
 
 /** Datestamp cells (3-cell visual hierarchy). */
@@ -159,7 +164,7 @@ export const FACTS: FactItem[] = [
   {
     icon: 'sun',
     title: 'Sunset Cruise',
-    body: 'Cast off at golden hour aboard a 100-ft party boat on Lake Travis.',
+    body: 'Cast off at golden hour aboard a 60-foot party boat on Lake Travis. Adults only, 25 and up.',
   },
   {
     icon: 'moon',
@@ -190,8 +195,7 @@ export const BOARD_INCLUDED: string[] = [
 export const BOARD_BRING: string[] = [
   'Drinks! This event is BYOB — please order through our partner, Party On Delivery (see below)',
   'A towel, if you like',
-  "A plan to get home if you're drinking (FM 1431 is no joke)",
-  'A chill attitude',
+  "A plan to get home if you're drinking (FM 2769 is no joke)",
 ];
 
 export const SCHEDULE: ScheduleStop[] = [
@@ -269,7 +273,7 @@ export const FAQS: FaqItem[] = [
 
 export const FOOTER = {
   editorial: 'Cast off at golden hour. Come back glowing.',
-  legal: '© 2026 Party On Delivery LLC · TABC Licensed · Must be 21+ · Drink responsibly',
+  legal: '© 2026 Party On Delivery LLC · TABC Licensed · Adults 25+ only · Drink responsibly',
   legalNote: 'Sunset & moonrise times are forecasts and may shift slightly.',
 };
 

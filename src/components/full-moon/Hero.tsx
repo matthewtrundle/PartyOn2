@@ -6,7 +6,8 @@ import styles from './full-moon.module.css';
 import NeonHalo from './NeonHalo';
 import Wordmark from './Wordmark';
 import HeroCarousel from './HeroCarousel';
-import { DATESTAMP, HERO, SECTIONS } from './event';
+import { Icon } from './icons';
+import { DATESTAMP, HERO, LOCATION, SECTIONS } from './event';
 
 interface HeroProps {
   /** Primary "Get Your Ticket" action (opens the purchase form). */
@@ -24,7 +25,7 @@ export default function Hero({ onGetTicket }: HeroProps): ReactElement {
               {HERO.headlineLines.map((line, i) => (
                 <span key={line}>
                   {i > 0 ? <br /> : null}
-                  {i === HERO.glowLine ? <span className={styles.heroGlow}>{line}</span> : line}
+                  {line}
                 </span>
               ))}
             </h1>
@@ -41,6 +42,15 @@ export default function Hero({ onGetTicket }: HeroProps): ReactElement {
                 </div>
               ))}
             </div>
+
+            <p className={styles.heroLocation}>
+              <span className={styles.heroLocationIcon} aria-hidden="true">
+                <Icon name="pin" strokeWidth={1.7} />
+              </span>
+              <span>
+                <strong>{LOCATION.name}</strong> · {LOCATION.address}
+              </span>
+            </p>
 
             <div className={styles.heroCta}>
               <span className={styles.heroCtaLogo} aria-hidden="true">

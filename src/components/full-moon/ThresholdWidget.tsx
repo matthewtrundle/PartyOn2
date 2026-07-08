@@ -18,14 +18,16 @@ type TicketState = 'working' | 'met' | 'cancelled';
 /**
  * The ticket-threshold widget. Reads the live sold count from
  * /api/v1/full-moon/count and flips from "filling up" to "we're sailing" once
- * the 32-guest minimum is met. There is no hard cap — sales can exceed 50.
- * (`THRESHOLD.state === 'cancelled'` is a manual override for a postponed date.)
+ * the 32-guest minimum is met (no hard cap). Includes a "see guest list" toggle
+ * that shows who has already bought (first name + last initial).
  */
 export default function ThresholdWidget({ onGetTicket }: ThresholdWidgetProps): ReactElement {
   const { capacity, minimum } = EVENT;
   const [sold, setSold] = useState(THRESHOLD.sold);
   const [inView, setInView] = useState(false);
   const [fillPct, setFillPct] = useState(0);
+  const [guestsOpen, setGuestsOpen] = useState(false);
+  const [guests, setGuests] = useState<string[] | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const confettiFired = useRef(false);
   const reduced = useReducedMotion();
@@ -36,7 +38,6 @@ export default function ThresholdWidget({ onGetTicket }: ThresholdWidgetProps): 
   const markerPct = Math.round((minimum / capacity) * 100);
   const toGo = Math.max(0, minimum - sold);
 
-  // Live count.
   useEffect(() => {
     let active = true;
     fetch('/api/v1/full-moon/count')
@@ -50,7 +51,6 @@ export default function ThresholdWidget({ onGetTicket }: ThresholdWidgetProps): 
     };
   }, []);
 
-  // Reveal → animate the bar into place.
   useEffect(() => {
     const el = cardRef.current;
     if (!el) return;
@@ -73,13 +73,23 @@ export default function ThresholdWidget({ onGetTicket }: ThresholdWidgetProps): 
     if (inView) setFillPct(pct);
   }, [inView, pct]);
 
-  // Celebrate the moment the minimum is met (once).
   useEffect(() => {
     if (inView && state === 'met' && !reduced && !confettiFired.current && cardRef.current) {
       confettiFired.current = true;
       fireConfetti(cardRef.current, 26, 30);
     }
   }, [inView, state, reduced]);
+
+  const toggleGuests = (): void => {
+    const next = !guestsOpen;
+    setGuestsOpen(next);
+    if (next && guests === null) {
+      fetch('/api/v1/full-moon/guests')
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => setGuests(Array.isArray(data?.guests) ? data.guests : []))
+        .catch(() => setGuests([]));
+    }
+  };
 
   const eyebrow = state === 'met' ? "We're sailing" : state === 'cancelled' ? 'Postponed' : 'Filling up';
   const cardClass = [
@@ -94,9 +104,9 @@ export default function ThresholdWidget({ onGetTicket }: ThresholdWidgetProps): 
     <Section id={SECTIONS.tickets}>
       <div className={styles.thresholdWrap}>
         <div ref={cardRef} className={cardClass}>
-          <p className={[styles.eyebrow, styles.eyebrowNeon, styles.statusEyebrow].join(' ')}>
+          <p className={styles.statusEyebrow}>
             <span className={styles.statusDot} aria-hidden="true" />
-            {eyebrow}
+            <span className={styles.statusBig}>{eyebrow}</span>
           </p>
 
           <div className={styles.count}>
@@ -148,6 +158,25 @@ export default function ThresholdWidget({ onGetTicket }: ThresholdWidgetProps): 
               </NeonHalo>
             )}
           </div>
+
+          <button type="button" className={styles.guestToggle} onClick={toggleGuests} aria-expanded={guestsOpen}>
+            {guestsOpen ? 'Hide guest list' : 'See guest list'}
+          </button>
+          {guestsOpen ? (
+            <div className={styles.guestList}>
+              {guests === null ? (
+                <p className={styles.guestEmpty}>Loading&hellip;</p>
+              ) : guests.length === 0 ? (
+                <p className={styles.guestEmpty}>No guests yet &mdash; be the first aboard!</p>
+              ) : (
+                <ul>
+                  {guests.map((g, i) => (
+                    <li key={`${g}-${i}`}>{g}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ) : null}
 
           <p className={styles.thresholdHelper}>
             If we don&rsquo;t reach {minimum} guests {EVENT.deadlineDays} days out, the cruise rolls to the next full

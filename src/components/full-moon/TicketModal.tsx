@@ -129,6 +129,9 @@ export default function TicketModal(): ReactElement {
                   autoComplete="name"
                   required
                 />
+                <span className={styles.fieldHint}>
+                  Shown on the public guest list as your first name + last initial.
+                </span>
               </div>
               <div className={styles.field}>
                 <label className={styles.fieldLabel} htmlFor="fm-email">
@@ -188,8 +191,8 @@ export default function TicketModal(): ReactElement {
               <label className={styles.check}>
                 <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
                 <span>
-                  I&rsquo;m 21+ and I understand every ticket is refunded in full if the cruise doesn&rsquo;t reach{' '}
-                  {EVENT.minimum} guests.
+                  I&rsquo;m 25 or older (this event is adults only) and I understand every ticket is refunded in full
+                  if the cruise doesn&rsquo;t reach {EVENT.minimum} guests.
                 </span>
               </label>
 
