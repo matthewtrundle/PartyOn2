@@ -1,7 +1,7 @@
 /**
  * POST /api/v1/full-moon/ticket
  *
- * Sells a $69 Lake Travis Full Moon Party ticket (×quantity) via Stripe.
+ * Sells a $59 Lake Travis Full Moon Party ticket (×quantity) via Stripe.
  * Creates a zeroed DraftOrder (no delivery fee, no tax) for the DRAFT ticket
  * product, then a Stripe Checkout Session that rides the existing
  * `draft_order_invoice` webhook (which creates the Order + confirmation email
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
               currency: 'usd',
               product_data: {
                 name: 'Lake Travis Full Moon Party — Ticket',
-                description: `${EVENT.dateLabel} · sunset cruise, moonrise dance party, taco bar included`,
+                description: `${EVENT.dateLabel} · sunset cruise + moonrise dance party on Lake Travis · BYOB via Party On Delivery`,
               },
               unit_amount: unitAmountCents,
             },

@@ -2,7 +2,7 @@
  * Upsert the Lake Travis Full Moon Party ticket product (idempotent).
  *
  * Creates a DRAFT Product "Lake Travis Full Moon Party Ticket" (handle
- * `full-moon-party-ticket`, productType "Event Ticket", one $69 variant with
+ * `full-moon-party-ticket`, productType "Event Ticket", one $59 variant with
  * trackInventory=false) in its own "Events" category. Status DRAFT keeps it out
  * of every storefront/catalog/dashboard listing (all require ACTIVE), while it
  * stays purchasable by handle through the /api/v1/full-moon/ticket endpoint.
@@ -105,7 +105,7 @@ async function main() {
           },
         });
       }
-      // Ensure exactly one purchasable variant at $69.
+      // Ensure exactly one purchasable variant at $59.
       if (product.variants.length === 0) {
         log('  + add missing variant');
         if (APPLY) {

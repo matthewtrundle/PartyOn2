@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/database/client';
 import { checkRateLimit } from '@/lib/security/rate-limit';
+import { isGuestNameAllowed } from '@/lib/full-moon/guest-moderation';
 import { TICKET_PRODUCT_HANDLE } from '@/components/full-moon/event';
 
 export const dynamic = 'force-dynamic';
@@ -61,6 +62,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       const name = row.order?.customerName?.trim();
       if (!name || seen.has(name.toLowerCase())) continue;
       seen.add(name.toLowerCase());
+      // Drop profane / operator-hidden names before they hit the public list.
+      if (!isGuestNameAllowed(name)) continue;
       guests.push(toDisplayName(name));
       if (guests.length >= 100) break;
     }
