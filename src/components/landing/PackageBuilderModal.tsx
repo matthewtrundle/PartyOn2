@@ -7,6 +7,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import { useLeadCapture } from '@/lib/leads/client';
+import { isCompleteEmail } from '@/lib/leads/email-validation';
 import { fireLeadConversionAndFlush } from '@/lib/leads/fireLeadConversion';
 import { getAttribution } from '@/lib/analytics/attribution';
 import { trackContactClick } from '@/lib/analytics/ga4-events';
@@ -169,7 +170,13 @@ export default function PackageBuilderModal({
       if (contactName && contactName !== prev.name) {
         lead.onBlurField('name', contactName, identify);
       }
-      if (contactEmail && contactEmail !== prev.email) {
+      // Only capture the email once it's a complete address — otherwise each
+      // debounce tick would fire a fresh fragment (`an@`, `anz@`, …).
+      if (
+        contactEmail &&
+        contactEmail !== prev.email &&
+        isCompleteEmail(contactEmail)
+      ) {
         lead.onBlurField('email', contactEmail, identify);
       }
       if (contactPhone && contactPhone !== prev.phone) {

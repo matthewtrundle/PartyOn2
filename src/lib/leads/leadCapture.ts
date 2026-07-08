@@ -19,6 +19,7 @@ import type {
   LeadStatus,
   VisitorSession,
 } from '@prisma/client';
+import { normalizeEmail } from './email-validation';
 
 export type IdentifyInput = {
   email?: string | null;
@@ -81,11 +82,10 @@ function mergeAttributionMetadata(
 
 const MAX_FIELD_VALUE_LEN = 1000;
 
-function normEmail(v?: string | null) {
-  if (!v) return null;
-  const trimmed = v.trim().toLowerCase();
-  return trimmed && trimmed.includes('@') ? trimmed : null;
-}
+// Email completeness lives in ./email-validation (a Prisma-free module so the
+// browser capture widgets can share the same rule). `normalizeEmail` rejects
+// mid-typing fragments like `an@` / `@gmail.com`, so a Lead is only ever
+// keyed/created on a syntactically complete address.
 
 function normPhone(v?: string | null) {
   if (!v) return null;
@@ -151,7 +151,7 @@ export async function getOrCreateSession(opts: {
  * creating a new lead from a partial submit.
  */
 export async function findLead(input: IdentifyInput): Promise<Lead | null> {
-  const email = normEmail(input.email);
+  const email = normalizeEmail(input.email);
   const phone = normPhone(input.phone);
   if (!email && !phone) return null;
   return prisma.lead.findFirst({
@@ -178,7 +178,7 @@ export async function upsertLead(
   ctx: LeadContext,
   session?: VisitorSession | null,
 ): Promise<Lead | null> {
-  const email = normEmail(identify.email);
+  const email = normalizeEmail(identify.email);
   const phone = normPhone(identify.phone);
   const firstName = nonEmpty(identify.firstName);
   const lastName = nonEmpty(identify.lastName);
