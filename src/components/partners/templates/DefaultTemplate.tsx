@@ -5,7 +5,7 @@ import Footer from '@/components/Footer';
 import HeroCarousel from '@/components/partners/HeroCarousel';
 import type { CategoryTemplateProps } from './template-types';
 import { getStrPartnerBySlug } from '@/lib/partners/str-partners';
-import PropertyPicker from '@/components/partners/PropertyPicker';
+import StrStartOrderButton from '@/components/partners/StrStartOrderButton';
 
 interface CategoryConfig {
   heroSubtitle: (name: string) => string;
@@ -174,8 +174,10 @@ export function DefaultTemplate({ affiliate, partnerLogo, partnerHeroImage, hero
   const valueTable = CATEGORY_VALUE_TABLES[category] ?? DEFAULT_VALUE_TABLE;
   const heroImage = partnerHeroImage || config.defaultHeroImage;
   const carouselImages = heroImages && heroImages.length > 1 ? heroImages : null;
-  // STR partners (e.g. Five Star) render a property picker in the hero CTA slot
-  // that pre-fills the delivery address, instead of the generic /order link.
+  // STR partners (e.g. Five Star) get a conversion-focused hero: no partner
+  // logo, no forms — a drinks/delivery photo carousel and a single CTA that
+  // creates the partner-attributed dashboard (the property dropdown lives on
+  // the dashboard, not the lander). Decision: Allan, 2026-07-08.
   const strConfig = getStrPartnerBySlug(affiliate.partnerSlug);
 
   return (
@@ -184,20 +186,26 @@ export function DefaultTemplate({ affiliate, partnerLogo, partnerHeroImage, hero
 
       {/* HERO */}
       <section className="relative overflow-hidden">
-        <Image
-          src="/images/hero/austin-skyline-night-lake.webp"
-          alt={`${businessName} x Party On Delivery - Austin skyline at night`}
-          fill
-          className="object-cover"
-          priority
-          sizes="100vw"
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-gray-900/90 via-gray-900/70 to-gray-900/50" />
+        {strConfig ? (
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-900 to-gray-800" />
+        ) : (
+          <>
+            <Image
+              src="/images/hero/austin-skyline-night-lake.webp"
+              alt={`${businessName} x Party On Delivery - Austin skyline at night`}
+              fill
+              className="object-cover"
+              priority
+              sizes="100vw"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-gray-900/90 via-gray-900/70 to-gray-900/50" />
+          </>
+        )}
 
         <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 pt-24 md:pt-28 pb-16 md:pb-20">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-12 items-center">
             <div className="order-1 text-center">
-              {partnerLogo && (
+              {partnerLogo && !strConfig && (
                 <div className="mb-6">
                   <Image
                     src={partnerLogo}
@@ -216,13 +224,15 @@ export function DefaultTemplate({ affiliate, partnerLogo, partnerHeroImage, hero
                 {config.heroSubtitle(businessName)}
               </p>
 
-              <div className="mb-8" id="partner-order">
+              <div className="mb-8">
                 {strConfig ? (
-                  <PropertyPicker
-                    config={strConfig}
-                    affiliateCode={affiliate.code}
-                    className="max-w-md mx-auto"
-                  />
+                  <div className="flex justify-center">
+                    <StrStartOrderButton
+                      config={strConfig}
+                      affiliateCode={affiliate.code}
+                      section="hero"
+                    />
+                  </div>
                 ) : (
                   <Link
                     href="/order"
@@ -322,12 +332,24 @@ export function DefaultTemplate({ affiliate, partnerLogo, partnerHeroImage, hero
           </div>
 
           <div className="mt-8 text-center">
-            <Link
-              href={strConfig ? '#partner-order' : '/order'}
-              className="inline-block px-8 py-3 bg-brand-blue text-white font-semibold rounded-lg hover:bg-brand-blue/90 transition-colors"
-            >
-              Order Your Drinks
-            </Link>
+            {strConfig ? (
+              <div className="flex justify-center">
+                <StrStartOrderButton
+                  config={strConfig}
+                  affiliateCode={affiliate.code}
+                  label="Order Your Drinks"
+                  section="services"
+                  className="btn-primary px-8 py-3 disabled:opacity-60"
+                />
+              </div>
+            ) : (
+              <Link
+                href="/order"
+                className="inline-block px-8 py-3 bg-brand-blue text-white font-semibold rounded-lg hover:bg-brand-blue/90 transition-colors"
+              >
+                Order Your Drinks
+              </Link>
+            )}
             <p className="text-gray-500 text-sm mt-4">
               Questions? Text{' '}
               <a href="tel:7373719700" className="text-brand-blue font-medium">
@@ -491,12 +513,23 @@ export function DefaultTemplate({ affiliate, partnerLogo, partnerHeroImage, hero
           </p>
 
           <div className="mb-6">
-            <Link
-              href={strConfig ? '#partner-order' : '/order'}
-              className="inline-block px-10 py-4 bg-gray-900 text-white hover:bg-gray-800 font-semibold tracking-wider transition-colors rounded-lg"
-            >
-              Start Your Order
-            </Link>
+            {strConfig ? (
+              <div className="flex justify-center">
+                <StrStartOrderButton
+                  config={strConfig}
+                  affiliateCode={affiliate.code}
+                  section="final_cta"
+                  className="px-10 py-4 bg-gray-900 text-white hover:bg-gray-800 font-semibold tracking-wider transition-colors rounded-lg disabled:opacity-60"
+                />
+              </div>
+            ) : (
+              <Link
+                href="/order"
+                className="inline-block px-10 py-4 bg-gray-900 text-white hover:bg-gray-800 font-semibold tracking-wider transition-colors rounded-lg"
+              >
+                Start Your Order
+              </Link>
+            )}
           </div>
 
           <p className="text-gray-700">
