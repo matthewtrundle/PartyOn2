@@ -4,6 +4,8 @@ import fs from 'fs';
 import path from 'path';
 import { getAffiliateBySlug } from '@/lib/affiliates/affiliate-service';
 import { getCategoryTemplate } from '@/components/partners/templates';
+import { getStrPartnerBySlug } from '@/lib/partners/str-partners';
+import { vacationRentalHeroMedia } from '@/generated/vacation-rental-hero-media';
 import partnersData from '@/data/austin-partners.json';
 
 interface Props {
@@ -104,6 +106,15 @@ export default async function DynamicPartnerPage({ params }: Props) {
     const first = partnerHeroImage; // may be null if no per-partner image yet
     heroImages = first ? [first, ...shared] : shared;
     if (heroImages.length === 0) heroImages = undefined;
+  }
+
+  // STR partners (Five Star, etc.): drinks/delivery photo carousel in the hero
+  // (shared vacation-rental shoot), replacing the skyline. Same manifest the
+  // /partners/vacation-rentals recruitment page uses; refreshed at build by
+  // scripts/scan-vacation-rental-hero.js.
+  if (getStrPartnerBySlug(affiliate.partnerSlug ?? slug)) {
+    const strShots = vacationRentalHeroMedia.map((m) => m.src);
+    if (strShots.length > 0) heroImages = strShots;
   }
 
   return (

@@ -668,6 +668,7 @@ export default function DashboardPage(): ReactElement {
           shareCode={groupOrder.shareCode}
           tab={tab}
           participantId={participantId}
+          affiliateCode={groupOrder.affiliate?.code ?? null}
           onClose={() => setShowLocationDetails(false)}
           onSaved={() => {
             setShowLocationDetails(false);

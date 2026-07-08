@@ -16,7 +16,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const queryCode = request.nextUrl.searchParams.get('code');
 
     // Explicit beats inferred: an explicit ?code= (a real Affiliate.code from
-    // /order?ref= or the partner-page PropertyPicker) must win over the
+    // /order?ref= or the partner-page StrStartOrderButton) must win over the
     // middleware's path-derived cookie, which holds an UPPERCASED SLUG
     // ("FIVE-STAR") that getAffiliateByCode can't resolve when it differs
     // from the code ("FIVESTAR"). Cookie-first shadowed the valid code and

@@ -3,14 +3,24 @@
 import { useState, type ReactElement, type FormEvent } from 'react';
 import { updateTabV2 } from '@/lib/group-orders-v2/api-client';
 import type { SubOrderFull } from '@/lib/group-orders-v2/types';
+import { getStrPartnerByCode, type StrProperty } from '@/lib/partners/str-partners';
 
 interface Props {
   shareCode: string;
   tab: SubOrderFull;
   participantId: string;
+  /**
+   * The group's affiliate code (groupOrder.affiliate?.code). When it resolves
+   * to an STR partner config (e.g. FIVESTAR), the address form shows a
+   * dropdown of that partner's rental properties that pre-fills the fields.
+   */
+  affiliateCode?: string | null;
   onClose: () => void;
   onSaved: () => void;
 }
+
+/** Sentinel value for the "my place isn't listed" dropdown option. */
+const STR_CUSTOM = '__custom__';
 
 /** In-store pickup location — 7600 N. Lamar Blvd #A2, Austin TX 78752 */
 const STORE_PICKUP_ADDRESS = {
@@ -56,10 +66,16 @@ export default function DeliveryDetailsModal({
   shareCode,
   tab,
   participantId,
+  affiliateCode,
   onClose,
   onSaved,
 }: Props): ReactElement {
   const addr = tab.deliveryAddress || { address1: '', address2: '', city: '', province: 'TX', zip: '', country: 'US' };
+
+  // STR partner (Five Star, etc.) property roster for the address dropdown.
+  const strConfig = affiliateCode ? getStrPartnerByCode(affiliateCode) : null;
+  const strProperties = strConfig?.properties ?? [];
+  const hasStrDropdown = strProperties.length > 0;
 
   // Fulfillment method — default to whatever the tab is currently set to
   const [fulfillmentMethod, setFulfillmentMethod] = useState<'delivery' | 'pickup'>(
@@ -84,6 +100,35 @@ export default function DeliveryDetailsModal({
   const [notes, setNotes] = useState(tab.deliveryNotes || '');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+
+  // Dropdown selection. If the tab's address already matches a roster
+  // property, preselect it; if an address was hand-typed, show "custom".
+  const [strSelection, setStrSelection] = useState<string>(() => {
+    if (!hasStrDropdown) return '';
+    const match = strProperties.find(
+      (p) => p.address1 === (addr.address1 || '') && p.zip === (addr.zip || '')
+    );
+    if (match) return match.id;
+    return addr.address1 ? STR_CUSTOM : '';
+  });
+  const strIsCustom = strSelection === STR_CUSTOM;
+
+  function applyStrSelection(value: string): void {
+    setStrSelection(value);
+    const prop: StrProperty | undefined = strProperties.find((p) => p.id === value);
+    if (prop) {
+      setAddress1(prop.address1);
+      setAddress2(prop.address2 ?? '');
+      setCity(prop.city);
+      setZip(prop.zip);
+    } else if (value === STR_CUSTOM) {
+      // Clear roster-filled values so the guest types their own.
+      setAddress1('');
+      setAddress2('');
+      setCity('');
+      setZip('');
+    }
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -270,6 +315,34 @@ export default function DeliveryDetailsModal({
             </div>
           ) : (
             <>
+              {hasStrDropdown && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Your {strConfig?.name} rental
+                  </label>
+                  <select
+                    value={strSelection}
+                    onChange={(e) => applyStrSelection(e.target.value)}
+                    className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg text-base bg-white focus:border-brand-blue focus:ring-0 transition-all hover:border-gray-300"
+                    aria-label={`Choose your ${strConfig?.name} rental`}
+                  >
+                    <option value="">Select your rental…</option>
+                    {strProperties.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.label}
+                      </option>
+                    ))}
+                    {strConfig?.allowCustomAddress && (
+                      <option value={STR_CUSTOM}>My place isn&apos;t listed — enter address</option>
+                    )}
+                  </select>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Picking your rental fills in the delivery address below.
+                  </p>
+                </div>
+              )}
+
+              {(!hasStrDropdown || strSelection !== '') && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Address
@@ -279,49 +352,57 @@ export default function DeliveryDetailsModal({
                   value={address1}
                   onChange={(e) => setAddress1(e.target.value)}
                   placeholder="Street address"
-                  className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg text-base focus:border-brand-blue focus:ring-0 transition-all hover:border-gray-300"
+                  readOnly={hasStrDropdown && !strIsCustom}
+                  className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg text-base focus:border-brand-blue focus:ring-0 transition-all hover:border-gray-300 read-only:bg-gray-50 read-only:text-gray-600"
                 />
               </div>
+              )}
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Address Line 2 <span className="text-gray-400 font-normal">(optional)</span>
-                </label>
-                <input
-                  type="text"
-                  value={address2}
-                  onChange={(e) => setAddress2(e.target.value)}
-                  placeholder="Apt, suite, unit, etc."
-                  className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg text-base focus:border-brand-blue focus:ring-0 transition-all hover:border-gray-300"
-                />
-              </div>
+              {(!hasStrDropdown || strSelection !== '') && (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Address Line 2 <span className="text-gray-400 font-normal">(optional)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={address2}
+                      onChange={(e) => setAddress2(e.target.value)}
+                      placeholder="Apt, suite, unit, etc."
+                      className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg text-base focus:border-brand-blue focus:ring-0 transition-all hover:border-gray-300"
+                    />
+                  </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    City
-                  </label>
-                  <input
-                    type="text"
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    placeholder="Austin"
-                    className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg text-base focus:border-brand-blue focus:ring-0 transition-all hover:border-gray-300"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Zip Code
-                  </label>
-                  <input
-                    type="text"
-                    value={zip}
-                    onChange={(e) => setZip(e.target.value)}
-                    placeholder="78701"
-                    className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg text-base focus:border-brand-blue focus:ring-0 transition-all hover:border-gray-300"
-                  />
-                </div>
-              </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        City
+                      </label>
+                      <input
+                        type="text"
+                        value={city}
+                        onChange={(e) => setCity(e.target.value)}
+                        placeholder="Austin"
+                        readOnly={hasStrDropdown && !strIsCustom}
+                        className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg text-base focus:border-brand-blue focus:ring-0 transition-all hover:border-gray-300 read-only:bg-gray-50 read-only:text-gray-600"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Zip Code
+                      </label>
+                      <input
+                        type="text"
+                        value={zip}
+                        onChange={(e) => setZip(e.target.value)}
+                        placeholder="78701"
+                        readOnly={hasStrDropdown && !strIsCustom}
+                        className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg text-base focus:border-brand-blue focus:ring-0 transition-all hover:border-gray-300 read-only:bg-gray-50 read-only:text-gray-600"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
             </>
           )}
 
