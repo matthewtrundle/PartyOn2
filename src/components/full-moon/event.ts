@@ -268,12 +268,13 @@ export const THRESHOLD = {
 };
 
 export const GALLERY: GalleryItem[] = [
-  { src: '/images/boat-heroes/boat-party-epic-night.webp', alt: 'Boat party at night on Lake Travis', wide: true, tall: true },
-  { src: '/images/lake-travis/devils-cove-party.webp', alt: 'Boats rafted together at Devils Cove' },
-  { src: '/images/hero/neon-nights-hero.webp', alt: 'Neon-lit dance floor' },
-  { src: '/images/boat-heroes/boat-party-epic-sunset.webp', alt: 'Party boat at sunset', wide: true },
-  { src: '/images/services/boat-parties/multiple-yachts-party.webp', alt: 'Multiple yachts at a lake party' },
-  { src: '/images/lake-travis/the-oasis-sunset.webp', alt: 'Sunset over Lake Travis at The Oasis' },
+  { src: '/images/full-moon/premier-9895.webp', alt: 'Premier Party Cruises guests on Lake Travis', wide: true, tall: true },
+  { src: '/images/full-moon/premier-7270.webp', alt: 'Friends celebrating on a Premier party cruise', tall: true },
+  { src: '/images/full-moon/premier-289.webp', alt: 'Guests dancing on a Premier party cruise', tall: true },
+  { src: '/images/full-moon/premier-7217.webp', alt: 'A group toasting on a Premier party cruise', tall: true },
+  { src: '/images/full-moon/premier-273.webp', alt: 'A packed Premier party cruise on Lake Travis', wide: true },
+  { src: '/images/full-moon/premier-7468.webp', alt: 'Guests partying on a Premier cruise on Lake Travis' },
+  { src: '/images/full-moon/premier-7318.webp', alt: 'A Premier Party Cruises crowd on Lake Travis' },
 ];
 
 export const FAQS: FaqItem[] = [
