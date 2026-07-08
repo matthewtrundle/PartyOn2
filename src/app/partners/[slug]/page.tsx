@@ -109,6 +109,7 @@ export default async function DynamicPartnerPage({ params }: Props) {
   return (
     <CategoryTemplate
       affiliate={{
+        id: affiliate.id,
         businessName: affiliate.businessName,
         code: affiliate.code,
         category: affiliate.category,
