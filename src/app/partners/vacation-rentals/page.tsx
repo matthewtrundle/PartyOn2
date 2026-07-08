@@ -44,7 +44,7 @@ const COCKTAILS = [
 const FAQS = [
   {
     q: 'How does the partnership work financially?',
-    a: 'Property managers earn a revenue share on every order placed through their branded link. Tiered structure based on volume. No upfront cost, no monthly minimums.',
+    a: 'Property managers earn a revenue share on every order placed through their branded link — 5% to start, rising to 8% and 10% as order volume through your link grows. No upfront cost, no monthly minimums.',
   },
   {
     q: 'Can we white-label the experience?',
@@ -717,31 +717,30 @@ UTM Campaign: ${formData.utm_campaign || 'none'}`,
                 </div>
               ))}
             </div>
+            {/* Value cards — swap in real partner testimonials once we have signed quotes. */}
             <div className="grid md:grid-cols-2 gap-8">
               <div className="bg-white border border-gray-200 p-10 rounded-xl">
                 <div className="editorial text-xl md:text-2xl mb-6 text-gray-900 leading-relaxed">
-                  &ldquo;POD turned what used to be a logistical headache into the easiest part of every Lake Travis weekend.
-                  Our guests get hotel-grade service. We don&apos;t lift a finger.&rdquo;
+                  Pre-stocked before check-in, restocked same-day on request. Your guests get hotel-grade
+                  bar service &mdash; and you never touch a bottle.
                 </div>
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-brand-blue/10 flex items-center justify-center font-heading font-bold text-brand-blue">PP</div>
-                  <div>
-                    <div className="font-heading font-bold text-lg">[Partner Name]</div>
-                    <div className="text-sm text-gray-600">[Title], [Company]</div>
-                  </div>
+                <div className="flex items-center gap-3 text-sm font-semibold text-brand-blue tracking-[0.08em] uppercase">
+                  <svg className="w-6 h-6 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  Effortless guest experience
                 </div>
               </div>
               <div className="bg-white border border-gray-200 p-10 rounded-xl">
                 <div className="editorial text-xl md:text-2xl mb-6 text-gray-900 leading-relaxed">
-                  &ldquo;The TABC piece alone is worth it. We stopped routing guests to grocery delivery and our reviews
-                  mention the bar service by name.&rdquo;
+                  Fully TABC-licensed and insured. Stop routing guests to grocery delivery &mdash; and earn a
+                  revenue share on every order they place.
                 </div>
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-brand-blue/10 flex items-center justify-center font-heading font-bold text-brand-blue">PM</div>
-                  <div>
-                    <div className="font-heading font-bold text-lg">[Partner Name]</div>
-                    <div className="text-sm text-gray-600">[Title], [Company]</div>
-                  </div>
+                <div className="flex items-center gap-3 text-sm font-semibold text-brand-blue tracking-[0.08em] uppercase">
+                  <svg className="w-6 h-6 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  Licensed, insured, profitable
                 </div>
               </div>
             </div>

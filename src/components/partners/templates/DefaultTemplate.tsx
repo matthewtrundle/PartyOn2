@@ -4,6 +4,8 @@ import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import HeroCarousel from '@/components/partners/HeroCarousel';
 import type { CategoryTemplateProps } from './template-types';
+import { getStrPartnerBySlug } from '@/lib/partners/str-partners';
+import PropertyPicker from '@/components/partners/PropertyPicker';
 
 interface CategoryConfig {
   heroSubtitle: (name: string) => string;
@@ -172,6 +174,9 @@ export function DefaultTemplate({ affiliate, partnerLogo, partnerHeroImage, hero
   const valueTable = CATEGORY_VALUE_TABLES[category] ?? DEFAULT_VALUE_TABLE;
   const heroImage = partnerHeroImage || config.defaultHeroImage;
   const carouselImages = heroImages && heroImages.length > 1 ? heroImages : null;
+  // STR partners (e.g. Five Star) render a property picker in the hero CTA slot
+  // that pre-fills the delivery address, instead of the generic /order link.
+  const strConfig = getStrPartnerBySlug(affiliate.partnerSlug);
 
   return (
     <div className="bg-white min-h-screen">
@@ -211,13 +216,21 @@ export function DefaultTemplate({ affiliate, partnerLogo, partnerHeroImage, hero
                 {config.heroSubtitle(businessName)}
               </p>
 
-              <div className="mb-8">
-                <Link
-                  href="/order"
-                  className="inline-block h-14 md:h-16 px-10 bg-yellow-500 hover:bg-brand-yellow text-gray-900 font-semibold tracking-wide transition-colors rounded-lg text-lg md:text-xl leading-[3.5rem] md:leading-[4rem]"
-                >
-                  Start Your Order
-                </Link>
+              <div className="mb-8" id="partner-order">
+                {strConfig ? (
+                  <PropertyPicker
+                    config={strConfig}
+                    affiliateCode={affiliate.code}
+                    className="max-w-md mx-auto"
+                  />
+                ) : (
+                  <Link
+                    href="/order"
+                    className="inline-block h-14 md:h-16 px-10 bg-yellow-500 hover:bg-brand-yellow text-gray-900 font-semibold tracking-wide transition-colors rounded-lg text-lg md:text-xl leading-[3.5rem] md:leading-[4rem]"
+                  >
+                    Start Your Order
+                  </Link>
+                )}
               </div>
 
               <div className="flex flex-col items-center gap-2">
@@ -310,7 +323,7 @@ export function DefaultTemplate({ affiliate, partnerLogo, partnerHeroImage, hero
 
           <div className="mt-8 text-center">
             <Link
-              href="/order"
+              href={strConfig ? '#partner-order' : '/order'}
               className="inline-block px-8 py-3 bg-brand-blue text-white font-semibold rounded-lg hover:bg-brand-blue/90 transition-colors"
             >
               Order Your Drinks
@@ -479,7 +492,7 @@ export function DefaultTemplate({ affiliate, partnerLogo, partnerHeroImage, hero
 
           <div className="mb-6">
             <Link
-              href="/order"
+              href={strConfig ? '#partner-order' : '/order'}
               className="inline-block px-10 py-4 bg-gray-900 text-white hover:bg-gray-800 font-semibold tracking-wider transition-colors rounded-lg"
             >
               Start Your Order

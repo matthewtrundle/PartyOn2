@@ -53,7 +53,8 @@ export type CtaSection =
   | 'party_type_chip'
   | 'package_card'
   | 'quick_buy'
-  | 'package_builder';
+  | 'package_builder'
+  | 'property_picker';
 
 /**
  * Track CTA button clicks for A/B testing
