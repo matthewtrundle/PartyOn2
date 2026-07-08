@@ -217,10 +217,10 @@ export function DefaultTemplate({ affiliate, partnerLogo, partnerHeroImage, hero
               </p>
 
               <div className="mb-8" id="partner-order">
-                {strConfig && affiliate.id ? (
+                {strConfig ? (
                   <PropertyPicker
                     config={strConfig}
-                    affiliateId={affiliate.id}
+                    affiliateCode={affiliate.code}
                     className="max-w-md mx-auto"
                   />
                 ) : (

@@ -1,7 +1,5 @@
 export interface CategoryTemplateProps {
   affiliate: {
-    /** Affiliate DB id — passed to the STR PropertyPicker for order attribution. */
-    id: string;
     businessName: string;
     code: string;
     category: string;

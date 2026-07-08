@@ -35,25 +35,36 @@ function mkGroup(shareCode: string) {
   return { shareCode, participants: [{ id: 'host-1', isHost: true }] };
 }
 
+/** Stub the attribution endpoint the picker calls to resolve code → id. */
+function mockAttribution(affiliateId: string | null) {
+  (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+    ok: true,
+    json: async () => ({ success: true, data: affiliateId ? { affiliateId } : null }),
+  });
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
 });
 
 describe('PropertyPicker', () => {
   it('renders the property dropdown + the custom-address option', () => {
-    render(<PropertyPicker config={config} affiliateId="aff-1" />);
+    render(<PropertyPicker config={config} affiliateCode="TESTCO" />);
     expect(screen.getByText('Prop One')).toBeInTheDocument();
     expect(screen.getByText(/my place isn't listed/i)).toBeInTheDocument();
   });
 
   it('creates a dashboard pre-filled with the selected property address + partner attribution', async () => {
+    mockAttribution('aff-123');
     mocks.createDashboardOrderV2.mockResolvedValue(mkGroup('CODE9'));
-    render(<PropertyPicker config={config} affiliateId="aff-123" />);
+    render(<PropertyPicker config={config} affiliateCode="TESTCO" />);
 
     fireEvent.change(screen.getByLabelText('Choose your rental'), { target: { value: 'prop-1' } });
     fireEvent.click(screen.getByRole('button', { name: /start your order/i }));
 
     await waitFor(() => expect(mocks.createDashboardOrderV2).toHaveBeenCalledTimes(1));
+    // The id must come from the server-side attribution resolve, not the client.
+    expect(global.fetch).toHaveBeenCalledWith('/api/v1/affiliate/attribution?code=TESTCO');
     expect(mocks.createDashboardOrderV2).toHaveBeenCalledWith(
       expect.objectContaining({
         affiliateId: 'aff-123',
@@ -72,9 +83,25 @@ describe('PropertyPicker', () => {
     await waitFor(() => expect(mocks.push).toHaveBeenCalledWith('/dashboard/CODE9'));
   });
 
+  it('still creates the dashboard (unattributed) when the affiliate code does not resolve', async () => {
+    mockAttribution(null); // e.g. DRAFT affiliate — attribution endpoint returns no id
+    mocks.createDashboardOrderV2.mockResolvedValue(mkGroup('C3'));
+    render(<PropertyPicker config={config} affiliateCode="TESTCO" />);
+
+    fireEvent.change(screen.getByLabelText('Choose your rental'), { target: { value: 'prop-1' } });
+    fireEvent.click(screen.getByRole('button', { name: /start your order/i }));
+
+    await waitFor(() => expect(mocks.createDashboardOrderV2).toHaveBeenCalledTimes(1));
+    expect(mocks.createDashboardOrderV2).toHaveBeenCalledWith(
+      expect.objectContaining({ affiliateId: undefined })
+    );
+    await waitFor(() => expect(mocks.push).toHaveBeenCalledWith('/dashboard/C3'));
+  });
+
   it('supports a custom address when the unit is not listed', async () => {
+    mockAttribution('aff-1');
     mocks.createDashboardOrderV2.mockResolvedValue(mkGroup('C2'));
-    render(<PropertyPicker config={config} affiliateId="aff-1" />);
+    render(<PropertyPicker config={config} affiliateCode="TESTCO" />);
 
     fireEvent.change(screen.getByLabelText('Choose your rental'), { target: { value: '__custom__' } });
     fireEvent.change(screen.getByLabelText('Rental street address'), { target: { value: '99 Custom Ln' } });
@@ -98,7 +125,7 @@ describe('PropertyPicker', () => {
   });
 
   it('blocks submission and shows an error when the custom address is incomplete', () => {
-    render(<PropertyPicker config={config} affiliateId="aff-1" />);
+    render(<PropertyPicker config={config} affiliateCode="TESTCO" />);
     fireEvent.change(screen.getByLabelText('Choose your rental'), { target: { value: '__custom__' } });
     fireEvent.click(screen.getByRole('button', { name: /start your order/i }));
 

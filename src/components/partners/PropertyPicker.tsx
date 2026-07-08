@@ -9,8 +9,13 @@ import type { StrPartnerConfig } from '@/lib/partners/str-partners';
 interface PropertyPickerProps {
   /** The STR partner whose properties populate the dropdown. */
   config: StrPartnerConfig;
-  /** Affiliate DB id — attributes the resulting orders to this partner. */
-  affiliateId: string;
+  /**
+   * Affiliate referral code (NOT the DB id). Resolved server-side at submit
+   * time via /api/v1/affiliate/attribution, which only returns an id for
+   * ACTIVE affiliates — the same safe pattern /order uses. Never ship raw
+   * affiliate DB ids to the client (security review 2026-07-08).
+   */
+  affiliateCode: string;
   /** Optional wrapper classes. */
   className?: string;
 }
@@ -29,7 +34,7 @@ const CUSTOM = '__custom__';
  */
 export default function PropertyPicker({
   config,
-  affiliateId,
+  affiliateCode,
   className,
 }: PropertyPickerProps): ReactElement {
   const router = useRouter();
@@ -86,6 +91,22 @@ export default function PropertyPicker({
 
     setBusy(true);
     try {
+      // Resolve the affiliate id server-side (ACTIVE affiliates only) — never
+      // trust a client-embedded DB id. Non-blocking: an unresolved code still
+      // creates the dashboard, just without affiliate attribution.
+      let affiliateId: string | undefined;
+      try {
+        const res = await fetch(
+          `/api/v1/affiliate/attribution?code=${encodeURIComponent(affiliateCode)}`
+        );
+        if (res.ok) {
+          const json = await res.json();
+          if (json?.data?.affiliateId) affiliateId = json.data.affiliateId;
+        }
+      } catch {
+        // Attribution is best-effort; the order flow must not break on it.
+      }
+
       const group = await createDashboardOrderV2({
         hostName: 'Party Host',
         source: 'PARTNER_PAGE',
