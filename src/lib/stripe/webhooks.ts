@@ -31,6 +31,7 @@ import {
   upsertPayout,
 } from '@/lib/finance/stripe-extended';
 import { cancelJobsForDraft, cancelJobsForEmail } from '@/lib/followups/enqueue';
+import { isEventTicketSession } from '@/lib/full-moon/ticket';
 
 /**
  * Advisory follow-up cleanup on payment success: the customer converted, so
@@ -342,19 +343,25 @@ async function handleDraftOrderPayment(
       await tryDraftAttribute(draftDiscountCode);
     }
 
-    // Create delivery task
-    try {
-      await prisma.deliveryTask.create({
-        data: {
-          orderId: order.id,
-          scheduledDate: order.deliveryDate,
-          scheduledTime: order.deliveryTime,
-          status: 'PENDING',
-        },
-      });
-      console.log('[Stripe Webhook] Delivery task created for order:', order.orderNumber);
-    } catch (deliveryError) {
-      console.error('[Stripe Webhook] Failed to create delivery task:', deliveryError);
+    // Create delivery task — but skip it for event tickets (e.g. Full Moon
+    // Party), which are not deliveries and would otherwise litter the ops
+    // delivery queue with phantom tasks.
+    if (isEventTicketSession(session.metadata)) {
+      console.log('[Stripe Webhook] Event ticket order — skipping delivery task:', order.orderNumber);
+    } else {
+      try {
+        await prisma.deliveryTask.create({
+          data: {
+            orderId: order.id,
+            scheduledDate: order.deliveryDate,
+            scheduledTime: order.deliveryTime,
+            status: 'PENDING',
+          },
+        });
+        console.log('[Stripe Webhook] Delivery task created for order:', order.orderNumber);
+      } catch (deliveryError) {
+        console.error('[Stripe Webhook] Failed to create delivery task:', deliveryError);
+      }
     }
 
     // Send confirmation email

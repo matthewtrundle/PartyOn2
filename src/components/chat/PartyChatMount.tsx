@@ -35,6 +35,8 @@ const HIDE_PATTERNS: RegExp[] = [
   // Private event invites — no general chat bubble; the page has its
   // own dedicated flow.
   /^\/events(\/|$)/,
+  // Full Moon Party lander — has its own share FAB; keep it distraction-free.
+  /^\/full-moon(\/|$)/,
 ];
 
 export default function PartyChatMount() {
