@@ -10,17 +10,14 @@ interface WordmarkProps {
 }
 
 /**
- * The real Party On Delivery master logo (/images/pod-logo-2025.svg), rendered
- * white so it reads on the dark event page (the source logo is built for light
- * backgrounds). Decorative — the containing element supplies the accessible
- * label.
+ * The real Party On Delivery master logo (/images/pod-logo-2025.svg), in its
+ * true brand colors. Decorative — the containing element supplies the
+ * accessible label.
  */
 export default function Wordmark({ height = 30, className }: WordmarkProps): ReactElement {
   const style: CSSProperties = {
     height,
     width: 'auto',
-    // Force a crisp white silhouette of the master logo on the dark page.
-    filter: 'brightness(0) invert(1)',
   };
   return (
     <Image

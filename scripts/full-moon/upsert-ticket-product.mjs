@@ -26,7 +26,7 @@ const PRODUCT = {
   title: 'Lake Travis Full Moon Party Ticket',
   productType: 'Event Ticket',
   vendor: 'Party On Delivery',
-  description: 'One spot on the Lake Travis Full Moon Party sunset cruise — moonrise dance party, light bites, water and ice included. Drinks ordered ahead through Party On Delivery.',
+  description: 'One spot on the Lake Travis Full Moon Party — a three-and-a-half-hour sunset cruise with DJ Trey, water, ice & cups, and life jackets on board. BYOB via Party On Delivery.',
   basePrice: '59.00',
 };
 const VARIANT = {

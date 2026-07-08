@@ -12,6 +12,7 @@ import WhatsIncluded from './WhatsIncluded';
 import ScheduleTimeline from './ScheduleTimeline';
 import DrinksViaPod from './DrinksViaPod';
 import ThresholdWidget from './ThresholdWidget';
+import SafetyNote from './SafetyNote';
 import Gallery from './Gallery';
 import Faq from './Faq';
 import SiteFooter from './SiteFooter';
@@ -54,6 +55,7 @@ function Experience(): ReactElement {
         <ScheduleTimeline />
         <DrinksViaPod />
         <ThresholdWidget onGetTicket={onGetTicket} />
+        <SafetyNote />
         <Gallery />
         <Faq />
         <SiteFooter />

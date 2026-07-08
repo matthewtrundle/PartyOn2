@@ -4,6 +4,7 @@ import type { ReactElement } from 'react';
 import Button from '@/components/Button';
 import styles from './full-moon.module.css';
 import NeonHalo from './NeonHalo';
+import Wordmark from './Wordmark';
 import HeroCarousel from './HeroCarousel';
 import { DATESTAMP, HERO, SECTIONS } from './event';
 
@@ -12,7 +13,7 @@ interface HeroProps {
   onGetTicket: () => void;
 }
 
-/** The hero: copy stack + datestamp + single CTA, with the image carousel. */
+/** The hero: copy stack + datestamp + single CTA (with logo), and the carousel. */
 export default function Hero({ onGetTicket }: HeroProps): ReactElement {
   return (
     <section className={styles.hero} id={SECTIONS.top}>
@@ -20,9 +21,12 @@ export default function Hero({ onGetTicket }: HeroProps): ReactElement {
         <div className={styles.heroGrid}>
           <div className={styles.heroContent} data-fm-parallax="content">
             <h1 className={styles.heroTitle}>
-              {HERO.headlineLead}
-              <br />
-              <span className={styles.heroGlow}>{HERO.headlineGlow}</span>
+              {HERO.headlineLines.map((line, i) => (
+                <span key={line}>
+                  {i > 0 ? <br /> : null}
+                  {i === HERO.glowLine ? <span className={styles.heroGlow}>{line}</span> : line}
+                </span>
+              ))}
             </h1>
             <p className={styles.heroSub}>{HERO.sub}</p>
 
@@ -39,6 +43,9 @@ export default function Hero({ onGetTicket }: HeroProps): ReactElement {
             </div>
 
             <div className={styles.heroCta}>
+              <span className={styles.heroCtaLogo} aria-hidden="true">
+                <Wordmark height={34} />
+              </span>
               <NeonHalo>
                 <Button variant="cart" size="lg" onClick={onGetTicket} className="uppercase">
                   {HERO.primaryCta}

@@ -132,9 +132,10 @@
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.7);
 }
+/* White (not neon cyan) so section eyebrows read over the bright pink sky. */
 .eyebrowNeon {
-  color: var(--neon-a);
-  text-shadow: 0 0 18px color-mix(in oklch, var(--neon-a) 70%, transparent);
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55), 0 2px 14px rgba(0, 0, 0, 0.4);
 }
 .ruleNeon {
   display: block;
@@ -309,9 +310,9 @@
   font-size: 12px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  /* Brighter than the raw neon so it's legible on the darker pill. */
-  color: #a9edff;
-  text-shadow: 0 0 10px color-mix(in oklch, var(--neon-a) 45%, transparent);
+  /* White so it's legible on the pill regardless of the sky behind it. */
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 .dsVal {
   font-family: var(--font-barlow-condensed), sans-serif;
@@ -328,7 +329,8 @@
   color: rgba(255, 255, 255, 0.7);
   letter-spacing: 0;
 }
-.heroCta { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 34px; align-items: center; }
+.heroCta { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 34px; align-items: center; }
+.heroCtaLogo { display: inline-flex; align-items: center; }
 
 .scrollInd {
   position: absolute;
@@ -579,6 +581,83 @@
   color: var(--color-black, #191c1f);
   background: var(--yellow);
   padding: 4px 11px;
+  border-radius: 6px;
+}
+
+/* ---------- WHAT'S ON BOARD — one tile, two lists ---------- */
+.boardTile {
+  margin-top: 8px;
+  text-align: left;
+  background: rgba(9, 13, 30, 0.62);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  padding: clamp(28px, 4vw, 44px);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: clamp(28px, 5vw, 56px);
+}
+.boardColTitle {
+  font-family: var(--font-barlow-condensed), sans-serif;
+  font-weight: 700;
+  color: #fff;
+  font-size: 20px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+.boardList { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.boardList li {
+  position: relative;
+  padding-left: 26px;
+  font-size: 15.5px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.86);
+}
+.boardList li::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--yellow);
+  box-shadow: 0 0 10px color-mix(in oklch, var(--yellow) 55%, transparent);
+}
+@media (max-width: 760px) {
+  .boardTile { grid-template-columns: 1fr; }
+}
+
+/* ---------- "Very important" safety note ---------- */
+.safety {
+  max-width: 760px;
+  margin: 0 auto;
+  background: linear-gradient(160deg, rgba(242, 211, 79, 0.16), rgba(8, 12, 28, 0.7));
+  backdrop-filter: blur(8px);
+  border: 1px solid color-mix(in oklch, var(--yellow) 42%, transparent);
+  border-radius: 16px;
+  padding: clamp(24px, 4vw, 36px);
+  text-align: center;
+}
+.safetyTitle {
+  font-family: var(--font-barlow-condensed), sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 14px;
+  color: var(--yellow);
+  margin-bottom: 10px;
+}
+.safetyBody { font-size: 16px; line-height: 1.6; color: #fff; margin-top: 8px; }
+.safetyCode {
+  display: inline-block;
+  font-family: var(--font-barlow-condensed), sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--color-black, #191c1f);
+  background: var(--yellow);
+  padding: 1px 8px;
   border-radius: 6px;
 }
 

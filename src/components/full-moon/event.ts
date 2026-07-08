@@ -96,7 +96,7 @@ export const EVENT: FullMoonEvent = {
   dateLabel: 'Sat, Aug 1',
   shortDate: 'Sat Aug 1',
   castOff: '8:00 PM',
-  backAtDock: '11:00 PM',
+  backAtDock: '11:30 PM',
   sunset: '8:26 PM',
   price: 59,
   capacity: 50,
@@ -114,18 +114,18 @@ export const SHARE = {
 
 /** Hero copy. */
 export const HERO = {
-  /** H1 rendered as two lines; `glow` gets the white glow span. */
-  headlineLead: 'DANCE UNDER',
-  headlineGlow: 'THE FULL MOON.',
+  /** H1 rendered one line per entry; the line at `glowLine` gets the glow. */
+  headlineLines: ['FULL MOON', 'ON THE WATER', 'DANCE PARTY', "Y'ALL"] as string[],
+  glowLine: 0,
   sub: 'Watch the sun set over Lake Travis. Dance under a bright, nearly-full moon. This is what summer is for.',
   primaryCta: `Get Your Ticket — $${EVENT.price}`,
-} as const;
+};
 
 /** Datestamp cells (3-cell visual hierarchy). */
 export const DATESTAMP: { key: string; value: string; suffix?: string }[] = [
   { key: 'The Date', value: EVENT.dateLabel },
   { key: 'Cast Off', value: '8:00', suffix: ' PM' },
-  { key: 'Back at Dock', value: '11:00', suffix: ' PM' },
+  { key: 'Back at Dock', value: '11:30', suffix: ' PM' },
 ];
 
 export const CAROUSEL: CarouselSlide[] = [
@@ -163,47 +163,35 @@ export const FACTS: FactItem[] = [
   },
   {
     icon: 'moon',
-    title: 'Timed to the Moon',
-    body: "Once a month, the moon is full and we're on the water beneath it.",
-  },
-  {
-    icon: 'taco',
-    title: 'Light Bites Included',
-    body: 'Chips, salsa & dips, plus water and ice on board. No dinner — eat beforehand.',
+    title: 'Dancing in the Moonlight',
+    body: "Austin's best DJ and a floating dance floor — a one-of-a-kind Austin experience.",
   },
   {
     icon: 'bottle',
-    title: 'Drinks via POD',
+    title: 'Water, Ice & Cups',
+    body: 'Life jackets and floating devices too — everything on board but the drinks.',
+  },
+  {
+    icon: 'bottle',
+    title: 'BYOB via POD',
     body: "Order beer, wine, spirits & mixers ahead — we'll have them iced in a cooler on board.",
   },
 ];
 
-export const INCLUDED: IncludedItem[] = [
-  {
-    icon: 'boat',
-    title: '3 Hours on a 100-ft Boat',
-    body: 'A full sunset-to-moonlight cruise on Lake Travis with room to roam, lounge, and dance.',
-  },
-  {
-    icon: 'taco',
-    title: 'Light Bites Included',
-    body: 'Chips, salsa, and dips to nibble on — plus water and ice on board. No dinner, so we recommend eating beforehand.',
-  },
-  {
-    icon: 'dj',
-    title: 'Moonlit Dance Deck',
-    body: 'A moonlit dance deck and feel-good beats by DJ Vic — easy at sunset, full tilt once the moon is up. String lights overhead, soft seating along the rail.',
-  },
-  {
-    icon: 'people',
-    title: '50 of Your Soon-to-Be Favorites',
-    body: 'Capped at 50 guests. Big enough for a party, small enough to actually meet people. Bring your crew and mingle!',
-  },
-  {
-    icon: 'captain',
-    title: 'Captained by Premier Party Cruises',
-    body: 'A licensed crew runs the boat. You just have to show up at golden hour.',
-  },
+/** "What's on board" — a single tile with two lists. */
+export const BOARD_INCLUDED: string[] = [
+  'A three-and-a-half-hour cruise around Lake Travis with a captain & crew on board',
+  'Smooth beats by DJ Trey',
+  'Water, ice & cups',
+  'Life jackets & floating devices',
+  'An absolutely incredible time',
+];
+
+export const BOARD_BRING: string[] = [
+  'Drinks! This event is BYOB — please order through our partner, Party On Delivery (see below)',
+  'A towel, if you like',
+  "A plan to get home if you're drinking (FM 1431 is no joke)",
+  'A chill attitude',
 ];
 
 export const SCHEDULE: ScheduleStop[] = [
@@ -211,7 +199,7 @@ export const SCHEDULE: ScheduleStop[] = [
   { time: '8:26', label: 'Sunset over the hills. The sky does its best work.', skyColor: '#d24a6e' },
   { time: '9:15', label: 'The moon takes the lake and the deck lights up.', skyColor: '#cfd9ee', moonlight: true },
   { time: '10:00', label: 'Full dance floor under the moon. Peak glow.', skyColor: '#7a3a86' },
-  { time: '11:00', label: 'Back to the dock, glowing. Same time next moon.', skyColor: '#2a3566' },
+  { time: '11:30', label: 'Back to the dock, glowing. Same time next moon.', skyColor: '#2a3566' },
 ];
 
 export const DRINKS = {
@@ -220,6 +208,17 @@ export const DRINKS = {
   headlineTail: 'ORDER AHEAD & CHILL.',
   body: "Party On Delivery is how Austin stocks the boat. Order beer, wine, spirits, and mixers, and we'll have it in a cooler on board on ice, ready to go at cast off.",
   cta: 'Order Now',
+};
+
+/** "Very important" safety note, shown between the tickets and gallery sections. */
+export const SAFETY = {
+  title: 'Very important',
+  body: 'If you will be drinking, please have a plan to get home.',
+  fetiiLead: 'Coming with a group? We recommend',
+  fetiiPartner: 'Fetii',
+  fetiiMid: '— use our discount code',
+  fetiiCode: 'PartyOn',
+  fetiiTail: 'for 25% off.',
 };
 
 /**
@@ -244,7 +243,7 @@ export const GALLERY: GalleryItem[] = [
 export const FAQS: FaqItem[] = [
   {
     q: "What's the ticket price, exactly?",
-    a: `$${EVENT.price} per person. That covers the 3-hour cruise, the DJ, and light bites (chips, salsa & dips) with water and ice. Drinks are ordered separately through Party On Delivery — we ice them in a cooler on board.`,
+    a: `$${EVENT.price} per person for the three-and-a-half-hour cruise, the captain & crew, DJ Trey, and water, ice & cups. It's BYOB — order your drinks ahead through Party On Delivery and we'll have them iced in a cooler on board.`,
   },
   {
     q: 'Where do we board?',

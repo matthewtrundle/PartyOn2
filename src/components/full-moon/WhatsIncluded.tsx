@@ -1,11 +1,10 @@
 import type { ReactElement } from 'react';
 import ScrollReveal from '@/components/ui/ScrollReveal';
 import Section from './Section';
-import { Icon } from './icons';
-import { EVENT, INCLUDED, SECTIONS } from './event';
+import { BOARD_BRING, BOARD_INCLUDED, EVENT, SECTIONS } from './event';
 import styles from './full-moon.module.css';
 
-/** "What's on board" — the six things every $69 ticket includes; the taco bar is featured. */
+/** "What's on board" — one tile, two lists: what's included and what to bring. */
 export default function WhatsIncluded(): ReactElement {
   return (
     <Section id={SECTIONS.included}>
@@ -19,19 +18,26 @@ export default function WhatsIncluded(): ReactElement {
         <span className={styles.ruleYellow} />
       </ScrollReveal>
 
-      <div className={styles.incGrid}>
-        {INCLUDED.map((item, i) => (
-          <ScrollReveal key={item.title} delay={(i % 3) * 0.08}>
-            <div className={styles.inc}>
-              <span className={styles.badgeIc}>
-                <Icon name={item.icon} strokeWidth={1.7} />
-              </span>
-              <h4 className={styles.incTitle}>{item.title}</h4>
-              <p className={styles.incBody}>{item.body}</p>
-            </div>
-          </ScrollReveal>
-        ))}
-      </div>
+      <ScrollReveal>
+        <div className={styles.boardTile}>
+          <div className={styles.boardCol}>
+            <h3 className={styles.boardColTitle}>What&rsquo;s included</h3>
+            <ul className={styles.boardList}>
+              {BOARD_INCLUDED.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
+          <div className={styles.boardCol}>
+            <h3 className={styles.boardColTitle}>What to bring</h3>
+            <ul className={styles.boardList}>
+              {BOARD_BRING.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </ScrollReveal>
     </Section>
   );
 }

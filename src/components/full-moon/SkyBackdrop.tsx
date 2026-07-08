@@ -35,8 +35,6 @@ export default function SkyBackdrop(): ReactElement {
     const moonLayer = moonLayerRef.current;
     const moon = moonRef.current;
     const canvas = canvasRef.current;
-    const heroContent = document.querySelector<HTMLElement>('[data-fm-parallax="content"]');
-    const heroMedia = document.querySelector<HTMLElement>('[data-fm-parallax="media"]');
 
     // ---- Scroll-driven arc ----
     let scrollTick = false;
@@ -57,13 +55,7 @@ export default function SkyBackdrop(): ReactElement {
         moonLayer.style.opacity = m.toFixed(3);
         moon.style.transform = `translateY(${((1 - m) * 98 - 40).toFixed(1)}vh)`;
       }
-      if (!reduced && scrollY < window.innerHeight * 1.3) {
-        if (heroMedia) heroMedia.style.transform = `translateY(${(scrollY * 0.1).toFixed(1)}px)`;
-        if (heroContent) {
-          heroContent.style.transform = `translateY(${(scrollY * 0.16).toFixed(1)}px)`;
-          heroContent.style.opacity = Math.max(0, 1 - scrollY / (window.innerHeight * 0.95)).toFixed(2);
-        }
-      }
+      // No hero copy/carousel parallax — only the sky/sun/moon move with scroll.
       scrollTick = false;
     };
     const onScroll = (): void => {
