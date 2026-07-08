@@ -279,7 +279,8 @@
   width: fit-content;
   align-items: center;
   gap: 10px;
-  margin-top: 16px;
+  /* Centered horizontally within the hero content column. */
+  margin: 16px auto 0;
   padding: 6px 20px 6px 14px;
   border: 1px solid rgba(255, 255, 255, 0.28);
   border-radius: 14px;
