@@ -321,8 +321,8 @@ export const SECTIONS = {
   faq: 'faq',
 } as const;
 
-/** Open-graph image for the preview (existing asset; regenerate per event at launch). */
-export const OG_IMAGE = '/images/hero/austin-skyline-night-lake.webp';
+/** Open-graph / link-preview image: the moonrise dance-floor hero shot. */
+export const OG_IMAGE = '/images/full-moon/moonrise-dance-hero.webp';
 
 /**
  * Ticketing (real Stripe checkout). The ticket is a DRAFT Product created by
