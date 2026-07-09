@@ -145,25 +145,33 @@ export default function OpsLayout({ children }: OpsLayoutProps): ReactElement {
     );
   }
 
-  // Navigation items for ops (day-to-day operational tasks)
-  const navItems = [
-    { href: '/ops/inventory', label: 'Inventory' },
-    { href: '/ops/inventory/count', label: 'AI Count' },
-    { href: '/ops/inventory/predictions', label: 'Predictions' },
-    { href: '/ops/products', label: 'Products' },
-    { href: '/ops/orders', label: 'Orders' },
-    { href: '/ops/orders?view=carts', label: 'Unpaid Carts' },
-    { href: '/ops/boat-schedule', label: 'Boats' },
-    { href: '/ops/events', label: 'Events' },
-    { href: '/ops/orders?view=weekly', label: 'Weekly' },
-    { href: '/ops/collections', label: 'Collections' },
-    { href: '/ops/agent', label: 'Agent' },
+  // Navigation items for ops (day-to-day operational tasks).
+  // Consolidated 2026-07: Unpaid Carts + Weekly live inside Orders (in-page
+  // tabs), Boats is an Orders sub-view, Inventory + Collections live under
+  // Products, and AI Count / Predictions were retired from the nav.
+  const navItems: Array<{ href: string; label: string; match: string[] }> = [
+    {
+      href: '/ops/orders',
+      label: 'Orders',
+      match: ['/ops/orders', '/ops/boat-schedule', '/ops/group-orders'],
+    },
+    {
+      href: '/ops/products',
+      label: 'Products',
+      match: ['/ops/products', '/ops/inventory', '/ops/collections'],
+    },
+    {
+      href: '/ops/events',
+      label: 'Events',
+      match: ['/ops/events', '/ops/full-moon', '/ops/rsvps'],
+    },
+    { href: '/ops/agent', label: 'Agent', match: ['/ops/agent'] },
   ];
 
-  const isActive = (href: string) =>
-    pathname === href ||
-    (href === '/ops/inventory' && pathname === '/ops/inventory') ||
-    (href !== '/ops/inventory' && pathname?.startsWith(href));
+  const isActive = (item: { match: string[] }) =>
+    item.match.some(
+      (p) => pathname === p || pathname?.startsWith(`${p}/`) || pathname?.startsWith(`${p}?`),
+    );
 
   // Authenticated - render with navigation
   return (
@@ -173,7 +181,7 @@ export default function OpsLayout({ children }: OpsLayoutProps): ReactElement {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14">
             <div className="flex items-center gap-8">
-              <Link href="/ops/inventory" className="font-semibold text-blue-200">
+              <Link href="/ops/orders" className="font-semibold text-blue-200">
                 Party On Ops
               </Link>
               <div className="hidden md:flex gap-1">
@@ -182,7 +190,7 @@ export default function OpsLayout({ children }: OpsLayoutProps): ReactElement {
                     key={item.href}
                     href={item.href}
                     className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      isActive(item.href)
+                      isActive(item)
                         ? 'bg-blue-800 text-white'
                         : 'text-blue-200 hover:bg-blue-800 hover:text-white'
                     }`}
@@ -232,7 +240,7 @@ export default function OpsLayout({ children }: OpsLayoutProps): ReactElement {
                 key={item.href}
                 href={item.href}
                 className={`block px-3 py-2 min-h-[44px] flex items-center rounded-md text-sm font-medium transition-colors ${
-                  isActive(item.href)
+                  isActive(item)
                     ? 'bg-blue-800 text-white'
                     : 'text-blue-200 hover:bg-blue-800 hover:text-white'
                 }`}

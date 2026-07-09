@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import SectionSubNav from '@/components/backend/SectionSubNav';
+import { PARTNERS_SUBNAV } from '@/components/backend/subnav-items';
 
 interface Discount {
   id: string;
@@ -136,12 +138,12 @@ export default function PromotionsPage() {
 
   return (
     <div className="p-4 md:p-8">
+      <div className="mb-4">
+        <SectionSubNav items={PARTNERS_SUBNAV} />
+      </div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-black">Promotions</h1>
-          <Link href="/admin/reports" className="text-blue-600 hover:text-blue-800 text-sm">
-            &larr; Back to Reports Dashboard
-          </Link>
         </div>
         <Link
           href="/admin/promotions/new"

@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, ReactElement } from 'react';
+import SectionSubNav from '@/components/backend/SectionSubNav';
+import { EMAIL_SUBNAV } from '@/components/backend/subnav-items';
 
 type EmailType = 'order-confirmation' | 'delivery-en-route' | 'delivery-completed' | 'payment-failed' | 'refund-processed' | 'order-cancelled' | 'invoice' | 'affiliate-welcome' | 'affiliate-prospect' | 'dashboard-link';
 
@@ -260,6 +262,9 @@ export default function EmailPreviewPage(): ReactElement {
 
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
+      <div className="mb-4">
+        <SectionSubNav items={EMAIL_SUBNAV} />
+      </div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-500 to-pink-600 flex items-center justify-center shadow-lg">
