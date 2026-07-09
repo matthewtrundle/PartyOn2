@@ -62,24 +62,43 @@ export interface FullMoonRoster {
   totals: RosterTotals;
 }
 
+/** Alias — this shape is generic across ticketed events, not Full-Moon-specific. */
+export type TicketedEventRoster = FullMoonRoster;
+
+/** Per-event thresholds a ticketed roster needs (each event has its own). */
+export interface TicketedEventConfig {
+  minimum: number;
+  advertisedCapacity: number;
+  hardCap: number;
+  /** internalNote marker for $0 comps (defaults to the Full Moon marker). */
+  compNote?: string;
+}
+
 /**
- * Build the full sales roster + totals for the Full Moon Party ticket product.
- * Returns an empty roster (productFound=false) if the product is missing.
+ * Build the full sales roster + totals for ANY ticketed event, identified by
+ * its product handle. Money and headcount are scoped to the ticket line items,
+ * so a bundled/mixed order can never inflate "$ collected". $0 comps count
+ * toward the headcount but are excluded from money. Returns productFound=false
+ * if the product doesn't exist yet.
  */
-export async function getFullMoonRoster(): Promise<FullMoonRoster> {
+export async function getTicketedEventRoster(
+  productHandle: string,
+  cfg: TicketedEventConfig,
+): Promise<TicketedEventRoster> {
+  const compNote = cfg.compNote ?? FULL_MOON_COMP_NOTE;
   const emptyTotals: RosterTotals = {
     ticketsSold: 0,
     payingOrders: 0,
     compOrders: 0,
     collected: 0,
-    minimum: EVENT.minimum,
-    advertisedCapacity: EVENT.capacity,
-    hardCap: EVENT.hardCap,
+    minimum: cfg.minimum,
+    advertisedCapacity: cfg.advertisedCapacity,
+    hardCap: cfg.hardCap,
     overMinimum: false,
   };
 
   const product = await prisma.product.findUnique({
-    where: { handle: TICKET_PRODUCT_HANDLE },
+    where: { handle: productHandle },
     select: { id: true },
   });
   if (!product) {
@@ -103,7 +122,7 @@ export async function getFullMoonRoster(): Promise<FullMoonRoster> {
       internalNote: true,
       financialStatus: true,
       // Scope BOTH quantity and money to the ticket line items, so a bundled /
-      // mixed order can never inflate the Full Moon headcount or "$ collected".
+      // mixed order can never inflate the headcount or "$ collected".
       items: { where: { productId: product.id }, select: { quantity: true, totalPrice: true } },
     },
     orderBy: { createdAt: 'desc' },
@@ -113,7 +132,7 @@ export async function getFullMoonRoster(): Promise<FullMoonRoster> {
     const quantity = o.items.reduce((sum, it) => sum + it.quantity, 0);
     // Ticket-only revenue (never order.total, which could include other items).
     const amount = Math.round(o.items.reduce((sum, it) => sum + Number(it.totalPrice), 0) * 100) / 100;
-    const isComp = o.internalNote === FULL_MOON_COMP_NOTE || amount === 0;
+    const isComp = o.internalNote === compNote || amount === 0;
     return {
       orderId: o.id,
       orderNumber: o.orderNumber,
@@ -140,7 +159,20 @@ export async function getFullMoonRoster(): Promise<FullMoonRoster> {
     }
   }
   totals.collected = Math.round(totals.collected * 100) / 100;
-  totals.overMinimum = totals.ticketsSold >= EVENT.minimum;
+  totals.overMinimum = totals.ticketsSold >= cfg.minimum;
 
   return { productFound: true, orders: rosterOrders, totals };
+}
+
+/**
+ * Full Moon Party sales roster — thin wrapper over getTicketedEventRoster using
+ * the Full Moon ticket handle + thresholds from event.ts. Kept as the named
+ * entry point for the ticket route, deadline cron, and batch-refund script.
+ */
+export async function getFullMoonRoster(): Promise<FullMoonRoster> {
+  return getTicketedEventRoster(TICKET_PRODUCT_HANDLE, {
+    minimum: EVENT.minimum,
+    advertisedCapacity: EVENT.capacity,
+    hardCap: EVENT.hardCap,
+  });
 }
