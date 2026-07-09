@@ -22,6 +22,8 @@ import { checkRateLimit } from '@/lib/security/rate-limit';
 import {
   computeTicketAmounts,
   ticketIdempotencyKey,
+  wouldExceedHardCap,
+  remainingUnderHardCap,
   TicketPurchaseSchema,
   EVENT_TICKET_METADATA_FLAG,
 } from '@/lib/full-moon/ticket';
@@ -70,6 +72,31 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     const { quantity, subtotal, unitAmountCents } = computeTicketAmounts(Number(variant.price), body.quantity);
+
+    // Hard-cap guard. The public page advertises capacity 50, but the real boat
+    // limit is EVENT.hardCap (60). Reject any purchase that would push total
+    // PAID sales past it — server-side, so the displayed number never changes.
+    // NOTE: this counts PAID orders at session-creation time; an in-flight
+    // unpaid checkout isn't counted, so a burst could momentarily overshoot by
+    // a few. That slop is absorbed by the 50→60 buffer (we never advertise 60).
+    const soldAgg = await prisma.orderItem.aggregate({
+      _sum: { quantity: true },
+      where: { productId: product.id, order: { financialStatus: 'PAID' } },
+    });
+    const sold = soldAgg._sum.quantity ?? 0;
+    if (wouldExceedHardCap(sold, quantity, EVENT.hardCap)) {
+      const remaining = remainingUnderHardCap(sold, EVENT.hardCap);
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            remaining > 0
+              ? `Only ${remaining} spot${remaining === 1 ? '' : 's'} left — please lower your quantity and try again.`
+              : 'This cruise is fully booked.',
+        },
+        { status: 409 },
+      );
+    }
 
     const item: DraftOrderItem = {
       productId: product.id,

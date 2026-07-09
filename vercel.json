@@ -95,6 +95,10 @@
     {
       "path": "/api/cron/finance-weekly-briefing",
       "schedule": "0 14 * * 1"
+    },
+    {
+      "path": "/api/cron/full-moon-deadline",
+      "schedule": "0 15 * * *"
     }
   ]
 }

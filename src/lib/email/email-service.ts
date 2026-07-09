@@ -579,6 +579,115 @@ Premium Alcohol Delivery
 }
 
 /**
+ * Send the Lake Travis Full Moon Party roll-forward refund email.
+ *
+ * Used when the event is postponed for not hitting its minimum: the cruise
+ * rolls to the next full moon and every ticket is refunded in full. Framed as
+ * a postponement (not a generic order refund) so buyers understand why their
+ * ticket was refunded and that no action is needed.
+ */
+export async function sendFullMoonRefundEmail(
+  customerEmail: string,
+  customerName: string,
+  orderNumber: number,
+  refundAmount: number | string,
+): Promise<string | null> {
+  const { formatCurrency } = await import('./resend-client');
+  const rawFirstName = (customerName || 'there').trim().split(/\s+/)[0] || 'there';
+  // Escape before interpolating into the HTML body (buyer-controlled name).
+  const firstNameHtml = rawFirstName
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Full Moon Party — Postponed &amp; Refunded</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background-color: #f9fafb;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+          <tr>
+            <td style="background-color: #1a1a1a; padding: 32px; text-align: center;">
+              <img src="https://partyondelivery.com/images/pod-logo-2025.png" alt="Party On Delivery" width="180" style="width: 180px; max-width: 100%; height: auto; margin-bottom: 12px;" />
+              <p style="color: #ffffff; margin: 0; font-size: 14px; letter-spacing: 0.05em;">LAKE TRAVIS FULL MOON PARTY</p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 24px;">
+              <p style="margin: 0 0 16px; font-size: 16px; color: #1a1a1a;">Hi ${firstNameHtml},</p>
+              <p style="margin: 0 0 16px; font-size: 16px; color: #666;">
+                This full moon cruise didn't reach the guest minimum we need to safely cast off, so we're
+                <strong>rolling it forward to the next full moon</strong>. There's nothing you need to do.
+              </p>
+              <p style="margin: 0 0 16px; font-size: 16px; color: #666;">
+                We've <strong>refunded your ticket (order #${orderNumber}) in full</strong>.
+              </p>
+              <div style="background-color: #f0fdf4; border-radius: 8px; padding: 16px; margin-bottom: 16px; text-align: center;">
+                <p style="margin: 0; color: #166534; font-size: 14px;">Refund Amount</p>
+                <p style="margin: 4px 0 0; font-size: 24px; font-weight: 600; color: #1a1a1a;">${formatCurrency(refundAmount)}</p>
+              </div>
+              <p style="margin: 16px 0; font-size: 14px; color: #666;">
+                Please allow 5-10 business days for the refund to appear on your original payment method.
+                We'll send the next date your way soon — we'd love to have you aboard.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="background-color: #1a1a1a; padding: 24px; text-align: center;">
+              <p style="margin: 0; color: #D4AF37; font-size: 14px;">Questions?</p>
+              <p style="margin: 8px 0 0; color: #ffffff; font-size: 14px;">Reply to this email or contact us at support@partyondelivery.com</p>
+              <p style="margin: 16px 0 0; color: #666; font-size: 12px;">&copy; ${new Date().getFullYear()} Party On Delivery. All rights reserved.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `.trim();
+
+  const text = `
+LAKE TRAVIS FULL MOON PARTY
+
+Hi ${rawFirstName},
+
+This full moon cruise didn't reach the guest minimum we need to safely cast off, so we're rolling it forward to the next full moon. There's nothing you need to do.
+
+We've refunded your ticket (order #${orderNumber}) in full.
+
+Refund Amount: ${formatCurrency(refundAmount)}
+
+Please allow 5-10 business days for the refund to appear on your original payment method. We'll send the next date your way soon — we'd love to have you aboard.
+
+Questions? Reply to this email or contact support@partyondelivery.com
+
+Party On Delivery
+  `.trim();
+
+  return sendEmail({
+    to: customerEmail,
+    subject: `Full Moon Party postponed — your ticket is refunded (Order #${orderNumber})`,
+    html,
+    text,
+    type: EmailType.REFUND_PROCESSED,
+    metadata: {
+      orderNumber,
+      refundAmount,
+      flow: 'full-moon-roll-forward',
+    },
+  });
+}
+
+/**
  * Send order cancellation notification
  */
 export async function sendOrderCancellationEmail(

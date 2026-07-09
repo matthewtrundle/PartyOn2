@@ -3,6 +3,8 @@ import {
   computeTicketAmounts,
   isEventTicketSession,
   ticketIdempotencyKey,
+  wouldExceedHardCap,
+  remainingUnderHardCap,
   TicketPurchaseSchema,
 } from '../ticket';
 
@@ -62,6 +64,34 @@ describe('ticketIdempotencyKey', () => {
     expect(ticketIdempotencyKey('a@b.com', 2, t)).not.toBe(ticketIdempotencyKey('a@b.com', 2, t + 6 * 60_000));
     expect(ticketIdempotencyKey('a@b.com', 2, t)).not.toBe(ticketIdempotencyKey('a@b.com', 3, t));
     expect(ticketIdempotencyKey('A@B.com', 2, t)).toBe(ticketIdempotencyKey('a@b.com', 2, t));
+  });
+});
+
+describe('wouldExceedHardCap', () => {
+  const CAP = 60;
+
+  it('allows a purchase that lands exactly on the cap', () => {
+    expect(wouldExceedHardCap(58, 2, CAP)).toBe(false);
+    expect(wouldExceedHardCap(0, 60, CAP)).toBe(false);
+  });
+
+  it('rejects a purchase that would cross the cap', () => {
+    expect(wouldExceedHardCap(59, 2, CAP)).toBe(true);
+    expect(wouldExceedHardCap(60, 1, CAP)).toBe(true);
+  });
+
+  it('advertised capacity (50) is NOT the ceiling — selling above 50 is allowed up to 60', () => {
+    expect(wouldExceedHardCap(50, 8, CAP)).toBe(false); // 58 ≤ 60
+    expect(wouldExceedHardCap(55, 5, CAP)).toBe(false); // 60 ≤ 60
+    expect(wouldExceedHardCap(55, 6, CAP)).toBe(true); // 61 > 60
+  });
+});
+
+describe('remainingUnderHardCap', () => {
+  it('reports spots left, never negative', () => {
+    expect(remainingUnderHardCap(55, 60)).toBe(5);
+    expect(remainingUnderHardCap(60, 60)).toBe(0);
+    expect(remainingUnderHardCap(65, 60)).toBe(0);
   });
 });
 
