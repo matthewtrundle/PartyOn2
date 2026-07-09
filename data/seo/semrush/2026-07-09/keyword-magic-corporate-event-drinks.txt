@@ -1,0 +1,13 @@
+SEMrush Keyword Magic Tool — seed: "corporate event drinks" — db=us — captured 2026-07-09
+Cluster totals: All keywords: 12 | Total Volume: 110 | Average KD: 6%
+
+corporate event space houston with food and drink | C | 40 | 6 | 0.00 | 3
+best corporate event space houston with food and drink | n/a | 20 | pending
+best corporate event spaces houston with food and drink | n/a | 10
+corporate event drink station | n/a | 10
+corporate event drink toppers | n/a | 10
+soft drinks bulk delivery for corporate events | n/a | 10
+soft drinks delivery for corporate events | n/a | 10   <- we rank pos 11.9 for this (GSC)
+(rest: 0/mo)
+
+FINDING: corporate event drink searches are effectively nonexistent on Google — 110/mo total and half of it is Houston venue-space intent, not drinks.

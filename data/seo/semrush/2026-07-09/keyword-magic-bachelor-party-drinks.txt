@@ -1,0 +1,12 @@
+SEMrush Keyword Magic Tool — seed: "bachelor party drinks" — db=us — captured 2026-07-09
+Cluster totals: All keywords: 70 | Total Volume: 710 | Average KD: 5%
+Columns: keyword | intent | volume | KD% | CPC | SERP-feature-count
+
+bachelor party drinking games | I | 170 | 3 | 0.18 | 7
+bachelor party drinks | C | 140 | 12 | 0.32 | 8   <- commercial intent
+drinks for bachelor party | I/C | 90 | 4 | 0.00 | 6
+drinking games bachelor party | I | 40 | 3 | 0.00 | 7
+drinking games for bachelor party | n/a | 30 | pending
+non drinking bachelor party ideas | n/a | 30 | pending
+bachelor party drink ideas | n/a | 20 | pending
+(long tail 0-20/mo: game/rules/team variants; modifier groups: game 22, ideas 17, best 6)

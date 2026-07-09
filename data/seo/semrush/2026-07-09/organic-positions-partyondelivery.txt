@@ -1,0 +1,19 @@
+SEMrush Organic Rankings — partyondelivery.com — db=us — Jul 8 2026 data — captured 2026-07-09
+Totals: 1,490 US keywords | est. traffic 469/mo | traffic cost $661
+Columns: keyword | intent | position | volume | KD% | URL
+(page 1 of 15; segment/relevant rows)
+
+adult birthday party ideas | I | 7 | 3.6K | 24 | /blog/15-unique-birthday-party-ideas-in-austin-for-adults   <- top traffic driver (18%)
+alcohol delivery | C | 24 | 27.1K | 51 | /
+booze delivery austin | C | 2 | 140 | 20 | /
+alcohol delivery austin | C | 6 | 260 | 11 | /
+team bride sunglasses | I | 5 | 90 | 11 | /products/team-bride-sunglasses
+small venues for weddings | C | 20 | 720 | 17 | /blog/best-small-wedding-venues-near-austin
+small wedding locations | T | 33 | 1.9K | 21 | /blog/best-small-wedding-venues-near-austin
+things to do in austin for a bachelor party | I | 51 | 70 | 4 | /blog/austin-bachelor-party-do-s-and-don-ts...
+all inclusive wedding venues in austin tx | C | 68 | 90 | 7 | /blog/all-inclusive-austin-wedding-venues...
+cooler rentals | C | 15 | 390 | 8 | /rentals/cooler-rentals-austin
+drink dispenser for party | C | 33 | 1.9K | 31 | /products/glass-beverage-dispenser
+who delivers alcohol | I | 29 | 2.4K | 48 | /
+
+NOTE: SEMrush sees no meaningful segment-keyword rankings that GSC didn't already show (GSC first-party data is richer for segments). Domain's biggest organic asset is the adult-birthday blog post + branded/delivery terms.

@@ -1,0 +1,33 @@
+SEMrush Keyword Magic Tool — seed: "wedding bar" — db=us — captured 2026-07-09
+Cluster totals: All keywords: 8,761 | Total Volume: 85,820 | Average KD: 14%
+Columns: keyword | intent | volume | KD% | CPC | SERP-feature-count
+(page 1 of 88 captured; drink/bar-service relevant rows extracted)
+
+wedding bar menu | I | 1600 | 15 | 1.10 | 8
+wedding bar | I/C | 880 | 15 | 1.51 | 8
+how much is an open bar at a wedding | I | 720 | 18 | 1.42 | 5
+open bar wedding cost | I | 590 | 10 | 1.52 | 6
+bar for weddings | C | 480 | 15 | 1.85 | 7
+bar services for weddings | C | 390 | 12 | 2.01 | 5
+how much does an open bar cost at a wedding | I | 390 | 18 | 1.50 | 5
+price for open bar at wedding | I | 390 | 3 | 1.64 | 5
+how much for open bar wedding | I | 320 | 10 | 1.50 | 5
+wedding bar services | T | 320 | 29 | 1.97 | 4
+cash bar wedding | I | 260 | 28 | 1.87 | 7
+open bar wedding | I | 260 | 20 | 1.57 | 6
+how much do open bars cost at weddings | I | 210 | 16 | 1.60 | 4
+how much does an open bar for a wedding cost | I | 210 | 14 | 1.60 | 5
+how much does open bar cost for wedding | I | 210 | 10 | 1.60 | 5
+mobile bar for weddings | C | 210 | 17 | 1.31 | 4
+rent a bar for a wedding near me | I/T | 210 | 6 | 0.00 | 3
+wedding open bar | I | 210 | 3 | 1.85 | 5
+bar service for wedding | C | 170 | 24 | 2.01 | 5
+diy wedding bar | I | 170 | 6 | 0.73 | 8
+how much is an open bar for a wedding | I | 170 | 7 | 1.42 | 5
+open bar cost wedding | I | 170 | 8 | 1.64 | 5
+stock the bar party for wedding | I | 170 | 12 | 0.59 | 6
+what is a cash bar at a wedding | I | 170 | 28 | 0.00 | 6
+bar packages for weddings | I | 140 | 8 | 1.64 | 7
+diy wedding bar (dupe entry above) — see also "wedding bars for rent" 170 KD4
+
+NOTE: bulk of the 85k cluster is non-drink intent (candy bar 673 kws, dessert bar, coffee bar, taco bar, signs/decor). The OPEN BAR COST sub-cluster (~2,500/mo combined, KD 3-18) is the money angle for a video: DIY/delivery vs venue open bar cost comparison.
