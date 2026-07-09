@@ -165,21 +165,33 @@ export default function AdminLayout({ children }: AdminLayoutProps): ReactElemen
     );
   }
 
-  // Navigation items (admin-only strategic/management features)
-  const navItems = [
-    { href: '/admin/strategy', label: 'Game Plan' },
-    { href: '/admin/analytics', label: 'Analytics' },
-    { href: '/admin/customers', label: 'Customers' },
-    { href: '/admin/emails', label: 'Emails' },
-    { href: '/admin/emails/followups', label: 'Follow-Ups' },
-    { href: '/admin/email-signups', label: 'Email Signups' },
-    { href: '/admin/sync', label: 'Sync' },
-    { href: '/admin/reports', label: 'Reports' },
-    { href: '/admin/promotions', label: 'Promotions' },
-    { href: '/admin/affiliates', label: 'Affiliates' },
-    { href: '/admin/brians-stuff', label: "Brian's Stuff" },
-    { href: '/admin/settings', label: 'Settings' },
+  // Navigation items (admin-only strategic/management features).
+  // Consolidated 2026-07: Email groups templates + follow-ups + signups,
+  // Partners groups affiliates + promotions, Sync left the nav (page still
+  // reachable at /admin/sync), and Dashboard (the post-login landing page)
+  // finally got a nav entry.
+  const navItems: Array<{ href: string; label: string; match: string[] }> = [
+    { href: '/admin/dashboard', label: 'Dashboard', match: ['/admin/dashboard'] },
+    { href: '/admin/strategy', label: 'Game Plan', match: ['/admin/strategy'] },
+    { href: '/admin/analytics', label: 'Analytics', match: ['/admin/analytics'] },
+    { href: '/admin/customers', label: 'Customers', match: ['/admin/customers'] },
+    {
+      href: '/admin/emails',
+      label: 'Email',
+      match: ['/admin/emails', '/admin/email-signups'],
+    },
+    { href: '/admin/reports', label: 'Reports', match: ['/admin/reports'] },
+    {
+      href: '/admin/affiliates',
+      label: 'Partners',
+      match: ['/admin/affiliates', '/admin/promotions'],
+    },
+    { href: '/admin/brians-stuff', label: "Brian's Stuff", match: ['/admin/brians-stuff'] },
+    { href: '/admin/settings', label: 'Settings', match: ['/admin/settings'] },
   ];
+
+  const isActive = (item: { match: string[] }) =>
+    item.match.some((p) => pathname === p || pathname?.startsWith(`${p}/`));
 
   // Authenticated - render with navigation
   return (
@@ -197,8 +209,8 @@ export default function AdminLayout({ children }: AdminLayoutProps): ReactElemen
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                      pathname?.startsWith(item.href)
+                    className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                      isActive(item)
                         ? 'bg-gray-800 text-white'
                         : 'text-gray-300 hover:bg-gray-800 hover:text-white'
                     }`}
@@ -210,7 +222,7 @@ export default function AdminLayout({ children }: AdminLayoutProps): ReactElemen
             </div>
             <div className="hidden md:flex items-center gap-4">
               <Link
-                href="/ops/inventory"
+                href="/ops/orders"
                 className="text-sm text-gray-400 hover:text-white transition-colors"
               >
                 Ops Portal
@@ -248,7 +260,7 @@ export default function AdminLayout({ children }: AdminLayoutProps): ReactElemen
                 key={item.href}
                 href={item.href}
                 className={`block px-3 py-2 min-h-[44px] flex items-center rounded-md text-sm font-medium transition-colors ${
-                  pathname?.startsWith(item.href)
+                  isActive(item)
                     ? 'bg-gray-800 text-white'
                     : 'text-gray-300 hover:bg-gray-800 hover:text-white'
                 }`}
@@ -258,7 +270,7 @@ export default function AdminLayout({ children }: AdminLayoutProps): ReactElemen
             ))}
             <div className="border-t border-gray-800 pt-2 mt-2 space-y-1">
               <Link
-                href="/ops/inventory"
+                href="/ops/orders"
                 className="block px-3 py-2 min-h-[44px] flex items-center text-sm text-gray-400 hover:text-white transition-colors"
               >
                 Ops Portal

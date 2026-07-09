@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import OrderDetailModal from './OrderDetailModal';
+import OrdersTabs from '@/components/ops/orders/OrdersTabs';
 
 type ViewTab = 'upcoming' | 'exceptions' | 'today' | 'weekly';
 
@@ -223,6 +224,9 @@ export default function BoatSchedulePage() {
 
   return (
     <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="mb-4">
+        <OrdersTabs active="boats" />
+      </div>
       {/* Header */}
       <div className="flex items-start justify-between mb-6 gap-4">
         <div>

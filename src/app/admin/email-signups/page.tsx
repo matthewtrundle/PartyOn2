@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { prisma } from '@/lib/database/client';
 import { getOpsSession } from '@/lib/auth/ops-session';
 import type { Prisma } from '@prisma/client';
+import SectionSubNav from '@/components/backend/SectionSubNav';
+import { EMAIL_SUBNAV } from '@/components/backend/subnav-items';
 
 /**
  * Admin → Emails → Signups.
@@ -94,7 +96,10 @@ export default async function EmailSignupsPage({
 
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
-      {/* Header + sub-nav */}
+      <div className="mb-4">
+        <SectionSubNav items={EMAIL_SUBNAV} />
+      </div>
+      {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-1">
           <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-pink-500 to-pink-600 flex items-center justify-center shadow">
@@ -106,10 +111,6 @@ export default async function EmailSignupsPage({
             <h1 className="text-3xl font-bold text-gray-900">Email Signups</h1>
             <p className="text-gray-500 mt-0.5">Every email address collected across the site (the leads store).</p>
           </div>
-        </div>
-        <div className="flex gap-2 mt-3">
-          <Link href="/admin/emails" className="px-3 py-1.5 text-sm font-semibold rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200">Email Preview</Link>
-          <span className="px-3 py-1.5 text-sm font-semibold rounded-lg bg-pink-600 text-white">Signups</span>
         </div>
       </div>
 

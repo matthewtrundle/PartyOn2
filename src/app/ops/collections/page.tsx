@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback, ReactElement } from 'react';
 import Link from 'next/link';
+import SectionSubNav from '@/components/backend/SectionSubNav';
+import { CATALOG_SUBNAV } from '@/components/backend/subnav-items';
 
 interface Collection {
   id: string;
@@ -91,6 +93,9 @@ export default function CollectionsPage(): ReactElement {
 
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
+      <div className="mb-4">
+        <SectionSubNav items={CATALOG_SUBNAV} />
+      </div>
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div className="flex items-center gap-3">
@@ -114,15 +119,6 @@ export default function CollectionsPage(): ReactElement {
             </svg>
             New Collection
           </button>
-          <Link
-            href="/ops/products"
-            className="group px-4 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl font-medium hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 shadow-sm flex items-center gap-2"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-            Products
-          </Link>
         </div>
       </div>
 

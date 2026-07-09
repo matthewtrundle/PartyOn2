@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback, ReactElement } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import AddAffiliateModal from '@/components/ops/AddAffiliateModal';
+import SectionSubNav from '@/components/backend/SectionSubNav';
+import { PARTNERS_SUBNAV } from '@/components/backend/subnav-items';
 
 interface Application {
   id: string;
@@ -145,6 +147,9 @@ export default function AffiliatesPage(): ReactElement {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
+      <div className="mb-4">
+        <SectionSubNav items={PARTNERS_SUBNAV} />
+      </div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
         <h1 className="text-2xl font-bold text-gray-900">Affiliates</h1>
         <div className="flex gap-2">

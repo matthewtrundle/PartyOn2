@@ -3,6 +3,8 @@
 import { useState, useEffect, ReactElement, useCallback } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import SectionSubNav from '@/components/backend/SectionSubNav';
+import { CATALOG_SUBNAV } from '@/components/backend/subnav-items';
 
 interface InventoryItem {
   id: string;
@@ -683,6 +685,9 @@ export default function InventoryPage(): ReactElement {
 
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
+      <div className="mb-4">
+        <SectionSubNav items={CATALOG_SUBNAV} />
+      </div>
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
@@ -731,24 +736,6 @@ export default function InventoryPage(): ReactElement {
             </svg>
             Refresh
           </button>
-          <Link
-            href="/ops/inventory/count"
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-2"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-            </svg>
-            AI Count
-          </Link>
-          <Link
-            href="/ops/inventory/predictions"
-            className="px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors shadow-sm flex items-center gap-2"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-            </svg>
-            Predictions
-          </Link>
         </div>
       </div>
 

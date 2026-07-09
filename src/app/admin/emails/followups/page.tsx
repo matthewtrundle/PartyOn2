@@ -9,8 +9,9 @@
  * this page calls also gates itself with requireOpsAuth.
  */
 
-import Link from 'next/link';
 import type { ReactElement } from 'react';
+import SectionSubNav from '@/components/backend/SectionSubNav';
+import { EMAIL_SUBNAV } from '@/components/backend/subnav-items';
 import CopyEditorPanel from '@/components/admin/followups/CopyEditorPanel';
 import FlagsPanel from '@/components/admin/followups/FlagsPanel';
 import QueuePanel from '@/components/admin/followups/QueuePanel';
@@ -21,7 +22,8 @@ import TestSendPanel from '@/components/admin/followups/TestSendPanel';
 
 export default function FollowupsAdminPage(): ReactElement {
   return (
-    <div className="space-y-6">
+    <div className="p-4 md:p-8 bg-gray-50 min-h-screen space-y-6">
+      <SectionSubNav items={EMAIL_SUBNAV} />
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <h1 className="font-heading text-3xl tracking-[0.1em] text-gray-900">Follow-Ups</h1>
@@ -30,9 +32,6 @@ export default function FollowupsAdminPage(): ReactElement {
             Engine runs every 15 minutes.
           </p>
         </div>
-        <Link href="/admin/emails" className="btn-ghost">
-          ← Email Templates
-        </Link>
       </div>
 
       <FlagsPanel />

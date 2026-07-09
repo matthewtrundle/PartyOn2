@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback, ReactElement } from 'react';
 import Link from 'next/link';
 import { PRODUCT_CATEGORIES, getCategoryByProductType, getCategoryColor } from '@/lib/product-categories';
+import SectionSubNav from '@/components/backend/SectionSubNav';
+import { CATALOG_SUBNAV } from '@/components/backend/subnav-items';
 
 interface ProductVariant {
   id: string;
@@ -212,6 +214,9 @@ export default function ProductsPage(): ReactElement {
 
   return (
     <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
+      <div className="mb-4">
+        <SectionSubNav items={CATALOG_SUBNAV} />
+      </div>
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
@@ -231,15 +236,6 @@ export default function ProductsPage(): ReactElement {
         </div>
         <div className="flex flex-wrap gap-3 w-full sm:w-auto">
           <Link
-            href="/ops/collections"
-            className="group px-4 py-2.5 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-xl font-medium hover:from-purple-700 hover:to-purple-800 transition-all duration-200 shadow-md shadow-purple-200 hover:shadow-lg hover:shadow-purple-300 flex items-center gap-2"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-            </svg>
-            Collections
-          </Link>
-          <Link
             href="/ops/products/create"
             className="group px-4 py-2.5 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-xl font-medium hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-md shadow-green-200 hover:shadow-lg hover:shadow-green-300 flex items-center gap-2"
           >
@@ -257,15 +253,6 @@ export default function ProductsPage(): ReactElement {
             </svg>
             Refresh
           </button>
-          <Link
-            href="/ops/sync"
-            className="group px-4 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl font-medium hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-md shadow-blue-200 hover:shadow-lg hover:shadow-blue-300 flex items-center gap-2"
-          >
-            <svg className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            Sync from Shopify
-          </Link>
         </div>
       </div>
 
