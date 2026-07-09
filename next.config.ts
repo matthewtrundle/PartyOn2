@@ -196,6 +196,16 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
 
+      // 2026-07-08 Full Moon Party moved to a date-specific URL so each
+      // month's cruise gets its own page (/full-moon → /full-moon-aug1).
+      // Keeps the already-live/indexed URL, shared links, and OG preview
+      // working, and preserves the Stripe return URL for anyone mid-checkout.
+      {
+        source: '/full-moon',
+        destination: '/full-moon-aug1',
+        permanent: true,
+      },
+
       // 2026-07-02 orphaned design-exploration demo pages deleted (zombie
       // catalog pattern — no inbound links, not in sitemap, no metadata,
       // linked to a 404ing /heritage). GSC + GA4 confirmed zero

@@ -156,8 +156,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           ...(body.attribution?.utmSource ? { utmSource: body.attribution.utmSource } : {}),
           ...(body.attribution?.utmCampaign ? { utmCampaign: body.attribution.utmCampaign } : {}),
         },
-        success_url: `${baseUrl}/full-moon?ticket=success`,
-        cancel_url: `${baseUrl}/full-moon?ticket=cancelled`,
+        success_url: `${baseUrl}/full-moon-aug1?ticket=success`,
+        cancel_url: `${baseUrl}/full-moon-aug1?ticket=cancelled`,
       },
       // Same email + quantity within ~5 min resolves to one session → one charge.
       { idempotencyKey: ticketIdempotencyKey(body.email, quantity, Date.now()) },

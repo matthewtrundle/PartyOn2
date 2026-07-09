@@ -122,7 +122,7 @@ export const EVENT: FullMoonEvent = {
   hardCap: 60,
   minimum: 32,
   deadlineDays: 7,
-  shareUrl: 'https://partyondelivery.com/full-moon',
+  shareUrl: 'https://partyondelivery.com/full-moon-aug1',
   ordersUrl: '/order',
 };
 
