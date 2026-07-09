@@ -63,6 +63,22 @@ export function isEventTicketSession(metadata: Record<string, string> | null | u
 }
 
 /**
+ * Whether selling `requested` more tickets would push total PAID sales past the
+ * real hard cap. The public page advertises a lower capacity (50); this guards
+ * the true physical limit (60) server-side so we never oversell the boat.
+ *
+ * Pure so it can be unit-tested. `sold` is the current PAID ticket count.
+ */
+export function wouldExceedHardCap(sold: number, requested: number, hardCap: number): boolean {
+  return sold + requested > hardCap;
+}
+
+/** How many tickets can still be sold before hitting the hard cap (never negative). */
+export function remainingUnderHardCap(sold: number, hardCap: number): number {
+  return Math.max(0, hardCap - sold);
+}
+
+/**
  * Deterministic idempotency key for the Stripe session so rapid duplicate
  * submits (double-click, retry, second tab) resolve to the SAME session — and
  * therefore a single charge — within a short window. Buckets by ~5 minutes.

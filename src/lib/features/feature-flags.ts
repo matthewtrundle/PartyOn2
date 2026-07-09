@@ -41,6 +41,12 @@ export const FEATURE_FLAGS = {
   FOLLOWUPS_AFFILIATE_APPLY: 'followups_affiliate_apply',
   FOLLOWUPS_EVENT_QUIZ: 'followups_event_quiz',
   FOLLOWUPS_POST_PURCHASE_REVIEW: 'followups_post_purchase_review',
+
+  // Full Moon Party — set true when the event is postponed/cancelled (short of
+  // the minimum at the deadline). Flips the public threshold widget to its
+  // "postponed" state. Set by the deadline cron or the operator; reset to
+  // resume selling. See src/lib/full-moon/event-state.ts.
+  FULL_MOON_POSTPONED: 'full_moon_postponed',
 } as const;
 
 export type FeatureFlagKey = (typeof FEATURE_FLAGS)[keyof typeof FEATURE_FLAGS];

@@ -88,7 +88,14 @@ export interface FullMoonEvent {
   backAtDock: string;
   sunset: string;
   price: number;
+  /** Advertised capacity — what the public page shows ("/50", "Boat capacity: 50"). */
   capacity: number;
+  /**
+   * Real hard cap enforced server-side in the ticket route. Higher than the
+   * advertised `capacity` so we keep a small safety buffer without changing the
+   * number guests see. Never surfaced publicly.
+   */
+  hardCap: number;
   minimum: number;
   /** Days before the event the minimum must be met. */
   deadlineDays: number;
@@ -112,9 +119,10 @@ export const EVENT: FullMoonEvent = {
   sunset: '8:26 PM',
   price: 59,
   capacity: 50,
+  hardCap: 60,
   minimum: 32,
   deadlineDays: 7,
-  shareUrl: 'https://partyondelivery.com/full-moon',
+  shareUrl: 'https://partyondelivery.com/full-moon-aug1',
   ordersUrl: '/order',
 };
 

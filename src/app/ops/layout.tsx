@@ -155,6 +155,7 @@ export default function OpsLayout({ children }: OpsLayoutProps): ReactElement {
     { href: '/ops/orders?view=carts', label: 'Unpaid Carts' },
     { href: '/ops/boat-schedule', label: 'Boats' },
     { href: '/ops/rsvps', label: 'RSVPs' },
+    { href: '/ops/full-moon', label: 'Full Moon' },
     { href: '/ops/orders?view=weekly', label: 'Weekly' },
     { href: '/ops/collections', label: 'Collections' },
     { href: '/ops/agent', label: 'Agent' },

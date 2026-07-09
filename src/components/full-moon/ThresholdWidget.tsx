@@ -24,6 +24,8 @@ type TicketState = 'working' | 'met' | 'cancelled';
 export default function ThresholdWidget({ onGetTicket }: ThresholdWidgetProps): ReactElement {
   const { capacity, minimum } = EVENT;
   const [sold, setSold] = useState(THRESHOLD.sold);
+  // Authoritative widget state from the live count endpoint (null until loaded).
+  const [serverState, setServerState] = useState<TicketState | null>(null);
   const [inView, setInView] = useState(false);
   const [fillPct, setFillPct] = useState(0);
   const [guestsOpen, setGuestsOpen] = useState(false);
@@ -32,8 +34,10 @@ export default function ThresholdWidget({ onGetTicket }: ThresholdWidgetProps): 
   const confettiFired = useRef(false);
   const reduced = useReducedMotion();
 
-  const forcedCancelled = THRESHOLD.state === 'cancelled';
-  const state: TicketState = forcedCancelled ? 'cancelled' : sold >= minimum ? 'met' : 'working';
+  // Prefer the live server state (which already folds in the postponed flag);
+  // fall back to the static snapshot / local derivation before it loads.
+  const state: TicketState =
+    serverState ?? (THRESHOLD.state === 'cancelled' ? 'cancelled' : sold >= minimum ? 'met' : 'working');
   const pct = Math.min(100, Math.round((sold / capacity) * 100));
   const markerPct = Math.round((minimum / capacity) * 100);
   const toGo = Math.max(0, minimum - sold);
@@ -43,7 +47,11 @@ export default function ThresholdWidget({ onGetTicket }: ThresholdWidgetProps): 
     fetch('/api/v1/full-moon/count')
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
-        if (active && data && typeof data.sold === 'number') setSold(data.sold);
+        if (!active || !data) return;
+        if (typeof data.sold === 'number') setSold(data.sold);
+        if (data.state === 'working' || data.state === 'met' || data.state === 'cancelled') {
+          setServerState(data.state);
+        }
       })
       .catch(() => undefined);
     return () => {
