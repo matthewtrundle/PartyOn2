@@ -3,6 +3,7 @@
 import { ReactElement } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import HqBadge from '@/components/backend/kit/Badge';
 import { formatDateTime } from './shared';
 import type { OrderDetail } from './types';
 
@@ -52,21 +53,19 @@ export default function DetailHeader({
           </svg>
         </Link>
         <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold text-gray-900">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+            <h1 className="font-heading font-bold text-2xl sm:text-3xl tracking-[0.06em] uppercase text-gray-900">
               Order #{order.orderNumber}
             </h1>
             {order.groupOrder.isGroupOrder && (
-              <span className="px-3 py-1 text-sm font-medium bg-purple-100 text-purple-700 border border-purple-200 rounded-full">
-                Group Order
-              </span>
+              <HqBadge variant="blue">Group Order</HqBadge>
             )}
             {order.cruiseType && (
               <span
-                className={`px-3 py-1 text-sm font-semibold rounded-full border ${
+                className={`inline-flex items-center px-2 py-[3px] rounded text-xs font-bold tracking-[0.05em] uppercase whitespace-nowrap ${
                   order.cruiseType === 'DISCO'
-                    ? 'bg-orange-500 text-white border-orange-700'
-                    : 'bg-teal-600 text-white border-teal-800'
+                    ? 'bg-orange-500 text-white'
+                    : 'bg-teal-600 text-white'
                 }`}
                 title={order.cruiseBoat ? `Boat: ${order.cruiseBoat}` : undefined}
               >
@@ -75,13 +74,13 @@ export default function DetailHeader({
               </span>
             )}
           </div>
-          <p className="text-gray-500 mt-1">
-            Created {formatDateTime(order.createdAt)}
+          <p className="text-sm text-gray-500 mt-1">
+            {order.customer.name || order.customerSnapshot.name || 'Guest'} · ${order.pricing.total.toFixed(2)} · Created {formatDateTime(order.createdAt)}
           </p>
         </div>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
         {/* Prev/Next Navigation */}
         <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden shadow-sm">
           <button

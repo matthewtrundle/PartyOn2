@@ -8,6 +8,7 @@ import StatusStepperCard from '@/components/ops/orders/detail/StatusStepperCard'
 import DeliveryCard from '@/components/ops/orders/detail/DeliveryCard';
 import ItemsCard from '@/components/ops/orders/detail/ItemsCard';
 import PaymentCard from '@/components/ops/orders/detail/PaymentCard';
+import DetailStickyBar, { nextTransition } from '@/components/ops/orders/detail/DetailStickyBar';
 import { getStatusColor, formatDateTime, SectionHeader } from '@/components/ops/orders/detail/shared';
 import type { OrderDetail } from '@/components/ops/orders/detail/types';
 
@@ -573,6 +574,18 @@ export default function OrderDetailPage(): ReactElement {
 
   async function updateOrder(updates: Record<string, unknown>): Promise<void> {
     if (!order) return;
+    const prev = order;
+
+    // Optimistic: reflect status changes instantly (stepper/sticky bar), then
+    // reconcile with the server; roll back + refetch if the write fails.
+    const optimistic: Partial<OrderDetail> = {};
+    if (typeof updates.status === 'string') optimistic.status = updates.status;
+    if (typeof updates.fulfillmentStatus === 'string') {
+      optimistic.fulfillmentStatus = updates.fulfillmentStatus;
+      // Mirrors the API: DELIVERED fulfillment auto-sets order status
+      if (updates.fulfillmentStatus === 'DELIVERED') optimistic.status = 'DELIVERED';
+    }
+    if (Object.keys(optimistic).length > 0) setOrder({ ...prev, ...optimistic });
     setSaving(true);
 
     try {
@@ -587,13 +600,17 @@ export default function OrderDetailPage(): ReactElement {
       if (data.success) {
         await fetchOrder();
         // Show review prompt when fulfillment changes to DELIVERED
-        if (updates.fulfillmentStatus === 'DELIVERED' && !order.reviewRequestSentAt) {
+        if (updates.fulfillmentStatus === 'DELIVERED' && !prev.reviewRequestSentAt) {
           setShowReviewPrompt(true);
         }
       } else {
+        setOrder(prev);
+        await fetchOrder();
         alert('Failed to update order: ' + data.error);
       }
     } catch {
+      setOrder(prev);
+      await fetchOrder();
       alert('Failed to update order');
     } finally {
       setSaving(false);
@@ -833,6 +850,8 @@ export default function OrderDetailPage(): ReactElement {
     );
   }
 
+  const showStickyBar = !isEditing && nextTransition(order) !== null;
+
   return (
     <>
       {toast && (
@@ -841,7 +860,7 @@ export default function OrderDetailPage(): ReactElement {
         </div>
       )}
       {/* Screen View */}
-      <div className={`p-4 md:p-8 bg-gray-50 min-h-screen print:hidden ${isEditing ? 'pb-48' : ''}`}>
+      <div className={`p-4 md:p-8 bg-gray-50 min-h-screen print:hidden ${isEditing ? 'pb-48' : showStickyBar ? 'pb-28' : ''}`}>
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <DetailHeader
@@ -1559,6 +1578,9 @@ export default function OrderDetailPage(): ReactElement {
           </div>
         </div>
       </div>
+
+      {/* Sticky next-transition bar (MARK PACKED → MARK OUT → MARK DELIVERED) */}
+      {showStickyBar && <DetailStickyBar order={order} saving={saving} onAdvance={updateOrder} />}
 
       {/* Edit Bar (sticky bottom in edit mode) */}
       {isEditing && (

@@ -1,95 +1,80 @@
-import { ReactElement } from 'react';
-import { SectionHeader } from './shared';
+'use client';
+
+import { ReactElement, useState } from 'react';
+import OrderItemsChecklist from '../OrderItemsChecklist';
 import type { OrderDetail } from './types';
 
 /**
- * Read-only order items card with the pricing summary footer. Edit-mode item
- * management (product search, quantity steppers) stays in the page.
+ * Read-only order items card with an expandable pick checklist. The
+ * checklist reuses OrderItemsChecklist, so pick state shares the exact
+ * TITLE-derived item keys and /api/ops/orders/[id]/picks persistence the
+ * orders list uses — both surfaces see the same live progress. Edit-mode
+ * item management stays in the page; the pricing summary lives in
+ * PaymentCard.
  */
 export default function ItemsCard({ order }: { order: OrderDetail }): ReactElement {
+  const [showChecklist, setShowChecklist] = useState(false);
+  const totalUnits = order.items.reduce((sum, item) => sum + item.quantity, 0);
+
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-      <SectionHeader
-        icon={
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-          </svg>
-        }
-        title="Order Items"
-      />
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3.5 border-b border-gray-100">
+        <h2 className="font-heading font-bold text-lg tracking-[0.08em] uppercase text-gray-900">
+          Items · {order.items.length}
+        </h2>
+        <span className="text-sm font-semibold text-gray-500 whitespace-nowrap">{totalUnits} units</span>
+      </div>
 
       <div className="divide-y divide-gray-100">
         {order.items.map((item) => (
-          <div key={item.id} className="px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
-            <div className="flex items-center gap-3 flex-1">
-              {item.imageUrl ? (
-                <img src={item.imageUrl} alt="" className="w-10 h-10 rounded-lg object-cover border border-gray-100 flex-shrink-0" />
-              ) : (
-                <div className="w-10 h-10 rounded-lg bg-gray-100 flex-shrink-0" />
+          <div key={item.id} className="px-4 sm:px-6 py-3 flex items-center gap-3 min-h-[56px]">
+            {item.imageUrl ? (
+              <img src={item.imageUrl} alt="" className="w-10 h-10 rounded-lg object-cover border border-gray-100 flex-shrink-0" />
+            ) : (
+              <div className="w-10 h-10 rounded-lg bg-gray-100 flex-shrink-0" />
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-gray-900">{item.title}</p>
+              {item.variantTitle && item.variantTitle !== 'Default Title' && (
+                <p className="text-sm text-gray-500">{item.variantTitle}</p>
               )}
-              <div>
-                <p className="font-semibold text-gray-900">{item.title}</p>
-                {item.variantTitle && item.variantTitle !== 'Default Title' && (
-                  <p className="text-sm text-gray-500">{item.variantTitle}</p>
-                )}
-                {item.sku && (
-                  <p className="text-xs text-gray-400 font-mono">SKU: {item.sku}</p>
-                )}
-                {item.refundedQuantity > 0 && (
-                  <span className="inline-flex items-center px-2 py-0.5 mt-1 text-xs font-medium bg-orange-100 text-orange-700 border border-orange-200 rounded-full">
-                    {item.refundedQuantity} returned
-                  </span>
-                )}
-              </div>
+              {item.refundedQuantity > 0 && (
+                <span className="inline-flex items-center px-2 py-[3px] mt-1 rounded text-xs font-bold tracking-[0.05em] uppercase bg-amber-100 text-amber-800">
+                  {item.refundedQuantity} returned
+                </span>
+              )}
             </div>
-            <div className="text-right">
-              <p className="font-semibold text-gray-900">
-                {item.quantity} x ${item.price.toFixed(2)}
+            <div className="text-right flex-shrink-0">
+              <p className="text-sm font-semibold text-gray-900 tabular-nums">
+                {item.quantity} × ${item.price.toFixed(2)}
               </p>
-              <p className="text-sm text-gray-500">
-                ${item.total.toFixed(2)}
-              </p>
+              <p className="text-sm text-gray-500 tabular-nums">${item.total.toFixed(2)}</p>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Pricing Summary */}
-      <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 space-y-2">
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-600">Subtotal</span>
-          <span className="text-gray-900 font-medium">${order.pricing.subtotal.toFixed(2)}</span>
-        </div>
-        {order.pricing.discountAmount > 0 && (
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600">
-              Discount {order.pricing.discountCode && (
-                <span className="inline-flex px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded ml-2">
-                  {order.pricing.discountCode}
-                </span>
-              )}
-            </span>
-            <span className="text-green-600 font-medium">-${order.pricing.discountAmount.toFixed(2)}</span>
+      <div className="px-4 sm:px-6 py-2 border-t border-gray-100 bg-gray-50">
+        <button
+          type="button"
+          onClick={() => setShowChecklist(!showChecklist)}
+          className="min-h-[44px] -ml-1 px-1 text-sm font-heading font-bold tracking-[0.08em] uppercase text-brand-blue hover:text-blue-800 touch-manipulation"
+        >
+          {showChecklist ? 'Hide pick checklist' : 'Pick checklist'}
+        </button>
+        {showChecklist && (
+          <div className="pb-2">
+            <OrderItemsChecklist
+              orderId={order.id}
+              items={order.items.map((item) => ({
+                quantity: item.quantity,
+                title: item.title,
+                bundleComponents: item.bundleComponents,
+              }))}
+              refreshKey={showChecklist}
+            />
           </div>
         )}
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-600">Delivery Fee</span>
-          <span className="text-gray-900 font-medium">${order.pricing.deliveryFee.toFixed(2)}</span>
-        </div>
-        <div className="flex justify-between text-sm">
-          <span className="text-gray-600">Tax (8.25%)</span>
-          <span className="text-gray-900 font-medium">${order.pricing.taxAmount.toFixed(2)}</span>
-        </div>
-        {order.pricing.tipAmount > 0 && (
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Tip</span>
-            <span className="text-amber-600 font-medium">${order.pricing.tipAmount.toFixed(2)}</span>
-          </div>
-        )}
-        <div className="flex justify-between text-xl font-bold pt-3 mt-3 border-t border-gray-200">
-          <span>Total</span>
-          <span className="text-blue-600">${order.pricing.total.toFixed(2)}</span>
-        </div>
       </div>
     </div>
   );
