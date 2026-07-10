@@ -1,12 +1,14 @@
-# YouTube Strategy — 3 Segment Videos (draft, 2026-07-09)
+# YouTube Strategy — 3 Segment Videos (updated 2026-07-10)
 
 Companion to [youtube-keyword-research-2026-07.md](./youtube-keyword-research-2026-07.md) — read that for the data behind every keyword here.
+
+> **Order changed 2026-07-10 (seasonality beats raw ROI): BACH FIRST — it's peak bach season now; wedding and corporate move to fall.** The bach video also changed format: a 3–5 min Q&A listicle (10 keyword-targeted questions as chapters) that gets chopped into per-question shorts. Full deep-dive research + shoot-ready spec: **[bach-video-brief-2026-07.md](./bach-video-brief-2026-07.md)** — it supersedes the Video 2 sketch below. Wedding and corporate briefs below remain the plan for fall.
 
 ## Strategy in one paragraph
 
 Each video does two jobs. **On the landing page** it deepens the page that already half-ranks for its money terms (dwell time, content depth, a second indexable asset) — note there is currently no video carousel on these SERPs to hijack, so the Google win is indirect. **On YouTube** it fishes where planners actually search, which per both this research and the 2026-06 vidIQ study means broad planning phrasings ("corporate event ideas", "austin bachelorette party"), not hyperlocal service terms. Titles use the exact live-autocomplete phrasing; the Austin/service specificity lives in the content, description, and end-screen CTA, not the title.
 
-## Video 1 — Wedding (produce first)
+## Video 1 — Wedding (FALL 2026)
 
 - **Title:** How Much Alcohol Do You Need for a Wedding? (100–200 Guests)
 - **Target:** Google "how much alcohol to buy for a wedding" cluster (3,580/mo, KD~10); YouTube "how much alcohol for wedding" (live-verified autocomplete incl. "of 150" / "of 200")
@@ -20,7 +22,7 @@ Each video does two jobs. **On the landing page** it deepens the page that alrea
 - **Why first:** biggest cluster, lowest effective competition (The Knot ranks with a text page; nobody owns a good video), the landing page and a live Google Ads campaign already exist — the video compounds spend already happening.
 - **Follow-up candidate (Video 1b):** "What an Open Bar Really Costs (DIY vs Venue)" — open-bar-cost sub-cluster, ~2,500/mo at KD 3–18, "wedding open bar math" is verbatim YouTube autocomplete, and it's PartyOn's exact value proposition.
 
-## Video 2 — Bach (bachelorette-led, bachelor section inside)
+## Video 2 — Bach (NOW — see [bach-video-brief-2026-07.md](./bach-video-brief-2026-07.md), which supersedes this sketch)
 
 - **Title:** Austin Bachelorette Party: Drinks, Boat Day & What to Plan
 - **Target:** YouTube "austin bachelorette party" (top live autocomplete); Google "bachelorette party drinks" (210/mo KD4) + repair-by-association for `bachelorette party alcohol delivery austin` (pos 22.9) and `bachelor party alcohol delivery austin` (pos 18.8), which today land on the homepage instead of the landers
@@ -34,7 +36,7 @@ Each video does two jobs. **On the landing page** it deepens the page that alrea
 - **One video covers both genders** — bachelorette carries ~3× bachelor volume; splitting halves the effort budget for the weakest marginal gain.
 - **Note:** the "how much alcohol for a bachelorette party" angle tested dead (20/mo, cluster skews non-alcoholic) — deliberately not the hook.
 
-## Video 3 — Corporate (produce last)
+## Video 3 — Corporate (FALL 2026 — holiday-party season timing)
 
 - **Title:** Corporate Event Ideas That Aren't Lame (Happy Hour Edition)
 - **Target:** YouTube + Google "corporate event ideas" (1,900/mo KD20; 13,450/mo cluster; top live autocomplete). The briefed angles ("how much alcohol for corporate event", "office party bar setup", "company party drink calculator") all tested at ~0 volume — skipped per research.

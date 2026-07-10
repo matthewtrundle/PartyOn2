@@ -1,0 +1,43 @@
+SEMrush Keyword Magic Tool — QUESTIONS tab — seed: "bachelor party" — db=us — captured 2026-07-10
+Cluster totals: 2,158 question keywords | Total Volume: 21,080/mo | Average KD: 16%
+Columns: keyword | intent | volume | KD% | CPC
+(page 1 of 22, sorted by volume)
+
+what is a bachelor party (+4 spelling variants) | I | 1900+1000+720+480+480 | 28-37 | 0.00  <- definition cluster ~4,600/mo
+who pays for bachelor party | I | 590 | 17 | 0.00
+who pays for a bachelor party | I | 390 | 17 | 0.00
+who pays bachelor party | I | 320 | 17 | 0.00
+who pays for the bachelor party | I | 320 | 19 | 0.00   <- who-pays cluster ~1,620/mo KD17-19
+how to organize bachelor party | I | 260 | 15 | 1.28
+how to throw a bachelor party | I | 260 | 26 | 1.30
+how do you plan a bachelor party | I | 210 | 14 | 1.28
+how to plan a bachelor party | I | 210 | 19 | 1.28
+who plans the bachelor party | I | 210 | 22 | 1.44   <- planning cluster ~1,150/mo
+what happens at a bachelor party | I | 170 | 9 | 0.00
+what to do for a bachelor party | I | 170 | 33 | 0.90
+what are bachelor parties for | I | 140 | 11 | 0.00
+what goes on at bachelor parties | I | 140 | 12 | 0.00
+when should bachelor party be | I | 140 | 15 | 0.00
+does the best man pay for the bachelor party | C | 110 | 20 | 0.00
+what is the point of a bachelor party | I | 110 | 21 | 0.00
+does the best man plan the bachelor party | C | 90 | 10 | 0.00
+what happens at bachelor parties | I | 90 | 7 | 0.00
+do you bring a gift to a bachelor party | I | 70 | 7 | 0.00
+does the groom pay for the bachelor party | I | 70 | 7 | 0.00
+what do guys do at a bachelor party | I | 70 | 11 | 0.00
+what to bring to a bachelor party | I | 70 | 3 | 0.00
+when do bachelor parties happen | I | 70 | 18 | 0.00
+how long are bachelor parties | I | 50 | 8 | 0.00
+what to pack for a bachelor party | n/a | 40 | pending
+what do you call a bachelor and bachelorette party together | n/a | 30 | pending
+what is a combined bachelor and bachelorette party called | n/a | 30 | pending
+(long tail: timing/gift/who-goes variants 30-70/mo)
+
+Modifier groups (kw count): stay 104, pay 99, plan 91, vegas 76, guy 62, much 51, long 40, austin 17
+
+QUESTION THEMES BY COMBINED VOLUME:
+1. definition (~4,600/mo, KD 28-37) — "what is a bachelor party" — top-funnel, high KD
+2. who-pays (~2,200/mo incl best-man/groom variants, KD 7-20)
+3. planning/how-to (~1,150/mo, KD 10-26)
+4. what-happens/what-do-guys-do (~800/mo, KD 7-18)
+5. timing/duration (~600/mo, KD 8-23)
