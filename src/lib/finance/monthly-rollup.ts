@@ -533,9 +533,13 @@ function buildDataHealth(h: HealthInput): Record<string, unknown> {
     h.bankExpenseTotalCents > expensesTotalCents * 1.5 &&
     h.bankExpenseTotalCents - expensesTotalCents > QB_MATERIAL_FLOOR_CENTS
   ) {
+    // Describe the discrepancy as a RATIO, not raw dollar totals. The QB expense
+    // total is COGS+OpEx; embedding it here would let a reader reconstruct the
+    // withheld net income (Revenue − total) in the monthly-close email's
+    // honesty-gated view, so keep it qualitative.
+    const overBy = Math.round((h.bankExpenseTotalCents / expensesTotalCents - 1) * 100);
     flags.push(
-      `bank outflows ($${(h.bankExpenseTotalCents / 100).toFixed(0)}) materially exceed QB expenses ` +
-        `($${(expensesTotalCents / 100).toFixed(0)}) — QB books may be incomplete this month`
+      `bank outflows exceed QB-booked expenses by ~${overBy}% — QB books may be incomplete this month`
     );
   }
 
