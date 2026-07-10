@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import OrderDetailModal from './OrderDetailModal';
-import OrdersTabs from '@/components/ops/orders/OrdersTabs';
+import NavyBand from '@/components/backend/shell/NavyBand';
+import SegmentedControl from '@/components/backend/kit/SegmentedControl';
 
 type ViewTab = 'upcoming' | 'exceptions' | 'today' | 'weekly';
 
@@ -223,10 +224,19 @@ export default function BoatSchedulePage() {
   };
 
   return (
-    <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      <div className="mb-4">
-        <OrdersTabs active="boats" />
-      </div>
+    <div>
+      <NavyBand innerClassName="max-w-[1400px] mx-auto lg:px-2">
+        <SegmentedControl
+          active="boats"
+          segments={[
+            { key: 'orders', label: 'Upcoming', href: '/ops/orders' },
+            { key: 'invoices', label: 'Invoices', href: '/ops/orders?view=invoices' },
+            { key: 'carts', label: 'Carts', href: '/ops/orders?view=carts' },
+            { key: 'boats', label: 'Boats' },
+          ]}
+        />
+      </NavyBand>
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
       {/* Header */}
       <div className="flex items-start justify-between mb-6 gap-4">
         <div>
@@ -439,6 +449,7 @@ export default function BoatSchedulePage() {
           onClose={() => setModalOrderNumber(null)}
         />
       )}
+      </div>
     </div>
   );
 }
