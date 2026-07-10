@@ -6,6 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { requireOpsAuth } from '@/lib/auth/ops-session';
 import {
   getLowStockAlerts,
   acknowledgeAlert,
@@ -17,6 +18,9 @@ import {
  * Get all active low stock alerts
  */
 export async function GET(): Promise<NextResponse> {
+  const auth = await requireOpsAuth();
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const alerts = await getLowStockAlerts();
 
@@ -45,6 +49,9 @@ export async function GET(): Promise<NextResponse> {
  * Handle alert actions: acknowledge, resolve
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const auth = await requireOpsAuth();
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const body = await request.json();
     const { alertId, action, acknowledgedBy } = body;

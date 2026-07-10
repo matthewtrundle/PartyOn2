@@ -7,12 +7,16 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getLocations, createLocation } from '@/lib/inventory/services/inventory-service';
+import { requireOpsAuth } from '@/lib/auth/ops-session';
 
 /**
  * GET /api/v1/inventory/locations
  * List all inventory locations
  */
 export async function GET(): Promise<NextResponse> {
+  const auth = await requireOpsAuth();
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const locations = await getLocations();
 
@@ -38,6 +42,9 @@ export async function GET(): Promise<NextResponse> {
  * Create a new inventory location
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const auth = await requireOpsAuth();
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const body = await request.json();
 

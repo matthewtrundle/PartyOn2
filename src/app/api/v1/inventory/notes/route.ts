@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireOpsAuth } from '@/lib/auth/ops-session';
 
 /**
  * GET /api/v1/inventory/notes
@@ -8,6 +9,9 @@ import { prisma } from '@/lib/prisma';
  *   - status: "pending" | "processed" (optional, defaults to all)
  */
 export async function GET(request: NextRequest): Promise<NextResponse> {
+  const auth = await requireOpsAuth();
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const status = request.nextUrl.searchParams.get('status');
 
@@ -32,6 +36,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
  * Body: { content: string }
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const auth = await requireOpsAuth();
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const body = await request.json();
     const { content } = body;

@@ -13,11 +13,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { adjustInventory } from '@/lib/inventory/services/inventory-service';
+import { requireOpsAuth } from '@/lib/auth/ops-session';
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
+  const auth = await requireOpsAuth();
+  if (auth instanceof NextResponse) return auth;
+
   const { id } = await params;
 
   let body: {
@@ -25,6 +29,7 @@ export async function PATCH(
     committed?: number | null;
     available?: number | null;
     costPerUnit?: number | null;
+    reason?: string | null;
   };
   try {
     body = await request.json();
@@ -69,11 +74,15 @@ export async function PATCH(
   if (targetQuantity !== null) {
     const delta = targetQuantity - variant.inventoryQuantity;
     if (delta !== 0) {
+      const reason =
+        typeof body.reason === 'string' && body.reason.trim()
+          ? body.reason.trim().slice(0, 200)
+          : 'Manual edit from inventory page';
       await adjustInventory({
         productId: variant.productId,
         variantId: variant.id,
         quantity: delta,
-        reason: 'Manual edit from inventory page',
+        reason,
         type: 'ADJUSTMENT',
       });
     }

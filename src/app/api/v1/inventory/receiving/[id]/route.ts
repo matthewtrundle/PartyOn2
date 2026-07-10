@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/database/client';
 import { getVariantSuggestions } from '@/lib/inventory/receiving/service';
+import { requireOpsAuth } from '@/lib/auth/ops-session';
 
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
+  const auth = await requireOpsAuth();
+  if (auth instanceof NextResponse) return auth;
+
   const { id } = await params;
   const invoice = await prisma.receivingInvoice.findUnique({
     where: { id },
