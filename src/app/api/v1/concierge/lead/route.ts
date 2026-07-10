@@ -33,6 +33,9 @@ import {
   appendLeadToPodLeadsSheet,
   formatCentralTimestamp,
 } from '@/lib/premier/pod-leads-sheet';
+import { sendEmail } from '@/lib/email/resend-client';
+import { conciergeWelcomeEmail } from '@/lib/email/templates/concierge-welcome';
+import { EmailType } from '@prisma/client';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -181,7 +184,47 @@ export async function POST(req: NextRequest) {
     console.error('[concierge/lead] GHL notify failed (non-blocking)', err);
   });
 
-  // ─── 4) Google Sheet append — non-blocking ───────────────────────
+  // ─── 4) Confirmation email — non-blocking ────────────────────────
+  // Fire-and-forget so a Resend outage or throttle can't 500 the API.
+  // Wrapped in try/catch inside the async IIFE so unhandled rejections
+  // don't crash the Node runtime.
+  (async () => {
+    try {
+      const tpl = conciergeWelcomeEmail({
+        firstName: body.firstName,
+        headcount: body.headcount,
+        arrivalDate: body.arrivalDate,
+        departureDate: body.departureDate,
+        partyType: body.partyType,
+        budgetPerPerson: body.budgetPerPerson,
+        activities: body.activities,
+        notes: body.notes,
+      });
+      await sendEmail({
+        to: body.email,
+        subject: tpl.subject,
+        html: tpl.html,
+        text: tpl.text,
+        type: EmailType.WELCOME,
+        metadata: {
+          flow: 'premier-concierge',
+          leadId,
+          partyType: body.partyType,
+          headcount: body.headcount,
+          budget: body.budgetPerPerson,
+          activities: body.activities,
+        },
+        tags: [
+          { name: 'flow', value: 'premier-concierge' },
+          { name: 'party_type', value: body.partyType },
+        ],
+      });
+    } catch (err) {
+      console.error('[concierge/lead] welcome email failed (non-blocking)', err);
+    }
+  })();
+
+  // ─── 5) Google Sheet append — non-blocking ───────────────────────
   appendLeadToPodLeadsSheet({
     submittedAt: formatCentralTimestamp(now),
     source: body.source,
