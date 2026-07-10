@@ -63,12 +63,23 @@ export default function SlideToConfirm({
   function handlePointerUp(): void {
     if (!dragging.current) return;
     dragging.current = false;
+    if (disabled) {
+      setPct(0);
+      return;
+    }
     if (pctRef.current >= 96) fire();
     else setPct(0);
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLButtonElement>): void {
     if (disabled) return;
+    // Auto-repeat from a held key must not count — each step requires a
+    // distinct physical press, or holding ArrowRight would fire a refund
+    // in under a second (security review, PR-D).
+    if (e.repeat) {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') e.preventDefault();
+      return;
+    }
     if (e.key === 'ArrowRight') {
       e.preventDefault();
       const next = Math.min(100, pctRef.current + 10);
