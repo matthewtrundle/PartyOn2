@@ -29,6 +29,18 @@ export default function AppShell({ children }: { children: ReactNode }): ReactEl
     setMoreOpen(false);
   }, [pathname]);
 
+  // PWA service worker: minimal offline fallback (public/sw.js). Production
+  // only — a dev SW makes hot-reload debugging miserable.
+  useEffect(() => {
+    if (process.env.NODE_ENV !== 'production') return;
+    if (!('serviceWorker' in navigator)) return;
+    navigator.serviceWorker
+      .register('/sw.js', { updateViaCache: 'none' })
+      .catch(() => {
+        /* offline support is a nice-to-have, never an error state */
+      });
+  }, []);
+
   // Still checking auth status
   if (isAuthenticated === null) {
     return (

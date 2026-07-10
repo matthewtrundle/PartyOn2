@@ -6,6 +6,7 @@ import KPITile from '@/components/backend/kit/KPITile';
 import TriageRow from '@/components/backend/kit/TriageRow';
 import HqBadge, { type HqBadgeVariant } from '@/components/backend/kit/Badge';
 import SkeletonCard from '@/components/backend/kit/SkeletonCard';
+import IosInstallHint from '@/components/backend/shell/IosInstallHint';
 import type { TodayData } from '@/lib/ops/today-data';
 
 const SEVERITY_BADGE: Record<string, HqBadgeVariant> = {
@@ -101,6 +102,7 @@ export default function TodayPage(): ReactElement {
       </div>
 
       <div className="px-4 py-4 md:px-8 max-w-5xl mx-auto space-y-4">
+        <IosInstallHint />
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 text-sm">
             Couldn&apos;t load the board.{' '}

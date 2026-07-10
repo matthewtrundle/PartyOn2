@@ -63,6 +63,11 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://partyondelivery.com'),
+  // Customer-site manifest (public/manifest.json). Declared here (config-
+  // based) instead of the app/manifest.json file convention so the backend
+  // layouts can override it with the Party On HQ manifest — file-based
+  // metadata would win over any nested override.
+  manifest: '/manifest.json',
   title: "Alcohol Delivery Austin | Party On Delivery",
   description: "Beer, wine, liquor, kegs & party supplies delivered in Austin TX. Same-day delivery for weddings, lake parties & events. Order online now.",
   keywords: "alcohol delivery austin, alcohol delivery near me, alcohol delivery service, wedding bar service, lake travis boat party, austin party delivery, beer delivery austin, liquor delivery austin",

@@ -25,17 +25,18 @@ export {
 };
 
 /**
- * Set the ops session cookie
+ * Set the ops session cookie. Pass `firstIat` when renewing so the chain
+ * origin survives re-issues (see SESSION_ABSOLUTE_MAX_S in ops-token.ts).
  */
-export async function setOpsSessionCookie(role: OpsRole): Promise<void> {
-  const token = await createOpsSessionToken(role);
+export async function setOpsSessionCookie(role: OpsRole, firstIat?: number): Promise<void> {
+  const token = await createOpsSessionToken(role, firstIat);
   const cookieStore = await cookies();
 
   cookieStore.set(OPS_SESSION_COOKIE, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: 60 * 60 * 48, // 48 hours
+    maxAge: 60 * 60 * 24 * 14, // 14 days — sliding via GET /api/ops/session
     path: '/',
   });
 }
