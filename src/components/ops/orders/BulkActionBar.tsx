@@ -33,14 +33,14 @@ export default function BulkActionBar({
     <div className="fixed bottom-[var(--pod-tab-h,0px)] inset-x-0 md:left-[232px] z-40 print:hidden">
       <div className="mx-auto max-w-7xl px-3 pb-3 safe-area-bottom">
         <div className="flex items-center gap-2 rounded-xl border border-blue-200 bg-white shadow-2xl px-3 py-2">
-          <span className="text-sm font-bold text-blue-900 whitespace-nowrap">
+          <span className="font-heading text-base font-bold text-gray-900 whitespace-nowrap tabular-nums">
             {count} selected
           </span>
           <button
             type="button"
             onClick={onFulfill}
             disabled={fulfilling}
-            className="min-h-[44px] px-4 bg-gradient-to-r from-green-600 to-green-700 text-white text-sm font-semibold rounded-lg hover:from-green-700 hover:to-green-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 touch-manipulation"
+            className="min-h-[44px] px-4 bg-green-600 text-white font-heading text-sm font-bold tracking-[0.08em] uppercase rounded-lg hover:bg-green-700 active:bg-green-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 touch-manipulation"
           >
             {fulfilling ? (
               <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">

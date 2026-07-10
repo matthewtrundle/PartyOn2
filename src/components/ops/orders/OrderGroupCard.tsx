@@ -52,9 +52,9 @@ export default function OrderGroupCard({
       id={htmlId}
       data-share-code={c.shareCode || undefined}
       className={[
-        'overflow-hidden border border-gray-200 bg-white break-inside-avoid rounded-lg print:rounded-none',
+        'overflow-hidden border border-gray-200 bg-white break-inside-avoid rounded-xl print:rounded-none',
         'print:border-gray-400',
-        c.isVeryLarge ? 'border-l-4 border-l-orange-500' : '',
+        c.isVeryLarge ? 'border-l-4 border-l-brand-yellow print:border-l-orange-500' : '',
       ].join(' ')}
     >
       {/* Banner */}
@@ -69,19 +69,25 @@ export default function OrderGroupCard({
           <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold tracking-[0.08em] ${pill.cls}`}>
             {pill.label}
           </span>
-          <span className="text-sm md:text-base font-bold text-gray-900 leading-none">
+          <span className="font-heading text-xl md:text-2xl font-bold text-brand-blue leading-none print:text-base print:text-gray-900">
             {c.deliveryTime || 'TBD'}
           </span>
           <span className={`inline-flex items-center px-2.5 py-1 rounded text-xs font-extrabold tracking-[0.06em] uppercase leading-none ${typeTag.cls}`}>
             {typeTag.label}
           </span>
           {c.isVeryLarge && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold tracking-[0.08em] bg-orange-100 text-orange-800 ring-1 ring-orange-400">
-              VERY LARGE
-            </span>
+            <>
+              {/* Screen: the brand XL flag chip; print keeps the explicit wording */}
+              <span className="print:hidden inline-flex items-center px-2 py-[3px] rounded text-xs font-bold tracking-[0.05em] uppercase bg-brand-yellow text-gray-900">
+                XL
+              </span>
+              <span className="hidden print:inline-flex items-center px-2 py-0.5 rounded text-xs font-bold tracking-[0.08em] bg-orange-100 text-orange-800 ring-1 ring-orange-400">
+                VERY LARGE
+              </span>
+            </>
           )}
           {unpaidCount > 0 && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold tracking-[0.08em] bg-red-100 text-red-800 ring-1 ring-red-300">
+            <span className="inline-flex items-center px-2 py-[3px] rounded text-xs font-bold tracking-[0.05em] uppercase bg-red-100 text-red-800 print:ring-1 print:ring-red-300">
               {unpaidCount} UNPAID
             </span>
           )}
