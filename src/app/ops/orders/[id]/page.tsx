@@ -9,6 +9,7 @@ import DeliveryCard from '@/components/ops/orders/detail/DeliveryCard';
 import ItemsCard from '@/components/ops/orders/detail/ItemsCard';
 import PaymentCard from '@/components/ops/orders/detail/PaymentCard';
 import DetailStickyBar, { nextTransition } from '@/components/ops/orders/detail/DetailStickyBar';
+import OrderActionSheet from '@/components/ops/orders/detail/OrderActionSheet';
 import { getStatusColor, formatDateTime, SectionHeader } from '@/components/ops/orders/detail/shared';
 import type { OrderDetail } from '@/components/ops/orders/detail/types';
 
@@ -98,8 +99,8 @@ export default function OrderDetailPage(): ReactElement {
   const searchRef = useRef<HTMLDivElement>(null);
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Refund dialog state
-  const [showRefundDialog, setShowRefundDialog] = useState(false);
+  // Action sheet + refund state
+  const [showActionSheet, setShowActionSheet] = useState(false);
   const [refundAmount, setRefundAmount] = useState(0);
   const [refundReason, setRefundReason] = useState('');
   const [refundProcessing, setRefundProcessing] = useState(false);
@@ -386,11 +387,12 @@ export default function OrderDetailPage(): ReactElement {
             await sendAmendmentInvoice(amendment.id);
           }
         } else if (amendment.amountDelta < 0) {
-          // Negative delta -- show refund dialog
+          // Negative delta -- open the action sheet's refund zone prefilled
           setPendingAmendmentId(amendment.id);
           setRefundAmount(Math.abs(amendment.amountDelta));
           setRefundReason('Order amendment');
-          setShowRefundDialog(true);
+          setRefundType('custom');
+          setShowActionSheet(true);
         }
         setIsEditing(false);
         setPreview(null);
@@ -447,8 +449,11 @@ export default function OrderDetailPage(): ReactElement {
             ? `Refund of $${refundAmount.toFixed(2)} processed — WARNING: ${data.warning}`
             : `Refund of $${refundAmount.toFixed(2)} processed successfully`
         );
-        setShowRefundDialog(false);
+        setShowActionSheet(false);
         setPendingAmendmentId(null);
+        setRefundAmount(0);
+        setRefundReason('');
+        setRefundType('custom');
         await fetchOrder();
       } else {
         alert(data.error || 'Failed to process refund');
@@ -699,12 +704,13 @@ export default function OrderDetailPage(): ReactElement {
     }
   }
 
-  function openRefundDialog(): void {
+  function openActionSheet(): void {
+    // Fresh open: clear any leftover refund prefill from an abandoned flow
     setRefundType('custom');
     setRefundAmount(0);
     setRefundReason('');
     setPendingAmendmentId(null);
-    setShowRefundDialog(true);
+    setShowActionSheet(true);
   }
 
   function openReturnDialog(): void {
@@ -878,7 +884,7 @@ export default function OrderDetailPage(): ReactElement {
             onCopySummary={handleCopySummary}
             onPrint={handlePrint}
             onSendReceipt={handleSendReceipt}
-            onOpenRefund={openRefundDialog}
+            onOpenActions={openActionSheet}
             onOpenReturn={openReturnDialog}
             onEnterEdit={enterEditMode}
             onOpenCancel={openCancelDialog}
@@ -1255,9 +1261,10 @@ export default function OrderDetailPage(): ReactElement {
                               setPendingAmendmentId(amendment.id);
                               setRefundAmount(Math.abs(amendment.amountDelta));
                               setRefundReason('Order amendment');
-                              setShowRefundDialog(true);
+                              setRefundType('custom');
+                              setShowActionSheet(true);
                             }}
-                            disabled={!order.payment.stripePaymentIntentId}
+                            disabled={refundProcessing || !order.payment.stripePaymentIntentId}
                             className="mt-2 px-3 py-1.5 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             title={!order.payment.stripePaymentIntentId ? 'No Stripe payment found for this order' : ''}
                           >
@@ -1587,7 +1594,9 @@ export default function OrderDetailPage(): ReactElement {
       </div>
 
       {/* Sticky next-transition bar (MARK PACKED → MARK OUT → MARK DELIVERED) */}
-      {showStickyBar && <DetailStickyBar order={order} saving={saving} onAdvance={updateOrder} />}
+      {showStickyBar && (
+        <DetailStickyBar order={order} saving={saving} onAdvance={updateOrder} onOpenActions={openActionSheet} />
+      )}
 
       {/* Edit Bar (sticky bottom in edit mode) */}
       {isEditing && (
@@ -1695,165 +1704,41 @@ export default function OrderDetailPage(): ReactElement {
         </div>
       )}
 
-      {/* Refund Confirmation Dialog */}
-      {showRefundDialog && (
-        <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4 print:hidden">
-          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">Process Refund</h3>
-            <div className="space-y-4">
-              {/* Quick-select refund type buttons */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Refund Type</label>
-                <div className="flex flex-wrap gap-2">
-                  {order.pricing.deliveryFee > 0 && (
-                    <button
-                      onClick={() => {
-                        setRefundType('delivery');
-                        setRefundAmount(order.pricing.deliveryFee);
-                        setRefundReason('Delivery fee refund');
-                      }}
-                      className={`px-3 py-1.5 text-sm font-medium rounded-full border transition-colors ${
-                        refundType === 'delivery'
-                          ? 'bg-blue-100 text-blue-700 border-blue-300'
-                          : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
-                      }`}
-                    >
-                      Delivery Fee (${order.pricing.deliveryFee.toFixed(2)})
-                    </button>
-                  )}
-                  {order.pricing.tipAmount > 0 && (
-                    <button
-                      onClick={() => {
-                        setRefundType('tip');
-                        setRefundAmount(order.pricing.tipAmount);
-                        setRefundReason('Tip refund');
-                      }}
-                      className={`px-3 py-1.5 text-sm font-medium rounded-full border transition-colors ${
-                        refundType === 'tip'
-                          ? 'bg-blue-100 text-blue-700 border-blue-300'
-                          : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
-                      }`}
-                    >
-                      Tip (${order.pricing.tipAmount.toFixed(2)})
-                    </button>
-                  )}
-                  {order.pricing.deliveryFee > 0 && order.pricing.tipAmount > 0 && (
-                    <button
-                      onClick={() => {
-                        setRefundType('delivery_tip');
-                        setRefundAmount(order.pricing.deliveryFee + order.pricing.tipAmount);
-                        setRefundReason('Delivery fee + tip refund');
-                      }}
-                      className={`px-3 py-1.5 text-sm font-medium rounded-full border transition-colors ${
-                        refundType === 'delivery_tip'
-                          ? 'bg-blue-100 text-blue-700 border-blue-300'
-                          : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
-                      }`}
-                    >
-                      Delivery + Tip (${(order.pricing.deliveryFee + order.pricing.tipAmount).toFixed(2)})
-                    </button>
-                  )}
-                  <button
-                    onClick={() => {
-                      const captured = order.refunds?.stripeCapturedAmount ?? order.pricing.total;
-                      const maxRefundable = captured - (order.refunds?.totalRefunded || 0);
-                      setRefundType('full');
-                      setRefundAmount(Math.max(0, maxRefundable));
-                      setRefundReason('Full refund');
-                    }}
-                    className={`px-3 py-1.5 text-sm font-medium rounded-full border transition-colors ${
-                      refundType === 'full'
-                        ? 'bg-blue-100 text-blue-700 border-blue-300'
-                        : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
-                    }`}
-                  >
-                    Full Refund (${Math.max(0, (order.refunds?.stripeCapturedAmount ?? order.pricing.total) - (order.refunds?.totalRefunded || 0)).toFixed(2)})
-                  </button>
-                  <button
-                    onClick={() => {
-                      setRefundType('custom');
-                      setRefundAmount(0);
-                      setRefundReason('');
-                    }}
-                    className={`px-3 py-1.5 text-sm font-medium rounded-full border transition-colors ${
-                      refundType === 'custom'
-                        ? 'bg-blue-100 text-blue-700 border-blue-300'
-                        : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
-                    }`}
-                  >
-                    Custom
-                  </button>
-                </div>
-              </div>
-
-              {/* Amount input */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Refund Amount</label>
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-500">$</span>
-                  <input
-                    type="number"
-                    value={refundAmount}
-                    onChange={(e) => {
-                      setRefundAmount(parseFloat(e.target.value) || 0);
-                      setRefundType('custom');
-                    }}
-                    step="0.01"
-                    min="0"
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                {order.refunds && order.refunds.totalRefunded > 0 && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    Previously refunded: ${order.refunds.totalRefunded.toFixed(2)} | Max remaining: ${Math.max(0, (order.refunds.stripeCapturedAmount ?? order.pricing.total) - order.refunds.totalRefunded).toFixed(2)}
-                  </p>
-                )}
-              </div>
-
-              {/* Reason input */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Reason</label>
-                <input
-                  type="text"
-                  value={refundReason}
-                  onChange={(e) => setRefundReason(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Reason for refund"
-                />
-              </div>
-
-              {/* Warning */}
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                <p className="text-sm text-red-800">
-                  This will process a refund of <strong>${refundAmount.toFixed(2)}</strong> via Stripe.
-                  The customer will receive an email notification.
-                </p>
-              </div>
-
-              {/* Buttons */}
-              <div className="flex items-center justify-end gap-3 pt-2">
-                <button
-                  onClick={() => {
-                    setShowRefundDialog(false);
-                    setPendingAmendmentId(null);
-                    setRefundType('custom');
-                  }}
-                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={processRefund}
-                  disabled={refundProcessing || refundAmount <= 0}
-                  className="px-6 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 disabled:opacity-50"
-                >
-                  {refundProcessing ? 'Processing...' : 'Confirm Refund'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Order action sheet (overflow actions + refund zone) */}
+      <OrderActionSheet
+        open={showActionSheet}
+        onClose={() => setShowActionSheet(false)}
+        order={order}
+        canAmend={!!canAmend}
+        saving={saving}
+        sendingReceipt={sendingReceipt}
+        sendingReview={sendingReview}
+        refundAmount={refundAmount}
+        refundReason={refundReason}
+        refundType={refundType}
+        refundProcessing={refundProcessing}
+        onRefundAmount={(amount) => {
+          setRefundAmount(amount);
+          // Any preset/manual amount change inside the sheet detaches the
+          // refund from a prefilled amendment — otherwise a mismatched
+          // amount could stamp that amendment REFUNDED (security review).
+          setPendingAmendmentId(null);
+        }}
+        onRefundReason={setRefundReason}
+        onRefundType={setRefundType}
+        onMarkDelivered={() => {
+          setShowActionSheet(false);
+          updateOrder({ fulfillmentStatus: 'DELIVERED' });
+        }}
+        onPrint={handlePrint}
+        onSendReceipt={handleSendReceipt}
+        onAmend={enterEditMode}
+        onRequestReview={() => {
+          setShowActionSheet(false);
+          handleSendReview();
+        }}
+        onProcessRefund={processRefund}
+      />
 
       {/* Return Dialog */}
       {showReturnDialog && order && (
