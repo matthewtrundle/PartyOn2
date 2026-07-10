@@ -42,8 +42,10 @@ export function useBackendAuth(): BackendAuth {
       return;
     }
 
-    // sessionStorage is empty (new tab / old keys) — check the httpOnly cookie
-    fetch('/api/ops/session')
+    // sessionStorage is empty (new tab / old keys) — check the httpOnly
+    // cookie. x-hq-renew opts into sliding renewal: only this explicit
+    // header mints a fresh cookie (see the session route).
+    fetch('/api/ops/session', { headers: { 'x-hq-renew': '1' } })
       .then((res) => res.json())
       .then((data) => {
         if (data.authenticated && data.role) {

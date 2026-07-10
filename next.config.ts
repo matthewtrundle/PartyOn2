@@ -561,6 +561,17 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      // Service worker must never be cached — updates roll out on next
+      // launch (registered with updateViaCache: 'none' in the HQ shell)
+      {
+        source: '/sw.js',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'no-cache, no-store, must-revalidate',
+          },
+        ],
+      },
       // Cache headers for images
       {
         source: '/:all*(svg|jpg|jpeg|png|gif|ico|webp|avif)',
