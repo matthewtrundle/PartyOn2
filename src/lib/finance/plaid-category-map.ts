@@ -31,10 +31,25 @@ import { type CategorySlug, NAME_KEYWORD_RULES } from './qb-account-map';
  * statement descriptors after the first production sync.
  */
 export const COGS_MERCHANT_RULES: readonly RegExp[] = [
-  /\brndc\b|republic\s*national/i,
+  // RNDC / Republic National. Wells Fargo TRUNCATES the descriptor to
+  // "Republic Nationa Fintech" (trailing 'l' cut), so match `nationa` not
+  // `national` — `nationa` subsumes the full spelling too.
+  /\brndc\b|republic\s*nationa/i,
   /southern\s*glazer'?s?/i,
   /total\s*wine/i,
   /spec'?s\b/i,
+  // Capital Reyes (Reyes Beverage). WF descriptor: "Capital Reyes Di FINTECHEFT…".
+  /capital\s*reyes|\breyes\b.*distribut/i,
+  // Brown Distributing. WF descriptor: "Brown Distributi Fintech" (truncated).
+  /brown\s*distribut/i,
+  // Additional Austin-area beverage / mixer suppliers surfaced by the first WF
+  // sync — all previously fell into meals/office. Beer, mixers, and liquor
+  // bought for resale are cost-of-goods for an alcohol-delivery business.
+  /austin\s*beerworks/i, // local brewery — wholesale beer
+  /fresh\s*victor/i, // premium cocktail-mixer brand
+  /twin\s*liquors?/i, // liquor retail bought for resale (cf. Total Wine / Spec's)
+  /coast\s*to\s*coast/i, // Coast to Coast Distributing (WF truncates to "…Dis")
+  /\bh[-\s]?e[-\s]?b\b/i, // H-E-B — cocktail-kit produce/mixers (the fresh-produce resale vendor)
 ];
 
 /**
