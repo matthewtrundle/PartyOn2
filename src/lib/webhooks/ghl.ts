@@ -269,6 +269,14 @@ export interface GhlDashboardPayload {
   cruise_date: string;
   cruise_type: string;
   booking_id: string;
+  /** Affiliate/partner code that sourced this booking (e.g. PREMIER, CENTEXBOATRENTALS) */
+  partner_code?: string;
+  /**
+   * Whether the customer opted in to SMS at booking time. The GHL
+   * dashboard.created workflow should gate texting on this flag and fall back
+   * to email-only outreach when it is false (Hybrid partners like Centex).
+   */
+  sms_consent?: boolean;
 }
 
 /**

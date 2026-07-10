@@ -8,15 +8,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createMultiTabDashboardOrder } from '@/lib/group-orders-v2/service';
-import { PREMIER_MARINA_ADDRESS } from '@/lib/affiliates/presets';
 import {
   affiliateWebhookSchema,
   normalizeCruiseType,
-  buildCruiseTabName,
-  buildDashboardTitle,
   formatDeliveryWindow,
   sendDashboardCallback,
-  LODGING_TAB_NAME,
+  getWebhookDashboardConfig,
 } from '@/lib/webhooks/affiliate-dashboard';
 import type { DashboardCallbackPayload } from '@/lib/webhooks/affiliate-dashboard';
 import { notifyDashboardCreated } from '@/lib/webhooks/ghl';
@@ -58,11 +55,15 @@ export async function POST(request: NextRequest) {
   const payload = parsed.data;
 
   // ── Build dashboard input ────────────────────
+  // Resolve per-partner config (marina address, tab naming) by affiliate code.
+  // Falls back to the Premier config for any unregistered affiliate.
+  const config = getWebhookDashboardConfig(affiliate.code);
   const cruiseType = normalizeCruiseType(payload.items_name);
-  const cruiseTabName = buildCruiseTabName(cruiseType, payload.customer_name);
-  const dashboardTitle = buildDashboardTitle(payload.customer_name);
+  const cruiseTabName = config.buildPrimaryTabName(payload.items_name, payload.customer_name);
+  const dashboardTitle = config.buildDashboardTitle(payload.customer_name);
   const deliveryTime = formatDeliveryWindow(payload.cruise_start_time);
-  const marinaAddress = `${PREMIER_MARINA_ADDRESS.address1}, ${PREMIER_MARINA_ADDRESS.city}, ${PREMIER_MARINA_ADDRESS.province} ${PREMIER_MARINA_ADDRESS.zip}`;
+  const m = config.marinaAddress;
+  const marinaAddress = `${m.address1}, ${m.city}, ${m.province} ${m.zip}`;
 
   try {
     const result = await createMultiTabDashboardOrder({
@@ -82,7 +83,7 @@ export async function POST(request: NextRequest) {
           deliveryContextType: 'BOAT',
         },
         {
-          name: LODGING_TAB_NAME,
+          name: config.lodgingTabName,
           deliveryContextType: 'HOUSE',
         },
       ],
@@ -146,6 +147,8 @@ export async function POST(request: NextRequest) {
         cruise_date: payload.cruise_date,
         cruise_type: cruiseType,
         booking_id: payload.booking_id || '',
+        partner_code: affiliate.code,
+        sms_consent: payload.sms_consent,
       });
     } catch (ghlErr) {
       console.error('[Affiliate Webhook] GHL dashboard notify failed:', ghlErr);
