@@ -10,8 +10,7 @@
  */
 
 import type { ReactElement } from 'react';
-import SectionSubNav from '@/components/backend/SectionSubNav';
-import { EMAIL_SUBNAV } from '@/components/backend/subnav-items';
+import EmailHubBand from '@/components/admin/emails/EmailHubBand';
 import CopyEditorPanel from '@/components/admin/followups/CopyEditorPanel';
 import FlagsPanel from '@/components/admin/followups/FlagsPanel';
 import QueuePanel from '@/components/admin/followups/QueuePanel';
@@ -22,9 +21,9 @@ import TestSendPanel from '@/components/admin/followups/TestSendPanel';
 
 export default function FollowupsAdminPage(): ReactElement {
   return (
-    <div className="p-4 md:p-8 bg-gray-50 min-h-screen space-y-6">
-      <SectionSubNav items={EMAIL_SUBNAV} />
-      <div className="flex items-center justify-between flex-wrap gap-2">
+    <div className="bg-gray-50 min-h-screen">
+      <EmailHubBand active="followups" />
+      <div className="p-4 md:p-8 space-y-6">
         <div>
           <h1 className="font-heading text-3xl tracking-[0.1em] text-gray-900">Follow-Ups</h1>
           <p className="text-sm text-gray-500">
@@ -32,15 +31,15 @@ export default function FollowupsAdminPage(): ReactElement {
             Engine runs every 15 minutes.
           </p>
         </div>
-      </div>
 
-      <FlagsPanel />
-      <CopyEditorPanel />
-      <TestSendPanel />
-      <StatsPanel />
-      <QueuePanel />
-      <SentLogPanel />
-      <SuppressionsPanel />
+        <FlagsPanel />
+        <StatsPanel />
+        <QueuePanel />
+        <SentLogPanel />
+        <CopyEditorPanel />
+        <TestSendPanel />
+        <SuppressionsPanel />
+      </div>
     </div>
   );
 }

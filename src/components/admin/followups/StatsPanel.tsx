@@ -6,6 +6,7 @@
  */
 
 import { useEffect, useState, type ReactElement } from 'react';
+import KPITile from '@/components/backend/kit/KPITile';
 
 interface StatRow {
   journeyKey: string;
@@ -17,6 +18,7 @@ interface StatRow {
 
 export default function StatsPanel(): ReactElement {
   const [stats, setStats] = useState<StatRow[] | null>(null);
+  const [queued, setQueued] = useState<number | null>(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -27,7 +29,24 @@ export default function StatsPanel(): ReactElement {
         else setError('Failed to load stats');
       })
       .catch(() => setError('Failed to load stats'));
+    // Queued total comes from the flags payload's per-journey counts
+    fetch('/api/ops/followups/flags')
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.success) {
+          const total = (json.journeys as { counts: { scheduled: number } }[]).reduce(
+            (sum, j) => sum + j.counts.scheduled,
+            0,
+          );
+          setQueued(total);
+        }
+      })
+      .catch(() => undefined);
   }, []);
+
+  const totalSends = stats?.reduce((sum, r) => sum + r.sends, 0) ?? 0;
+  const totalOpens = stats?.reduce((sum, r) => sum + r.opens, 0) ?? 0;
+  const openRate = totalSends > 0 ? Math.round((totalOpens / totalSends) * 100) : 0;
 
   return (
     <div className="card">
@@ -35,6 +54,17 @@ export default function StatsPanel(): ReactElement {
       <p className="text-sm text-gray-500 mb-4">
         Orders within 30 days of a send, matched by email; each order counts once.
       </p>
+
+      <div className="grid grid-cols-3 gap-2.5 mb-4">
+        <KPITile label="Queued" value={queued != null ? String(queued) : '—'} />
+        <KPITile label="Sent" value={String(totalSends)} delta="all time" />
+        <KPITile
+          label="Open rate"
+          value={totalSends > 0 ? `${openRate}%` : '—'}
+          delta={totalSends > 0 ? `${totalOpens} opens` : 'no sends yet'}
+          deltaTone={totalSends > 0 && openRate >= 30 ? 'green' : 'gray'}
+        />
+      </div>
       {error && <p className="text-sm text-red-600 mb-3">{error}</p>}
       {!stats ? (
         <p className="text-sm text-gray-500">Loading stats…</p>

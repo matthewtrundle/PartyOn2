@@ -43,7 +43,7 @@ export default function SentLogPanel(): ReactElement {
   }, []);
 
   return (
-    <div className="card">
+    <div className="card" id="sent-log">
       <h2 className="text-lg font-bold tracking-[0.08em] text-gray-900 mb-1">Sent Log</h2>
       <p className="text-sm text-gray-500 mb-4">Last 100 follow-up emails.</p>
       {error && <p className="text-sm text-red-600 mb-3">{error}</p>}
