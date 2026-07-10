@@ -2,8 +2,7 @@ import Link from 'next/link';
 import { prisma } from '@/lib/database/client';
 import { getOpsSession } from '@/lib/auth/ops-session';
 import type { Prisma } from '@prisma/client';
-import SectionSubNav from '@/components/backend/SectionSubNav';
-import { EMAIL_SUBNAV } from '@/components/backend/subnav-items';
+import EmailHubBand from '@/components/admin/emails/EmailHubBand';
 
 /**
  * Admin → Emails → Signups.
@@ -95,10 +94,9 @@ export default async function EmailSignupsPage({
   ]);
 
   return (
-    <div className="p-4 md:p-8 bg-gray-50 min-h-screen">
-      <div className="mb-4">
-        <SectionSubNav items={EMAIL_SUBNAV} />
-      </div>
+    <div className="bg-gray-50 min-h-screen">
+      <EmailHubBand active="signups" />
+      <div className="p-4 md:p-8">
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-1">
@@ -194,6 +192,7 @@ export default async function EmailSignupsPage({
         * Drink-calculator leads live in a separate legacy table and aren&apos;t listed above — count shown for completeness.
         Newsletter signups appear here once <code className="bg-gray-100 px-1 rounded">/api/newsletter</code> is deployed (PR&nbsp;#157).
       </p>
+      </div>
     </div>
   );
 }

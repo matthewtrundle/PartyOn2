@@ -58,7 +58,12 @@ export default function QueuePanel(): ReactElement {
 
   return (
     <div className="card">
-      <h2 className="text-lg font-bold tracking-[0.08em] text-gray-900 mb-1">Upcoming Queue</h2>
+      <div className="flex items-baseline justify-between gap-3 mb-1">
+        <h2 className="text-lg font-bold tracking-[0.08em] text-gray-900">Next in Queue</h2>
+        <a href="#sent-log" className="text-sm font-semibold text-brand-blue hover:underline">
+          Sent log ↓
+        </a>
+      </div>
       <p className="text-sm text-gray-500 mb-4">
         Next 50 scheduled sends. The engine re-checks every cancel condition before sending.
       </p>
@@ -68,50 +73,40 @@ export default function QueuePanel(): ReactElement {
       ) : jobs.length === 0 ? (
         <p className="text-sm text-gray-500">Nothing queued.</p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-gray-500 border-b border-gray-200">
-                <th className="py-2 pr-4 font-semibold">Journey</th>
-                <th className="py-2 pr-4 font-semibold">Step</th>
-                <th className="py-2 pr-4 font-semibold">To</th>
-                <th className="py-2 pr-4 font-semibold">Sends at</th>
-                <th className="py-2 pr-4 font-semibold">Status</th>
-                <th className="py-2" />
-              </tr>
-            </thead>
-            <tbody>
-              {jobs.map((job) => (
-                <tr key={job.id} className="border-b border-gray-100">
-                  <td className="py-2 pr-4 text-gray-900">{job.journeyKey}</td>
-                  <td className="py-2 pr-4 text-gray-700">{job.step}</td>
-                  <td className="py-2 pr-4 text-gray-700">{job.email}</td>
-                  <td className="py-2 pr-4 text-gray-700">
-                    {new Date(job.scheduledFor).toLocaleString('en-US', {
-                      timeZone: 'America/Chicago',
-                      month: 'short',
-                      day: 'numeric',
-                      hour: 'numeric',
-                      minute: '2-digit',
-                    })}
-                  </td>
-                  <td className="py-2 pr-4 text-gray-700">{job.status}</td>
-                  <td className="py-2 text-right">
-                    {job.status === 'scheduled' && (
-                      <button
-                        type="button"
-                        onClick={() => void cancel(job.id)}
-                        disabled={busyId === job.id}
-                        className="btn-ghost text-red-600 disabled:opacity-50"
-                      >
-                        Cancel
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="divide-y divide-gray-100 -mx-2">
+          {jobs.map((job) => (
+            <div key={job.id} className="px-2 py-2.5 min-h-[52px] flex flex-wrap items-center gap-x-3 gap-y-1">
+              <div className="flex-1 min-w-[180px]">
+                <p className="text-sm font-semibold text-gray-900">
+                  {job.email}
+                  <span className="ml-2 text-gray-400 font-normal">step {job.step}</span>
+                </p>
+                <p className="text-sm text-gray-500">{job.journeyKey}</p>
+              </div>
+              <div className="text-sm font-semibold text-gray-700 tabular-nums whitespace-nowrap">
+                {new Date(job.scheduledFor).toLocaleString('en-US', {
+                  timeZone: 'America/Chicago',
+                  month: 'short',
+                  day: 'numeric',
+                  hour: 'numeric',
+                  minute: '2-digit',
+                })}
+              </div>
+              <span className="inline-flex items-center px-2 py-[3px] rounded text-xs font-bold tracking-[0.05em] uppercase bg-blue-100 text-blue-800">
+                {job.status}
+              </span>
+              {job.status === 'scheduled' && (
+                <button
+                  type="button"
+                  onClick={() => void cancel(job.id)}
+                  disabled={busyId === job.id}
+                  className="min-h-[36px] px-3 text-sm font-semibold text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-50 touch-manipulation"
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
+          ))}
         </div>
       )}
     </div>
