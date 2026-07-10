@@ -6,9 +6,3 @@ export const CATALOG_SUBNAV: SectionSubNavItem[] = [
   { href: '/ops/inventory', label: 'Inventory' },
   { href: '/ops/collections', label: 'Collections' },
 ];
-
-/** Admin Partners group: affiliate program + discount codes. */
-export const PARTNERS_SUBNAV: SectionSubNavItem[] = [
-  { href: '/admin/affiliates', label: 'Affiliates' },
-  { href: '/admin/promotions', label: 'Promotions' },
-];

@@ -107,7 +107,9 @@ export default function FinanceDashboardPage(): ReactElement {
     <div className="p-4 md:p-8">
       <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-black">Finance — Internal P&amp;L</h1>
+          <h1 className="font-heading font-bold text-2xl sm:text-3xl tracking-[0.06em] uppercase text-gray-900">
+            Finance — Internal P&amp;L
+          </h1>
           <p className="text-gray-600 text-sm">
             Phase 1C of the Finance Director. Built from PartyOn data only;
             QuickBooks OpEx joins in Phase 2A.
@@ -154,7 +156,7 @@ export default function FinanceDashboardPage(): ReactElement {
           <p className="text-gray-700 mb-2">
             No finance snapshots yet. The daily cron fires at 07:45 UTC.
           </p>
-          <p className="text-gray-500 text-xs">
+          <p className="text-gray-500 text-sm">
             To trigger one manually (admin only): hit{' '}
             <code className="bg-gray-100 px-1 rounded">GET /api/cron/finance-snapshot?date=YYYY-MM-DD</code>{' '}
             with the cron bearer token.
@@ -162,7 +164,7 @@ export default function FinanceDashboardPage(): ReactElement {
         </div>
       ) : !latest ? null : (
         <>
-          <div className="text-xs text-gray-500 mb-3">
+          <div className="text-sm text-gray-500 mb-3">
             Latest: <span className="font-medium">{latest.snapshotDate}</span> · captured{' '}
             {new Date(latest.createdAt).toLocaleString()}
           </div>
@@ -246,7 +248,7 @@ export default function FinanceDashboardPage(): ReactElement {
 
             <Card title="OpEx by category (trailing 30d)">
               {!opex || opex.byCategory.length === 0 ? (
-                <p className="text-gray-500 text-xs">
+                <p className="text-gray-500 text-sm">
                   No QuickBooks expense data yet. Connect QB at{' '}
                   <Link className="text-blue-600 hover:underline" href="/admin/finance/connect-quickbooks">
                     /admin/finance/connect-quickbooks
@@ -306,6 +308,8 @@ export default function FinanceDashboardPage(): ReactElement {
 
           {snapshots.length > 1 && (
             <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+              {/* Desktop table (md+) */}
+              <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 text-gray-700">
                   <tr>
@@ -346,6 +350,65 @@ export default function FinanceDashboardPage(): ReactElement {
                   ))}
                 </tbody>
               </table>
+              </div>
+
+              {/* Mobile stacked cards (<md) */}
+              <div className="md:hidden divide-y divide-gray-100">
+                {snapshots.map((s) => (
+                  <div key={s.id} className="p-4">
+                    <div className="flex items-baseline justify-between gap-3">
+                      <span className="font-semibold text-sm text-gray-900">{s.snapshotDate}</span>
+                      <span className="text-sm text-gray-500">
+                        {s.payload.paidOrderCount} orders
+                      </span>
+                    </div>
+                    <div className="mt-2 space-y-1 text-sm">
+                      <div className="flex justify-between gap-3">
+                        <span className="text-gray-500">Gross</span>
+                        <span className="tabular-nums text-gray-900">
+                          {formatCents(s.payload.grossRevenueCents)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between gap-3">
+                        <span className="text-gray-500">Refunds</span>
+                        <span
+                          className={`tabular-nums ${
+                            s.payload.refundedAmountCents > 0 ? 'text-red-700' : 'text-gray-900'
+                          }`}
+                        >
+                          {s.payload.refundedAmountCents > 0
+                            ? `-${formatCents(s.payload.refundedAmountCents)}`
+                            : '—'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between gap-3">
+                        <span className="text-gray-500">Stripe fees</span>
+                        <span className="tabular-nums text-gray-600">
+                          {formatCents(s.payload.stripeFeesCents)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between gap-3">
+                        <span className="text-gray-500">Net</span>
+                        <span className="tabular-nums text-gray-900">
+                          {formatCents(s.payload.netRevenueCents)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between gap-3">
+                        <span className="text-gray-500">Gross profit</span>
+                        <span className="tabular-nums text-gray-900">
+                          {formatCents(s.payload.grossProfitCents)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between gap-3">
+                        <span className="text-gray-500">Margin %</span>
+                        <span className="tabular-nums text-gray-900">
+                          {pct(s.payload.grossMarginPct)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </>
@@ -374,22 +437,28 @@ function Kpi({
   alert?: boolean;
 }): ReactElement {
   return (
-    <div
-      className={`p-4 rounded-lg border ${alert ? 'bg-red-50 border-red-200' : 'bg-white border-gray-200'}`}
-    >
-      <div className="text-gray-600 text-xs">{label}</div>
-      <div className="text-2xl font-bold tabular-nums">{value}</div>
+    <div className="bg-white rounded-xl border border-gray-200 p-[14px]">
+      <div className="text-[11px] font-semibold tracking-[0.1em] uppercase text-gray-500">
+        {label}
+      </div>
+      <div
+        className={`font-heading font-bold text-3xl leading-tight mt-1 tabular-nums ${
+          alert ? 'text-red-600' : 'text-gray-900'
+        }`}
+      >
+        {value}
+      </div>
       {delta && (
         <div
-          className={`text-xs mt-0.5 ${
-            delta.dirCents >= 0 ? 'text-green-700' : 'text-red-700'
+          className={`text-xs font-semibold mt-0.5 ${
+            delta.dirCents >= 0 ? 'text-green-600' : 'text-red-600'
           }`}
         >
           {delta.dirCents >= 0 ? '+' : ''}
           {delta.pct.toFixed(1)}% vs prior day
         </div>
       )}
-      {sub && <div className="text-gray-500 text-xs mt-1">{sub}</div>}
+      {sub && <div className="text-gray-500 text-sm mt-1">{sub}</div>}
     </div>
   );
 }
@@ -420,7 +489,7 @@ function Row({
         <span className="text-gray-700">{label}</span>
         <span className="tabular-nums">{value}</span>
       </div>
-      {sub && <div className="text-xs text-gray-500">{sub}</div>}
+      {sub && <div className="text-sm text-gray-500">{sub}</div>}
     </div>
   );
 }

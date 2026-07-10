@@ -99,7 +99,7 @@ export default function StrategyPage(): ReactElement {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-3xl md:text-4xl font-heading tracking-[0.1em] text-gray-900">Game Plan</h1>
+          <h1 className="font-heading font-bold text-2xl sm:text-3xl tracking-[0.06em] uppercase text-gray-900">Game Plan</h1>
           <p className="text-sm text-gray-600 mt-1">
             Our living plan to grow the bottom line — and where each piece stands.
           </p>
@@ -126,7 +126,7 @@ export default function StrategyPage(): ReactElement {
             <div><span className="font-bold text-gray-900">{stats.total}</span> <span className="text-gray-500">total</span></div>
           </div>
           <div className="flex-1 min-w-[160px]">
-            <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
+            <div className="h-2 rounded bg-gray-100 overflow-hidden">
               <div className="h-full bg-green-500 transition-all" style={{ width: `${stats.pct}%` }} />
             </div>
           </div>

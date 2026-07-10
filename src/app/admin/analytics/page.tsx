@@ -101,7 +101,7 @@ function AnalyticsHub(): ReactElement {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Landing Page Analytics</h1>
+          <h1 className="font-heading font-bold text-2xl sm:text-3xl tracking-[0.06em] uppercase text-gray-900">Landing Page Analytics</h1>
           <p className="text-sm text-gray-500">
             Traffic, CTA clicks &amp; conversion for each landing page.
           </p>

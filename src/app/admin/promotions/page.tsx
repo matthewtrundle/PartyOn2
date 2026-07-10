@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import SectionSubNav from '@/components/backend/SectionSubNav';
-import { PARTNERS_SUBNAV } from '@/components/backend/subnav-items';
+import PartnersHubBand from '@/components/admin/partners/PartnersHubBand';
 
 interface Discount {
   id: string;
@@ -123,27 +122,32 @@ export default function PromotionsPage() {
     return formatCurrency(value);
   };
 
+  /** Kit flat badge — shared by desktop tables + mobile cards. */
+  const badgeBase = 'inline-flex items-center px-2 py-[3px] rounded text-xs font-bold tracking-[0.05em] uppercase';
+
   if (loading) {
     return (
-      <div className="p-4 md:p-8">
-        <h1 className="text-2xl font-bold text-black mb-6">Promotions</h1>
-        <div className="space-y-4">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="animate-pulse bg-gray-200 rounded-lg h-20" />
-          ))}
+      <div className="bg-gray-50 min-h-screen">
+        <PartnersHubBand active="promotions" />
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          <h1 className="font-heading font-bold text-2xl sm:text-3xl tracking-[0.06em] uppercase text-gray-900 mb-6">Promotions</h1>
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="animate-pulse bg-gray-200 rounded-lg h-20" />
+            ))}
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-4 md:p-8">
-      <div className="mb-4">
-        <SectionSubNav items={PARTNERS_SUBNAV} />
-      </div>
+    <div className="bg-gray-50 min-h-screen">
+      <PartnersHubBand active="promotions" />
+      <div className="max-w-7xl mx-auto px-4 py-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-black">Promotions</h1>
+          <h1 className="font-heading font-bold text-2xl sm:text-3xl tracking-[0.06em] uppercase text-gray-900">Promotions</h1>
         </div>
         <Link
           href="/admin/promotions/new"
@@ -181,17 +185,18 @@ export default function PromotionsPage() {
       {activeTab === 'codes' && (
         <div className="bg-white border-2 border-gray-200 rounded-lg overflow-hidden">
           {discounts.length > 0 ? (
-            <div className="overflow-x-auto">
+            <>
+            <div className="hidden md:block overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b-2 border-gray-200 bg-gray-50">
                   <th className="text-left py-3 px-4 font-semibold text-black">Code</th>
-                  <th className="hidden md:table-cell text-left py-3 px-4 font-semibold text-black">Name</th>
-                  <th className="hidden md:table-cell text-left py-3 px-4 font-semibold text-black">Type</th>
+                  <th className="text-left py-3 px-4 font-semibold text-black">Name</th>
+                  <th className="text-left py-3 px-4 font-semibold text-black">Type</th>
                   <th className="text-right py-3 px-4 font-semibold text-black">Value</th>
                   <th className="text-right py-3 px-4 font-semibold text-black">Usage</th>
-                  <th className="hidden md:table-cell text-right py-3 px-4 font-semibold text-black">Total Saved</th>
-                  <th className="hidden md:table-cell text-center py-3 px-4 font-semibold text-black">Stackable</th>
+                  <th className="text-right py-3 px-4 font-semibold text-black">Total Saved</th>
+                  <th className="text-center py-3 px-4 font-semibold text-black">Stackable</th>
                   <th className="text-center py-3 px-4 font-semibold text-black">Status</th>
                   <th className="text-right py-3 px-4 font-semibold text-black">Actions</th>
                 </tr>
@@ -204,11 +209,11 @@ export default function PromotionsPage() {
                         {discount.code}
                       </code>
                     </td>
-                    <td className="hidden md:table-cell py-3 px-4 font-medium text-black">{discount.name}</td>
-                    <td className="hidden md:table-cell py-3 px-4 text-gray-600">
+                    <td className="py-3 px-4 font-medium text-black">{discount.name}</td>
+                    <td className="py-3 px-4 text-gray-600">
                       {getDiscountTypeLabel(discount.type)}
                       {discount.freeShipping && discount.type !== 'FREE_SHIPPING' && (
-                        <span className="ml-1 inline-block px-1.5 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded">
+                        <span className={`ml-1 ${badgeBase} bg-green-100 text-green-800`}>
                           + Free Delivery
                         </span>
                       )}
@@ -220,15 +225,15 @@ export default function PromotionsPage() {
                       {discount.usageCount}
                       {discount.maxUsageCount && ` / ${discount.maxUsageCount}`}
                     </td>
-                    <td className="hidden md:table-cell py-3 px-4 text-right text-black">
+                    <td className="py-3 px-4 text-right text-black">
                       {formatCurrency(discount.totalDiscountGiven)}
                     </td>
-                    <td className="hidden md:table-cell py-3 px-4 text-center">
+                    <td className="py-3 px-4 text-center">
                       <span
-                        className={`px-2 py-1 rounded text-xs font-medium ${
+                        className={`${badgeBase} ${
                           discount.combinable
-                            ? 'bg-blue-100 text-blue-700'
-                            : 'bg-gray-100 text-gray-500'
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-gray-100 text-gray-600'
                         }`}
                       >
                         {discount.combinable ? 'Yes' : 'No'}
@@ -237,10 +242,10 @@ export default function PromotionsPage() {
                     <td className="py-3 px-4 text-center">
                       <button
                         onClick={() => toggleDiscountStatus(discount.id, discount.isActive)}
-                        className={`px-2 py-1 rounded text-xs font-medium ${
+                        className={`${badgeBase} ${
                           discount.isActive
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-gray-100 text-gray-500'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-gray-100 text-gray-600'
                         }`}
                       >
                         {discount.isActive ? 'Active' : 'Inactive'}
@@ -259,6 +264,60 @@ export default function PromotionsPage() {
               </tbody>
             </table>
             </div>
+            <div className="md:hidden divide-y divide-gray-100">
+              {discounts.map((discount) => (
+                <div key={discount.id} className="px-4 py-3 space-y-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <code className="bg-gray-100 px-2 py-1 rounded text-sm font-mono font-semibold">
+                      {discount.code}
+                    </code>
+                    <span className="text-sm font-semibold text-gray-900">
+                      {getDiscountValueDisplay(discount.type, discount.value)}
+                    </span>
+                  </div>
+                  <div className="font-semibold text-sm text-gray-900">{discount.name}</div>
+                  <div className="text-sm text-gray-500">
+                    {getDiscountTypeLabel(discount.type)} &middot; Used {discount.usageCount}
+                    {discount.maxUsageCount && ` / ${discount.maxUsageCount}`} &middot; Saved {formatCurrency(discount.totalDiscountGiven)}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    {discount.freeShipping && discount.type !== 'FREE_SHIPPING' && (
+                      <span className={`${badgeBase} bg-green-100 text-green-800`}>
+                        + Free Delivery
+                      </span>
+                    )}
+                    <span
+                      className={`${badgeBase} ${
+                        discount.combinable
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-gray-100 text-gray-600'
+                      }`}
+                    >
+                      {discount.combinable ? 'Stackable' : 'Not Stackable'}
+                    </span>
+                  </div>
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      onClick={() => toggleDiscountStatus(discount.id, discount.isActive)}
+                      className={`flex-1 min-h-[44px] px-3 inline-flex items-center justify-center rounded-lg text-sm font-semibold touch-manipulation ${
+                        discount.isActive
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-gray-100 text-gray-600'
+                      }`}
+                    >
+                      {discount.isActive ? 'Active' : 'Inactive'}
+                    </button>
+                    <Link
+                      href={`/admin/promotions/${discount.id}`}
+                      className="flex-1 min-h-[44px] px-3 inline-flex items-center justify-center rounded-lg border border-gray-200 text-blue-600 hover:text-blue-800 text-sm font-medium touch-manipulation"
+                    >
+                      Edit
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+            </>
           ) : (
             <div className="p-8 text-center text-gray-500">
               No discount codes yet.{' '}
@@ -274,15 +333,16 @@ export default function PromotionsPage() {
       {activeTab === 'automatic' && (
         <div className="bg-white border-2 border-gray-200 rounded-lg overflow-hidden">
           {autoDiscounts.length > 0 ? (
-            <div className="overflow-x-auto">
+            <>
+            <div className="hidden md:block overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b-2 border-gray-200 bg-gray-50">
                   <th className="text-left py-3 px-4 font-semibold text-black">Name</th>
                   <th className="text-left py-3 px-4 font-semibold text-black">Type</th>
-                  <th className="hidden md:table-cell text-right py-3 px-4 font-semibold text-black">Value</th>
+                  <th className="text-right py-3 px-4 font-semibold text-black">Value</th>
                   <th className="text-left py-3 px-4 font-semibold text-black">Trigger</th>
-                  <th className="hidden md:table-cell text-right py-3 px-4 font-semibold text-black">Priority</th>
+                  <th className="text-right py-3 px-4 font-semibold text-black">Priority</th>
                   <th className="text-center py-3 px-4 font-semibold text-black">Status</th>
                 </tr>
               </thead>
@@ -293,7 +353,7 @@ export default function PromotionsPage() {
                     <td className="py-3 px-4 text-gray-600">
                       {getDiscountTypeLabel(discount.type)}
                     </td>
-                    <td className="hidden md:table-cell py-3 px-4 text-right text-black">
+                    <td className="py-3 px-4 text-right text-black">
                       {getDiscountValueDisplay(discount.type, discount.value)}
                     </td>
                     <td className="py-3 px-4 text-gray-600">
@@ -306,13 +366,13 @@ export default function PromotionsPage() {
                         </span>
                       )}
                     </td>
-                    <td className="hidden md:table-cell py-3 px-4 text-right text-gray-600">{discount.priority}</td>
+                    <td className="py-3 px-4 text-right text-gray-600">{discount.priority}</td>
                     <td className="py-3 px-4 text-center">
                       <span
-                        className={`px-2 py-1 rounded text-xs font-medium ${
+                        className={`${badgeBase} ${
                           discount.isActive
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-gray-100 text-gray-500'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-gray-100 text-gray-600'
                         }`}
                       >
                         {discount.isActive ? 'Active' : 'Inactive'}
@@ -323,6 +383,39 @@ export default function PromotionsPage() {
               </tbody>
             </table>
             </div>
+            <div className="md:hidden divide-y divide-gray-100">
+              {autoDiscounts.map((discount) => (
+                <div key={discount.id} className="px-4 py-3 space-y-1">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="font-semibold text-sm text-gray-900">{discount.name}</div>
+                    <span
+                      className={`${badgeBase} ${
+                        discount.isActive
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-gray-100 text-gray-600'
+                      }`}
+                    >
+                      {discount.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    {getDiscountTypeLabel(discount.type)} &middot; {getDiscountValueDisplay(discount.type, discount.value)}
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    {getTriggerLabel(discount.triggerType)}
+                    {discount.triggerValue !== null && (
+                      <span className="text-gray-900 ml-1">
+                        ({discount.triggerType === 'CART_TOTAL'
+                          ? formatCurrency(discount.triggerValue)
+                          : discount.triggerValue})
+                      </span>
+                    )}
+                    {' '}&middot; Priority {discount.priority}
+                  </div>
+                </div>
+              ))}
+            </div>
+            </>
           ) : (
             <div className="p-8 text-center text-gray-500">
               No automatic discounts configured.
@@ -334,23 +427,24 @@ export default function PromotionsPage() {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
         <div className="bg-blue-100 border-2 border-blue-300 rounded-lg p-4">
-          <h3 className="text-xs font-medium text-gray-600 mb-1">Active Discount Codes</h3>
+          <h3 className="text-sm font-medium text-gray-600 mb-1">Active Discount Codes</h3>
           <p className="text-2xl font-bold text-black">
             {discounts.filter((d) => d.isActive).length}
           </p>
         </div>
         <div className="bg-green-100 border-2 border-green-300 rounded-lg p-4">
-          <h3 className="text-xs font-medium text-gray-600 mb-1">Total Discounts Given</h3>
+          <h3 className="text-sm font-medium text-gray-600 mb-1">Total Discounts Given</h3>
           <p className="text-2xl font-bold text-black">
             {formatCurrency(discounts.reduce((sum, d) => sum + d.totalDiscountGiven, 0))}
           </p>
         </div>
         <div className="bg-purple-100 border-2 border-purple-300 rounded-lg p-4">
-          <h3 className="text-xs font-medium text-gray-600 mb-1">Total Redemptions</h3>
+          <h3 className="text-sm font-medium text-gray-600 mb-1">Total Redemptions</h3>
           <p className="text-2xl font-bold text-black">
             {discounts.reduce((sum, d) => sum + d.usageCount, 0)}
           </p>
         </div>
+      </div>
       </div>
     </div>
   );
