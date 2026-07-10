@@ -68,7 +68,12 @@ export default function BriansStuffTabs({
   return (
     <div className="-m-6 md:-m-8 lg:-m-10">
       <div className="sticky top-[var(--pod-appbar-h,0px)] z-20 bg-white border-b border-gray-200">
-        <div className="max-w-5xl mx-auto px-6 md:px-10 flex gap-1 overflow-x-auto">
+        {/* Wrap onto multiple rows when the label count exceeds one row's
+            width. The old `overflow-x-auto` clipped labels behind a
+            silent scrollbar so half the tabs were invisible on 13"
+            laptops. flex-wrap + generous vertical padding gives every
+            tab a real touch target. */}
+        <div className="max-w-6xl mx-auto px-4 md:px-8 flex flex-wrap gap-x-1 gap-y-0.5 py-1">
           <TabButton active={tab === 'playbook'} onClick={() => setTab('playbook')}>
             📘 Landing Page Playbook
           </TabButton>
@@ -152,10 +157,11 @@ function TabButton({
     <button
       type="button"
       onClick={onClick}
-      className="px-4 py-3 text-sm font-bold border-b-2 transition-colors whitespace-nowrap"
+      className="px-3 py-2.5 text-[13px] sm:text-sm font-bold border-b-2 transition-colors whitespace-nowrap rounded-t-md hover:bg-purple-50/50"
       style={{
         borderColor: active ? '#7C3AED' : 'transparent',
-        color: active ? '#5B21B6' : '#6B7280',
+        color: active ? '#5B21B6' : '#4B5563',
+        background: active ? 'rgba(124,58,237,0.06)' : 'transparent',
       }}
     >
       {children}

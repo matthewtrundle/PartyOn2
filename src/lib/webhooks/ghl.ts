@@ -9,6 +9,7 @@ const GHL_WEBHOOK_URL = process.env.GHL_ORDER_WEBHOOK_URL;
 const GHL_REVIEW_WEBHOOK_URL = process.env.GHL_REVIEW_WEBHOOK_URL;
 const GHL_DASHBOARD_WEBHOOK_URL = process.env.GHL_DASHBOARD_WEBHOOK_URL;
 const GHL_NEWSLETTER_WEBHOOK_URL = process.env.GHL_NEWSLETTER_WEBHOOK_URL;
+const GHL_CONCIERGE_LEAD_WEBHOOK_URL = process.env.GHL_CONCIERGE_LEAD_WEBHOOK_URL;
 const CORELINQ_INGEST_URL = process.env.CORELINQ_INGEST_URL;
 
 // ──────────────────────────────────────────────
@@ -338,5 +339,66 @@ export async function notifyNewsletterSignup(payload: GhlNewsletterPayload): Pro
     }
   } catch (err) {
     console.error('[GHL Newsletter Webhook] Error:', err);
+  }
+}
+
+// ──────────────────────────────────────────────
+// Premier Concierge — bachelor / weekend planning lead
+// ──────────────────────────────────────────────
+
+export interface GhlConciergeLeadPayload {
+  event: 'concierge.lead';
+  /** GHL-standard contact fields */
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  /** Structured questionnaire answers so the receiving workflow can
+   *  route to the right pipeline stage. */
+  source: string;                  // e.g. 'premier-concierge-bachelor'
+  partyType: string;               // 'bachelor' | 'bachelorette' | 'weekend' | ...
+  headcount: number;
+  arrivalDate: string;             // ISO YYYY-MM-DD
+  departureDate: string;
+  budgetPerPerson: string;         // '$400' etc.
+  activities: string[];            // ['drink-delivery', 'boat', 'atv', ...]
+  notes: string;
+  /** Array of tags the receiving GHL workflow should apply to the
+   *  contact. Everything after 'premier-concierge' + 'bachelor-party'
+   *  is dynamic based on the questionnaire (activity tags, budget tag,
+   *  headcount bucket, etc.). */
+  tags: string[];
+  /** Deep link back to the Lead row in Brian's Stuff. */
+  leadUrl: string;
+  submittedAt: string;
+}
+
+/**
+ * POST a Premier Concierge lead to the GHL concierge webhook so the
+ * receiving GHL workflow can create/update the contact and apply the
+ * appropriate tags for pipeline routing.
+ *
+ * Fire-and-forget: logs errors, never throws. No-ops silently when
+ * GHL_CONCIERGE_LEAD_WEBHOOK_URL is not set — so this is inert until
+ * the founder creates the GHL inbound webhook/workflow and sets the
+ * env var. In the meantime the CoreLinq mirror still fires.
+ */
+export async function notifyConciergeLead(payload: GhlConciergeLeadPayload): Promise<void> {
+  await postToCoreLinq(payload);
+  if (!GHL_CONCIERGE_LEAD_WEBHOOK_URL) return;
+
+  try {
+    const res = await fetch(GHL_CONCIERGE_LEAD_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      console.error('[GHL Concierge Webhook] Failed:', res.status, await res.text());
+    } else {
+      console.log('[GHL Concierge Webhook] Lead synced:', payload.email);
+    }
+  } catch (err) {
+    console.error('[GHL Concierge Webhook] Error:', err);
   }
 }

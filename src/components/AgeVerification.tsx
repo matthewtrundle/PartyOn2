@@ -24,6 +24,7 @@ const AGE_GATE_EXEMPT_PATHS = [
   '/austin-4th-of-july-delivery',
   '/event-quiz',
   '/events/4th-of-july-disco-cruise',
+  '/austin-bachelor-concierge',
 ]
 
 /**

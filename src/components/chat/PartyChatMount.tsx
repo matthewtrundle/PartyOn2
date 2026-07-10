@@ -37,6 +37,8 @@ const HIDE_PATTERNS: RegExp[] = [
   /^\/events(\/|$)/,
   // Full Moon Party lander — has its own share FAB; keep it distraction-free.
   /^\/full-moon-aug1(\/|$)/,
+  // Premier Concierge lander — own questionnaire modal; no drink-planner bubble.
+  /^\/austin-bachelor-concierge(\/|$)/,
 ];
 
 export default function PartyChatMount() {
