@@ -7,7 +7,7 @@ export default function OpsPage() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace('/ops/orders');
+    router.replace('/ops/today');
   }, [router]);
 
   return null;

@@ -61,7 +61,7 @@ export function useBackendAuth(): BackendAuth {
   // Employees never see /admin/* (preserves the pre-shell admin layout rule)
   useEffect(() => {
     if (isAuthenticated && role === 'employee' && pathname?.startsWith('/admin')) {
-      router.replace('/ops/orders');
+      router.replace('/ops/today');
     }
   }, [isAuthenticated, role, pathname, router]);
 
@@ -86,10 +86,10 @@ export function useBackendAuth(): BackendAuth {
 
         if (data.role === 'employee') {
           if (pathname?.startsWith('/admin') || pathname === '/ops') {
-            router.push('/ops/orders');
+            router.push('/ops/today');
           }
         } else if (pathname === '/ops') {
-          router.push('/ops/orders');
+          router.push('/ops/today');
         } else if (pathname === '/admin') {
           router.push('/admin/dashboard');
         }
