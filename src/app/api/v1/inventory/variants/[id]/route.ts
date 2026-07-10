@@ -29,6 +29,7 @@ export async function PATCH(
     committed?: number | null;
     available?: number | null;
     costPerUnit?: number | null;
+    reason?: string | null;
   };
   try {
     body = await request.json();
@@ -73,11 +74,15 @@ export async function PATCH(
   if (targetQuantity !== null) {
     const delta = targetQuantity - variant.inventoryQuantity;
     if (delta !== 0) {
+      const reason =
+        typeof body.reason === 'string' && body.reason.trim()
+          ? body.reason.trim().slice(0, 200)
+          : 'Manual edit from inventory page';
       await adjustInventory({
         productId: variant.productId,
         variantId: variant.id,
         quantity: delta,
-        reason: 'Manual edit from inventory page',
+        reason,
         type: 'ADJUSTMENT',
       });
     }

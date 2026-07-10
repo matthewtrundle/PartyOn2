@@ -100,30 +100,33 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       ...(!needsPostFilter ? { skip: (page - 1) * limit, take: limit } : {}),
     });
 
+    // Evergreen (trackInventory=false) variants are always sellable — they never
+    // belong in low/out/oversold tiers (mirrors checkout + the Today aggregate).
     let filteredVariants = allVariants;
     if (filter === 'oversold') {
-      filteredVariants = allVariants.filter(v => (v.inventoryQuantity - v.committedQuantity) < 0);
+      filteredVariants = allVariants.filter(v => v.trackInventory && (v.inventoryQuantity - v.committedQuantity) < 0);
     } else if (filter === 'out_of_stock') {
-      filteredVariants = allVariants.filter(v => (v.inventoryQuantity - v.committedQuantity) <= 0);
+      filteredVariants = allVariants.filter(v => v.trackInventory && (v.inventoryQuantity - v.committedQuantity) <= 0);
     } else if (filter === 'low_stock') {
       filteredVariants = allVariants.filter(v => {
         const available = v.inventoryQuantity - v.committedQuantity;
-        return available > 0 && available <= LOW_STOCK_THRESHOLD;
+        return v.trackInventory && available > 0 && available <= LOW_STOCK_THRESHOLD;
       });
     }
 
     // Default sort (filter='all' or 'missing_cost'): by stock-tier urgency, then alphabetical.
     // out-of-stock (0) → low-stock (1) → in-stock (2). Ties broken by product/variant title.
     if (!needsPostFilter) {
-      const tierOf = (qty: number, committed: number): number => {
+      const tierOf = (qty: number, committed: number, tracked: boolean): number => {
+        if (!tracked) return 2;
         const available = qty - committed;
         if (available <= 0) return 0;
         if (available <= LOW_STOCK_THRESHOLD) return 1;
         return 2;
       };
       filteredVariants = [...filteredVariants].sort((a, b) => {
-        const ta = tierOf(a.inventoryQuantity, a.committedQuantity);
-        const tb = tierOf(b.inventoryQuantity, b.committedQuantity);
+        const ta = tierOf(a.inventoryQuantity, a.committedQuantity, a.trackInventory);
+        const tb = tierOf(b.inventoryQuantity, b.committedQuantity, b.trackInventory);
         if (ta !== tb) return ta - tb;
         const pa = a.product.title.localeCompare(b.product.title);
         if (pa !== 0) return pa;
@@ -152,6 +155,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       quantity: variant.inventoryQuantity,
       committedQuantity: variant.committedQuantity,
       available: variant.inventoryQuantity - variant.committedQuantity,
+      trackInventory: variant.trackInventory,
       reservedQuantity: variant.committedQuantity,
       lowStockThreshold: LOW_STOCK_THRESHOLD,
       reorderPoint: 5,
