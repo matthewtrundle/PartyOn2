@@ -3,11 +3,15 @@ import { uploadToBlob, isBlobConfigured } from '@/lib/storage/blob';
 import { parseInvoiceImage } from '@/lib/inventory/receiving/parser';
 import { createInvoiceFromParse } from '@/lib/inventory/receiving/service';
 import { prisma } from '@/lib/database/client';
+import { requireOpsAuth } from '@/lib/auth/ops-session';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
 
 export async function GET(): Promise<NextResponse> {
+  const auth = await requireOpsAuth();
+  if (auth instanceof NextResponse) return auth;
+
   const invoices = await prisma.receivingInvoice.findMany({
     orderBy: { createdAt: 'desc' },
     take: 25,
@@ -17,6 +21,9 @@ export async function GET(): Promise<NextResponse> {
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
+  const auth = await requireOpsAuth();
+  if (auth instanceof NextResponse) return auth;
+
   if (!isBlobConfigured()) {
     return NextResponse.json({ error: 'Blob storage not configured' }, { status: 503 });
   }

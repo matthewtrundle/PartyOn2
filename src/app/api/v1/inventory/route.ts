@@ -9,6 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
+import { requireOpsAuth } from '@/lib/auth/ops-session';
 import {
   adjustInventory,
   setInventoryCount,
@@ -30,6 +31,9 @@ const LOW_STOCK_THRESHOLD = 10;
  * Default sort: out-of-stock → low-stock → in-stock, then product/variant title.
  */
 export async function GET(request: NextRequest): Promise<NextResponse> {
+  const auth = await requireOpsAuth();
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const searchParams = request.nextUrl.searchParams;
     const search = searchParams.get('search') || '';
@@ -187,6 +191,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
  * Transfer is no longer supported (single location).
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const auth = await requireOpsAuth();
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const body = await request.json();
     const operation = body.operation;

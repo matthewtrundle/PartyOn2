@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { parseInventoryNote, type KnownProduct } from '@/lib/ai/note-parser';
+import { requireOpsAuth } from '@/lib/auth/ops-session';
 
 /**
  * POST /api/v1/inventory/notes/[id]/process
@@ -12,6 +13,9 @@ export async function POST(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
+  const auth = await requireOpsAuth();
+  if (auth instanceof NextResponse) return auth;
+
   try {
     const { id } = await params;
 

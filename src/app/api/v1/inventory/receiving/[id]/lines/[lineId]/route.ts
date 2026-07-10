@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/database/client';
+import { requireOpsAuth } from '@/lib/auth/ops-session';
 
 const patchSchema = z.object({
   matchedVariantId: z.string().nullable().optional(),
@@ -15,6 +16,9 @@ export async function PATCH(
   req: NextRequest,
   { params }: { params: Promise<{ id: string; lineId: string }> }
 ): Promise<NextResponse> {
+  const auth = await requireOpsAuth();
+  if (auth instanceof NextResponse) return auth;
+
   const { id, lineId } = await params;
 
   const body = await req.json().catch(() => null);

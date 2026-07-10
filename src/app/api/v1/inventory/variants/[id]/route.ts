@@ -13,11 +13,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { adjustInventory } from '@/lib/inventory/services/inventory-service';
+import { requireOpsAuth } from '@/lib/auth/ops-session';
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ): Promise<NextResponse> {
+  const auth = await requireOpsAuth();
+  if (auth instanceof NextResponse) return auth;
+
   const { id } = await params;
 
   let body: {
