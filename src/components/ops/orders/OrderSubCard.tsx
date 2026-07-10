@@ -3,8 +3,44 @@
 import { ReactElement, useState } from 'react';
 import Link from 'next/link';
 import OrderItemsChecklist from './OrderItemsChecklist';
-import { fmtMoney, getFulfillmentColor, getStatusColor } from './format';
+import { fmtMoney } from './format';
 import type { OrdersViewOrder } from '@/lib/ops/orders-view-data';
+
+/** Flat kit-spec badge tints (tinted = state, solid = act-now). */
+function statusTint(status: string): string {
+  switch (status) {
+    case 'CONFIRMED':
+      return 'bg-green-100 text-green-800';
+    case 'PENDING':
+      return 'bg-amber-100 text-amber-800';
+    case 'CANCELLED':
+    case 'REFUNDED':
+      return 'bg-red-100 text-red-800';
+    case 'PROCESSING':
+    case 'OUT_FOR_DELIVERY':
+      return 'bg-blue-100 text-blue-800';
+    case 'DELIVERED':
+      return 'bg-green-100 text-green-800';
+    default:
+      return 'bg-gray-100 text-gray-500';
+  }
+}
+
+function fulfillmentTint(status: string): string {
+  switch (status) {
+    case 'DELIVERED':
+      return 'bg-green-600 text-white'; // act-now solid
+    case 'UNFULFILLED':
+      return 'bg-amber-100 text-amber-800';
+    case 'IN_TRANSIT':
+    case 'OUT_FOR_DELIVERY':
+      return 'bg-blue-100 text-blue-800';
+    case 'FAILED':
+      return 'bg-red-600 text-white';
+    default:
+      return 'bg-gray-100 text-gray-500';
+  }
+}
 
 /**
  * One payer's order inside a cooler card: selection checkbox, order link,
@@ -71,21 +107,22 @@ export default function OrderSubCard({
         </span>
       </div>
 
-      {/* Badges: status / fulfillment / unpaid / review */}
+      {/* Badges: status / fulfillment / unpaid / review — kit badge spec:
+          tinted = state, solid = act-now (DELIVERED). Screen-only. */}
       <div className="mt-1 flex flex-wrap items-center gap-1 print:hidden">
-        <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ${getStatusColor(order.status)}`}>
+        <span className={`inline-flex px-2 py-[3px] text-xs font-bold tracking-[0.05em] uppercase rounded ${statusTint(order.status)}`}>
           {order.status}
         </span>
-        <span className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ${getFulfillmentColor(order.fulfillmentStatus)}`}>
+        <span className={`inline-flex px-2 py-[3px] text-xs font-bold tracking-[0.05em] uppercase rounded ${fulfillmentTint(order.fulfillmentStatus)}`}>
           {order.fulfillmentStatus}
         </span>
         {unpaid && (
-          <span className="inline-flex px-2 py-0.5 text-xs font-bold rounded-full bg-red-100 text-red-800 ring-1 ring-red-300">
+          <span className="inline-flex px-2 py-[3px] text-xs font-bold tracking-[0.05em] uppercase rounded bg-red-100 text-red-800">
             {order.financialStatus}
           </span>
         )}
         {order.reviewRequestSentAt && (
-          <span className="inline-flex px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+          <span className="inline-flex px-2 py-[3px] text-xs font-bold tracking-[0.05em] uppercase rounded bg-blue-100 text-blue-800">
             Review sent
           </span>
         )}

@@ -64,6 +64,9 @@ export default function DaySectionHeader({
         {isOverdue ? `⚠ ${label}` : label}
       </h2>
       <div className="text-sm font-medium opacity-90 whitespace-nowrap">
+        <span className="hidden sm:inline">
+          {orderIds.length} order{orderIds.length === 1 ? '' : 's'} ·{' '}
+        </span>
         {cardCount} cooler{cardCount === 1 ? '' : 's'} · {fmtMoney(total)}
       </div>
       {onPack && (

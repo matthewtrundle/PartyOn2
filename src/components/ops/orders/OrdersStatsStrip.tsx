@@ -18,27 +18,10 @@ interface Tile {
  * weekly StatsGrid.
  */
 export default function OrdersStatsStrip({ data }: { data: OrdersViewResponse }): ReactElement {
-  const g = data.stats.global;
   const r = data.stats.range;
 
-  const deltaStr =
-    g.revenueChangePct === null
-      ? '—'
-      : `${g.revenueChangePct > 0 ? '+' : ''}${g.revenueChangePct.toFixed(1)}%`;
-
-  const globalTiles: Tile[] = [
-    { label: 'Pending fulfillment', value: String(g.pendingFulfillment), accent: 'text-orange-600' },
-    { label: "Today's orders", value: String(g.todayOrders) },
-    { label: "Today's revenue", value: fmtMoney(g.todayRevenue) },
-    {
-      label: '30-day revenue',
-      value: fmtMoney(g.last30Revenue),
-      accent: 'text-brand-blue',
-      sub: g.revenueChangePct === null ? undefined : `${deltaStr} vs prior`,
-    },
-    { label: 'Total orders', value: g.total.toLocaleString() },
-  ];
-
+  // The global business tiles (today's revenue/orders, 30-day, pending)
+  // moved to the Today Shift Board — this strip is range-scoped only now.
   const rangeTiles: Tile[] = [
     { label: 'Coolers', value: String(r.coolers) },
     { label: 'Payments', value: String(r.payments) },
@@ -54,12 +37,7 @@ export default function OrdersStatsStrip({ data }: { data: OrdersViewResponse })
     },
   ];
 
-  return (
-    <div className="space-y-2">
-      <TileRow tiles={globalTiles} printHidden />
-      <TileRow tiles={rangeTiles} />
-    </div>
-  );
+  return <TileRow tiles={rangeTiles} />;
 }
 
 function TileRow({ tiles, printHidden = false }: { tiles: Tile[]; printHidden?: boolean }): ReactElement {

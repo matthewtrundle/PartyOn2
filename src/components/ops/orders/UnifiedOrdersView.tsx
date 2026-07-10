@@ -14,6 +14,7 @@ import PickSheetPrint from './print/PickSheetPrint';
 import ReviewRequestModal from './ReviewRequestModal';
 import ShortageListModal from './ShortageListModal';
 import { buildShortageList } from './shortage';
+import { todayCT } from './client-today';
 import { EMPTY_FILTERS, useOrdersView } from './useOrdersView';
 import { cacheChecks, fetchChecks, loadCachedChecks } from './usePickChecks';
 import { deliveryTimeMinutes, fmtDateLong, formatDate, formatDateTime } from './format';
@@ -447,7 +448,7 @@ export default function UnifiedOrdersView({
         {data?.days.map((day) =>
           renderSection({
             key: day.date,
-            label: fmtDateLong(day.date),
+            label: `${day.date === todayCT() ? 'TODAY · ' : ''}${fmtDateLong(day.date)}`,
             variant: 'day',
             cards: day.cards,
             total: day.total,
