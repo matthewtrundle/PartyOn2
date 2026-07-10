@@ -1257,7 +1257,7 @@ export default function OrderDetailPage(): ReactElement {
                               setRefundType('custom');
                               setShowActionSheet(true);
                             }}
-                            disabled={!order.payment.stripePaymentIntentId}
+                            disabled={refundProcessing || !order.payment.stripePaymentIntentId}
                             className="mt-2 px-3 py-1.5 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             title={!order.payment.stripePaymentIntentId ? 'No Stripe payment found for this order' : ''}
                           >
@@ -1710,7 +1710,13 @@ export default function OrderDetailPage(): ReactElement {
         refundReason={refundReason}
         refundType={refundType}
         refundProcessing={refundProcessing}
-        onRefundAmount={setRefundAmount}
+        onRefundAmount={(amount) => {
+          setRefundAmount(amount);
+          // Any preset/manual amount change inside the sheet detaches the
+          // refund from a prefilled amendment — otherwise a mismatched
+          // amount could stamp that amendment REFUNDED (security review).
+          setPendingAmendmentId(null);
+        }}
         onRefundReason={setRefundReason}
         onRefundType={setRefundType}
         onMarkDelivered={() => {
