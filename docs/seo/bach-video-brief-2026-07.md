@@ -1,5 +1,7 @@
 # Bach Video Production Brief — Q&A Listicle (2026-07-10)
 
+> **Script written:** the word-for-word plain-language script (with b-roll map, shot list, and the real-data claims awaiting Allan's sign-off) is at [bach-video-script-2026-07.md](./bach-video-script-2026-07.md).
+
 One combined bachelor + bachelorette video, bachelorette-led. **3–5 minutes, 10 questions, each question a keyword-targeted chapter.** Long-form lives on a new pillar blog post + both bach landers; each chapter becomes a standalone short mapped to a blog post.
 
 Evidence base (all raw files committed): `data/seo/semrush/2026-07-10/` (question keywords), `data/seo/serp-paa/2026-07-10.md` (PAA + SERP features), `data/seo/youtube-competitors/2026-07-10.md` (what performs), `data/seo/gsc/2026-07-09-segments.json` (our rankings), `data/seo/youtube-autocomplete/2026-07-10-questions.json` (live phrasings).
