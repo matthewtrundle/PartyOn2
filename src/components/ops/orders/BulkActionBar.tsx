@@ -30,7 +30,7 @@ export default function BulkActionBar({
   if (count === 0) return null;
 
   return (
-    <div className="fixed bottom-0 inset-x-0 z-40 print:hidden">
+    <div className="fixed bottom-[var(--pod-tab-h,0px)] inset-x-0 md:left-[232px] z-40 print:hidden">
       <div className="mx-auto max-w-7xl px-3 pb-3 safe-area-bottom">
         <div className="flex items-center gap-2 rounded-xl border border-blue-200 bg-white shadow-2xl px-3 py-2">
           <span className="text-sm font-bold text-blue-900 whitespace-nowrap">

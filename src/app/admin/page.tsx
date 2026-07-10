@@ -2,33 +2,25 @@
 
 import { useEffect, ReactElement } from 'react';
 import { useRouter } from 'next/navigation';
+import { useBackendAuth } from '@/components/backend/shell/useBackendAuth';
 
 /**
- * Admin landing page - redirects to appropriate dashboard based on role
+ * Admin landing page — sends admins to the dashboard. Employees are bounced
+ * to the ops portal by the shared auth hook before this redirect matters.
  */
 export default function AdminPage(): ReactElement {
   const router = useRouter();
+  const { isAuthenticated, role } = useBackendAuth();
 
   useEffect(() => {
-    // Check if authenticated and get role
-    const authenticated = sessionStorage.getItem('admin_authenticated');
-    const role = sessionStorage.getItem('admin_role');
-
-    if (authenticated === 'true') {
-      // Redirect based on role
-      if (role === 'admin') {
-        router.replace('/admin/dashboard');
-      } else {
-        router.replace('/admin/orders');
-      }
+    if (isAuthenticated && role === 'admin') {
+      router.replace('/admin/dashboard');
     }
-    // If not authenticated, the layout will show the login form
-  }, [router]);
+  }, [isAuthenticated, role, router]);
 
-  // Show loading while checking auth / redirecting
   return (
-    <div className="min-h-[calc(100vh-56px)] flex items-center justify-center bg-gray-100">
-      <div className="text-gray-500">Loading...</div>
+    <div className="min-h-[50vh] flex items-center justify-center">
+      <div className="text-gray-500">Loading…</div>
     </div>
   );
 }

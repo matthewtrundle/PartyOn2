@@ -2079,7 +2079,7 @@ export default function OrderDetailPage(): ReactElement {
 
       {/* Edit Bar (sticky bottom in edit mode) */}
       {isEditing && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-gray-200 shadow-2xl z-50 print:hidden">
+        <div className="fixed bottom-[var(--pod-tab-h,0px)] left-0 right-0 md:left-[232px] bg-white border-t-2 border-gray-200 shadow-2xl z-50 print:hidden">
           <div className="max-w-7xl mx-auto px-4 md:px-8 py-4">
             {preview ? (
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
