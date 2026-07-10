@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import KPITile from '@/components/backend/kit/KPITile';
 
 interface Customer {
   id: string;
@@ -130,7 +131,7 @@ export default function CustomersPage() {
     <div className="p-4 md:p-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-black">Customers</h1>
+          <h1 className="font-heading font-bold text-2xl sm:text-3xl tracking-[0.06em] uppercase text-gray-900">Customers</h1>
           <p className="text-gray-600 text-sm">
             Manage your customer database
           </p>
@@ -146,18 +147,9 @@ export default function CustomersPage() {
       {/* Summary Stats */}
       {data && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <div className="bg-blue-100 border-2 border-blue-300 rounded-lg p-4">
-            <h3 className="text-xs font-medium text-gray-600 mb-1">Total Customers</h3>
-            <p className="text-2xl font-bold text-black">{data.summary.total}</p>
-          </div>
-          <div className="bg-green-100 border-2 border-green-300 rounded-lg p-4">
-            <h3 className="text-xs font-medium text-gray-600 mb-1">Active Accounts</h3>
-            <p className="text-2xl font-bold text-black">{data.summary.active}</p>
-          </div>
-          <div className="bg-purple-100 border-2 border-purple-300 rounded-lg p-4">
-            <h3 className="text-xs font-medium text-gray-600 mb-1">With Orders</h3>
-            <p className="text-2xl font-bold text-black">{data.summary.withOrders}</p>
-          </div>
+          <KPITile label="Total Customers" value={String(data.summary.total)} />
+          <KPITile label="Active Accounts" value={String(data.summary.active)} />
+          <KPITile label="With Orders" value={String(data.summary.withOrders)} />
         </div>
       )}
 
@@ -246,7 +238,9 @@ export default function CustomersPage() {
             <p>No customers found matching your criteria.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          {/* Desktop table (md+) */}
+          <div className="hidden md:block overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
@@ -272,7 +266,7 @@ export default function CustomersPage() {
                           <p className="font-medium text-black hover:text-blue-600">
                             {customer.fullName}
                           </p>
-                          <p className="text-xs text-gray-500">{customer.email}</p>
+                          <p className="text-sm text-gray-500">{customer.email}</p>
                         </div>
                       </div>
                     </Link>
@@ -288,11 +282,11 @@ export default function CustomersPage() {
                   <td className="hidden md:table-cell px-4 py-4">
                     <div className="flex items-center gap-2">
                       {customer.isActive ? (
-                        <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                        <span className="inline-flex items-center px-2 py-[3px] rounded text-xs font-bold tracking-[0.05em] uppercase bg-green-100 text-green-800">
                           Active
                         </span>
                       ) : (
-                        <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
+                        <span className="inline-flex items-center px-2 py-[3px] rounded text-xs font-bold tracking-[0.05em] uppercase bg-gray-100 text-gray-600">
                           Inactive
                         </span>
                       )}
@@ -313,6 +307,58 @@ export default function CustomersPage() {
             </tbody>
           </table>
           </div>
+
+          {/* Mobile stacked cards (<md) */}
+          <div className="md:hidden divide-y divide-gray-100">
+            {data?.customers.map((customer) => (
+              <Link
+                key={customer.id}
+                href={`/admin/customers/${customer.id}`}
+                className="block p-4 min-h-[44px] touch-manipulation hover:bg-gray-50 active:bg-gray-50"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-sm text-gray-900 truncate">
+                      {customer.fullName}
+                    </p>
+                    <p className="text-sm text-gray-500 truncate">{customer.email}</p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {customer.isActive ? (
+                      <span className="inline-flex items-center px-2 py-[3px] rounded text-xs font-bold tracking-[0.05em] uppercase bg-green-100 text-green-800">
+                        Active
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2 py-[3px] rounded text-xs font-bold tracking-[0.05em] uppercase bg-gray-100 text-gray-600">
+                        Inactive
+                      </span>
+                    )}
+                    {customer.ageVerified && (
+                      <span className="text-green-500" title="Age Verified">
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="mt-2 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm text-gray-500">
+                  <span>
+                    <span className="font-semibold text-gray-900">{customer.totalOrders}</span>{' '}
+                    orders
+                  </span>
+                  <span>
+                    <span className="font-semibold text-gray-900">
+                      {customer.lifetimeSpend ? formatCurrency(customer.lifetimeSpend) : '-'}
+                    </span>{' '}
+                    lifetime
+                  </span>
+                  <span>Joined {formatDate(customer.createdAt)}</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+          </>
         )}
 
         {/* Pagination */}

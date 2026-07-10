@@ -56,7 +56,7 @@ export default function SettingsPage() {
     <div className="p-4 md:p-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-black">Settings</h1>
+          <h1 className="font-heading font-bold text-2xl sm:text-3xl tracking-[0.06em] uppercase text-gray-900">Settings</h1>
           <p className="text-gray-600 text-sm">
             Configure business settings and integrations
           </p>
@@ -111,7 +111,7 @@ export default function SettingsPage() {
                         </p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className={`px-2 py-1 text-xs rounded-full ${zone.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+                        <span className={`inline-flex items-center px-2 py-[3px] rounded text-xs font-bold tracking-[0.05em] uppercase ${zone.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
                           {zone.isActive ? 'Active' : 'Inactive'}
                         </span>
                         <button className="text-gray-400 hover:text-gray-600">
@@ -342,7 +342,7 @@ export default function SettingsPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className={`px-2 py-1 text-xs rounded-full ${integration.statusColor}`}>
+                      <span className={`inline-flex items-center px-2 py-[3px] rounded text-xs font-bold tracking-[0.05em] uppercase ${integration.statusColor}`}>
                         {integration.status}
                       </span>
                       <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">

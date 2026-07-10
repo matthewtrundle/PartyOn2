@@ -110,7 +110,7 @@ export default function ReportsPage() {
   if (loading) {
     return (
       <div className="p-4 md:p-8">
-        <h1 className="text-2xl font-bold text-black mb-6">Reports Dashboard</h1>
+        <h1 className="font-heading font-bold text-2xl sm:text-3xl tracking-[0.06em] uppercase text-gray-900 mb-6">Reports Dashboard</h1>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div key={i} className="animate-pulse bg-gray-200 rounded-lg h-32" />
@@ -123,7 +123,7 @@ export default function ReportsPage() {
   return (
     <div className="p-4 md:p-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <h1 className="text-2xl font-bold text-black">Reports Dashboard</h1>
+        <h1 className="font-heading font-bold text-2xl sm:text-3xl tracking-[0.06em] uppercase text-gray-900">Reports Dashboard</h1>
         <div className="flex gap-2">
           {(['7d', '30d', '90d'] as DateRange[]).map((r) => (
             <button
@@ -232,7 +232,7 @@ export default function ReportsPage() {
               {data.topProducts.map((product, index) => (
                 <div key={product.productId} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
                   <div className="flex items-center gap-3">
-                    <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-sm font-medium flex items-center justify-center">
+                    <span className="inline-flex items-center px-2 py-[3px] rounded text-xs font-bold tracking-[0.05em] uppercase bg-blue-100 text-blue-800">
                       {index + 1}
                     </span>
                     <span className="font-medium text-black">{product.productTitle}</span>

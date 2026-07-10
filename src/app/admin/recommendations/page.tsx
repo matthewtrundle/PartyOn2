@@ -97,7 +97,7 @@ export default function UnifiedRecommendationsPage(): ReactElement {
         </div>
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 font-heading tracking-[0.05em]">
+            <h1 className="font-heading font-bold text-2xl sm:text-3xl tracking-[0.06em] uppercase text-gray-900">
               Recommendation queue
             </h1>
             <p className="text-gray-500 mt-1 text-sm">
