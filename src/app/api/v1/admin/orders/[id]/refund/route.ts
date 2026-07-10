@@ -76,12 +76,15 @@ export async function POST(
     }
 
     // If the refund is linked to an amendment, verify the link BEFORE moving
-    // money: the amendment must exist, belong to this order, and its
+    // money: the amendment must exist, belong to this order, be an open
+    // refund-direction amendment (negative delta, still PENDING), and its
     // amountDelta must match the requested amount (±$0.005). On any mismatch
     // the refund still processes, but the amendment is NOT marked REFUNDED —
     // otherwise a smaller manual amount would resolve the amendment while
-    // under-paying the customer (CWE-840). The client detaches amendmentId
-    // when the operator edits the amount, but the server can't trust that.
+    // under-paying the customer, and a magnitude-matching refund could close
+    // a CHARGE amendment and hide an uncollected balance (CWE-840). The
+    // client detaches amendmentId when the operator edits the amount, but
+    // the server can't trust that.
     let amendmentToStamp: string | null = null;
     let warning: string | undefined;
     if (amendmentId) {
@@ -92,13 +95,15 @@ export async function POST(
         warning = 'Amendment not found — refund processed, but no amendment was marked REFUNDED.';
       } else if (amendment.orderId !== id) {
         warning = 'Amendment belongs to a different order — refund processed, but the amendment was not marked REFUNDED.';
+      } else if (Number(amendment.amountDelta) >= 0) {
+        warning = 'Amendment is a charge, not a refund — refund processed, but the amendment was not marked REFUNDED.';
+      } else if (amendment.resolution !== 'PENDING') {
+        warning = `Amendment is already resolved (${amendment.resolution}) — refund processed, but the amendment was not re-stamped.`;
+      } else if (Math.abs(amount + Number(amendment.amountDelta)) < 0.005) {
+        // Delta is negative here, so amount + delta ≈ 0 is an exact match.
+        amendmentToStamp = amendment.id;
       } else {
-        const amendmentAmount = Math.abs(Number(amendment.amountDelta));
-        if (Math.abs(amount - amendmentAmount) < 0.005) {
-          amendmentToStamp = amendment.id;
-        } else {
-          warning = `Refund amount ($${amount.toFixed(2)}) does not match the amendment amount ($${amendmentAmount.toFixed(2)}) — refund processed, but the amendment was NOT marked REFUNDED and stays pending.`;
-        }
+        warning = `Refund amount ($${amount.toFixed(2)}) does not match the amendment amount ($${Math.abs(Number(amendment.amountDelta)).toFixed(2)}) — refund processed, but the amendment was NOT marked REFUNDED and stays pending.`;
       }
     }
 
@@ -143,15 +148,20 @@ export async function POST(
     });
 
     // Mark the amendment REFUNDED only when the pre-verified amount matched.
+    // The write re-checks resolution=PENDING so a concurrent request that
+    // already resolved the amendment isn't silently overwritten (TOCTOU).
     if (amendmentToStamp) {
-      await prisma.orderAmendment.update({
-        where: { id: amendmentToStamp },
+      const stamped = await prisma.orderAmendment.updateMany({
+        where: { id: amendmentToStamp, resolution: 'PENDING' },
         data: {
           resolution: 'REFUNDED',
           refundId: refundRowId,
           resolvedAt: new Date(),
         },
       });
+      if (stamped.count === 0) {
+        warning = 'Amendment was resolved by another request while this refund processed — it was not re-stamped.';
+      }
     }
 
     // Send refund email

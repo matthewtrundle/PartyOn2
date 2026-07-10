@@ -2,11 +2,13 @@
  * Refund/amendment mismatch guard (CWE-840, flagged by the PR #221 security review).
  *
  * The route may only stamp OrderAmendment.resolution = REFUNDED when the
- * refunded amount actually matches the amendment's amountDelta (±$0.005).
- * A mismatched, missing, or foreign amendment must NOT block the refund —
- * the money still moves — but the amendment stays pending and the response
- * carries a warning. The client detaches amendmentId when the operator edits
- * the amount, but the server cannot trust that.
+ * amendment is an open refund-direction amendment (negative delta, PENDING)
+ * on this order and the refunded amount matches its amountDelta (±$0.005).
+ * A mismatched, missing, foreign, charge-direction, or already-resolved
+ * amendment must NOT block the refund — the money still moves — but the
+ * amendment is left untouched and the response carries a warning. The client
+ * detaches amendmentId when the operator edits the amount, but the server
+ * cannot trust that.
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -36,7 +38,7 @@ vi.mock('@/lib/auth/ops-session', () => ({
 const mockOrderFindUnique = vi.fn();
 const mockRefundUpdate = vi.fn().mockResolvedValue({});
 const mockAmendmentFindUnique = vi.fn();
-const mockAmendmentUpdate = vi.fn().mockResolvedValue({});
+const mockAmendmentUpdateMany = vi.fn().mockResolvedValue({ count: 1 });
 
 vi.mock('@/lib/database/client', () => ({
   prisma: {
@@ -44,7 +46,7 @@ vi.mock('@/lib/database/client', () => ({
     refund: { update: (...a: unknown[]) => mockRefundUpdate(...a) },
     orderAmendment: {
       findUnique: (...a: unknown[]) => mockAmendmentFindUnique(...a),
-      update: (...a: unknown[]) => mockAmendmentUpdate(...a),
+      updateMany: (...a: unknown[]) => mockAmendmentUpdateMany(...a),
     },
   },
 }));
@@ -107,7 +109,7 @@ describe('POST /refund — amendment stamp guard', () => {
     mockOrderFindUnique.mockResolvedValue(baseOrder());
     mockAmendmentFindUnique.mockResolvedValue(baseAmendment());
     mockRefundUpdate.mockResolvedValue({});
-    mockAmendmentUpdate.mockResolvedValue({});
+    mockAmendmentUpdateMany.mockResolvedValue({ count: 1 });
     mockPiRetrieve.mockResolvedValue({ amount_received: 15000 }); // $150 captured
     mockRefundsList.mockReturnValue(listOf([])); // nothing refunded on Stripe yet
     mockRefundsCreate.mockResolvedValue({ id: 're_1', status: 'succeeded' });
@@ -119,7 +121,7 @@ describe('POST /refund — amendment stamp guard', () => {
     expect(res.status).toBe(200);
     expect(data.success).toBe(true);
     expect(mockRefundsCreate).toHaveBeenCalledTimes(1); // money still moves
-    expect(mockAmendmentUpdate).not.toHaveBeenCalled(); // stamp withheld
+    expect(mockAmendmentUpdateMany).not.toHaveBeenCalled(); // stamp withheld
     expect(data.warning).toMatch(/does not match/i);
     expect(data.warning).toContain('$20.00');
     expect(data.warning).toContain('$50.00');
@@ -129,7 +131,7 @@ describe('POST /refund — amendment stamp guard', () => {
     const { data } = await callRoute({ amount: 49.99, amendmentId: 'amend-1' });
 
     expect(data.success).toBe(true);
-    expect(mockAmendmentUpdate).not.toHaveBeenCalled();
+    expect(mockAmendmentUpdateMany).not.toHaveBeenCalled();
     expect(data.warning).toMatch(/does not match/i);
   });
 
@@ -140,9 +142,10 @@ describe('POST /refund — amendment stamp guard', () => {
     expect(data.success).toBe(true);
     expect(data.warning).toBeUndefined();
 
-    expect(mockAmendmentUpdate).toHaveBeenCalledTimes(1);
-    const [updateArg] = mockAmendmentUpdate.mock.calls[0];
-    expect(updateArg.where).toEqual({ id: 'amend-1' });
+    expect(mockAmendmentUpdateMany).toHaveBeenCalledTimes(1);
+    const [updateArg] = mockAmendmentUpdateMany.mock.calls[0];
+    // Guarded write: only an amendment still PENDING can be stamped.
+    expect(updateArg.where).toEqual({ id: 'amend-1', resolution: 'PENDING' });
     expect(updateArg.data.resolution).toBe('REFUNDED');
     expect(updateArg.data.refundId).toBe('rf_db_1');
 
@@ -156,7 +159,7 @@ describe('POST /refund — amendment stamp guard', () => {
     const { data } = await callRoute({ amount: 50.004, amendmentId: 'amend-1' });
 
     expect(data.warning).toBeUndefined();
-    expect(mockAmendmentUpdate).toHaveBeenCalledTimes(1);
+    expect(mockAmendmentUpdateMany).toHaveBeenCalledTimes(1);
   });
 
   it('unknown amendmentId → refund processes, warning, no stamp (and no P2025 crash)', async () => {
@@ -166,7 +169,7 @@ describe('POST /refund — amendment stamp guard', () => {
     expect(res.status).toBe(200);
     expect(data.success).toBe(true);
     expect(mockRefundsCreate).toHaveBeenCalledTimes(1);
-    expect(mockAmendmentUpdate).not.toHaveBeenCalled();
+    expect(mockAmendmentUpdateMany).not.toHaveBeenCalled();
     expect(data.warning).toMatch(/not found/i);
   });
 
@@ -175,7 +178,7 @@ describe('POST /refund — amendment stamp guard', () => {
     const { data } = await callRoute({ amount: 50, amendmentId: 'amend-1' });
 
     expect(data.success).toBe(true);
-    expect(mockAmendmentUpdate).not.toHaveBeenCalled();
+    expect(mockAmendmentUpdateMany).not.toHaveBeenCalled();
     expect(data.warning).toMatch(/different order/i);
   });
 
@@ -185,8 +188,37 @@ describe('POST /refund — amendment stamp guard', () => {
     expect(res.status).toBe(200);
     expect(data.success).toBe(true);
     expect(mockAmendmentFindUnique).not.toHaveBeenCalled();
-    expect(mockAmendmentUpdate).not.toHaveBeenCalled();
+    expect(mockAmendmentUpdateMany).not.toHaveBeenCalled();
     expect('warning' in data).toBe(false);
+  });
+
+  it('SECURITY: a charge-direction amendment (positive delta) is never stamped by a refund', async () => {
+    // Stamping a charge amendment REFUNDED would remove it from the amend
+    // route's uncollected-balance guard and hide money the customer owes.
+    mockAmendmentFindUnique.mockResolvedValue({ ...baseAmendment(), amountDelta: '50.00' });
+    const { data } = await callRoute({ amount: 50, amendmentId: 'amend-1' });
+
+    expect(data.success).toBe(true);
+    expect(mockAmendmentUpdateMany).not.toHaveBeenCalled();
+    expect(data.warning).toMatch(/charge/i);
+  });
+
+  it('an already-resolved amendment is not re-stamped', async () => {
+    mockAmendmentFindUnique.mockResolvedValue({ ...baseAmendment(), resolution: 'REFUNDED' });
+    const { data } = await callRoute({ amount: 50, amendmentId: 'amend-1' });
+
+    expect(data.success).toBe(true);
+    expect(mockAmendmentUpdateMany).not.toHaveBeenCalled();
+    expect(data.warning).toMatch(/already resolved/i);
+  });
+
+  it('losing the stamp race (amendment resolved concurrently) still succeeds, with a warning', async () => {
+    mockAmendmentUpdateMany.mockResolvedValue({ count: 0 });
+    const { res, data } = await callRoute({ amount: 50, amendmentId: 'amend-1' });
+
+    expect(res.status).toBe(200);
+    expect(data.success).toBe(true);
+    expect(data.warning).toMatch(/another request/i);
   });
 
   it('non-numeric amount is rejected before any Stripe call', async () => {
