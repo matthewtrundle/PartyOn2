@@ -43,7 +43,7 @@ function fmtDate(d: Date) {
 }
 
 export default async function LeadsView() {
-  const [leads, totalLeads, anonSessions, partialCount, submittedCount, convertedCount] =
+  const [leads, totalLeads, anonSessions, partialCount, submittedCount, convertedCount, conciergeCount] =
     await Promise.all([
       prisma.lead.findMany({
         orderBy: { updatedAt: 'desc' },
@@ -58,17 +58,24 @@ export default async function LeadsView() {
       prisma.lead.count({ where: { status: 'PARTIAL' } }),
       prisma.lead.count({ where: { status: 'SUBMITTED' } }),
       prisma.lead.count({ where: { status: 'CONVERTED' } }),
+      // Premier Concierge leads — stored in metadata.partner so we don't
+      // need a schema migration for a new enum value. If we ever start
+      // seeing dozens per day we'll promote this to its own column.
+      prisma.lead.count({
+        where: { metadata: { path: ['partner'], equals: 'premier-concierge' } },
+      }),
     ]);
 
   return (
     <div className="space-y-6">
       {/* Top-line counters */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
         <Stat label="Total leads" value={totalLeads} />
         <Stat label="Anonymous sessions" value={anonSessions} />
         <Stat label="Partial" value={partialCount} color="#92400E" />
         <Stat label="Submitted" value={submittedCount} color="#1E40AF" />
         <Stat label="Converted" value={convertedCount} color="#166534" />
+        <Stat label="🥃 Concierge" value={conciergeCount} color="#5B21B6" />
       </div>
 
       <div className="rounded-md border border-gray-200 overflow-hidden bg-white">
@@ -106,8 +113,14 @@ export default async function LeadsView() {
               {leads.map((l) => {
                 const sc = STATUS_COLOR[l.status] ?? STATUS_COLOR.PARTIAL;
                 const lastEvent = l.events[0];
+                const meta = (l.metadata as Record<string, unknown> | null) ?? {};
+                const isConcierge = meta.partner === 'premier-concierge';
                 return (
-                  <tr key={l.id} className="border-t border-gray-100 align-top">
+                  <tr
+                    key={l.id}
+                    className="border-t border-gray-100 align-top"
+                    style={isConcierge ? { background: '#FAF5FF' } : undefined}
+                  >
                     <Td>{fmtDate(l.updatedAt)}</Td>
                     <Td>
                       <span
@@ -127,6 +140,14 @@ export default async function LeadsView() {
                       <div className="text-gray-500 text-xs">{l.phone || ''}</div>
                     </Td>
                     <Td>
+                      {isConcierge && (
+                        <span
+                          className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold tracking-wider mr-1"
+                          style={{ background: '#5B21B6', color: '#F2D34F' }}
+                        >
+                          🥃 CONCIERGE
+                        </span>
+                      )}
                       {l.sourceWidget ? (
                         <span className="text-xs font-semibold text-purple-700">
                           {WIDGET_LABELS[l.sourceWidget] ?? l.sourceWidget}
