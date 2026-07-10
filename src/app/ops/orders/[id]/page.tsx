@@ -635,7 +635,14 @@ export default function OrderDetailPage(): ReactElement {
       });
       const data = await res.json();
       if (data.success) {
-        alert(`Refund of $${refundAmount.toFixed(2)} processed successfully`);
+        // The server refunds even when the linked amendment couldn't be
+        // marked REFUNDED (amount mismatch etc.) — surface that, don't
+        // report an unqualified success.
+        alert(
+          data.warning
+            ? `Refund of $${refundAmount.toFixed(2)} processed — WARNING: ${data.warning}`
+            : `Refund of $${refundAmount.toFixed(2)} processed successfully`
+        );
         setShowRefundDialog(false);
         setPendingAmendmentId(null);
         await fetchOrder();
