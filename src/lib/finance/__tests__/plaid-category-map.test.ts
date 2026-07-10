@@ -62,9 +62,9 @@ describe('categorizeBankOutflow', () => {
     ).toBe('cogs');
   });
 
-  it('maps the other Austin beverage / mixer suppliers to cogs (beer, mixers, liquor-for-resale, grocery)', () => {
-    // Beer distributor, mixer brand, liquor retail-for-resale, distributor, and
-    // the cocktail-kit produce vendor — all bought for resale → COGS, not meals/office.
+  it('maps the single-purpose beverage / mixer suppliers to cogs unconditionally', () => {
+    // Beer distributor, mixer brand, liquor retail-for-resale, and the beverage
+    // distributor — 100% resale inventory → COGS regardless of Plaid category.
     expect(
       categorizeBankOutflow({
         name: 'Austin Beerworks Fintech',
@@ -79,9 +79,45 @@ describe('categorizeBankOutflow', () => {
     expect(categorizeBankOutflow({ name: 'Twin Liquors #12 AUSTIN', merchantName: 'Twin Liquors' })).toBe(
       'cogs'
     );
+    // Coast to Coast Distributing — WF truncates to "…Dis"; the "dis" anchor is required.
     expect(categorizeBankOutflow({ name: 'Coast To Coast Dis', merchantName: null })).toBe('cogs');
-    expect(categorizeBankOutflow({ name: 'H-E-B #572 AUSTIN TX', merchantName: 'H-E-B' })).toBe('cogs');
-    expect(categorizeBankOutflow({ name: 'HEB GAS', merchantName: null })).toBe('cogs');
+    // …but a generic "Coast to Coast" (e.g. a moving company) must NOT match.
+    expect(categorizeBankOutflow({ name: 'Coast To Coast Movers', merchantName: null })).not.toBe(
+      'cogs'
+    );
+  });
+
+  it('maps H-E-B to cogs ONLY for grocery purchases, never fuel (mixed merchant)', () => {
+    // Every real H-E-B outflow in the first WF sync was FOOD_AND_DRINK_GROCERIES —
+    // cocktail-kit produce/mixers bought for resale → COGS.
+    expect(
+      categorizeBankOutflow({
+        name: 'H-E-B #572 AUSTIN TX',
+        merchantName: 'H-E-B',
+        personalFinanceCategoryPrimary: 'FOOD_AND_DRINK',
+        personalFinanceCategoryDetailed: 'FOOD_AND_DRINK_GROCERIES',
+      })
+    ).toBe('cogs');
+    // But an H-E-B FUEL fill-up must keep its real category, NOT be swept into COGS.
+    expect(
+      categorizeBankOutflow({
+        name: 'H-E-B FUEL #14',
+        merchantName: 'H-E-B',
+        personalFinanceCategoryPrimary: 'TRANSPORTATION',
+        personalFinanceCategoryDetailed: 'TRANSPORTATION_GAS',
+      })
+    ).toBe('fuel');
+    // …and an in-store cafe/BBQ-counter lunch (FOOD_AND_DRINK but NOT groceries)
+    // is a `meals` expense, not resale inventory — the coarse primary must not
+    // sweep it into COGS.
+    expect(
+      categorizeBankOutflow({
+        name: 'H-E-B TRUE TEXAS BBQ',
+        merchantName: 'H-E-B',
+        personalFinanceCategoryPrimary: 'FOOD_AND_DRINK',
+        personalFinanceCategoryDetailed: 'FOOD_AND_DRINK_RESTAURANT',
+      })
+    ).toBe('meals');
   });
 
   it('maps transfers / card payments / loans to non_operating (never an expense)', () => {

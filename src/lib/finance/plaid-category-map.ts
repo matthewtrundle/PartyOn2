@@ -6,13 +6,16 @@
  * dormant for a month (e.g. all of 2026), the bank outflow IS the expense.
  *
  * Precedence (first match wins):
- *   1. Distributor / wholesale-alcohol merchant allowlist → `cogs`.
+ *   1. Single-purpose distributor / supplier allowlist → `cogs` unconditionally.
  *      Plaid's category taxonomy has NO wholesale-alcohol signal, so without
  *      this, alcohol buys land in GENERAL_MERCHANDISE → wrong. This is the
  *      single biggest threat to a trustworthy 2026 gross-margin number — extend
  *      `COGS_MERCHANT_RULES` against real bank-statement names after the first
  *      production sync.
- *   2. Plaid Personal Finance Category — detailed (most specific).
+ *   2. Plaid Personal Finance Category — detailed (most specific), with a
+ *      conditional `cogs` step (2a): mixed grocery merchants (`H-E-B`) map to
+ *      `cogs` ONLY when the detailed PFC is a resale grocery subtype, so a fuel
+ *      or cafe purchase at the same store keeps its real category.
  *   3. Plaid Personal Finance Category — primary (coarser).
  *   4. Merchant / name keywords (reuses qb-account-map's NAME_KEYWORD_RULES).
  *   5. Fallback → `other`.
@@ -44,13 +47,40 @@ export const COGS_MERCHANT_RULES: readonly RegExp[] = [
   /brown\s*distribut/i,
   // Additional Austin-area beverage / mixer suppliers surfaced by the first WF
   // sync — all previously fell into meals/office. Beer, mixers, and liquor
-  // bought for resale are cost-of-goods for an alcohol-delivery business.
+  // bought for resale are cost-of-goods for an alcohol-delivery business. These
+  // are single-purpose suppliers (100% of their spend is resale inventory), so
+  // — like the distributors above — they map to cogs unconditionally.
   /austin\s*beerworks/i, // local brewery — wholesale beer
   /fresh\s*victor/i, // premium cocktail-mixer brand
   /twin\s*liquors?/i, // liquor retail bought for resale (cf. Total Wine / Spec's)
-  /coast\s*to\s*coast/i, // Coast to Coast Distributing (WF truncates to "…Dis")
-  /\bh[-\s]?e[-\s]?b\b/i, // H-E-B — cocktail-kit produce/mixers (the fresh-produce resale vendor)
+  /coast\s*to\s*coast\s*dis/i, // Coast to Coast Distributing (WF truncates to "…Dis"); require the "dis" anchor so an unrelated "Coast to Coast" business can't false-match
 ];
+
+/**
+ * MIXED-merchant grocers whose spend is COGS only for a grocery/food purchase.
+ * Unlike the single-purpose suppliers in `COGS_MERCHANT_RULES`, these are
+ * full-service stores (groceries + fuel + pharmacy + general merch), so mapping
+ * every debit to cogs would sweep a fuel fill-up or pharmacy run into COGS and
+ * overstate it. Instead these map to cogs ONLY when Plaid's category confirms a
+ * grocery/food purchase (see `GROCERY_PFC_PRIMARY`); otherwise the normal PFC
+ * precedence applies (e.g. a fuel purchase → `fuel`).
+ *
+ * H-E-B is the fresh-produce / mixer vendor for cocktail kits (resale) — every
+ * H-E-B outflow in the first WF sync was PFC `FOOD_AND_DRINK_GROCERIES`.
+ */
+export const COGS_GROCERY_MERCHANT_RULES: readonly RegExp[] = [
+  /\bh[-\s]?e[-\s]?b\b/i, // H-E-B — cocktail-kit produce/mixers (resale)
+];
+
+/**
+ * Plaid PFC `detailed` values that confirm a resale grocery purchase, for the
+ * mixed-merchant grocery rules above. Deliberately narrow: the coarse
+ * `FOOD_AND_DRINK` PRIMARY also covers restaurant / fast-food / coffee (H-E-B
+ * stores have in-house cafes — a staff lunch is a `meals` expense, not resale
+ * inventory), and `GENERAL_MERCHANDISE` is non-food retail. Only the
+ * `FOOD_AND_DRINK_GROCERIES` detailed subtype maps to cogs.
+ */
+const GROCERY_PFC_DETAILED: ReadonlySet<string> = new Set(['FOOD_AND_DRINK_GROCERIES']);
 
 /**
  * Plaid PFC `detailed` → CategorySlug. Only the business-relevant
@@ -119,12 +149,21 @@ export interface BankOutflowLike {
 export function categorizeBankOutflow(txn: BankOutflowLike): CategorySlug {
   const text = `${txn.merchantName ?? ''} ${txn.name ?? ''}`.trim();
 
-  // 1. Distributor / wholesale-alcohol allowlist → cogs (Plaid has no such signal).
+  // 1. Single-purpose distributor / supplier allowlist → cogs unconditionally
+  // (100% of their spend is resale inventory; Plaid has no wholesale signal).
   for (const re of COGS_MERCHANT_RULES) {
     if (re.test(text)) return 'cogs';
   }
   // 2. Plaid PFC detailed.
   const detailed = txn.personalFinanceCategoryDetailed;
+  // 2a. Mixed grocery merchants (e.g. H-E-B) → cogs ONLY when Plaid's DETAILED
+  // category confirms a resale grocery purchase — so a fuel fill-up, pharmacy
+  // run, or in-store cafe lunch keeps its real category instead of COGS.
+  if (detailed && GROCERY_PFC_DETAILED.has(detailed)) {
+    for (const re of COGS_GROCERY_MERCHANT_RULES) {
+      if (re.test(text)) return 'cogs';
+    }
+  }
   if (detailed && PFC_DETAILED_MAP[detailed]) return PFC_DETAILED_MAP[detailed];
   // 3. Plaid PFC primary.
   const primary = txn.personalFinanceCategoryPrimary;
