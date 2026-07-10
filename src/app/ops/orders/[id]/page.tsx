@@ -2,151 +2,14 @@
 
 import { useState, useEffect, ReactElement, useCallback, useRef } from 'react';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
-
-interface OrderItem {
-  id: string;
-  product: { id: string; title: string; handle: string };
-  variant: { id: string; title: string; sku: string } | null;
-  title: string;
-  variantTitle: string | null;
-  sku: string | null;
-  quantity: number;
-  refundedQuantity: number;
-  price: number;
-  total: number;
-  imageUrl?: string | null;
-  bundleComponents?: { title: string; variantTitle: string | null; quantity: number }[];
-}
-
-interface Amendment {
-  id: string;
-  type: string;
-  changes: {
-    added: { title: string; quantity: number; price: number }[];
-    removed: { title: string; quantity: number; price: number }[];
-    modified: { title: string; oldQuantity: number; newQuantity: number; price: number }[];
-    deliveryFeeChange: { from: number; to: number } | null;
-  };
-  previousTotal: number;
-  newTotal: number;
-  amountDelta: number;
-  resolution: string;
-  draftOrderId: string | null;
-  refundId: string | null;
-  notes: string | null;
-  processedBy: string | null;
-  createdAt: string;
-  resolvedAt: string | null;
-}
-
-interface OrderDetail {
-  id: string;
-  orderNumber: string;
-  status: string;
-  financialStatus: string;
-  fulfillmentStatus: string;
-  cruiseType: 'DISCO' | 'PRIVATE' | null;
-  cruiseBoat: string | null;
-  customer: {
-    id: string;
-    email: string;
-    name: string;
-    phone: string | null;
-  };
-  customerSnapshot: {
-    name: string | null;
-    email: string | null;
-    phone: string | null;
-  };
-  items: OrderItem[];
-  pricing: {
-    subtotal: number;
-    discountCode: string | null;
-    discountAmount: number;
-    taxAmount: number;
-    deliveryFee: number;
-    tipAmount: number;
-    total: number;
-  };
-  delivery: {
-    date: string;
-    time: string;
-    type: string;
-    address: {
-      address1: string;
-      address2: string;
-      city: string;
-      state: string;
-      zip: string;
-      country: string;
-    };
-    phone: string | null;
-    instructions: string | null;
-  };
-  payment: {
-    stripePaymentIntentId: string | null;
-    stripeCheckoutSessionId: string | null;
-    stripeChargeId: string | null;
-  };
-  shopify: {
-    orderId: string | null;
-    orderNumber: string | null;
-  };
-  groupOrder: {
-    id: string | null;
-    isGroupOrder: boolean;
-    name: string | null;
-    shareCode: string | null;
-    status: string | null;
-    siblingOrders: {
-      id: string;
-      orderNumber: string;
-      customerName: string;
-      total: number;
-      status: string;
-    }[];
-  };
-  groupOrderV2: {
-    id: string;
-    isGroupOrder: boolean;
-    name: string;
-    shareCode: string;
-    hostName: string;
-    siblingOrders: {
-      id: string;
-      orderNumber: string;
-      customerName: string;
-      total: number;
-      status: string;
-      fulfillmentStatus: string;
-    }[];
-  } | null;
-  affiliate: {
-    id: string;
-    code: string;
-    businessName: string;
-    contactName: string;
-    phone: string | null;
-  } | null;
-  amendments: Amendment[];
-  notes: {
-    customer: string | null;
-    internal: string | null;
-  };
-  createdAt: string;
-  updatedAt: string;
-  navigation: {
-    previousOrderId: string | null;
-    nextOrderId: string | null;
-  };
-  reviewRequestSentAt: string | null;
-  refunds: {
-    totalRefunded: number;
-    count: number;
-    stripeCapturedAmount: number | null;
-  };
-}
+import { useParams } from 'next/navigation';
+import DetailHeader from '@/components/ops/orders/detail/DetailHeader';
+import StatusStepperCard from '@/components/ops/orders/detail/StatusStepperCard';
+import DeliveryCard from '@/components/ops/orders/detail/DeliveryCard';
+import ItemsCard from '@/components/ops/orders/detail/ItemsCard';
+import PaymentCard from '@/components/ops/orders/detail/PaymentCard';
+import { getStatusColor, formatDateTime, SectionHeader } from '@/components/ops/orders/detail/shared';
+import type { OrderDetail } from '@/components/ops/orders/detail/types';
 
 interface EditItem {
   productId: string;
@@ -193,8 +56,6 @@ interface PreviewData {
   warnings: string[];
 }
 
-const STATUS_OPTIONS = ['PENDING', 'CONFIRMED', 'PROCESSING', 'OUT_FOR_DELIVERY', 'DELIVERED', 'CANCELLED'];
-const FULFILLMENT_OPTIONS = ['UNFULFILLED', 'PENDING', 'IN_TRANSIT', 'OUT_FOR_DELIVERY', 'DELIVERED', 'FAILED'];
 const TIME_SLOTS = [
   '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
   '12:00 PM', '12:30 PM', '1:00 PM', '1:30 PM',
@@ -204,66 +65,8 @@ const TIME_SLOTS = [
   '8:00 PM', '8:30 PM', '9:00 PM',
 ];
 
-function getStatusColor(status: string): string {
-  const colors: Record<string, string> = {
-    PENDING: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-    CONFIRMED: 'bg-blue-100 text-blue-700 border-blue-200',
-    PROCESSING: 'bg-purple-100 text-purple-700 border-purple-200',
-    OUT_FOR_DELIVERY: 'bg-indigo-100 text-indigo-700 border-indigo-200',
-    DELIVERED: 'bg-green-100 text-green-700 border-green-200',
-    COMPLETED: 'bg-green-100 text-green-700 border-green-200',
-    CANCELLED: 'bg-red-100 text-red-700 border-red-200',
-    PAID: 'bg-green-100 text-green-700 border-green-200',
-    PARTIALLY_PAID: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-    PARTIALLY_REFUNDED: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-    REFUNDED: 'bg-gray-100 text-gray-700 border-gray-200',
-    FULFILLED: 'bg-green-100 text-green-700 border-green-200',
-    UNFULFILLED: 'bg-orange-100 text-orange-700 border-orange-200',
-    IN_TRANSIT: 'bg-blue-100 text-blue-700 border-blue-200',
-    PARTIAL: 'bg-yellow-100 text-yellow-700 border-yellow-200',
-    FAILED: 'bg-red-100 text-red-700 border-red-200',
-    INVOICE_SENT: 'bg-blue-100 text-blue-700 border-blue-200',
-    WAIVED: 'bg-gray-100 text-gray-700 border-gray-200',
-  };
-  return colors[status] || 'bg-gray-100 text-gray-700 border-gray-200';
-}
-
-function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    timeZone: 'UTC',
-  });
-}
-
-function formatDateTime(dateString: string): string {
-  return new Date(dateString).toLocaleString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-    timeZone: 'UTC',
-  });
-}
-
-function SectionHeader({ icon, title, action }: { icon: ReactElement; title: string; action?: ReactElement }): ReactElement {
-  return (
-    <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50">
-      <div className="flex items-center gap-3">
-        <span className="text-gray-400">{icon}</span>
-        <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
-      </div>
-      {action}
-    </div>
-  );
-}
-
 export default function OrderDetailPage(): ReactElement {
   const params = useParams();
-  const router = useRouter();
   const orderId = params?.id as string;
 
   const [order, setOrder] = useState<OrderDetail | null>(null);
@@ -879,6 +682,20 @@ export default function OrderDetailPage(): ReactElement {
     }
   }
 
+  function openRefundDialog(): void {
+    setRefundType('custom');
+    setRefundAmount(0);
+    setRefundReason('');
+    setPendingAmendmentId(null);
+    setShowRefundDialog(true);
+  }
+
+  function openReturnDialog(): void {
+    setReturnItems({});
+    setReturnReason('');
+    setShowReturnDialog(true);
+  }
+
   function handlePrint(): void {
     window.print();
   }
@@ -1034,171 +851,20 @@ export default function OrderDetailPage(): ReactElement {
       <div className={`p-4 md:p-8 bg-gray-50 min-h-screen print:hidden ${isEditing ? 'pb-48' : ''}`}>
         <div className="max-w-7xl mx-auto">
           {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-            <div className="flex items-center gap-4">
-              <Link
-                href="/ops/orders"
-                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-white rounded-lg transition-colors"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-              </Link>
-              <div>
-                <div className="flex items-center gap-3">
-                  <h1 className="text-3xl font-bold text-gray-900">
-                    Order #{order.orderNumber}
-                  </h1>
-                  {order.groupOrder.isGroupOrder && (
-                    <span className="px-3 py-1 text-sm font-medium bg-purple-100 text-purple-700 border border-purple-200 rounded-full">
-                      Group Order
-                    </span>
-                  )}
-                  {order.cruiseType && (
-                    <span
-                      className={`px-3 py-1 text-sm font-semibold rounded-full border ${
-                        order.cruiseType === 'DISCO'
-                          ? 'bg-orange-500 text-white border-orange-700'
-                          : 'bg-teal-600 text-white border-teal-800'
-                      }`}
-                      title={order.cruiseBoat ? `Boat: ${order.cruiseBoat}` : undefined}
-                    >
-                      {order.cruiseType === 'DISCO' ? 'Disco Cruise' : 'Private Cruise'}
-                      {order.cruiseBoat ? ` · ${order.cruiseBoat}` : ''}
-                    </span>
-                  )}
-                </div>
-                <p className="text-gray-500 mt-1">
-                  Created {formatDateTime(order.createdAt)}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              {/* Prev/Next Navigation */}
-              <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden shadow-sm">
-                <button
-                  onClick={() => order.navigation.previousOrderId && router.push(`/ops/orders/${order.navigation.previousOrderId}`)}
-                  disabled={!order.navigation.previousOrderId}
-                  className="p-2 bg-white text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed border-r border-gray-200"
-                  title="Previous order (by delivery date)"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                  </svg>
-                </button>
-                <button
-                  onClick={() => order.navigation.nextOrderId && router.push(`/ops/orders/${order.navigation.nextOrderId}`)}
-                  disabled={!order.navigation.nextOrderId}
-                  className="p-2 bg-white text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                  title="Next order (by delivery date)"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-              </div>
-
-              <button
-                onClick={handleCopySummary}
-                className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors shadow-sm flex items-center gap-2"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-                </svg>
-                Copy Summary
-              </button>
-
-              <button
-                onClick={handlePrint}
-                className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors shadow-sm flex items-center gap-2"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                </svg>
-                Print
-              </button>
-
-              {order.financialStatus === 'PAID' && (
-                <button
-                  onClick={handleSendReceipt}
-                  disabled={sendingReceipt}
-                  className="px-4 py-2 bg-white border border-green-200 text-green-700 rounded-lg font-medium hover:bg-green-50 transition-colors shadow-sm flex items-center gap-2 disabled:opacity-50"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  {sendingReceipt ? 'Sending...' : 'Send Receipt'}
-                </button>
-              )}
-
-              {order.payment.stripePaymentIntentId && (
-                <button
-                  onClick={() => {
-                    setRefundType('custom');
-                    setRefundAmount(0);
-                    setRefundReason('');
-                    setPendingAmendmentId(null);
-                    setShowRefundDialog(true);
-                  }}
-                  className="px-4 py-2 bg-white border border-red-200 text-red-700 rounded-lg font-medium hover:bg-red-50 transition-colors shadow-sm flex items-center gap-2"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-                  </svg>
-                  Issue Refund
-                </button>
-              )}
-
-              {order.payment.stripePaymentIntentId && (order.status === 'DELIVERED' || order.fulfillmentStatus === 'DELIVERED') && (
-                <button
-                  onClick={() => {
-                    setReturnItems({});
-                    setReturnReason('');
-                    setShowReturnDialog(true);
-                  }}
-                  className="px-4 py-2 bg-white border border-orange-200 text-orange-700 rounded-lg font-medium hover:bg-orange-50 transition-colors shadow-sm flex items-center gap-2"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z" />
-                  </svg>
-                  Process Return
-                </button>
-              )}
-
-              {canAmend && !isEditing && (
-                <>
-                  <button
-                    onClick={enterEditMode}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-sm flex items-center gap-2"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                    Edit Order
-                  </button>
-                  <button
-                    onClick={openCancelDialog}
-                    className="px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors shadow-sm flex items-center gap-2"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                    Cancel Order
-                  </button>
-                </>
-              )}
-
-              {isEditing && (
-                <button
-                  onClick={cancelEditMode}
-                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
-                >
-                  Cancel
-                </button>
-              )}
-            </div>
-          </div>
+          <DetailHeader
+            order={order}
+            isEditing={isEditing}
+            canAmend={!!canAmend}
+            sendingReceipt={sendingReceipt}
+            onCopySummary={handleCopySummary}
+            onPrint={handlePrint}
+            onSendReceipt={handleSendReceipt}
+            onOpenRefund={openRefundDialog}
+            onOpenReturn={openReturnDialog}
+            onEnterEdit={enterEditMode}
+            onOpenCancel={openCancelDialog}
+            onCancelEdit={cancelEditMode}
+          />
 
           {/* Edit mode banner */}
           {isEditing && (
@@ -1213,86 +879,21 @@ export default function OrderDetailPage(): ReactElement {
           )}
 
           {/* Status Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-              <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">
-                Order Status
-              </label>
-              <select
-                value={order.status}
-                onChange={(e) => updateOrder({ status: e.target.value })}
-                disabled={saving}
-                className={`w-full px-4 py-2.5 rounded-lg border-2 ${getStatusColor(order.status)} font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer`}
-              >
-                {STATUS_OPTIONS.map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-              <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">
-                Payment Status
-              </label>
-              <div className={`px-4 py-2.5 rounded-lg border-2 ${getStatusColor(order.financialStatus)} font-semibold text-center`}>
-                {order.financialStatus}
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-              <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">
-                Fulfillment
-              </label>
-              <select
-                value={order.fulfillmentStatus}
-                onChange={(e) => updateOrder({ fulfillmentStatus: e.target.value })}
-                disabled={saving}
-                className={`w-full px-4 py-2.5 rounded-lg border-2 ${getStatusColor(order.fulfillmentStatus)} font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer`}
-              >
-                {FULFILLMENT_OPTIONS.map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
-
-              {/* Review request prompt */}
-              {showReviewPrompt && !order.reviewRequestSentAt && (
-                <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                  <p className="text-sm font-medium text-blue-900 mb-2">
-                    Send review request to {order.customerSnapshot.name || order.customer.name}?
-                  </p>
-                  {(order.customerSnapshot.phone || order.customer.phone || order.delivery.phone) ? (
-                    <div className="flex gap-2">
-                      <button
-                        onClick={handleSendReview}
-                        disabled={sendingReview}
-                        className="px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
-                      >
-                        {sendingReview ? 'Sending...' : 'Send'}
-                      </button>
-                      <button
-                        onClick={() => setShowReviewPrompt(false)}
-                        className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                      >
-                        Skip
-                      </button>
-                    </div>
-                  ) : (
-                    <p className="text-xs text-blue-700">No phone number available</p>
-                  )}
-                </div>
-              )}
-              {order.reviewRequestSentAt && (
-                <p className="mt-2 text-xs text-gray-500">
-                  Review request sent {new Date(order.reviewRequestSentAt).toLocaleDateString()}
-                </p>
-              )}
-            </div>
-          </div>
+          <StatusStepperCard
+            order={order}
+            saving={saving}
+            showReviewPrompt={showReviewPrompt}
+            sendingReview={sendingReview}
+            onUpdateOrder={updateOrder}
+            onSendReview={handleSendReview}
+            onDismissReview={() => setShowReviewPrompt(false)}
+          />
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left Column - Order Details */}
             <div className="lg:col-span-2 space-y-6">
               {/* Delivery Details */}
+              {isEditing ? (
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 <SectionHeader
                   icon={
@@ -1304,8 +905,6 @@ export default function OrderDetailPage(): ReactElement {
                   title="Delivery Details"
                 />
                 <div className="p-6">
-                  {isEditing ? (
-                    <>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                         <div>
                           <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Delivery Date</label>
@@ -1399,56 +998,14 @@ export default function OrderDetailPage(): ReactElement {
                           />
                         </div>
                       </div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
-                        <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
-                          <p className="text-xs font-medium text-blue-600 uppercase tracking-wider mb-1">Delivery Date</p>
-                          <p className="font-bold text-gray-900 text-lg">{formatDate(order.delivery.date)}</p>
-                        </div>
-                        <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
-                          <p className="text-xs font-medium text-blue-600 uppercase tracking-wider mb-1">Time Window</p>
-                          <p className="font-bold text-gray-900 text-lg">{order.delivery.time}</p>
-                        </div>
-                      </div>
-                      <div className="space-y-4">
-                        <div>
-                          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Delivery Address</p>
-                          <p className="font-medium text-gray-900">
-                            {order.delivery.address.address1}
-                            {order.delivery.address.address2 && `, ${order.delivery.address.address2}`}
-                          </p>
-                          <p className="text-gray-600">
-                            {order.delivery.address.city}, {order.delivery.address.state} {order.delivery.address.zip}
-                          </p>
-                        </div>
-                        {order.delivery.phone && (
-                          <div>
-                            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Delivery Phone</p>
-                            <a href={`tel:${order.delivery.phone}`} className="text-blue-600 hover:underline font-medium">
-                              {order.delivery.phone}
-                            </a>
-                          </div>
-                        )}
-                        {order.delivery.instructions && (
-                          <div>
-                            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Delivery Instructions</p>
-                            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-gray-800">
-                              <svg className="w-5 h-5 text-yellow-500 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
-                              {order.delivery.instructions}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </>
-                  )}
                 </div>
               </div>
+              ) : (
+                <DeliveryCard order={order} />
+              )}
 
               {/* Order Items */}
+              {isEditing ? (
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 <SectionHeader
                   icon={
@@ -1459,8 +1016,7 @@ export default function OrderDetailPage(): ReactElement {
                   title="Order Items"
                 />
 
-                {/* Product search (edit mode only) */}
-                {isEditing && (
+                {/* Product search */}
                   <div className="px-6 py-4 border-b border-gray-100 bg-blue-50" ref={searchRef}>
                     <div className="relative">
                       <input
@@ -1505,12 +1061,9 @@ export default function OrderDetailPage(): ReactElement {
                       )}
                     </div>
                   </div>
-                )}
 
                 <div className="divide-y divide-gray-100">
-                  {isEditing ? (
-                    // Edit mode items
-                    editItems.map((item) => (
+                  {editItems.map((item) => (
                       <div
                         key={`${item.productId}-${item.variantId}`}
                         className={`px-6 py-4 flex items-center justify-between ${item.isNew ? 'bg-green-50' : ''}`}
@@ -1557,43 +1110,7 @@ export default function OrderDetailPage(): ReactElement {
                           </button>
                         </div>
                       </div>
-                    ))
-                  ) : (
-                    // Read-only items
-                    order.items.map((item) => (
-                      <div key={item.id} className="px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors">
-                        <div className="flex items-center gap-3 flex-1">
-                          {item.imageUrl ? (
-                            <img src={item.imageUrl} alt="" className="w-10 h-10 rounded-lg object-cover border border-gray-100 flex-shrink-0" />
-                          ) : (
-                            <div className="w-10 h-10 rounded-lg bg-gray-100 flex-shrink-0" />
-                          )}
-                          <div>
-                          <p className="font-semibold text-gray-900">{item.title}</p>
-                          {item.variantTitle && item.variantTitle !== 'Default Title' && (
-                            <p className="text-sm text-gray-500">{item.variantTitle}</p>
-                          )}
-                          {item.sku && (
-                            <p className="text-xs text-gray-400 font-mono">SKU: {item.sku}</p>
-                          )}
-                          {item.refundedQuantity > 0 && (
-                            <span className="inline-flex items-center px-2 py-0.5 mt-1 text-xs font-medium bg-orange-100 text-orange-700 border border-orange-200 rounded-full">
-                              {item.refundedQuantity} returned
-                            </span>
-                          )}
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-semibold text-gray-900">
-                            {item.quantity} x ${item.price.toFixed(2)}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            ${item.total.toFixed(2)}
-                          </p>
-                        </div>
-                      </div>
-                    ))
-                  )}
+                    ))}
                 </div>
 
                 {/* Pricing Summary */}
@@ -1616,24 +1133,20 @@ export default function OrderDetailPage(): ReactElement {
                   )}
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Delivery Fee</span>
-                    {isEditing ? (
-                      <div className="flex items-center gap-2">
-                        <span className="text-gray-400">$</span>
-                        <input
-                          type="number"
-                          value={editDeliveryFee}
-                          onChange={(e) => {
-                            setEditDeliveryFee(parseFloat(e.target.value) || 0);
-                            setPreview(null);
-                          }}
-                          step="0.01"
-                          min="0"
-                          className="w-20 px-2 py-1 border border-gray-300 rounded text-right focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
-                    ) : (
-                      <span className="text-gray-900 font-medium">${order.pricing.deliveryFee.toFixed(2)}</span>
-                    )}
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-400">$</span>
+                      <input
+                        type="number"
+                        value={editDeliveryFee}
+                        onChange={(e) => {
+                          setEditDeliveryFee(parseFloat(e.target.value) || 0);
+                          setPreview(null);
+                        }}
+                        step="0.01"
+                        min="0"
+                        className="w-20 px-2 py-1 border border-gray-300 rounded text-right focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-600">Tax (8.25%)</span>
@@ -1651,6 +1164,9 @@ export default function OrderDetailPage(): ReactElement {
                   </div>
                 </div>
               </div>
+              ) : (
+                <ItemsCard order={order} />
+              )}
 
               {/* Amendment History */}
               {order.amendments && order.amendments.length > 0 && (
@@ -1965,40 +1481,7 @@ export default function OrderDetailPage(): ReactElement {
               )}
 
               {/* Payment Info */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <SectionHeader
-                  icon={
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                    </svg>
-                  }
-                  title="Payment"
-                />
-                <div className="p-6 space-y-4">
-                  <div>
-                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Status</p>
-                    <span className={`inline-flex px-3 py-1.5 rounded-lg border text-sm font-semibold ${getStatusColor(order.financialStatus)}`}>
-                      {order.financialStatus}
-                    </span>
-                  </div>
-                  {order.payment.stripePaymentIntentId && (
-                    <div>
-                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Stripe Payment ID</p>
-                      <p className="text-xs font-mono text-gray-600 bg-gray-50 p-2 rounded break-all">
-                        {order.payment.stripePaymentIntentId}
-                      </p>
-                    </div>
-                  )}
-                  {order.shopify.orderId && (
-                    <div>
-                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Shopify Order</p>
-                      <p className="text-sm text-gray-600">
-                        #{order.shopify.orderNumber}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
+              <PaymentCard order={order} />
 
               {/* Affiliate Attribution */}
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
