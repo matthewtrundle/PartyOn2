@@ -32,9 +32,9 @@ export async function POST(
       amendmentId?: string;
     };
 
-    if (!amount || amount <= 0) {
+    if (typeof amount !== 'number' || !Number.isFinite(amount) || amount <= 0) {
       return NextResponse.json(
-        { success: false, error: 'Refund amount must be greater than 0' },
+        { success: false, error: 'Refund amount must be a number greater than 0' },
         { status: 400 }
       );
     }
@@ -73,6 +73,33 @@ export async function POST(
         success: false,
         error: `Refund amount ($${amount.toFixed(2)}) exceeds maximum refundable ($${maxRefundable.toFixed(2)})`,
       }, { status: 400 });
+    }
+
+    // If the refund is linked to an amendment, verify the link BEFORE moving
+    // money: the amendment must exist, belong to this order, and its
+    // amountDelta must match the requested amount (±$0.005). On any mismatch
+    // the refund still processes, but the amendment is NOT marked REFUNDED —
+    // otherwise a smaller manual amount would resolve the amendment while
+    // under-paying the customer (CWE-840). The client detaches amendmentId
+    // when the operator edits the amount, but the server can't trust that.
+    let amendmentToStamp: string | null = null;
+    let warning: string | undefined;
+    if (amendmentId) {
+      const amendment = await prisma.orderAmendment.findUnique({
+        where: { id: amendmentId },
+      });
+      if (!amendment) {
+        warning = 'Amendment not found — refund processed, but no amendment was marked REFUNDED.';
+      } else if (amendment.orderId !== id) {
+        warning = 'Amendment belongs to a different order — refund processed, but the amendment was not marked REFUNDED.';
+      } else {
+        const amendmentAmount = Math.abs(Number(amendment.amountDelta));
+        if (Math.abs(amount - amendmentAmount) < 0.005) {
+          amendmentToStamp = amendment.id;
+        } else {
+          warning = `Refund amount ($${amount.toFixed(2)}) does not match the amendment amount ($${amendmentAmount.toFixed(2)}) — refund processed, but the amendment was NOT marked REFUNDED and stays pending.`;
+        }
+      }
     }
 
     // Process Stripe refund.
@@ -115,10 +142,10 @@ export async function POST(
       },
     });
 
-    // Update OrderAmendment resolution if linked
-    if (amendmentId) {
+    // Mark the amendment REFUNDED only when the pre-verified amount matched.
+    if (amendmentToStamp) {
       await prisma.orderAmendment.update({
-        where: { id: amendmentId },
+        where: { id: amendmentToStamp },
         data: {
           resolution: 'REFUNDED',
           refundId: refundRowId,
@@ -142,6 +169,7 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
+      ...(warning ? { warning } : {}),
       data: {
         stripeRefundId: refund.id,
         amount,
