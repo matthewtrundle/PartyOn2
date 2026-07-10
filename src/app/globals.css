@@ -786,3 +786,42 @@
     animation: none;
   }
 }
+
+/* ===== Party On HQ backend shell (/ops + /admin) ===== */
+/* Chrome-height CSS vars: pages and kit components offset fixed/sticky
+   elements with var(--pod-tab-h) / var(--pod-appbar-h) so they stay correct
+   across breakpoints, in print, and if the chrome ever changes size. */
+.pod-shell {
+  --pod-appbar-h: 56px;
+  --pod-tab-h: calc(64px + env(safe-area-inset-bottom));
+}
+
+@media (min-width: 768px) {
+  .pod-shell {
+    --pod-appbar-h: 0px;
+    --pod-tab-h: 0px;
+  }
+}
+
+@media print {
+  .pod-shell {
+    --pod-appbar-h: 0px;
+    --pod-tab-h: 0px;
+  }
+}
+
+/* Bottom-sheet entrance (kit/BottomSheet) */
+@keyframes pod-sheet-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.pod-sheet-enter {
+  animation: pod-sheet-up 200ms cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pod-sheet-enter {
+    animation: none;
+  }
+}

@@ -67,7 +67,7 @@ export default function BriansStuffTabs({
 
   return (
     <div className="-m-6 md:-m-8 lg:-m-10">
-      <div className="sticky top-0 z-20 bg-white border-b border-gray-200">
+      <div className="sticky top-[var(--pod-appbar-h,0px)] z-20 bg-white border-b border-gray-200">
         <div className="max-w-5xl mx-auto px-6 md:px-10 flex gap-1 overflow-x-auto">
           <TabButton active={tab === 'playbook'} onClick={() => setTab('playbook')}>
             📘 Landing Page Playbook
