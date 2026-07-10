@@ -32,10 +32,12 @@ export default function DetailStickyBar({
   order,
   saving,
   onAdvance,
+  onOpenActions,
 }: {
   order: OrderDetail;
   saving: boolean;
   onAdvance: (updates: Record<string, unknown>) => void;
+  onOpenActions?: () => void;
 }): ReactElement | null {
   const next = nextTransition(order);
   if (!next) return null;
@@ -50,6 +52,20 @@ export default function DetailStickyBar({
       >
         {saving ? 'Saving…' : next.label}
       </button>
+      {onOpenActions && (
+        <button
+          type="button"
+          onClick={onOpenActions}
+          aria-label="More actions"
+          className="w-[52px] min-h-[52px] flex-shrink-0 rounded-lg border border-gray-300 bg-white text-gray-700 flex items-center justify-center hover:bg-gray-50 transition-colors touch-manipulation"
+        >
+          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+            <circle cx="5" cy="12" r="1.8" />
+            <circle cx="12" cy="12" r="1.8" />
+            <circle cx="19" cy="12" r="1.8" />
+          </svg>
+        </button>
+      )}
     </StickyActionBar>
   );
 }
