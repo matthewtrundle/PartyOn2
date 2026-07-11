@@ -1,6 +1,6 @@
-# Bach Video — Plain-Language Script (v1, 2026-07-10)
+# Bach Video — Plain-Language Script (v1.1, 2026-07-10 — data claims APPROVED)
 
-Companion to [bach-video-brief-2026-07.md](./bach-video-brief-2026-07.md). Format per Allan's decisions: **~90% voiceover over b-roll; Allan on camera 3 times only** (hook, one expertise moment, CTA ≈ 8% of runtime). Venues and partners named. Real order data used — every internal number is flagged **[APPROVE]** and listed in the sign-off table at the bottom.
+Companion to [bach-video-brief-2026-07.md](./bach-video-brief-2026-07.md). Format per Allan's decisions: **~90% voiceover over b-roll; Allan on camera 3 times only** (hook, one expertise moment, CTA ≈ 8% of runtime). Venues and partners named. All 5 real-data claims were approved by Allan 2026-07-10 (decisions recorded in the table at the bottom) — **this script is shoot-ready as written.**
 
 **Runtime target: ~4:15.** VO is ~640 words at a relaxed 150 wpm. Every chapter title is the search phrase — say it out loud as written (it's the keyword) and put it on screen.
 
@@ -10,7 +10,7 @@ Evidence sources: [internal-data-bach-2026-07-10.md](../../data/seo/internal-dat
 
 ## COLD OPEN — 0:00–0:12 · **ALLAN ON CAMERA** (warehouse or van, holding a cooler)
 
-> "We've stocked drinks for **over five hundred Austin bachelor and bachelorette parties this year** [APPROVE-1]. Every group asks the same ten questions. Here are the answers — in four minutes."
+> "We've stocked drinks for **over five hundred Austin bachelor and bachelorette parties**. Every group asks the same ten questions. Here are the answers — in four minutes."
 
 *On-screen:* "10 questions. 4 minutes." · *B-roll cut on "five hundred": rapid montage of delivery handoffs.*
 
@@ -36,7 +36,7 @@ Evidence sources: [internal-data-bach-2026-07-10.md](../../data/seo/internal-dat
 
 **The opinion: $700–1,000 a head done right — half of what Nashville costs — and drinks are the cheapest line item if you don't buy them at bars.**
 
-> "Nationally, people now spend about thirteen hundred dollars a head on these weekends. Austin, done right, runs seven hundred to a thousand — house, boat, food, everything. Here's the part nobody does the math on: one big bar night runs eighty to a hundred bucks a person. Groups that stock the house and the boat with us average **around thirty dollars a person for the whole weekend's drinks** [APPROVE-2]. The bar is for one night. The cooler is for the weekend."
+> "Nationally, people now spend about thirteen hundred dollars a head on these weekends. Austin, done right, runs seven hundred to a thousand — house, boat, food, everything. Here's the part nobody does the math on: one big bar night runs eighty to a hundred bucks a person. Groups that stock the house and the boat with us average **around thirty dollars a person for the whole weekend's drinks**. The bar is for one night. The cooler is for the weekend."
 
 *On-screen:* "$1,300 national avg → Austin: $700–$1,000" then "Bar night: ~$90/pp · Stocked weekend: ~$30/pp." · *B-roll:* HAVE — product/cooler shots, Rainey St night exteriors. · *Evidence: The Knot 2025 avg $1,300/pp; our pillar tiers $400–1,200; internal median group order $286.*
 
@@ -44,9 +44,9 @@ Evidence sources: [internal-data-bach-2026-07-10.md](../../data/seo/internal-dat
 
 **The opinion: 1–3 months before the wedding, spring or fall — and the boat is the thing that sells out.**
 
-> "Hold it one to three months before the wedding — close enough to feel real, far enough that nobody's stressed. In Austin, aim for March through May or September through October; nobody wants the lake in a hundred and five degrees. Book the house four months out and the boat at least eight weeks out — three months for peak Saturdays. And a confession from our own data: **half the groups that order drinks from us do it less than forty-eight hours before the party** [APPROVE-3]. Drinks, we can save same-day. The boat, nobody can."
+> "Hold it one to three months before the wedding — close enough to feel real, far enough that nobody's stressed. In Austin, aim for March through May or September through October; nobody wants the lake in a hundred and five degrees. Book the house four months out and the boat at least eight weeks out — three months for peak Saturdays. And a confession from our own data: **half the groups that order drinks from us do it less than forty-eight hours before the party**. We'll take the save — we deliver same-day — but do yourself a favor and **order a week ahead**. That's how you get exactly what you want, not what's left."
 
-*On-screen:* timeline graphic: house −4mo · boat −8wks · drinks −48h (or same-day). · *B-roll:* HAVE — vans loading, same-day delivery. NEED — busy marina Saturday wide shot.
+*On-screen:* timeline graphic: house −4mo · boat −8wks · **drinks −7 days** (same-day possible). · *B-roll:* HAVE — vans loading, same-day delivery. NEED — busy marina Saturday wide shot.
 
 ## Q5 — "What do you actually do at an Austin bachelorette party?" · 1:56–2:24
 
@@ -61,7 +61,7 @@ Evidence sources: [internal-data-bach-2026-07-10.md](../../data/seo/internal-dat
 **The opinion: two drinks per person per hour on the water. Do the multiplication, add water, stop guessing.**
 
 > **[Allan, to camera, packing a cooler]:** "This is the only formula you need: two drinks per person, per hour."
-> **[VO resumes]:** "Ten people, four hours on the boat — eighty drinks. A full weekend? Plan on roughly thirty drinks a person and adjust for your crew. What do Austin bach parties actually order? **Seltzers outsell beer two to one — High Noon is our number-one bach product, period** [APPROVE-4]. Add a bottle of bubbly for every five people for the tower, and — this is the one everyone forgets — a case of water and a bag of ice for every ten people. The hangover isn't the alcohol. It's the sun."
+> **[VO resumes]:** "Ten people, four hours on the boat — eighty drinks. A full weekend? Plan on roughly thirty drinks a person and adjust for your crew. What do Austin bach parties actually order? **Seltzers outsell beer two to one — High Noon is our number-one bach product, period**. Add a bottle of bubbly for every five people for the tower, and — this is the one everyone forgets — a case of water and a bag of ice for every ten people. The hangover isn't the alcohol. It's the sun."
 
 *On-screen:* "2 × people × hours" then "seltzers : beer = 2:1 at real bach parties." · *B-roll:* HAVE — product shots (High Noon, Surfside, Wycliff, Tito's), ice bags. NEED — cooler pack-out overhead (also the Q7 money shot). · *Evidence: drinkPlannerLogic.ts (2/person/hour, ice = 1 bag/10, multi-day = 16 drinking hours); internal top-products pull.*
 
@@ -69,7 +69,7 @@ Evidence sources: [internal-data-bach-2026-07-10.md](../../data/seo/internal-dat
 
 **The opinion: cans only. Glass doesn't get on the boat, and the captain doesn't drink — that's the law.**
 
-> "Rules first, because they're real: no glass on the boat — cans and plastic only. And since the 2024 law, the person driving the boat can't drink at all. Texas isn't kidding; alcohol shows up in about a quarter of the state's boating deaths. So the cooler looks like this: seltzers and canned cocktails, water one-for-one with the booze, ice on top. Bubbly? Get it in cans. If you booked with **Premier Party Cruises**, this gets easy — **we deliver to their marina free, cooler and ice included, thirty to sixty minutes before you board** [APPROVE-5]. You show up, it's cold, you sail."
+> "Rules first, because they're real: no glass on the boat — cans and plastic only. And since the 2024 law, the person driving the boat can't drink at all. Texas isn't kidding; alcohol shows up in about a quarter of the state's boating deaths. So the cooler looks like this: seltzers and canned cocktails, water one-for-one with the booze, ice on top. Bubbly? Get it in cans. If you booked with **Premier Party Cruises**, this gets easy — **we deliver to their marina free, cooler and ice included, thirty to sixty minutes before you board**. You show up, it's cold, you sail."
 
 *On-screen:* "NO GLASS · captain drinks nothing (2024 law)" then the cooler checklist. · *B-roll:* NEED — the money shot: overhead cooler pack-out, then marina handoff with a Premier boat behind (schedule with next Premier delivery). · *Evidence: legacy boat-laws post (2024 operator law, no-glass, TPWD ~25% stat); Premier partner page (free marina delivery, 30–60 min pre-departure).*
 
@@ -105,15 +105,15 @@ Evidence sources: [internal-data-bach-2026-07-10.md](../../data/seo/internal-dat
 
 ---
 
-## Real-data claims — ALLAN SIGN-OFF REQUIRED before publish
+## Real-data claims — APPROVED by Allan 2026-07-10 (script above reflects final wording)
 
-| # | Claim in script | Raw data behind it | Suggested safe phrasing if uncomfortable |
+| # | Final claim in script | Raw data behind it | Allan's decision |
 |---|---|---|---|
-| APPROVE-1 | "over five hundred Austin bachelor and bachelorette parties this year" | 532 bach dashboards created Jan–Jul 2026 (57 paid orders attached — the 532 counts groups who set up a party page) | "hundreds of Austin bach parties" |
-| APPROVE-2 | "around thirty dollars a person for the whole weekend's drinks" | median group order $286; assumes ~10-person group; covers what's ordered through us | "a fraction of one bar night" |
-| APPROVE-3 | "half the groups order less than 48 hours before" | median lead time 2.0 days (avg 5.5) | "most groups order days, not weeks, ahead" |
-| APPROVE-4 | "seltzers outsell beer two to one; High Noon is our #1 bach product" | seltzer units ≈148 vs beer ≈57; High Noon Variety 12pk = top item (52 units) | keep — this one is rock solid |
-| APPROVE-5 | "free marina delivery, cooler + ice, 30–60 min before boarding" | our own Premier partner page commitments | keep — it's our published offer |
+| 1 | "over five hundred Austin bachelor and bachelorette parties" (**no time qualifier**) | 532 bach dashboards created in 2026 alone; all-time total is higher, so "500+ total" is conservative | ✅ Approved as "served total, don't specify the time" |
+| 2 | "around thirty dollars a person for the whole weekend's drinks" | median group order $286; ~10-person group; covers what's ordered through us | ✅ Approved |
+| 3 | "half the groups order less than 48 hours before" **+ pivot: "order a week ahead"** | median lead time 2.0 days (avg 5.5) | ✅ Stat approved, reframed per Allan: recommend ordering **7+ days out** (same-day stays the safety net, not the pitch) |
+| 4 | "seltzers outsell beer two to one; High Noon is our #1 bach product" | seltzer units ≈148 vs beer ≈57; High Noon Variety 12pk = top item (52 units) | ✅ Approved |
+| 5 | "free marina delivery, cooler + ice, 30–60 min before boarding" | our own Premier partner page commitments | ✅ Approved |
 
 ## Master shot list (NEED — one shoot day + one scheduled delivery)
 
