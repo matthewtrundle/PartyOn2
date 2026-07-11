@@ -109,6 +109,7 @@ export default function ConnectBankPage(): ReactElement {
 
   const onSuccess = useCallback(
     async (publicToken: string, metadata: PlaidLinkOnSuccessMetadata) => {
+      setPendingOpen(false);
       setExchanging(true);
       try {
         if (mode === 'extend') {
@@ -149,10 +150,22 @@ export default function ConnectBankPage(): ReactElement {
     setPendingOpen(false);
   }, []);
 
+  // Clear the pending-open intent only when Link actually OPENS. The auto-open
+  // effect below can fire against the PREVIOUS handler while react-plaid-link
+  // is still re-initializing for a just-swapped token — that stale open() is a
+  // silent no-op, and eagerly consuming pendingOpen there left the flow dead
+  // (button click → nothing happens). Keeping the intent until the OPEN event
+  // makes the effect self-healing: it simply fires again when the new handler's
+  // ready/open land.
+  const onEvent = useCallback((eventName: string) => {
+    if (eventName === 'OPEN') setPendingOpen(false);
+  }, []);
+
   const { open, ready } = usePlaidLink({
     token: linkToken,
     onSuccess,
     onExit,
+    onEvent,
     receivedRedirectUri,
   });
 
@@ -162,11 +175,9 @@ export default function ConnectBankPage(): ReactElement {
   }, [receivedRedirectUri, ready, open]);
 
   // Open Link once it's ready after a button click swapped in a fresh token.
+  // Deliberately does NOT clear pendingOpen — see onEvent above.
   useEffect(() => {
-    if (pendingOpen && ready) {
-      setPendingOpen(false);
-      open();
-    }
+    if (pendingOpen && ready) open();
   }, [pendingOpen, ready, open]);
 
   async function startExtendHistory(): Promise<void> {
