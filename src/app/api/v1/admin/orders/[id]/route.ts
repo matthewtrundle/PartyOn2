@@ -79,7 +79,7 @@ export async function GET(
           },
         },
         refunds: {
-          select: { amount: true, createdAt: true },
+          select: { id: true, amount: true, createdAt: true },
         },
       },
     });
@@ -369,8 +369,10 @@ export async function GET(
             ? await getStripeCapturedAmount(order.stripePaymentIntentId).catch(() => null)
             : null,
           // Per-refund rows so the client can net an amendment's refund prefill
-          // against refunds recorded after the amendment was created.
+          // against refunds recorded after the amendment was created. The id
+          // lets the client skip refunds an amendment already claims.
           items: order.refunds.map((r) => ({
+            id: r.id,
             amount: Number(r.amount),
             createdAt: r.createdAt.toISOString(),
           })),

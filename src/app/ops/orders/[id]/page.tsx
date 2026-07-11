@@ -10,7 +10,7 @@ import ItemsCard from '@/components/ops/orders/detail/ItemsCard';
 import PaymentCard from '@/components/ops/orders/detail/PaymentCard';
 import DetailStickyBar, { nextTransition } from '@/components/ops/orders/detail/DetailStickyBar';
 import OrderActionSheet from '@/components/ops/orders/detail/OrderActionSheet';
-import { computeAmendmentRefundPrefill } from '@/components/ops/orders/detail/refund-prefill';
+import { computeAmendmentRefundPrefill, claimedRefundIds } from '@/components/ops/orders/detail/refund-prefill';
 import { getStatusColor, formatDateTime, SectionHeader } from '@/components/ops/orders/detail/shared';
 import type { OrderDetail } from '@/components/ops/orders/detail/types';
 
@@ -1260,7 +1260,10 @@ export default function OrderDetailPage(): ReactElement {
                           // Seed the netted remainder, not the full |amountDelta| —
                           // refunds recorded since the amendment was created must not
                           // be offered again on a retry (PR #225 security review).
-                          const prefill = computeAmendmentRefundPrefill(amendment, order.refunds?.items ?? []);
+                          // Refunds that resolved a different amendment don't count.
+                          const prefill = computeAmendmentRefundPrefill(amendment, order.refunds?.items ?? [], {
+                            excludeRefundIds: claimedRefundIds(order.amendments ?? []),
+                          });
                           return (
                             <button
                               onClick={() => {

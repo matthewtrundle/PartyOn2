@@ -3,7 +3,7 @@
 import { ReactElement, ReactNode } from 'react';
 import BottomSheet from '@/components/backend/kit/BottomSheet';
 import SlideToConfirm from './SlideToConfirm';
-import { computeAmendmentRefundPrefill } from './refund-prefill';
+import { computeAmendmentRefundPrefill, claimedRefundIds } from './refund-prefill';
 import type { OrderDetail } from './types';
 
 function ActionRow({
@@ -101,10 +101,14 @@ export default function OrderActionSheet({
   // Lifecycle rides on pendingAmendmentId: the page clears it when the
   // operator edits the amount, on a fresh sheet open, and after a refund.
   const pendingAmendment = pendingAmendmentId
-    ? order.amendments?.find((a) => a.id === pendingAmendmentId && a.amountDelta < 0)
+    ? order.amendments?.find(
+        (a) => a.id === pendingAmendmentId && a.amountDelta < 0 && a.resolution === 'PENDING',
+      )
     : undefined;
   const amendmentPrefill = pendingAmendment
-    ? computeAmendmentRefundPrefill(pendingAmendment, order.refunds?.items ?? [])
+    ? computeAmendmentRefundPrefill(pendingAmendment, order.refunds?.items ?? [], {
+        excludeRefundIds: claimedRefundIds(order.amendments ?? []),
+      })
     : null;
 
   const chip = (active: boolean): string =>

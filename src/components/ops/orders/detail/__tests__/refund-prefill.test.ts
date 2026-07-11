@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeAmendmentRefundPrefill } from '../refund-prefill';
+import { computeAmendmentRefundPrefill, claimedRefundIds } from '../refund-prefill';
 
 const AMENDED_AT = '2026-07-10T12:00:00.000Z';
 const BEFORE = '2026-07-10T11:59:59.000Z';
@@ -112,5 +112,65 @@ describe('computeAmendmentRefundPrefill', () => {
     const result = computeAmendmentRefundPrefill(amendment(-19.99), []);
     expect(result.amendmentAmount).toBe(19.99);
     expect(result.suggestedAmount).toBe(19.99);
+  });
+
+  it('ignores negative refund amounts instead of inflating the offer', () => {
+    const result = computeAmendmentRefundPrefill(amendment(-57), [
+      { amount: -20, createdAt: AFTER },
+    ]);
+    expect(result.refundedSinceAmendment).toBe(0);
+    expect(result.suggestedAmount).toBe(57);
+  });
+
+  it('does not net a refund that resolved a different amendment', () => {
+    // Amendment A (-$30, earlier) was refunded in full at AFTER and stamped
+    // with refund "ref-a". Amendment B (-$20) must not treat A's money as
+    // covering it — B is still owed in full.
+    const result = computeAmendmentRefundPrefill(
+      amendment(-20),
+      [{ id: 'ref-a', amount: 30, createdAt: AFTER }],
+      { excludeRefundIds: new Set(['ref-a']) }
+    );
+    expect(result.refundedSinceAmendment).toBe(0);
+    expect(result.suggestedAmount).toBe(20);
+    expect(result.fullyCovered).toBe(false);
+  });
+
+  it('still nets unclaimed refunds when an exclusion set is provided', () => {
+    const result = computeAmendmentRefundPrefill(
+      amendment(-57),
+      [
+        { id: 'ref-a', amount: 30, createdAt: AFTER },
+        { id: 'ref-b', amount: 20, createdAt: AFTER },
+      ],
+      { excludeRefundIds: new Set(['ref-a']) }
+    );
+    expect(result.refundedSinceAmendment).toBe(20);
+    expect(result.suggestedAmount).toBe(37);
+  });
+
+  it('nets refunds without an id even when an exclusion set is provided', () => {
+    const result = computeAmendmentRefundPrefill(
+      amendment(-57),
+      [{ amount: 20, createdAt: AFTER }],
+      { excludeRefundIds: new Set(['ref-a']) }
+    );
+    expect(result.refundedSinceAmendment).toBe(20);
+    expect(result.suggestedAmount).toBe(37);
+  });
+});
+
+describe('claimedRefundIds', () => {
+  it('collects stamped refund ids and skips unresolved amendments', () => {
+    const ids = claimedRefundIds([
+      { refundId: 'ref-a' },
+      { refundId: null },
+      { refundId: 'ref-b' },
+    ]);
+    expect(ids).toEqual(new Set(['ref-a', 'ref-b']));
+  });
+
+  it('returns an empty set for no amendments', () => {
+    expect(claimedRefundIds([]).size).toBe(0);
   });
 });
