@@ -3,6 +3,7 @@
 import { ReactElement, ReactNode } from 'react';
 import BottomSheet from '@/components/backend/kit/BottomSheet';
 import SlideToConfirm from './SlideToConfirm';
+import { computeAmendmentRefundPrefill } from './refund-prefill';
 import type { OrderDetail } from './types';
 
 function ActionRow({
@@ -39,6 +40,9 @@ function ActionRow({
  * refund zone. Refunds are exact-amount, preset-chipped, and confirmed by a
  * slide gesture — never a bare tap. All money state and the processRefund
  * call live in the page; the server enforces the Stripe-authoritative cap.
+ * When the refund is attached to a PENDING amendment, a callout nets the
+ * amendment's amount against refunds recorded since it was created, so a
+ * retry never silently re-offers money that already went back.
  */
 export default function OrderActionSheet({
   open,
@@ -52,6 +56,7 @@ export default function OrderActionSheet({
   refundReason,
   refundType,
   refundProcessing,
+  pendingAmendmentId,
   onRefundAmount,
   onRefundReason,
   onRefundType,
@@ -73,6 +78,7 @@ export default function OrderActionSheet({
   refundReason: string;
   refundType: string;
   refundProcessing: boolean;
+  pendingAmendmentId: string | null;
   onRefundAmount: (amount: number) => void;
   onRefundReason: (reason: string) => void;
   onRefundType: (type: string) => void;
@@ -89,6 +95,17 @@ export default function OrderActionSheet({
     0,
     (order.refunds?.stripeCapturedAmount ?? order.pricing.total) - (order.refunds?.totalRefunded || 0),
   );
+
+  // While the refund is attached to a PENDING refund-direction amendment,
+  // net its amount against refunds recorded since the amendment was created.
+  // Lifecycle rides on pendingAmendmentId: the page clears it when the
+  // operator edits the amount, on a fresh sheet open, and after a refund.
+  const pendingAmendment = pendingAmendmentId
+    ? order.amendments?.find((a) => a.id === pendingAmendmentId && a.amountDelta < 0)
+    : undefined;
+  const amendmentPrefill = pendingAmendment
+    ? computeAmendmentRefundPrefill(pendingAmendment, order.refunds?.items ?? [])
+    : null;
 
   const chip = (active: boolean): string =>
     `min-h-[44px] px-3 text-sm font-semibold rounded-lg border transition-colors touch-manipulation ${
@@ -281,6 +298,32 @@ export default function OrderActionSheet({
               <p className="text-sm text-red-800 mb-3">
                 Previously refunded ${order.refunds.totalRefunded.toFixed(2)} across {order.refunds.count} refund{order.refunds.count === 1 ? '' : 's'}.
               </p>
+            )}
+
+            {amendmentPrefill && amendmentPrefill.refundedSinceAmendment > 0 && (
+              <div className="mb-3 flex gap-2 rounded-lg border border-red-300 bg-white p-3">
+                <svg className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                </svg>
+                <p className="text-sm text-red-900">
+                  {amendmentPrefill.fullyCovered ? (
+                    <>
+                      This amendment&apos;s <strong>${amendmentPrefill.amendmentAmount.toFixed(2)}</strong> looks
+                      fully covered — ${amendmentPrefill.refundedSinceAmendment.toFixed(2)} was refunded after it
+                      was created, leaving nothing to refund. Entering an amount processes a manual refund and
+                      the amendment stays pending.
+                    </>
+                  ) : (
+                    <>
+                      ${amendmentPrefill.refundedSinceAmendment.toFixed(2)} of this amendment&apos;s{' '}
+                      <strong>${amendmentPrefill.amendmentAmount.toFixed(2)}</strong> was already refunded after it
+                      was created, leaving <strong>${amendmentPrefill.suggestedAmount.toFixed(2)}</strong> to
+                      refund. The amendment will stay pending (only an exact full-amount refund marks it
+                      refunded).
+                    </>
+                  )}
+                </p>
+              </div>
             )}
 
             <SlideToConfirm

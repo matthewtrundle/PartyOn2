@@ -144,5 +144,6 @@ export interface OrderDetail {
     totalRefunded: number;
     count: number;
     stripeCapturedAmount: number | null;
+    items: { amount: number; createdAt: string }[];
   };
 }
