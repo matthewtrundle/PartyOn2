@@ -130,6 +130,15 @@ function getRedirectUri(): string | undefined {
 }
 
 /**
+ * How much transaction history to request from the institution. Plaid's
+ * default is 90 days — which is why the first Wells Fargo sync only reached
+ * back ~3 months. 730 days (the maximum) gives the 2-year picture the
+ * bank-as-source-of-truth P&L needs. Fixed per-Item at link time, so existing
+ * items need the update-mode flow below to extend.
+ */
+const DAYS_REQUESTED = 730;
+
+/**
  * Create a link_token the browser SDK exchanges for a public_token.
  * Only requests `Transactions` since that's all the sync path uses.
  */
@@ -143,8 +152,34 @@ export async function createLinkToken(userId: string): Promise<string> {
     country_codes: [CountryCode.Us],
     language: 'en',
     webhook: getWebhookUrl(),
+    transactions: { days_requested: DAYS_REQUESTED },
     // OAuth banks (Wells Fargo) require a registered redirect_uri; omit it
     // entirely for the non-OAuth sandbox bank so that flow is unchanged.
+    ...(redirectUri ? { redirect_uri: redirectUri } : {}),
+  });
+  return response.data.link_token;
+}
+
+/**
+ * Create an UPDATE-MODE link_token for an already-linked Item, requesting the
+ * full 730 days of history. The operator re-authenticates through Link (quick
+ * OAuth round-trip for Wells Fargo); Plaid then backfills the deeper history
+ * and fires HISTORICAL_UPDATE webhooks, which the webhook handler turns into
+ * syncs. No token exchange happens on success — the Item is unchanged.
+ *
+ * Update-mode rule: pass `access_token`, do NOT pass `products`.
+ */
+export async function createUpdateLinkToken(accessToken: string): Promise<string> {
+  const client = createClient();
+  const redirectUri = getRedirectUri();
+  const response = await client.linkTokenCreate({
+    user: { client_user_id: 'ops-extend-history' },
+    client_name: 'Party On Delivery',
+    country_codes: [CountryCode.Us],
+    language: 'en',
+    access_token: accessToken,
+    webhook: getWebhookUrl(),
+    transactions: { days_requested: DAYS_REQUESTED },
     ...(redirectUri ? { redirect_uri: redirectUri } : {}),
   });
   return response.data.link_token;

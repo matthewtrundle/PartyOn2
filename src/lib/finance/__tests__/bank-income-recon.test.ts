@@ -6,7 +6,76 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { explainDeposits } from '@/lib/finance/bank-income-recon';
+import { explainDeposits, classifyBankInflow } from '@/lib/finance/bank-income-recon';
+
+describe('classifyBankInflow', () => {
+  it('classifies Brian owner-capital transfers by real WF descriptors (financing, not income)', () => {
+    // Real descriptors from the first production sync — Plaid mislabels these
+    // INCOME_CONTRACTOR, so classification is by descriptor.
+    expect(
+      classifyBankInflow({ name: 'ZELLE FROM B HILL ENTERTAINMENT LLC ON 05/15', merchantName: null })
+    ).toBe('owner_capital');
+    expect(
+      classifyBankInflow({ name: 'ONLINE TRANSFER FROM HILL B EVERYDAY CHECKIN', merchantName: null })
+    ).toBe('owner_capital');
+    expect(
+      classifyBankInflow({ name: 'ONLINE TRANSFER FROM B HILL ENTERTAINMENT LL', merchantName: null })
+    ).toBe('owner_capital');
+    expect(
+      classifyBankInflow({ name: 'ONLINE TRANSFER FROM HILL B REF #IB0Y2NKXHG', merchantName: null })
+    ).toBe('owner_capital');
+  });
+
+  it('classifies credits from COGS merchants as vendor refunds (not sales)', () => {
+    expect(
+      classifyBankInflow({ name: "Southern Glazer' FINTECHEFT 051826 XXXXX6635", merchantName: null })
+    ).toBe('vendor_refund');
+    expect(
+      classifyBankInflow({ name: 'Capital Reyes Di FINTECHEFT 061626 XXXXX6635', merchantName: null })
+    ).toBe('vendor_refund');
+  });
+
+  it('leaves Stripe payouts and ordinary deposits as sales_or_other', () => {
+    expect(
+      classifyBankInflow({ name: 'STRIPE TRANSFER ST-A9T6H2F5F3O9 PREMIER WORL', merchantName: null })
+    ).toBe('sales_or_other');
+    expect(
+      classifyBankInflow({ name: 'MOBILE DEPOSIT : REF NUMBER :308100443081', merchantName: null })
+    ).toBe('sales_or_other');
+    // A customer named Hillberg must NOT be swept into owner capital (word
+    // boundaries required around the B/HILL pairing).
+    expect(classifyBankInflow({ name: 'ZELLE FROM HILLBERG SARAH', merchantName: null })).toBe(
+      'sales_or_other'
+    );
+  });
+
+  it('does NOT classify a real customer whose name contains "B Hill" as owner capital', () => {
+    // The recon exists to catch unrecorded off-platform sales — a payment from
+    // a real person with a colliding name must stay IN the income check. The
+    // rules therefore require the LLC name or WF's online-transfer form, not a
+    // bare name match. (Security review, bank-truth round 1.)
+    expect(classifyBankInflow({ name: 'PAYMENT FROM SARAH B HILL', merchantName: null })).toBe(
+      'sales_or_other'
+    );
+    expect(classifyBankInflow({ name: 'ZELLE FROM ROBERT B HILL JR', merchantName: null })).toBe(
+      'sales_or_other'
+    );
+    expect(classifyBankInflow({ name: 'ZELLE FROM HILL BRANDON', merchantName: null })).toBe(
+      'sales_or_other'
+    );
+  });
+
+  it('requires the vendor processor stamp for a refund — a person named like a distributor stays in the check', () => {
+    // Real distributor credits carry the FINTECH/FINTECHEFT processor stamp;
+    // a Zelle from a coincidentally-named person does not.
+    expect(classifyBankInflow({ name: 'ZELLE FROM JOHN SPECS', merchantName: null })).toBe(
+      'sales_or_other'
+    );
+    expect(
+      classifyBankInflow({ name: 'WIRE FROM BROWN DISTRIBUTING EVENTS CO', merchantName: null })
+    ).toBe('sales_or_other');
+  });
+});
 
 describe('explainDeposits', () => {
   it('explains deposits via the revenue proxy when NO payouts matched (payout gap)', () => {

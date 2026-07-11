@@ -59,6 +59,14 @@ interface RollupDataHealth {
   netIncomeReliable?: boolean;
   incomeReconciled?: boolean | null;
   otherIncomeCents?: number | null;
+  /** Owner-capital injections recognized as financing this month. */
+  ownerCapitalCents?: number | null;
+  /** Per-transfer audit trail of the owner-capital classification. */
+  ownerCapitalTxns?: Array<{ name: string; cents: number }>;
+  /** Distributor refund credits excluded from the income check. */
+  vendorRefundCents?: number | null;
+  /** Accrual-COGS estimate (cost of what SOLD) + revenue coverage. */
+  accrual?: { cogsCents: number; coveredRevenueCents: number; coveragePct: number } | null;
   flags?: string[];
 }
 
@@ -112,6 +120,16 @@ export interface MonthlyClosePayload {
   // Reconciliation status
   incomeReconciled: boolean | null;
   otherIncomeCents: number | null;
+  /** Owner-capital injections (financing) recognized this month. */
+  ownerCapitalCents: number | null;
+  /** Per-transfer audit trail (descriptor + amount) of the owner-capital rows. */
+  ownerCapitalTxns: Array<{ name: string; cents: number }>;
+  /** Distributor refund credits excluded from the income check. */
+  vendorRefundCents: number | null;
+  // Accrual view (estimate) — cost of what SOLD, vs the cash-basis COGS above.
+  accrualCogsCents: number | null;
+  accrualCoveragePct: number | null;
+  accrualGrossMarginPct: number | null;
   dashboardUrl: string;
 }
 
@@ -170,6 +188,19 @@ export function shapeMonthlyClosePayload(args: {
     flags: Array.isArray(health.flags) ? health.flags : [],
     incomeReconciled: health.incomeReconciled ?? null,
     otherIncomeCents: health.otherIncomeCents ?? null,
+    ownerCapitalCents: health.ownerCapitalCents ?? null,
+    ownerCapitalTxns: Array.isArray(health.ownerCapitalTxns) ? health.ownerCapitalTxns : [],
+    vendorRefundCents: health.vendorRefundCents ?? null,
+    accrualCogsCents: health.accrual?.cogsCents ?? null,
+    accrualCoveragePct: health.accrual?.coveragePct ?? null,
+    // Margin over the COVERED basket only — dividing a partial COGS into full
+    // revenue would overstate the margin.
+    accrualGrossMarginPct:
+      health.accrual && health.accrual.coveredRevenueCents > 0
+        ? ((health.accrual.coveredRevenueCents - health.accrual.cogsCents) /
+            health.accrual.coveredRevenueCents) *
+          100
+        : null,
     dashboardUrl: `${base}/admin/finance`,
   };
 }
