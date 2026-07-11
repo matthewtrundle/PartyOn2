@@ -209,6 +209,62 @@ describe('renderFinanceMonthlyCloseEmail', () => {
     expect(html).not.toContain('Barrett Distributing');
   });
 
+  it('renders the accrual product-margin line over the COVERED basket only', () => {
+    // covered revenue $150 − accrual cogs $90 → 40% margin (NOT 9k into full revenue)
+    const html = renderFinanceMonthlyCloseEmail(
+      shapeMonthlyClosePayload({
+        rollup: reliableRollup({
+          dataHealth: {
+            expenseSource: 'bank',
+            netIncomeReliable: true,
+            incomeReconciled: true,
+            otherIncomeCents: 0,
+            accrual: { cogsCents: 9_000, coveredRevenueCents: 15_000, coveragePct: 75 },
+            flags: [],
+          },
+        }),
+        prior: null,
+        generatedAt: GEN,
+      })
+    );
+    expect(html).toContain('Product margin (accrual est.)');
+    expect(html).toContain('40.0%');
+    expect(html).toContain('75% of item revenue');
+    // …and absent when there is no accrual block.
+    const none = renderFinanceMonthlyCloseEmail(
+      shapeMonthlyClosePayload({ rollup: reliableRollup(), prior: null, generatedAt: GEN })
+    );
+    expect(none).not.toContain('accrual est.');
+  });
+
+  it('itemizes owner-capital transfers in the reconciliation section (audit trail)', () => {
+    const html = renderFinanceMonthlyCloseEmail(
+      shapeMonthlyClosePayload({
+        rollup: reliableRollup({
+          dataHealth: {
+            expenseSource: 'bank',
+            netIncomeReliable: true,
+            incomeReconciled: true,
+            otherIncomeCents: 0,
+            ownerCapitalCents: 1_000_000,
+            ownerCapitalTxns: [
+              { name: 'ZELLE FROM B HILL ENTERTAINMENT LLC ON 05/15', cents: 500_000 },
+              { name: 'ONLINE TRANSFER FROM HILL B EVERYDAY CHECKIN', cents: 500_000 },
+            ],
+            flags: [],
+          },
+        }),
+        prior: null,
+        generatedAt: GEN,
+      })
+    );
+    expect(html).toContain('Owner capital');
+    expect(html).toContain('$10,000');
+    // Per-transfer audit trail visible, so a misclassified deposit is spot-checkable.
+    expect(html).toContain('ZELLE FROM B HILL ENTERTAINMENT LLC ON 05/15');
+    expect(html).toContain('financing');
+  });
+
   it('does not leak net income via a QB-discrepancy flag (reconstruction chain closed)', () => {
     const html = renderFinanceMonthlyCloseEmail(
       shapeMonthlyClosePayload({ rollup: qbDiscrepancyRollup(), prior: null, generatedAt: GEN })

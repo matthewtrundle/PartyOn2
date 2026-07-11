@@ -154,6 +154,32 @@ function decToCents(d: Prisma.Decimal | null | undefined): number {
   return Math.round(Number(d) * 100);
 }
 
+/**
+ * Pure accrual-COGS aggregation over a month's order items. Returns the cost
+ * of what SOLD (cents), the revenue of the items that carry a cost
+ * (`coveredRevenueCents` — consumers must compute margin over THIS, not full
+ * revenue, or partial coverage overstates the margin), and the coverage share.
+ * Null when no item carries a cost (nothing to estimate from).
+ */
+export function computeAccrualBlock(
+  rows: Array<{ priceCents: number; costCents: number | null }>
+): { cogsCents: number; coveredRevenueCents: number; coveragePct: number } | null {
+  let cogsCents = 0;
+  let itemRevenueCents = 0;
+  let coveredRevenueCents = 0;
+  for (const r of rows) {
+    itemRevenueCents += r.priceCents;
+    if (r.costCents !== null && r.costCents > 0) {
+      cogsCents += r.costCents;
+      coveredRevenueCents += r.priceCents;
+    }
+  }
+  if (cogsCents <= 0) return null;
+  const coveragePct =
+    itemRevenueCents > 0 ? (coveredRevenueCents / itemRevenueCents) * 100 : 0;
+  return { cogsCents, coveredRevenueCents, coveragePct: Math.round(coveragePct * 10) / 10 };
+}
+
 function emptySegments(): Record<Segment, SegmentStat> {
   const out = {} as Record<Segment, SegmentStat>;
   for (const s of SEGMENTS) out[s] = { revenueCents: 0, orderCount: 0 };
@@ -271,12 +297,20 @@ export async function computeMonthlyRollup(
     stripeRevenueProxyCents: revenueCents,
   });
 
-  // Per-order COGS from OrderItem cost (sparse, ~4% coverage) — only used as a
-  // fallback signal; QB inventory cogs is the primary cost source.
-  const orderItemCostCents = orders.reduce(
-    (s, o) => s + o.items.reduce((is, it) => is + decToCents(it.totalCost), 0),
-    0
+  // ACCRUAL COGS: cost of what actually SOLD this month, from per-item cost
+  // snapshots (OrderItem.totalCost ← ProductVariant.costPerUnit at order time,
+  // or the margins backfill). Unlike the bank/QB cash-basis COGS (alcohol
+  // PURCHASED this month), this matches cost to revenue — the true product
+  // margin. Order-table era only (Shopify archive line items carry no cost).
+  const accrual = computeAccrualBlock(
+    orders.flatMap((o) =>
+      o.items.map((it) => ({
+        priceCents: decToCents(it.totalPrice),
+        costCents: it.totalCost === null ? null : decToCents(it.totalCost),
+      }))
+    )
   );
+  const orderItemCostCents = accrual?.cogsCents ?? 0;
 
   const effectiveCogs = cogsCents ?? (orderItemCostCents > 0 ? orderItemCostCents : null);
   const grossProfitCents = effectiveCogs !== null ? revenueCents - effectiveCogs : null;
@@ -295,6 +329,7 @@ export async function computeMonthlyRollup(
     bankExpenseTotalCents,
     bankIncome,
     orderItemCostCents,
+    accrual,
     orderCount: orders.length,
     archiveCount: archiveDeduped.length,
   });
@@ -477,6 +512,8 @@ interface HealthInput {
   bankExpenseTotalCents: number;
   bankIncome: BankIncomeRecon;
   orderItemCostCents: number;
+  /** Accrual-COGS estimate (cost of what SOLD) + its revenue coverage, or null. */
+  accrual: { cogsCents: number; coveredRevenueCents: number; coveragePct: number } | null;
   orderCount: number;
   archiveCount: number;
 }
@@ -558,6 +595,16 @@ function buildDataHealth(h: HealthInput): Record<string, unknown> {
     netIncomeReliable,
     incomeReconciled: h.bankIncome.hasProductionBank ? h.bankIncome.reconciled : null,
     otherIncomeCents: h.bankIncome.hasProductionBank ? h.bankIncome.otherIncomeCents : null,
+    // Owner-capital injections (financing) recognized this month — surfaced so
+    // the monthly close can report them as financing, never as income. The
+    // per-transfer list is the audit trail: a misclassified deposit shows up
+    // in the email instead of vanishing into an aggregate.
+    ownerCapitalCents: h.bankIncome.hasProductionBank ? h.bankIncome.ownerCapitalCents : null,
+    ownerCapitalTxns: h.bankIncome.hasProductionBank ? h.bankIncome.ownerCapitalTxns : [],
+    vendorRefundCents: h.bankIncome.hasProductionBank ? h.bankIncome.vendorRefundCents : null,
+    // Accrual-COGS estimate (cost of what SOLD, from per-item cost snapshots) —
+    // the true product-margin view alongside the lumpy cash-basis COGS.
+    accrual: h.accrual,
     flags,
   };
 }

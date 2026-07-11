@@ -127,6 +127,25 @@ function reconciliationBlock(d: MonthlyClosePayload): string {
     `Expense source: <strong>${d.expenseSource === 'bank' ? 'bank feed (cash-basis)' : 'QuickBooks'}</strong>`
   );
 
+  if (d.ownerCapitalCents !== null && d.ownerCapitalCents > 0) {
+    // Itemize the transfers — the audit trail that makes a misclassified
+    // deposit visible instead of hidden inside an aggregate.
+    const txns = d.ownerCapitalTxns
+      .map((t) => `${money(t.cents)} — ${esc(t.name)}`)
+      .join('<br>&nbsp;&nbsp;');
+    rows.push(
+      `Owner capital: <strong>${money(d.ownerCapitalCents)}</strong> received this month — ` +
+        `classified as financing (equity injection), excluded from income.` +
+        (txns ? `<br>&nbsp;&nbsp;${txns}` : '')
+    );
+  }
+
+  if (d.vendorRefundCents !== null && d.vendorRefundCents > 0) {
+    rows.push(
+      `Vendor refunds: ${money(d.vendorRefundCents)} in distributor credits — excluded from income.`
+    );
+  }
+
   if (d.incomeReconciled === true) {
     rows.push(`Income: ✅ bank deposits reconcile to known Stripe revenue.`);
   } else if (d.incomeReconciled === false) {
@@ -188,6 +207,16 @@ export function renderFinanceMonthlyCloseEmail(d: MonthlyClosePayload): string {
     d.grossProfitCents === null ? '—' : money(d.grossProfitCents),
     { strong: true, sub: `gross margin ${pct(d.grossMarginPct)}` }
   );
+  // Accrual view: true product margin (cost of what SOLD), over the covered
+  // basket only. Supplements the lumpy cash-basis line above; safe to show even
+  // on withheld months (independent of OpEx, so it can't reconstruct net).
+  const accrualLine =
+    d.accrualGrossMarginPct !== null && d.accrualCoveragePct !== null
+      ? plLine('Product margin (accrual est.)', pct(d.accrualGrossMarginPct), {
+          indent: true,
+          sub: `cost of goods sold this month · based on ${d.accrualCoveragePct.toFixed(0)}% of item revenue with known cost`,
+        })
+      : '';
 
   if (!hasExpenses) {
     plRows.push(
@@ -200,6 +229,7 @@ export function renderFinanceMonthlyCloseEmail(d: MonthlyClosePayload): string {
     plRows.push(
       cogsLine,
       grossProfitLine,
+      accrualLine,
       plLine('Operating expenses', d.opexCents === null ? '—' : money(d.opexCents), { strong: true }),
       opexRowsHtml(d.opexRows)
     );
@@ -211,6 +241,7 @@ export function renderFinanceMonthlyCloseEmail(d: MonthlyClosePayload): string {
     plRows.push(
       cogsLine,
       grossProfitLine,
+      accrualLine,
       plLine('Operating expenses', 'Withheld', {
         strong: true,
         sub: 'withheld until the flags below are resolved — net income can’t be stated',
@@ -305,6 +336,12 @@ export function renderFinanceMonthlyCloseText(d: MonthlyClosePayload): string {
     lines.push(
       `Gross profit: ${d.grossProfitCents === null ? '—' : money(d.grossProfitCents)} (margin ${pct(d.grossMarginPct)})`
     );
+    if (d.accrualGrossMarginPct !== null && d.accrualCoveragePct !== null) {
+      lines.push(
+        `Product margin (accrual est.): ${pct(d.accrualGrossMarginPct)} ` +
+          `(cost of goods SOLD; ${d.accrualCoveragePct.toFixed(0)}% of item revenue has known cost)`
+      );
+    }
     if (d.netIncomeReliable) {
       lines.push(`Operating expenses: ${d.opexCents === null ? '—' : money(d.opexCents)}`);
       for (const r of d.opexRows) {
@@ -325,6 +362,19 @@ export function renderFinanceMonthlyCloseText(d: MonthlyClosePayload): string {
   if (d.expenseSource !== 'none') {
     lines.push('');
     lines.push('Reconciliation:');
+    if (d.ownerCapitalCents !== null && d.ownerCapitalCents > 0) {
+      lines.push(
+        `  Owner capital: ${money(d.ownerCapitalCents)} received — financing (equity), excluded from income.`
+      );
+      for (const t of d.ownerCapitalTxns) {
+        lines.push(`    ${money(t.cents)} — ${t.name}`);
+      }
+    }
+    if (d.vendorRefundCents !== null && d.vendorRefundCents > 0) {
+      lines.push(
+        `  Vendor refunds: ${money(d.vendorRefundCents)} in distributor credits — excluded from income.`
+      );
+    }
     if (d.incomeReconciled === true) {
       lines.push('  Income reconciles to known Stripe revenue.');
     } else if (d.incomeReconciled === false) {
