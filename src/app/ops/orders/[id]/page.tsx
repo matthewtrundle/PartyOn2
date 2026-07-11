@@ -10,6 +10,7 @@ import ItemsCard from '@/components/ops/orders/detail/ItemsCard';
 import PaymentCard from '@/components/ops/orders/detail/PaymentCard';
 import DetailStickyBar, { nextTransition } from '@/components/ops/orders/detail/DetailStickyBar';
 import OrderActionSheet from '@/components/ops/orders/detail/OrderActionSheet';
+import { computeAmendmentRefundPrefill, claimedRefundIds } from '@/components/ops/orders/detail/refund-prefill';
 import { getStatusColor, formatDateTime, SectionHeader } from '@/components/ops/orders/detail/shared';
 import type { OrderDetail } from '@/components/ops/orders/detail/types';
 
@@ -1255,22 +1256,33 @@ export default function OrderDetailPage(): ReactElement {
                             Send Invoice (${amendment.amountDelta.toFixed(2)})
                           </button>
                         )}
-                        {amendment.resolution === 'PENDING' && amendment.amountDelta < 0 && (
-                          <button
-                            onClick={() => {
-                              setPendingAmendmentId(amendment.id);
-                              setRefundAmount(Math.abs(amendment.amountDelta));
-                              setRefundReason('Order amendment');
-                              setRefundType('custom');
-                              setShowActionSheet(true);
-                            }}
-                            disabled={refundProcessing || !order.payment.stripePaymentIntentId}
-                            className="mt-2 px-3 py-1.5 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                            title={!order.payment.stripePaymentIntentId ? 'No Stripe payment found for this order' : ''}
-                          >
-                            Process Refund (${Math.abs(amendment.amountDelta).toFixed(2)})
-                          </button>
-                        )}
+                        {amendment.resolution === 'PENDING' && amendment.amountDelta < 0 && (() => {
+                          // Seed the netted remainder, not the full |amountDelta| —
+                          // refunds recorded since the amendment was created must not
+                          // be offered again on a retry (PR #225 security review).
+                          // Refunds that resolved a different amendment don't count.
+                          const prefill = computeAmendmentRefundPrefill(amendment, order.refunds?.items ?? [], {
+                            excludeRefundIds: claimedRefundIds(order.amendments ?? []),
+                          });
+                          return (
+                            <button
+                              onClick={() => {
+                                setPendingAmendmentId(amendment.id);
+                                setRefundAmount(prefill.suggestedAmount);
+                                setRefundReason('Order amendment');
+                                setRefundType('custom');
+                                setShowActionSheet(true);
+                              }}
+                              disabled={refundProcessing || !order.payment.stripePaymentIntentId}
+                              className="mt-2 px-3 py-1.5 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                              title={!order.payment.stripePaymentIntentId ? 'No Stripe payment found for this order' : ''}
+                            >
+                              {prefill.fullyCovered
+                                ? 'Review Refund (already covered)'
+                                : `Process Refund ($${prefill.suggestedAmount.toFixed(2)})`}
+                            </button>
+                          );
+                        })()}
                       </div>
                     ))}
                   </div>
@@ -1717,6 +1729,7 @@ export default function OrderDetailPage(): ReactElement {
         refundReason={refundReason}
         refundType={refundType}
         refundProcessing={refundProcessing}
+        pendingAmendmentId={pendingAmendmentId}
         onRefundAmount={(amount) => {
           setRefundAmount(amount);
           // Any preset/manual amount change inside the sheet detaches the
