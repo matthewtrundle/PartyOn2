@@ -97,6 +97,10 @@
       "schedule": "0 14 * * 1"
     },
     {
+      "path": "/api/cron/finance-monthly-close",
+      "schedule": "0 14 1 * *"
+    },
+    {
       "path": "/api/cron/full-moon-deadline",
       "schedule": "0 15 * * *"
     }
