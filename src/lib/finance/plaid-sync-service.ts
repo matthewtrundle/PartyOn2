@@ -533,3 +533,230 @@ export async function plaidReconciliationSummary(
     rows,
   };
 }
+
+// ---------------------------------------------------------------------------
+// Relink cutover (replace a duplicate Item for the same institution)
+// ---------------------------------------------------------------------------
+
+export interface CutoverCoverageInput {
+  keep: { minDate: string; maxDate: string; txnCount: number };
+  old: { minDate: string; maxDate: string; txnCount: number };
+}
+
+/**
+ * Guard for the relink cutover: the KEEP item must cover the OLD item's date
+ * range before the old one may be deleted. Used when a bank is re-linked as a
+ * fresh Item (e.g. to obtain a larger days_requested history window that
+ * update mode failed to deliver): the new Item's initial pull only reaches
+ * ~90 days, so the cutover must wait until its HISTORICAL_UPDATE backfill has
+ * at least reached the old Item's earliest transaction. maxDate gets one day
+ * of slack (the old item may have synced this morning; the new one minutes
+ * later). Count sanity: keep must have ≥90% of old's rows in the overlap era —
+ * a keeper missing whole weeks means Plaid is still backfilling.
+ */
+export function cutoverCoverageOk(c: CutoverCoverageInput): { ok: boolean; reason: string } {
+  if (c.keep.minDate > c.old.minDate) {
+    return {
+      ok: false,
+      reason: `keep item history starts ${c.keep.minDate}, after old item's ${c.old.minDate} — historical backfill not complete yet`,
+    };
+  }
+  const oldMax = new Date(c.old.maxDate);
+  oldMax.setUTCDate(oldMax.getUTCDate() - 1);
+  if (c.keep.maxDate < oldMax.toISOString().slice(0, 10)) {
+    return {
+      ok: false,
+      reason: `keep item history ends ${c.keep.maxDate}, more than a day before old item's ${c.old.maxDate}`,
+    };
+  }
+  if (c.keep.txnCount < c.old.txnCount * 0.9) {
+    return {
+      ok: false,
+      reason: `keep item has ${c.keep.txnCount} txns vs old item's ${c.old.txnCount} — too few to be a superset`,
+    };
+  }
+  return { ok: true, reason: 'keep item covers the old item' };
+}
+
+export interface CutoverResult {
+  dryRun: boolean;
+  keptId: string;
+  removed: Array<{
+    id: string;
+    institutionName: string | null;
+    txnCount: number;
+    pendingDeleted: number;
+    payoutMatchesReset: number;
+    /** Non-null = Plaid /item/remove failed. The DB row is RETAINED with
+     * status 'removal_failed' (access token kept) so removal can be retried —
+     * only its transactions/accounts/cursor were deleted. */
+    plaidRemoveError: string | null;
+  }>;
+  refused: Array<{ id: string; reason: string }>;
+  recategorized: number;
+  reconciled: { inflowsMatched: number; outflowsMatched: number } | null;
+}
+
+const CUTOVER_CHUNK = 500; // bound in-clause sizes on large histories
+
+/**
+ * Retire duplicate production Items for the same institution as `keepId`,
+ * keeping only the keeper. For each duplicate the keeper fully COVERS (see
+ * cutoverCoverageOk): flip it to 'retiring' FIRST so the daily sync/reconcile
+ * cron (status in active/error) stops touching it mid-cutover, then —
+ * atomically per item — reset StripePayout matches pointing at its rows and
+ * delete its transactions, accounts, and sync cursor. Pending rows are deleted
+ * knowingly: the keeper surfaces the same unsettled charges from its own feed.
+ * The Item is then removed at Plaid (stops billing); ONLY on success is the DB
+ * row deleted — on failure it is kept (status 'removal_failed', access token
+ * retained) so removal can be retried rather than orphaning billing at Plaid.
+ * Finally the keeper is re-categorized + re-reconciled. Dry-run reports the
+ * plan without writing.
+ */
+export async function cutoverDuplicateItems(
+  keepId: string,
+  opts: { dryRun?: boolean } = {}
+): Promise<CutoverResult> {
+  const dryRun = opts.dryRun !== false;
+  const keep = await prisma.plaidItem.findUnique({
+    where: { id: keepId },
+    select: { id: true, environment: true, institutionId: true },
+  });
+  if (!keep || keep.environment !== 'production') {
+    throw new Error('keepId must be an existing PRODUCTION PlaidItem');
+  }
+  // A null institutionId would match OTHER null-institution items below
+  // (Prisma null equality) — potentially an unrelated bank. Refuse outright.
+  if (!keep.institutionId) {
+    throw new Error(
+      'keep item has no institutionId — cannot safely identify duplicates of the same bank; refusing'
+    );
+  }
+
+  const others = await prisma.plaidItem.findMany({
+    where: {
+      id: { not: keepId },
+      environment: 'production',
+      institutionId: keep.institutionId,
+    },
+    select: { id: true, institutionName: true, accessToken: true },
+  });
+
+  const rangeOf = async (itemId: string) => {
+    const [min, max, count] = await Promise.all([
+      prisma.plaidTransaction.findFirst({ where: { plaidItemId: itemId, pending: false }, orderBy: { date: 'asc' }, select: { date: true } }),
+      prisma.plaidTransaction.findFirst({ where: { plaidItemId: itemId, pending: false }, orderBy: { date: 'desc' }, select: { date: true } }),
+      prisma.plaidTransaction.count({ where: { plaidItemId: itemId, pending: false } }),
+    ]);
+    return {
+      minDate: min?.date.toISOString().slice(0, 10) ?? '9999-12-31',
+      maxDate: max?.date.toISOString().slice(0, 10) ?? '0000-01-01',
+      txnCount: count,
+    };
+  };
+
+  const keepRange = await rangeOf(keepId);
+  const result: CutoverResult = {
+    dryRun,
+    keptId: keepId,
+    removed: [],
+    refused: [],
+    recategorized: 0,
+    reconciled: null,
+  };
+
+  for (const other of others) {
+    const oldRange = await rangeOf(other.id);
+    const coverage = cutoverCoverageOk({ keep: keepRange, old: oldRange });
+    if (!coverage.ok) {
+      result.refused.push({ id: other.id, reason: coverage.reason });
+      continue;
+    }
+
+    // Payout matches pointing at the old item's transactions must be reset so
+    // reconcileItem can re-match them against the keeper's rows.
+    const oldTxnIds = (
+      await prisma.plaidTransaction.findMany({
+        where: { plaidItemId: other.id },
+        select: { id: true },
+      })
+    ).map((t) => t.id);
+    const payoutMatches = await prisma.stripePayout.count({
+      where: { matchedPlaidTxId: { in: oldTxnIds } },
+    });
+    const pendingDeleted = await prisma.plaidTransaction.count({
+      where: { plaidItemId: other.id, pending: true },
+    });
+
+    let plaidRemoveError: string | null = null;
+    if (!dryRun) {
+      // 1. Take the item out of the cron's reach BEFORE mutating, closing the
+      // window where a concurrent sync/reconcile could re-match a payout to a
+      // row this function is about to delete.
+      await prisma.plaidItem.update({
+        where: { id: other.id },
+        data: { status: 'retiring' },
+      });
+
+      // 2. Atomic per-item cleanup: payout resets (chunked to bound the
+      // in-clause) + row deletes in ONE transaction, so a crash can't leave a
+      // payout pointing at a deleted transaction.
+      const chunkedResets = [];
+      for (let i = 0; i < oldTxnIds.length; i += CUTOVER_CHUNK) {
+        chunkedResets.push(
+          prisma.stripePayout.updateMany({
+            where: { matchedPlaidTxId: { in: oldTxnIds.slice(i, i + CUTOVER_CHUNK) } },
+            data: { matchedPlaidTxId: null },
+          })
+        );
+      }
+      await prisma.$transaction([
+        ...chunkedResets,
+        prisma.plaidTransaction.deleteMany({ where: { plaidItemId: other.id } }),
+        prisma.plaidAccount.deleteMany({ where: { plaidItemId: other.id } }),
+        prisma.plaidSyncCursor.deleteMany({ where: { plaidItemId: other.id } }),
+      ]);
+
+      // 3. Remove at Plaid; only delete the DB row on success. On failure the
+      // row (and its access token) survives as 'removal_failed' for a retry —
+      // deleting it would orphan the Item at Plaid with no way to stop billing.
+      try {
+        const { removeItem } = await import('./plaid-client');
+        await removeItem(other.accessToken);
+        await prisma.plaidItem.delete({ where: { id: other.id } });
+      } catch (err) {
+        plaidRemoveError = err instanceof Error ? err.message : String(err);
+        await prisma.plaidItem.update({
+          where: { id: other.id },
+          data: { status: 'removal_failed', lastError: plaidRemoveError },
+        });
+      }
+    }
+
+    result.removed.push({
+      id: other.id,
+      institutionName: other.institutionName,
+      txnCount: oldRange.txnCount,
+      pendingDeleted,
+      payoutMatchesReset: payoutMatches,
+      plaidRemoveError,
+    });
+  }
+
+  if (!dryRun && result.removed.length > 0) {
+    // Re-stamp categories on any keeper rows not yet categorized, then
+    // re-match payouts against the keeper's transactions.
+    for (;;) {
+      const res = await categorizeBankOutflows(keepId);
+      result.recategorized += res.categorized;
+      if (res.categorized < 1000) break;
+    }
+    const recon = await reconcileItem(keepId);
+    result.reconciled = {
+      inflowsMatched: recon.inflowsMatched,
+      outflowsMatched: recon.outflowsMatched,
+    };
+  }
+
+  return result;
+}

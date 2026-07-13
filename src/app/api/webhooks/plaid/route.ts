@@ -59,12 +59,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ success: true, acked: true });
     }
 
+    // Same status gate as the daily cron (syncAllItems): items mid-cutover
+    // ('retiring') or awaiting a Plaid-removal retry ('removal_failed') must
+    // NOT be synced — a webhook landing in that window would resurrect the
+    // rows the cutover just deleted.
     const item = await prisma.plaidItem.findFirst({
-      where: { itemId },
+      where: { itemId, status: { in: ['active', 'error'] } },
       select: { id: true },
     });
     if (!item) {
-      console.warn('[plaid-webhook] unknown item_id', itemId);
+      console.warn('[plaid-webhook] unknown or non-syncable item_id', itemId);
       return NextResponse.json({ success: true, acked: true, unknownItem: true });
     }
 
