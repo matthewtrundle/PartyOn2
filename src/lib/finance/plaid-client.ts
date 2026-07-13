@@ -186,6 +186,15 @@ export async function createUpdateLinkToken(accessToken: string): Promise<string
 }
 
 /**
+ * Remove an Item at Plaid (invalidates the access token and stops billing).
+ * Used by the relink cutover after a replacement Item is verified.
+ */
+export async function removeItem(accessToken: string): Promise<void> {
+  const client = createClient();
+  await client.itemRemove({ access_token: accessToken });
+}
+
+/**
  * Update the webhook URL on an already-linked Item. Used for the one-shot
  * backfill that wires the webhook on every existing PlaidItem (which were
  * created before we passed `webhook` into link_token).
