@@ -27,6 +27,7 @@ const AGE_GATE_EXEMPT_PATHS = [
   '/austin-bachelor-concierge',
   '/austin-bachelorette-concierge',
   '/austin-concierge',
+  '/concierge-quote',
 ]
 
 /**
@@ -93,7 +94,11 @@ export default function AgeVerification() {
     if (
       pathname &&
       (AGE_GATE_EXEMPT_PATHS.includes(pathname) ||
-        AGE_GATE_EXEMPT_INVITE_PATHS.includes(pathname))
+        AGE_GATE_EXEMPT_INVITE_PATHS.includes(pathname) ||
+        // Concierge quote pages are dynamic (/concierge-quote/[leadId]
+        // and /success). Prefix-match them so every sub-route is
+        // exempted without listing each UUID.
+        pathname.startsWith('/concierge-quote/'))
     ) {
       setIsVisible(false)
       return
