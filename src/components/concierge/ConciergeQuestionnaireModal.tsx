@@ -72,12 +72,19 @@ function defaultDeparture(): string {
   return d.toISOString().slice(0, 10);
 }
 
+type Variant = 'bachelor' | 'bachelorette';
+
 type Props = {
+  /** Pre-selects the party type + drives the source tag on the API call
+   *  so bachelor and bachelorette submissions are distinguishable in
+   *  the Lead metadata, GHL tags, and Google Sheet source column. */
+  variant?: Variant;
   onClose: () => void;
   onSuccess: () => void;
 };
 
 export default function ConciergeQuestionnaireModal({
+  variant = 'bachelor',
   onClose,
   onSuccess,
 }: Props): ReactElement {
@@ -88,7 +95,9 @@ export default function ConciergeQuestionnaireModal({
   const [customHead, setCustomHead] = useState<string>('');
   const [arrivalDate, setArrivalDate] = useState<string>(defaultArrival());
   const [departureDate, setDepartureDate] = useState<string>(defaultDeparture());
-  const [partyType, setPartyType] = useState<PartyType>('bachelor');
+  const [partyType, setPartyType] = useState<PartyType>(
+    variant === 'bachelorette' ? 'bachelorette' : 'bachelor',
+  );
   const [budget, setBudget] = useState<string>('$400/pp');
   const [activities, setActivities] = useState<Activity[]>([
     'boat-rental',
@@ -152,7 +161,10 @@ export default function ConciergeQuestionnaireModal({
           budgetPerPerson: budget,
           activities,
           notes: notes.trim(),
-          source: 'premier-concierge-bachelor',
+          source:
+            variant === 'bachelorette'
+              ? 'premier-concierge-bachelorette'
+              : 'premier-concierge-bachelor',
         }),
       });
       const json = (await res.json()) as { ok: boolean; error?: string };

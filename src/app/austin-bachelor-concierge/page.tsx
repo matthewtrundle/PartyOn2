@@ -36,5 +36,5 @@ export const metadata: Metadata = {
 };
 
 export default function AustinBachelorConciergePage() {
-  return <ConciergeLandingClient />;
+  return <ConciergeLandingClient variant="bachelor" />;
 }
