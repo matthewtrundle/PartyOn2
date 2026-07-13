@@ -15,6 +15,7 @@ export type HqIconName =
   | 'dashboard'
   | 'analytics'
   | 'customers'
+  | 'leads'
   | 'email'
   | 'recs'
   | 'money'
@@ -106,6 +107,10 @@ const PATHS: Record<HqIconName, ReactElement> = {
       <circle cx="12" cy="12" r="6" />
       <circle cx="12" cy="12" r="2" />
     </>
+  ),
+  leads: (
+    // Funnel — leads flow in wide, convert narrow.
+    <path d="M3 4h18l-7 8v6l-4 2v-8L3 4z" />
   ),
   reports: (
     <>

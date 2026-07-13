@@ -10,6 +10,7 @@ import { prisma } from '@/lib/database/client';
 import { FinancialStatus, OrderStatus, Prisma } from '@prisma/client';
 import { getOrdersView } from './orders-view-data';
 import { getOpsEventSummaries } from '@/lib/events/ops-summary';
+import { getHotLeadsNeedingReply } from '@/lib/leads/board-data';
 import { todayCT } from './cooler-grouping';
 
 const LOW_STOCK_THRESHOLD = 10; // mirrors /api/v1/inventory
@@ -184,13 +185,16 @@ async function getRecsOpenCount(): Promise<number> {
 export async function getTodayData(role: 'admin' | 'employee'): Promise<TodayData> {
   const now = new Date();
 
-  const [view, stock, carts, lastWeekRevenue, events, recsOpen] = await Promise.all([
+  const [view, stock, carts, lastWeekRevenue, events, recsOpen, hotLeads] = await Promise.all([
     getOrdersView({ days: 1 }),
     getStockCounts(),
     getUnpaidCartSummary(now),
     getLastWeekSameDayRevenue(),
     getOpsEventSummaries(),
     role === 'admin' ? getRecsOpenCount() : Promise.resolve(0),
+    role === 'admin'
+      ? getHotLeadsNeedingReply().catch(() => ({ count: 0, oldestWaitHours: null }))
+      : Promise.resolve({ count: 0, oldestWaitHours: null }),
   ]);
 
   const todayKey = todayCT();
@@ -273,6 +277,18 @@ export async function getTodayData(role: 'admin' | 'employee'): Promise<TodayDat
       title: `${carts.staleCount} unpaid cart${carts.staleCount === 1 ? '' : 's'} sitting >24h`,
       actionLabel: 'Nudge',
       href: '/ops/orders?view=carts',
+    });
+  }
+  if (hotLeads.count > 0) {
+    // Admin-only by construction (count is 0 for employees, and the href is
+    // an admin route the client redirect would bounce them from anyway).
+    triage.push({
+      key: 'hot-leads',
+      severity: (hotLeads.oldestWaitHours ?? 0) > 48 ? 'red' : 'amber',
+      badge: 'LEADS',
+      title: `${hotLeads.count} hot lead${hotLeads.count === 1 ? '' : 's'} waiting on a reply`,
+      actionLabel: 'Open board',
+      href: '/admin/leads?temp=hot',
     });
   }
   if (stock.low > 0) {

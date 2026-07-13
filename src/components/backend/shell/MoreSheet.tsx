@@ -22,7 +22,8 @@ function Tile({
   badges: NavBadges;
   onNavigate: () => void;
 }): ReactElement {
-  const count = dest.badge === 'recs' ? badges.recsOpen : 0;
+  const count =
+    dest.badge === 'recs' ? badges.recsOpen : dest.badge === 'leads' ? badges.leadsHot : 0;
   return (
     <Link
       href={dest.href}

@@ -16,10 +16,14 @@ const prismaMock = vi.hoisted(() => ({
 
 const authMock = vi.hoisted(() => ({ requireOpsAuth: vi.fn() }));
 const groupingMock = vi.hoisted(() => ({ todayCT: vi.fn() }));
+const boardMock = vi.hoisted(() => ({ getHotLeadsNeedingReply: vi.fn() }));
 
 vi.mock('@/lib/database/client', () => ({ prisma: prismaMock }));
 vi.mock('@/lib/auth/ops-session', () => ({ requireOpsAuth: authMock.requireOpsAuth }));
 vi.mock('@/lib/ops/cooler-grouping', () => ({ todayCT: groupingMock.todayCT }));
+vi.mock('@/lib/leads/board-data', () => ({
+  getHotLeadsNeedingReply: boardMock.getHotLeadsNeedingReply,
+}));
 
 import { GET } from '../route';
 
@@ -30,6 +34,8 @@ beforeEach(() => {
   prismaMock.financeRecommendation.count.mockReset();
   authMock.requireOpsAuth.mockReset();
   groupingMock.todayCT.mockReturnValue('2026-07-09');
+  boardMock.getHotLeadsNeedingReply.mockReset();
+  boardMock.getHotLeadsNeedingReply.mockResolvedValue({ count: 0, oldestWaitHours: null });
 });
 
 describe('GET /api/ops/nav-badges', () => {
@@ -47,10 +53,11 @@ describe('GET /api/ops/nav-badges', () => {
     prismaMock.recommendationItem.count.mockResolvedValue(2);
     prismaMock.operationsRecommendation.count.mockResolvedValue(1);
     prismaMock.financeRecommendation.count.mockResolvedValue(3);
+    boardMock.getHotLeadsNeedingReply.mockResolvedValue({ count: 5, oldestWaitHours: 3 });
 
     const res = await GET();
     const body = await res.json();
-    expect(body).toEqual({ ordersToday: 4, recsOpen: 6 });
+    expect(body).toEqual({ ordersToday: 4, recsOpen: 6, leadsHot: 5 });
   });
 
   it('scopes ordersToday to the UTC window of the CT date, undelivered, non-cancelled', async () => {
@@ -69,15 +76,16 @@ describe('GET /api/ops/nav-badges', () => {
     expect(where.status).toEqual({ not: 'CANCELLED' });
   });
 
-  it('employee gets ordersToday but no recommendation queries', async () => {
+  it('employee gets ordersToday but no recommendation or lead queries', async () => {
     authMock.requireOpsAuth.mockResolvedValue({ role: 'employee' });
     prismaMock.order.count.mockResolvedValue(7);
 
     const res = await GET();
     const body = await res.json();
-    expect(body).toEqual({ ordersToday: 7, recsOpen: 0 });
+    expect(body).toEqual({ ordersToday: 7, recsOpen: 0, leadsHot: 0 });
     expect(prismaMock.recommendationItem.count).not.toHaveBeenCalled();
     expect(prismaMock.operationsRecommendation.count).not.toHaveBeenCalled();
     expect(prismaMock.financeRecommendation.count).not.toHaveBeenCalled();
+    expect(boardMock.getHotLeadsNeedingReply).not.toHaveBeenCalled();
   });
 });

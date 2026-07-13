@@ -24,7 +24,14 @@ function SidebarItem({
   badges: NavBadges;
 }): ReactElement {
   const active = isDestActive(dest, pathname);
-  const count = dest.badge === 'orders' ? badges.ordersToday : dest.badge === 'recs' ? badges.recsOpen : 0;
+  const count =
+    dest.badge === 'orders'
+      ? badges.ordersToday
+      : dest.badge === 'recs'
+        ? badges.recsOpen
+        : dest.badge === 'leads'
+          ? badges.leadsHot
+          : 0;
   return (
     <Link
       href={dest.href}

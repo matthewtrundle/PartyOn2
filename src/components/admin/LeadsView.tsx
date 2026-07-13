@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { prisma } from '@/lib/database/client';
 
 /**
@@ -42,7 +43,12 @@ function fmtDate(d: Date) {
   });
 }
 
-export default async function LeadsView() {
+export default async function LeadsView({
+  deepLinkedLeadId,
+}: {
+  /** `?lead=<id>` carried by old GHL-notification URLs — forwarded to the board. */
+  deepLinkedLeadId?: string | null;
+} = {}) {
   const [leads, totalLeads, anonSessions, partialCount, submittedCount, convertedCount, conciergeCount] =
     await Promise.all([
       prisma.lead.findMany({
@@ -68,6 +74,19 @@ export default async function LeadsView() {
 
   return (
     <div className="space-y-6">
+      {/* The working surface is now the Lead Flow board; this tab stays as
+          the raw storage view. Old GHL links carry ?lead= — forward it. */}
+      <div className="flex items-center justify-between rounded-xl border border-brand-blue/30 bg-blue-50 px-4 py-3">
+        <p className="text-sm text-gray-700">
+          Work leads on the Kanban board — stages, hot/warm/cold, replies.
+        </p>
+        <Link
+          href={deepLinkedLeadId ? `/admin/leads?lead=${deepLinkedLeadId}` : '/admin/leads'}
+          className="btn-primary min-h-[36px] px-3 py-1.5 text-sm whitespace-nowrap"
+        >
+          Open Lead Flow board
+        </Link>
+      </div>
       {/* Top-line counters */}
       <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
         <Stat label="Total leads" value={totalLeads} />
