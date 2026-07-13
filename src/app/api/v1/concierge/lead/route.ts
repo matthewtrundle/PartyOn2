@@ -28,6 +28,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/database/client';
 import { upsertLead, recordEvent } from '@/lib/leads/leadCapture';
+import { attributionSchema, compactAttribution } from '@/lib/leads/attribution-schema';
 import { notifyConciergeLead } from '@/lib/webhooks/ghl';
 import {
   appendLeadToPodLeadsSheet,
@@ -67,6 +68,10 @@ const bodySchema = z.object({
   /** Which page fired the form. Enables sending the same form from
    *  premierconcierge.co later. */
   source: z.string().max(80).optional().default('premier-concierge-bachelor'),
+  /** First-touch UTM + ad click ids captured client-side — same shape
+   *  every other lead surface sends. Optional so older cached bundles
+   *  never 400. */
+  attribution: attributionSchema,
 });
 
 const CORS_HEADERS = {
@@ -108,6 +113,17 @@ export async function POST(req: NextRequest) {
         // structured payload lives in metadata so admin UIs can filter
         // by `metadata.partner`.
         sourceWidget: 'PARTNER_LANDING_PAGE',
+        // UTM columns blank-fill + click ids merge into metadata.attribution.
+        utmSource: body.attribution?.utmSource,
+        utmMedium: body.attribution?.utmMedium,
+        utmCampaign: body.attribution?.utmCampaign,
+        utmContent: body.attribution?.utmContent,
+        utmTerm: body.attribution?.utmTerm,
+        gclid: body.attribution?.gclid,
+        gbraid: body.attribution?.gbraid,
+        wbraid: body.attribution?.wbraid,
+        fbclid: body.attribution?.fbclid,
+        msclkid: body.attribution?.msclkid,
       },
     );
 
@@ -128,12 +144,35 @@ export async function POST(req: NextRequest) {
         requestedActivities: body.activities.filter((a) => a !== 'not-sure'),
       });
 
+      // Merge attribution into metadata (latest ad click wins), same
+      // pattern as quote/start.
+      const prevAttribution =
+        prevMeta.attribution &&
+        typeof prevMeta.attribution === 'object' &&
+        !Array.isArray(prevMeta.attribution)
+          ? (prevMeta.attribution as Record<string, unknown>)
+          : {};
+
       await prisma.lead.update({
         where: { id: lead.id },
         data: {
           status: 'SUBMITTED',
+          // Last-touch stamp: a fresh submit should own the source
+          // columns even when the email matched an old lead row (the
+          // founder's test upserted onto a May '26 /flyer row and the
+          // admin table showed stale provenance).
+          sourcePage: `/${body.source}`,
+          sourceWidget: 'PARTNER_LANDING_PAGE',
           metadata: {
             ...prevMeta,
+            ...(body.attribution
+              ? {
+                  attribution: {
+                    ...prevAttribution,
+                    ...compactAttribution(body.attribution),
+                  },
+                }
+              : {}),
             partner: 'premier-concierge',
             conciergeQuiz: {
               source: body.source,
@@ -177,38 +216,42 @@ export async function POST(req: NextRequest) {
     ? `https://partyondelivery.com/admin/brians-stuff?tab=leads&lead=${leadId}`
     : 'https://partyondelivery.com/admin/brians-stuff?tab=leads';
 
-  // ─── 3) GHL webhook — non-blocking ───────────────────────────────
-  notifyConciergeLead({
-    event: 'concierge.lead',
-    first_name: body.firstName,
-    last_name: body.lastName,
-    email: body.email,
-    phone: body.phone,
-    source: body.source,
-    partyType: body.partyType,
-    headcount: body.headcount,
-    arrivalDate: body.arrivalDate,
-    departureDate: body.departureDate,
-    budgetPerPerson: body.budgetPerPerson,
-    activities: body.activities,
-    notes: body.notes,
-    tags,
-    leadUrl,
-    submittedAt: now.toISOString(),
-  }).catch((err) => {
-    console.error('[concierge/lead] GHL notify failed (non-blocking)', err);
-  });
-
-  // ─── 4) Quote email — AWAITED ────────────────────────────────────
-  // Combines the old welcome email with the summary + View Quote CTA
-  // that opens the interactive quote page. Only fires if we managed to
-  // create a Lead (need the ID for the quote URL).
-  //
-  // These side effects MUST be awaited before the response returns:
+  // ─── 3) Side effects — ALL AWAITED ───────────────────────────────
+  // GHL + email + sheet MUST be awaited before the response returns:
   // Vercel freezes the serverless function on return, and a
   // fire-and-forget promise gets killed mid-flight. That's exactly how
   // the founder's first bachelorette test lead vanished from the sheet.
   const sideEffects: Promise<unknown>[] = [];
+
+  // GHL webhook (no-op until GHL_CONCIERGE_LEAD_WEBHOOK_URL is set;
+  // internally never-throwing).
+  sideEffects.push(
+    notifyConciergeLead({
+      event: 'concierge.lead',
+      first_name: body.firstName,
+      last_name: body.lastName,
+      email: body.email,
+      phone: body.phone,
+      source: body.source,
+      partyType: body.partyType,
+      headcount: body.headcount,
+      arrivalDate: body.arrivalDate,
+      departureDate: body.departureDate,
+      budgetPerPerson: body.budgetPerPerson,
+      activities: body.activities,
+      notes: body.notes,
+      tags,
+      leadUrl,
+      submittedAt: now.toISOString(),
+    }).catch((err) => {
+      console.error('[concierge/lead] GHL notify failed (non-blocking)', err);
+    }),
+  );
+
+  // ─── 4) Quote email ──────────────────────────────────────────────
+  // Combines the old welcome email with the summary + View Quote CTA
+  // that opens the interactive quote page. Only fires if we managed to
+  // create a Lead (need the ID for the quote URL).
 
   if (leadId) {
     const capturedLeadId = leadId;

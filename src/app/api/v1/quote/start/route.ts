@@ -172,6 +172,10 @@ export async function POST(req: NextRequest) {
         where: { id: lead.id },
         data: {
           status: 'SUBMITTED',
+          // Last-touch stamp: a fresh submit owns the source columns
+          // even when the email matched an older lead row.
+          sourcePage: `/${body.source}`,
+          sourceWidget: 'CONTACT_FORM',
           metadata: nextMeta as never,
         },
       });

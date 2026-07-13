@@ -19,6 +19,7 @@ import { z } from 'zod';
 import { sendEmail } from '@/lib/email/resend-client';
 import { eventQuizWelcomeEmail } from '@/lib/email/templates/event-quiz-welcome';
 import { upsertLead, recordEvent } from '@/lib/leads/leadCapture';
+import { attributionSchema, compactAttribution } from '@/lib/leads/attribution-schema';
 import { targetUrlFor } from '@/lib/eventQuiz/routing';
 import { recommendForChat } from '@/lib/chat/recommendation';
 import { isLastMinuteDate } from '@/lib/lastMinute/dates';
@@ -48,6 +49,10 @@ const schema = z.object({
   /** ISO YYYY-MM-DD. Drives whether the destination landing page is
    *  served the last-minute menu when the user lands there. */
   deliveryDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  /** First-touch UTM + ad click ids captured client-side. Optional so
+   *  older cached bundles never 400. Without this, chat leads could
+   *  never be tied to an ad campaign (the founder's exact question). */
+  attribution: attributionSchema,
 });
 
 export async function POST(req: NextRequest) {
@@ -77,16 +82,46 @@ export async function POST(req: NextRequest) {
       {
         sourcePage: '/chat',
         sourceWidget: 'CONTACT_FORM',
+        // UTM columns blank-fill + click ids merge into metadata.attribution.
+        utmSource: body.attribution?.utmSource,
+        utmMedium: body.attribution?.utmMedium,
+        utmCampaign: body.attribution?.utmCampaign,
+        utmContent: body.attribution?.utmContent,
+        utmTerm: body.attribution?.utmTerm,
+        gclid: body.attribution?.gclid,
+        gbraid: body.attribution?.gbraid,
+        wbraid: body.attribution?.wbraid,
+        fbclid: body.attribution?.fbclid,
+        msclkid: body.attribution?.msclkid,
       },
     );
     if (lead) {
       leadId = lead.id;
+      const prevMeta = (lead.metadata as Record<string, unknown> | null) ?? {};
+      const prevAttribution =
+        prevMeta.attribution &&
+        typeof prevMeta.attribution === 'object' &&
+        !Array.isArray(prevMeta.attribution)
+          ? (prevMeta.attribution as Record<string, unknown>)
+          : {};
       await prisma.lead.update({
         where: { id: lead.id },
         data: {
           status: 'SUBMITTED',
+          // Last-touch stamp: a fresh submit owns the source columns
+          // even when the email matched an older lead row.
+          sourcePage: '/chat',
+          sourceWidget: 'CONTACT_FORM',
           metadata: {
-            ...((lead.metadata as Record<string, unknown> | null) ?? {}),
+            ...prevMeta,
+            ...(body.attribution
+              ? {
+                  attribution: {
+                    ...prevAttribution,
+                    ...compactAttribution(body.attribution),
+                  },
+                }
+              : {}),
             chatQuiz: {
               partyType: body.partyType,
               headcount: body.headcount,
@@ -94,7 +129,7 @@ export async function POST(req: NextRequest) {
               submittedAt: new Date().toISOString(),
               resumePath,
             },
-          },
+          } as never,
         },
       });
       await recordEvent({
