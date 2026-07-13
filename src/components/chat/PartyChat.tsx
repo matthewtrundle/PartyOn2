@@ -31,6 +31,7 @@ import {
 } from '@/lib/eventQuiz/routing';
 import { sendLeadEvent } from '@/lib/leads/client';
 import { useDeliveryWindow } from '@/lib/deliveryWindow/window';
+import { getAttribution } from '@/lib/analytics/attribution';
 
 type RecommendedItem = {
   handle: string;
@@ -145,6 +146,9 @@ export default function PartyChat() {
           partyType,
           headcount,
           deliveryDate,
+          // First-touch UTM + ad click ids — lets the Lead be tied to
+          // the ad campaign that brought them in.
+          attribution: getAttribution(),
         }),
       });
       const recJson = await recRes.json();
@@ -190,6 +194,7 @@ export default function PartyChat() {
           source: 'chat',
           recommendedItems:
             recommendation?.items.map((it) => ({ handle: it.handle, qty: it.qty })) ?? [],
+          attribution: getAttribution(),
         }),
       });
       const json = await res.json();

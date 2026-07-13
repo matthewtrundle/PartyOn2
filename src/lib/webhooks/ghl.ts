@@ -396,7 +396,9 @@ export async function notifyConciergeLead(payload: GhlConciergeLeadPayload): Pro
     if (!res.ok) {
       console.error('[GHL Concierge Webhook] Failed:', res.status, await res.text());
     } else {
-      console.log('[GHL Concierge Webhook] Lead synced:', payload.email);
+      // Log the lead deep-link, not the email — customer PII stays out
+      // of INFO-level production logs (project rule).
+      console.log('[GHL Concierge Webhook] Lead synced:', payload.leadUrl);
     }
   } catch (err) {
     console.error('[GHL Concierge Webhook] Error:', err);

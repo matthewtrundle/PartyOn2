@@ -72,6 +72,63 @@ export async function constructWebhookEvent(
  * Handle checkout.session.completed event
  * Creates an order when payment is successful
  */
+/**
+ * Premier Concierge 25% deposit paid. Marks the quote on
+ * Lead.metadata.quote as deposit-paid + promotes the Lead to CONVERTED.
+ * Idempotent — a repeat delivery (or the success page having already
+ * done it) is a no-op.
+ */
+async function handleConciergeDepositPayment(
+  session: Stripe.Checkout.Session
+): Promise<void> {
+  const leadId = session.metadata?.leadId;
+  if (!leadId) {
+    console.error('[Stripe Webhook] concierge deposit with no leadId:', session.id);
+    return;
+  }
+  if (session.payment_status !== 'paid' && session.payment_status !== 'no_payment_required') {
+    console.log('[Stripe Webhook] concierge deposit not paid yet:', session.id);
+    return;
+  }
+
+  const lead = await prisma.lead.findUnique({
+    where: { id: leadId },
+    select: { metadata: true },
+  });
+  if (!lead) {
+    console.error('[Stripe Webhook] concierge deposit lead not found:', leadId);
+    return;
+  }
+  const meta = (lead.metadata as Record<string, unknown> | null) ?? {};
+  const quote = meta.quote as Record<string, unknown> | undefined;
+  if (!quote) {
+    console.error('[Stripe Webhook] concierge deposit lead has no quote:', leadId);
+    return;
+  }
+  if (quote.status === 'deposit-paid') {
+    console.log('[Stripe Webhook] concierge deposit already recorded:', leadId);
+    return;
+  }
+
+  await prisma.lead.update({
+    where: { id: leadId },
+    data: {
+      status: 'CONVERTED',
+      metadata: {
+        ...meta,
+        quote: {
+          ...quote,
+          status: 'deposit-paid',
+          depositPaidAt: new Date().toISOString(),
+          stripeCheckoutSessionId: session.id,
+          updatedAt: new Date().toISOString(),
+        },
+      } as never,
+    },
+  });
+  console.log('[Stripe Webhook] concierge deposit recorded for lead:', leadId);
+}
+
 async function handleCheckoutSessionCompleted(
   session: Stripe.Checkout.Session
 ): Promise<void> {
@@ -99,6 +156,16 @@ async function handleCheckoutSessionCompleted(
   // Check if this is a Group V2 delivery fee payment
   if (session.metadata?.type === 'group_v2_delivery') {
     await handleGroupV2DeliveryPayment(session);
+    return;
+  }
+
+  // Check if this is a Premier Concierge quote deposit. These sessions
+  // carry no cartId, so without this branch they'd fall through to the
+  // cart path and throw. The success page also marks the quote paid
+  // when the customer returns; this webhook closes the gap for
+  // customers who pay and never come back.
+  if (session.metadata?.source === 'concierge-quote-deposit') {
+    await handleConciergeDepositPayment(session);
     return;
   }
 

@@ -17,6 +17,7 @@
  */
 
 import { useMemo, useState, type ReactElement, type FormEvent } from 'react';
+import { getAttribution } from '@/lib/analytics/attribution';
 
 const NAVY = '#0A1F33';
 const GOLD = '#D4AF37';
@@ -165,6 +166,9 @@ export default function ConciergeQuestionnaireModal({
             variant === 'bachelorette'
               ? 'premier-concierge-bachelorette'
               : 'premier-concierge-bachelor',
+          // First-touch UTM + ad click ids — ties the lead to the ad
+          // campaign that brought them in.
+          attribution: getAttribution(),
         }),
       });
       const json = (await res.json()) as { ok: boolean; error?: string };
