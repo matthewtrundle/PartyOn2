@@ -34,7 +34,8 @@ import {
   formatCentralTimestamp,
 } from '@/lib/premier/pod-leads-sheet';
 import { sendEmail } from '@/lib/email/resend-client';
-import { conciergeWelcomeEmail } from '@/lib/email/templates/concierge-welcome';
+import { conciergeQuoteEmail } from '@/lib/email/templates/concierge-quote';
+import { buildInitialQuote, type Quote } from '@/lib/concierge/quote';
 import { EmailType } from '@prisma/client';
 
 export const runtime = 'nodejs';
@@ -114,6 +115,19 @@ export async function POST(req: NextRequest) {
       leadId = lead.id;
       const prevMeta =
         (lead.metadata as Record<string, unknown> | null) ?? {};
+
+      // Build the initial quote from the questionnaire answers so the
+      // customer sees a starting plan when they open the quote link.
+      const conciergeVariant: 'bachelor' | 'bachelorette' =
+        body.partyType === 'bachelorette' ? 'bachelorette' : 'bachelor';
+      const initialQuote: Quote = buildInitialQuote({
+        variant: conciergeVariant,
+        headcount: body.headcount,
+        arrivalDate: body.arrivalDate,
+        departureDate: body.departureDate,
+        requestedActivities: body.activities.filter((a) => a !== 'not-sure'),
+      });
+
       await prisma.lead.update({
         where: { id: lead.id },
         data: {
@@ -132,6 +146,7 @@ export async function POST(req: NextRequest) {
               notes: body.notes,
               submittedAt: new Date().toISOString(),
             },
+            quote: initialQuote,
           } as never,
         },
       });
@@ -184,45 +199,55 @@ export async function POST(req: NextRequest) {
     console.error('[concierge/lead] GHL notify failed (non-blocking)', err);
   });
 
-  // ─── 4) Confirmation email — non-blocking ────────────────────────
-  // Fire-and-forget so a Resend outage or throttle can't 500 the API.
-  // Wrapped in try/catch inside the async IIFE so unhandled rejections
-  // don't crash the Node runtime.
-  (async () => {
-    try {
-      const tpl = conciergeWelcomeEmail({
-        firstName: body.firstName,
-        headcount: body.headcount,
-        arrivalDate: body.arrivalDate,
-        departureDate: body.departureDate,
-        partyType: body.partyType,
-        budgetPerPerson: body.budgetPerPerson,
-        activities: body.activities,
-        notes: body.notes,
-      });
-      await sendEmail({
-        to: body.email,
-        subject: tpl.subject,
-        html: tpl.html,
-        text: tpl.text,
-        type: EmailType.WELCOME,
-        metadata: {
-          flow: 'premier-concierge',
-          leadId,
-          partyType: body.partyType,
-          headcount: body.headcount,
-          budget: body.budgetPerPerson,
-          activities: body.activities,
-        },
-        tags: [
-          { name: 'flow', value: 'premier-concierge' },
-          { name: 'party_type', value: body.partyType },
-        ],
-      });
-    } catch (err) {
-      console.error('[concierge/lead] welcome email failed (non-blocking)', err);
-    }
-  })();
+  // ─── 4) Quote email — non-blocking ───────────────────────────────
+  // Combines the old welcome email with the summary + View Quote CTA
+  // that opens the interactive quote page. Only fires if we managed to
+  // create a Lead (need the ID for the quote URL).
+  if (leadId) {
+    const capturedLeadId = leadId;
+    const conciergeVariant: 'bachelor' | 'bachelorette' =
+      body.partyType === 'bachelorette' ? 'bachelorette' : 'bachelor';
+    const emailQuote: Quote = buildInitialQuote({
+      variant: conciergeVariant,
+      headcount: body.headcount,
+      arrivalDate: body.arrivalDate,
+      departureDate: body.departureDate,
+      requestedActivities: body.activities.filter((a) => a !== 'not-sure'),
+    });
+    const quoteUrl = `https://partyondelivery.com/concierge-quote/${capturedLeadId}`;
+    (async () => {
+      try {
+        const tpl = conciergeQuoteEmail({
+          firstName: body.firstName,
+          variant: conciergeVariant,
+          quote: emailQuote,
+          quoteUrl,
+        });
+        await sendEmail({
+          to: body.email,
+          subject: tpl.subject,
+          html: tpl.html,
+          text: tpl.text,
+          type: EmailType.WELCOME,
+          metadata: {
+            flow: 'premier-concierge',
+            leadId: capturedLeadId,
+            partyType: body.partyType,
+            headcount: body.headcount,
+            budget: body.budgetPerPerson,
+            activities: body.activities,
+            quoteUrl,
+          },
+          tags: [
+            { name: 'flow', value: 'premier-concierge' },
+            { name: 'party_type', value: body.partyType },
+          ],
+        });
+      } catch (err) {
+        console.error('[concierge/lead] quote email failed (non-blocking)', err);
+      }
+    })();
+  }
 
   // ─── 5) Google Sheet append — non-blocking ───────────────────────
   appendLeadToPodLeadsSheet({

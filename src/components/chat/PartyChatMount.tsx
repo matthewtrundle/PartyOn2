@@ -41,6 +41,7 @@ const HIDE_PATTERNS: RegExp[] = [
   /^\/austin-bachelor-concierge(\/|$)/,
   /^\/austin-bachelorette-concierge(\/|$)/,
   /^\/austin-concierge(\/|$)/,
+  /^\/concierge-quote(\/|$)/,
 ];
 
 export default function PartyChatMount() {
