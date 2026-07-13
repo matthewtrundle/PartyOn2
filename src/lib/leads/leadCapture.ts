@@ -20,6 +20,8 @@ import type {
   VisitorSession,
 } from '@prisma/client';
 import { normalizeEmail } from './email-validation';
+import { normPhone } from './phone';
+import { enrollLeadIfEligible, handleSubmitSignal } from './pipeline';
 
 export type IdentifyInput = {
   email?: string | null;
@@ -87,11 +89,7 @@ const MAX_FIELD_VALUE_LEN = 1000;
 // mid-typing fragments like `an@` / `@gmail.com`, so a Lead is only ever
 // keyed/created on a syntactically complete address.
 
-function normPhone(v?: string | null) {
-  if (!v) return null;
-  const digits = v.replace(/[^\d+]/g, '');
-  return digits.length >= 7 ? digits : null;
-}
+// normPhone lives in ./phone (shared with the Lead Flow pipeline + order matching).
 
 function nonEmpty(v?: string | null) {
   if (v == null) return null;
@@ -269,7 +267,7 @@ export async function recordEvent(opts: {
   metadata?: Record<string, unknown> | null;
 }) {
   if (!opts.sessionId && !opts.leadId) return null;
-  return prisma.leadEvent.create({
+  const event = await prisma.leadEvent.create({
     data: {
       type: opts.type,
       sessionId: opts.sessionId ?? null,
@@ -281,6 +279,24 @@ export async function recordEvent(opts: {
       metadata: (opts.metadata ?? null) as never,
     },
   });
+  // Lead Flow board bookkeeping — must never break capture (module contract:
+  // intentionally tolerant).
+  if (opts.leadId) {
+    try {
+      // Board cards + scoring read this instead of scanning lead_events.
+      await prisma.lead.update({
+        where: { id: opts.leadId },
+        data: { lastActivityAt: new Date() },
+      });
+      // A real submit enrolls a new card / re-opens a WON-LOST one as NEW.
+      if (opts.type === 'FORM_SUBMIT' || opts.type === 'CHECKOUT_START') {
+        await handleSubmitSignal(opts.leadId);
+      }
+    } catch (err) {
+      console.warn('[leadCapture] pipeline bookkeeping failed', err);
+    }
+  }
+  return event;
 }
 
 /**
@@ -297,7 +313,7 @@ export async function markLeadStatus(
     orderId?: string | null;
   },
 ) {
-  return prisma.lead.update({
+  const lead = await prisma.lead.update({
     where: { id: leadId },
     data: {
       status,
@@ -307,4 +323,15 @@ export async function markLeadStatus(
       orderId: extras?.orderId ?? undefined,
     },
   });
+  // Lead Flow board: a pixel-driven SUBMITTED promotion happens AFTER its
+  // recordEvent call (see landing/lead-event), so enroll here too. Idempotent;
+  // never breaks the caller.
+  if (status === 'SUBMITTED') {
+    try {
+      await enrollLeadIfEligible(leadId);
+    } catch (err) {
+      console.warn('[leadCapture] board enroll failed', err);
+    }
+  }
+  return lead;
 }

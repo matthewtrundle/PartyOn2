@@ -15,6 +15,7 @@ import { prisma } from '@/lib/database/client';
 import { getJourney } from './journeys';
 import { normalizeEmail } from './suppression';
 import { isCompleteEmail } from '@/lib/leads/email-validation';
+import { enrollLeadIfEligible } from '@/lib/leads/pipeline';
 import { entityIdFromDedupeKey, type JourneyKey } from './types';
 
 const MAX_JITTER_MS = 45 * 60 * 1000;
@@ -131,6 +132,12 @@ export async function enqueueJourney(
         scheduledFor,
       },
     });
+    // Lead Flow board: anything flagged for a follow-up belongs on the board
+    // (Allan's rule) — this is how abandoned-quote PARTIAL leads surface.
+    // Best-effort; a board hiccup must not fail the enqueue.
+    if (opts.leadId) {
+      await enrollLeadIfEligible(opts.leadId, { allowPartial: true }).catch(() => undefined);
+    }
     return { enqueued: true, jobId: job.id };
   } catch (error) {
     if (

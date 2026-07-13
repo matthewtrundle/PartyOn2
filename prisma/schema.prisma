@@ -1377,6 +1377,7 @@ enum EmailType {
   ORDER_CANCELLED
   RECEIPT
   FOLLOW_UP
+  LEAD_REPLY
 }
 
 enum EmailStatus {
@@ -3345,6 +3346,31 @@ model Lead {
   /// in a later PR. Kept here so `prisma db push` doesn't drop the column.
   affiliateId     String?         @map("affiliate_id")
 
+  /// ---- Lead Flow board (2026-07-13-lead-pipeline.sql) -------------------
+  /// Kanban stage. NULL = not on the board. TEXT + DB CHECK, not an enum —
+  /// values in src/lib/leads/pipeline-types.ts (NEW/CONTACTED/QUALIFIED/
+  /// QUOTE_SENT/WON/LOST). Deliberately separate from `status`: the
+  /// follow-ups engine reads `status` and must keep its semantics.
+  pipelineStage   String?         @map("pipeline_stage")
+  stageChangedAt  DateTime?       @map("stage_changed_at")
+  /// Fractional rank within a column — lower sorts first (top).
+  boardSortOrder  Float           @default(0) @map("board_sort_order")
+  /// Stored rule-based temperature 0–100 (hot/warm/cold derived in code).
+  leadScore       Int?            @map("lead_score")
+  scoreBreakdown  Json?           @map("score_breakdown")
+  /// Last staff outreach from the board (email reply v1).
+  lastContactedAt DateTime?       @map("last_contacted_at")
+  /// Bumped by recordEvent — board reads never scan lead_events.
+  lastActivityAt  DateTime?       @map("last_activity_at")
+  /// Set when a WON/LOST lead re-submits and re-enters NEW.
+  reopenedAt      DateTime?       @map("reopened_at")
+  /// Freeform staff owner ('Allan' | 'Brian' by convention).
+  owner           String?
+  snoozedUntil    DateTime?       @map("snoozed_until")
+  lostReason      String?         @map("lost_reason")
+  wonAt           DateTime?       @map("won_at")
+  lostAt          DateTime?       @map("lost_at")
+
   events          LeadEvent[]
   sessions        VisitorSession[]
 
@@ -3356,6 +3382,8 @@ model Lead {
   @@index([status])
   @@index([createdAt])
   @@index([draftOrderId])
+  @@index([pipelineStage, boardSortOrder])
+  @@index([lastContactedAt])
   @@map("leads")
 }
 

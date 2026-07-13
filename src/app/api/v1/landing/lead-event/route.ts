@@ -61,13 +61,11 @@ const eventTypeEnum = z.enum([
   'CUSTOM',
 ]);
 
-const statusEnum = z.enum([
-  'ANONYMOUS',
-  'PARTIAL',
-  'SUBMITTED',
-  'CONVERTED',
-  'ARCHIVED',
-]);
+// Public browser input may only promote a lead to SUBMITTED — never
+// CONVERTED/ARCHIVED (those are server-side facts: Stripe webhooks + the won
+// matcher). The legitimate client (src/lib/leads/client.ts) only ever sends
+// SUBMITTED; anything wider lets curl vandalize the Lead Flow board.
+const statusEnum = z.enum(['PARTIAL', 'SUBMITTED']);
 
 const bodySchema = z.object({
   type: eventTypeEnum,

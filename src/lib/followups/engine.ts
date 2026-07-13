@@ -249,6 +249,25 @@ export async function processJob(
     return 'canceled';
   }
 
+  // 2b. Lead Flow board guard: a lead explicitly closed on the board (WON or
+  // LOST) is a finished conversation — a board-Lost lead must never get a
+  // follow-up email when the flags flip on. Only jobs anchored to a lead are
+  // affected (B2B journeys carry no leadId).
+  if (job.leadId) {
+    const boardLead = await prisma.lead.findUnique({
+      where: { id: job.leadId },
+      select: { pipelineStage: true },
+    });
+    if (boardLead?.pipelineStage === 'LOST') {
+      await markCanceled(job, 'pipeline-lost');
+      return 'canceled';
+    }
+    if (boardLead?.pipelineStage === 'WON') {
+      await markCanceled(job, 'pipeline-won');
+      return 'canceled';
+    }
+  }
+
   // 3. Global guard: they became a paying customer since this was queued.
   if (!journey.skipGlobalPaidGuard && (await hasPaidOrderSince(job.email, job.createdAt))) {
     await markCanceled(job, 'converted-order');

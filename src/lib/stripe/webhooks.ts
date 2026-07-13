@@ -16,6 +16,7 @@ import {
   sendRefundProcessedEmail,
 } from '@/lib/email';
 import { notifyNewOrder, buildGhlPayload } from '@/lib/webhooks/ghl';
+import { syncStageFromConversion } from '@/lib/leads/pipeline';
 import { recordDiscountUsage } from '@/lib/discounts/discount-engine';
 import {
   handleGroupV2PaymentCompleted,
@@ -126,6 +127,8 @@ async function handleConciergeDepositPayment(
       } as never,
     },
   });
+  // Lead Flow board: a paid deposit is a win — keep stage in sync with status.
+  await syncStageFromConversion(leadId);
   console.log('[Stripe Webhook] concierge deposit recorded for lead:', leadId);
 }
 
