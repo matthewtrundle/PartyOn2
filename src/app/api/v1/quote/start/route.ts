@@ -34,6 +34,7 @@ import { attributionSchema, compactAttribution } from '@/lib/leads/attribution-s
 import { targetUrlFor } from '@/lib/eventQuiz/routing';
 import { createDashboardOrder, addDraftItem } from '@/lib/group-orders-v2/service';
 import { isLastMinuteDate } from '@/lib/lastMinute/dates';
+import { mirrorLeadToSheet } from '@/lib/premier/pod-leads-sheet';
 import { prisma } from '@/lib/database/client';
 import { EmailType } from '@prisma/client';
 import type { PartyType as DashboardPartyType, DeliveryContextType } from '@/lib/group-orders-v2/types';
@@ -299,6 +300,24 @@ export async function POST(req: NextRequest) {
       console.error('[quote/start] email send failed', err);
     }
   }
+
+  // Mirror to the POD Leads Google Sheet. AWAITED — Vercel kills
+  // un-awaited promises when the response returns. Never throws.
+  await mirrorLeadToSheet({
+    source: `quote-start:${body.source}`,
+    firstName: body.firstName,
+    lastName: body.lastName ?? '',
+    email: body.email,
+    phone: body.phone ?? '',
+    arrivalDate: body.deliveryDate,
+    partyType: body.partyType,
+    headcount: body.headcount,
+    activities: body.recommendedItems.map((r) => r.handle).join(', '),
+    notes: shareCode ? `dashboard: ${shareCode}` : '',
+    leadUrl: leadId
+      ? `https://partyondelivery.com/admin/brians-stuff?tab=leads&lead=${leadId}`
+      : '',
+  });
 
   // Always return a redirectTo. If the dashboard create failed we fall
   // back to the matching landing page so the user isn't stranded.

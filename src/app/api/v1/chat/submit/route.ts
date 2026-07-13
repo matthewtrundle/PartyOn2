@@ -22,6 +22,7 @@ import { upsertLead, recordEvent } from '@/lib/leads/leadCapture';
 import { targetUrlFor } from '@/lib/eventQuiz/routing';
 import { recommendForChat } from '@/lib/chat/recommendation';
 import { isLastMinuteDate } from '@/lib/lastMinute/dates';
+import { mirrorLeadToSheet } from '@/lib/premier/pod-leads-sheet';
 import { EmailType } from '@prisma/client';
 import { prisma } from '@/lib/database/client';
 
@@ -159,6 +160,22 @@ export async function POST(req: NextRequest) {
   // Flag whether the destination landing page should auto-engage
   // last-minute mode (delivery date is today or tomorrow in Austin TZ).
   const isLastMinute = isLastMinuteDate(body.deliveryDate);
+
+  // Mirror to the POD Leads Google Sheet. AWAITED — Vercel kills
+  // un-awaited promises when the response returns. Never throws.
+  await mirrorLeadToSheet({
+    source: 'party-chat',
+    firstName: body.firstName,
+    lastName: body.lastName ?? '',
+    email: body.email,
+    phone: body.phone ?? '',
+    arrivalDate: body.deliveryDate,
+    partyType: body.partyType,
+    headcount: body.headcount,
+    leadUrl: leadId
+      ? `https://partyondelivery.com/admin/brians-stuff?tab=leads&lead=${leadId}`
+      : '',
+  });
 
   return NextResponse.json({
     ok: true,

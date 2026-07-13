@@ -26,6 +26,7 @@ import { getInvoiceTextOverrides } from '@/lib/email/template-content';
 import { sendEmail } from '@/lib/email/resend-client';
 import { attributionSchema, attributionNoteLine } from '@/lib/leads/attribution-schema';
 import { cancelJobsForEmail, enqueueJourney } from '@/lib/followups/enqueue';
+import { mirrorLeadToSheet } from '@/lib/premier/pod-leads-sheet';
 import { EmailType, DraftOrderStatus } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
@@ -246,6 +247,22 @@ export async function POST(request: NextRequest) {
     } catch (err) {
       console.warn('[landing/quote] abandoned-quote cancel failed:', err);
     }
+
+    // Mirror to the POD Leads Google Sheet. AWAITED — Vercel kills
+    // un-awaited promises when the response returns. Never throws.
+    const nameParts = (body.customerName ?? '').trim().split(/\s+/);
+    await mirrorLeadToSheet({
+      source: `quickbuy:${body.occasion}`,
+      firstName: nameParts[0] ?? '',
+      lastName: nameParts.slice(1).join(' '),
+      email: body.customerEmail,
+      phone: body.customerPhone ?? '',
+      arrivalDate: body.deliveryDate,
+      partyType: body.occasion,
+      headcount: body.groupSize,
+      notes: `${body.mode} · invoice: ${draftOrder.token} · $${Number(draftOrder.total).toFixed(2)}`,
+      leadUrl: invoiceUrl,
+    });
 
     return NextResponse.json({
       success: true,

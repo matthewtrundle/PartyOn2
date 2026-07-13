@@ -23,6 +23,7 @@ import { eventQuizWelcomeEmail } from '@/lib/email/templates/event-quiz-welcome'
 import { upsertLead, recordEvent } from '@/lib/leads/leadCapture';
 import { targetUrlFor } from '@/lib/eventQuiz/routing';
 import { enqueueJourney } from '@/lib/followups/enqueue';
+import { mirrorLeadToSheet } from '@/lib/premier/pod-leads-sheet';
 import { EmailType } from '@prisma/client';
 import { prisma } from '@/lib/database/client';
 
@@ -175,6 +176,22 @@ export async function POST(req: NextRequest) {
       console.warn('[event-quiz] follow-up enqueue failed', err);
     }
   }
+
+  // Mirror to the POD Leads Google Sheet. AWAITED — Vercel kills
+  // un-awaited promises when the response returns. Never throws.
+  await mirrorLeadToSheet({
+    source: 'event-quiz',
+    firstName: body.firstName,
+    lastName: body.lastName ?? '',
+    email: body.email,
+    phone: body.phone ?? '',
+    partyType: body.partyType,
+    activities: body.needs.join(', '),
+    notes: `timing: ${body.timing}`,
+    leadUrl: leadId
+      ? `https://partyondelivery.com/admin/brians-stuff?tab=leads&lead=${leadId}`
+      : '',
+  });
 
   return NextResponse.json({
     ok: true,

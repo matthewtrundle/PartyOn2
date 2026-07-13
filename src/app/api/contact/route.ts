@@ -15,6 +15,7 @@ import { prisma } from '@/lib/database/client';
 import { upsertLead } from '@/lib/leads/leadCapture';
 import { enqueueJourney } from '@/lib/followups/enqueue';
 import { checkRateLimit } from '@/lib/security/rate-limit';
+import { mirrorLeadToSheet } from '@/lib/premier/pod-leads-sheet';
 
 const bodySchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(120),
@@ -140,6 +141,23 @@ export async function POST(request: NextRequest) {
         console.warn('[Contact] follow-up enqueue failed:', err);
       }
     }
+
+    // Mirror to the POD Leads Google Sheet. AWAITED — Vercel kills
+    // un-awaited promises when the response returns. Never throws.
+    await mirrorLeadToSheet({
+      source: 'contact-form',
+      firstName: firstName || '',
+      lastName: restName.join(' '),
+      email: body.email,
+      phone: body.phone || '',
+      arrivalDate: body.eventDate || '',
+      partyType: body.eventType || '',
+      headcount: body.guestCount ?? '',
+      notes: body.message.slice(0, 500),
+      leadUrl: leadId
+        ? `https://partyondelivery.com/admin/brians-stuff?tab=leads&lead=${leadId}`
+        : '',
+    });
 
     return NextResponse.json({
       success: true,

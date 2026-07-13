@@ -199,10 +199,17 @@ export async function POST(req: NextRequest) {
     console.error('[concierge/lead] GHL notify failed (non-blocking)', err);
   });
 
-  // ─── 4) Quote email — non-blocking ───────────────────────────────
+  // ─── 4) Quote email — AWAITED ────────────────────────────────────
   // Combines the old welcome email with the summary + View Quote CTA
   // that opens the interactive quote page. Only fires if we managed to
   // create a Lead (need the ID for the quote URL).
+  //
+  // These side effects MUST be awaited before the response returns:
+  // Vercel freezes the serverless function on return, and a
+  // fire-and-forget promise gets killed mid-flight. That's exactly how
+  // the founder's first bachelorette test lead vanished from the sheet.
+  const sideEffects: Promise<unknown>[] = [];
+
   if (leadId) {
     const capturedLeadId = leadId;
     const conciergeVariant: 'bachelor' | 'bachelorette' =
@@ -215,59 +222,60 @@ export async function POST(req: NextRequest) {
       requestedActivities: body.activities.filter((a) => a !== 'not-sure'),
     });
     const quoteUrl = `https://partyondelivery.com/concierge-quote/${capturedLeadId}`;
-    (async () => {
-      try {
-        const tpl = conciergeQuoteEmail({
-          firstName: body.firstName,
-          variant: conciergeVariant,
-          quote: emailQuote,
+    const tpl = conciergeQuoteEmail({
+      firstName: body.firstName,
+      variant: conciergeVariant,
+      quote: emailQuote,
+      quoteUrl,
+    });
+    sideEffects.push(
+      sendEmail({
+        to: body.email,
+        subject: tpl.subject,
+        html: tpl.html,
+        text: tpl.text,
+        type: EmailType.WELCOME,
+        metadata: {
+          flow: 'premier-concierge',
+          leadId: capturedLeadId,
+          partyType: body.partyType,
+          headcount: body.headcount,
+          budget: body.budgetPerPerson,
+          activities: body.activities,
           quoteUrl,
-        });
-        await sendEmail({
-          to: body.email,
-          subject: tpl.subject,
-          html: tpl.html,
-          text: tpl.text,
-          type: EmailType.WELCOME,
-          metadata: {
-            flow: 'premier-concierge',
-            leadId: capturedLeadId,
-            partyType: body.partyType,
-            headcount: body.headcount,
-            budget: body.budgetPerPerson,
-            activities: body.activities,
-            quoteUrl,
-          },
-          tags: [
-            { name: 'flow', value: 'premier-concierge' },
-            { name: 'party_type', value: body.partyType },
-          ],
-        });
-      } catch (err) {
+        },
+        tags: [
+          { name: 'flow', value: 'premier-concierge' },
+          { name: 'party_type', value: body.partyType },
+        ],
+      }).catch((err) => {
         console.error('[concierge/lead] quote email failed (non-blocking)', err);
-      }
-    })();
+      }),
+    );
   }
 
-  // ─── 5) Google Sheet append — non-blocking ───────────────────────
-  appendLeadToPodLeadsSheet({
-    submittedAt: formatCentralTimestamp(now),
-    source: body.source,
-    firstName: body.firstName,
-    lastName: body.lastName,
-    email: body.email,
-    phone: body.phone,
-    headcount: String(body.headcount),
-    arrivalDate: body.arrivalDate,
-    departureDate: body.departureDate,
-    partyType: body.partyType,
-    budgetPerPerson: body.budgetPerPerson,
-    activities: body.activities.join(', '),
-    notes: body.notes,
-    leadUrl,
-  }).catch((err) => {
-    console.error('[concierge/lead] sheet append failed (non-blocking)', err);
-  });
+  // ─── 5) Google Sheet append — AWAITED ────────────────────────────
+  sideEffects.push(
+    appendLeadToPodLeadsSheet({
+      submittedAt: formatCentralTimestamp(now),
+      source: body.source,
+      firstName: body.firstName,
+      lastName: body.lastName,
+      email: body.email,
+      phone: body.phone,
+      headcount: String(body.headcount),
+      arrivalDate: body.arrivalDate,
+      departureDate: body.departureDate,
+      partyType: body.partyType,
+      budgetPerPerson: body.budgetPerPerson,
+      activities: body.activities.join(', '),
+      notes: body.notes,
+      leadUrl,
+    }),
+  );
+
+  // Run email + sheet in parallel; both are internally never-throwing.
+  await Promise.allSettled(sideEffects);
 
   return NextResponse.json(
     { ok: true, leadId },
