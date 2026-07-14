@@ -43,7 +43,9 @@ export default function LakeTravisYachtRentalsPage(): ReactElement {
         partnerSlug: 'lake-travis-yacht-rentals',
       }}
       partnerLogo="/images/partners/lake-travis-yacht-rentals-logo.png"
-      partnerHeroImage={null}
+      partnerHeroImage="/images/partners/lake-travis-yacht-rentals-hero.jpg"
+      heroBackgroundImage="/images/partners/lake-travis-yacht-rentals-hero-bg.webp"
+      logoLightChip
       headline={
         <>
           <span className="text-brand-yellow">Lake Travis Yacht Rental</span> Delivery
