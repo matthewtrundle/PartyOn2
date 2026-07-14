@@ -296,11 +296,11 @@ export async function recordEvent(opts: {
   fieldValue?: string | null;
   metadata?: Record<string, unknown> | null;
   /**
-   * Set ONLY by server-validated submit routes (chat, concierge, event-quiz,
-   * quote/start). The public pixel route must never set this: event `type`
-   * is client-chosen there, and a trusted submit is what re-opens WON/LOST
-   * board cards — an anonymous caller must not be able to do that with a
-   * victim's email (security review HIGH-1, 2026-07-13).
+   * Set ONLY by server-validated (zod) submit routes: chat, concierge,
+   * event-quiz, quote/start, contact. The public pixel route must never set
+   * this: event `type` is client-chosen there, and a trusted submit is what
+   * re-opens WON/LOST board cards — an anonymous caller must not be able to
+   * do that with a victim's email (security review HIGH-1, 2026-07-13).
    */
   trustedSubmit?: boolean;
 }) {

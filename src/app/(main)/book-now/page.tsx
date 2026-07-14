@@ -2,12 +2,16 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import Section from '@/components/Section'
 import VideoHero from '@/components/VideoHero'
 
 function BookNowContent() {
   const searchParams = useSearchParams()
   const [activeTab, setActiveTab] = useState('delivery')
+  const [submitting, setSubmitting] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     service: '',
     package: '',
@@ -40,10 +44,46 @@ function BookNowContent() {
     setFormData(prev => ({ ...prev, [name]: value }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Submits into the contact-form lead pipeline (SUBMITTED lead + board card
+  // + ops notification) — this form was a no-op console.log until the
+  // 2026-07-13 lead-capture audit. Delivery tab then continues into the real
+  // order flow; event tab shows the quote confirmation.
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('Form submitted:', formData)
-    // Integration with Shopify Storefront API would go here
+    setError(null)
+    setSubmitting(true)
+    try {
+      const details =
+        activeTab === 'delivery'
+          ? ['Fast delivery request (book-now)', formData.time && `Timing: ${formData.time}`, formData.location && `Address: ${formData.location}`]
+          : ['Event quote request (book-now)', formData.package && `Package: ${formData.package}`, formData.time && `Start time: ${formData.time}`, formData.location && `Venue: ${formData.location}`]
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          eventType: activeTab === 'delivery' ? 'fast-delivery' : formData.service,
+          eventDate: formData.date,
+          guestCount: formData.guests,
+          message: [...details.filter(Boolean), formData.notes].filter(Boolean).join('\n'),
+        }),
+      })
+      const json = await res.json()
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || 'Could not send your request. Please try again.')
+      }
+      if (activeTab === 'delivery') {
+        window.location.href = '/order'
+        return
+      }
+      setSubmitted(true)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong — please try again.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -89,6 +129,18 @@ function BookNowContent() {
             </button>
           </div>
 
+          {submitted ? (
+            <div className="bg-gray-50 p-8 rounded-2xl text-center">
+              <h2 className="font-heading text-2xl text-gray-900 mb-3">Request received!</h2>
+              <p className="text-base text-gray-700 mb-6">
+                We&apos;ll contact you within 2 hours with a custom quote. Want to get a head
+                start on drinks in the meantime?
+              </p>
+              <Link href="/order" className="btn-primary px-8 py-3 inline-block">
+                Start an Order
+              </Link>
+            </div>
+          ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
             {activeTab === 'delivery' ? (
               <>
@@ -325,20 +377,31 @@ function BookNowContent() {
 
             {/* Submit Button */}
             <div className="text-center">
+              {error && (
+                <p className="mb-4 text-base text-red-600" role="alert">
+                  {error}
+                </p>
+              )}
               <button
                 type="submit"
-                className="btn-primary px-12 py-4 text-lg"
+                disabled={submitting}
+                className="btn-primary px-12 py-4 text-lg disabled:opacity-60"
               >
-                {activeTab === 'delivery' ? 'Continue to Products' : 'Request Quote'}
+                {submitting
+                  ? 'Sending…'
+                  : activeTab === 'delivery'
+                    ? 'Continue to Products'
+                    : 'Request Quote'}
               </button>
               <p className="mt-4 text-sm text-gray-700">
-                {activeTab === 'delivery' 
+                {activeTab === 'delivery'
                   ? "You'll be able to browse and add products on the next page"
                   : 'We\'ll contact you within 2 hours with a custom quote'
                 }
               </p>
             </div>
           </form>
+          )}
         </div>
       </Section>
 
