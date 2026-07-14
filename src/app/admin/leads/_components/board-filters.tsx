@@ -6,11 +6,15 @@ import type { BoardFilters } from '@/lib/leads/board-types';
 
 const SOURCE_OPTIONS = [
   ['', 'All sources'],
+  ['GROUP_DASHBOARD', 'Party Dashboard'],
   ['PARTNER_LANDING_PAGE', 'Concierge'],
   ['CONTACT_FORM', 'Contact / Quote'],
+  ['PARTNER_INQUIRY', 'B2B / Partner'],
+  ['OPS_INVOICE', 'Ops Invoice'],
   ['QUICK_BUY', 'Quick Buy'],
   ['PACKAGE_BUILDER', 'Package Builder'],
   ['DRINK_CALCULATOR', 'Calculator'],
+  ['LEAD_MAGNET', 'Lead Magnet'],
   ['EMAIL_SIGNUP', 'Email Signup'],
   ['OTHER', 'Site'],
 ] as const;

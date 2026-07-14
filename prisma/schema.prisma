@@ -3310,6 +3310,13 @@ enum LeadSourceWidget {
   PARTNER_FAREHARBOR_WEBHOOK
   PARTNER_EMAIL_OPTIN
   PARTNER_LANDING_PAGE
+  /// Server-stamped sources (lead-capture gap closure 2026-07-14) — never
+  /// claimable by the public pixel; see the 2026-07-14-lead-source-*.sql
+  /// manual migrations.
+  GROUP_DASHBOARD
+  PARTNER_INQUIRY
+  OPS_INVOICE
+  LEAD_MAGNET
   OTHER
 }
 

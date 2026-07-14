@@ -195,3 +195,37 @@ describe('computeLeadScore — per-surface fixtures', () => {
     expect(maxed.score).toBe(100);
   });
 });
+
+describe('computeLeadScore — gap-closure sources (2026-07-14)', () => {
+  const base = { createdAt: NOW, lastActivityAt: NOW, now: NOW } as const;
+
+  it('groupDashboard metadata scores like a real quote and feeds facts', () => {
+    const { breakdown } = computeLeadScore({
+      ...base,
+      sourceWidget: 'GROUP_DASHBOARD',
+      metadata: {
+        groupDashboard: { deliveryDate: isoDaysFromNow(6), partyType: 'bachelorette' },
+      },
+    });
+    expect(breakdown.sourceQuality).toBe(16);
+    expect(breakdown.eventProximity).toBe(30); // deliveryDate drives proximity
+  });
+
+  it('new widget tiers: OPS_INVOICE 16, PARTNER_INQUIRY 14, LEAD_MAGNET 6', () => {
+    const q = (w: string) =>
+      computeLeadScore({ ...base, sourceWidget: w, metadata: {} }).breakdown.sourceQuality;
+    expect(q('OPS_INVOICE')).toBe(16);
+    expect(q('PARTNER_INQUIRY')).toBe(14);
+    expect(q('LEAD_MAGNET')).toBe(6);
+    expect(q('EMAIL_SIGNUP')).toBe(2); // unchanged
+  });
+
+  it('opsInvoice deliveryDate reaches event proximity', () => {
+    const { breakdown } = computeLeadScore({
+      ...base,
+      sourceWidget: 'OPS_INVOICE',
+      metadata: { opsInvoice: { deliveryDate: isoDaysFromNow(10) } },
+    });
+    expect(breakdown.eventProximity).toBe(26); // ≤14 days
+  });
+});

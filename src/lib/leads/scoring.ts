@@ -98,6 +98,8 @@ function extractEventDate(meta: unknown): string | null {
     metaSection(meta, 'chatQuiz')?.deliveryDate,
     metaSection(meta, 'unifiedQuote')?.deliveryDate,
     metaSection(meta, 'contactForm')?.eventDate,
+    metaSection(meta, 'groupDashboard')?.deliveryDate,
+    metaSection(meta, 'opsInvoice')?.deliveryDate,
   ];
   for (const c of candidates) {
     if (typeof c === 'string' && c.trim()) return c;
@@ -145,6 +147,8 @@ export function extractLeadFacts(meta: unknown): LeadFacts {
     metaSection(meta, 'unifiedQuote')?.partyType,
     metaSection(meta, 'eventQuiz')?.partyType,
     metaSection(meta, 'contactForm')?.eventType,
+    metaSection(meta, 'groupDashboard')?.partyType,
+    metaSection(meta, 'partnerInquiry')?.businessType,
   ];
   let occasion: string | null = null;
   for (const c of occasionCandidates) {
@@ -201,6 +205,7 @@ function sourceQualityPoints(sourceWidget: string | null | undefined, meta: unkn
   const m = asObject(meta) ?? {};
   if (m.conciergeQuiz) return 20; // full questionnaire w/ budget + dates
   if (m.unifiedQuote) return 16; // asked for a real quote
+  if (m.groupDashboard) return 16; // built a party dashboard — strong intent
   if (m.chatQuiz) return 14;
   if (m.eventQuiz) return 12;
   if (m.contactForm) return 10;
@@ -208,16 +213,21 @@ function sourceQualityPoints(sourceWidget: string | null | undefined, meta: unkn
     case 'QUICK_BUY':
     case 'PACKAGE_BUILDER':
     case 'CALL_BOOKING':
+    case 'GROUP_DASHBOARD':
+    case 'OPS_INVOICE':
       return 16;
     case 'PARTNER_LANDING_PAGE':
     case 'PARTNER_FAREHARBOR_WEBHOOK':
     case 'PARTNER_EMAIL_OPTIN':
+    case 'PARTNER_INQUIRY':
       return 14;
     case 'DRINK_CALCULATOR':
       return 12;
     case 'A_LA_CARTE':
     case 'CONTACT_FORM':
       return 10;
+    case 'LEAD_MAGNET':
+      return 6; // freebie popup — real intent only when a phone came with it
     case 'EMAIL_SIGNUP':
       return 2; // newsletter subscriber, not a party inquiry
     default:

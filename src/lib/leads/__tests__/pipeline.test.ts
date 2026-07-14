@@ -252,6 +252,17 @@ describe('board eligibility', () => {
     expect(isNewsletterOnly({ sourceWidget: 'CONTACT_FORM', metadata: {} })).toBe(false);
   });
 
+  it('gap-closure metadata keys count as inquiries; leadMagnet deliberately does not', () => {
+    const signup = (metadata: Record<string, unknown>) =>
+      isNewsletterOnly({ sourceWidget: 'EMAIL_SIGNUP', metadata: { newsletter: {}, ...metadata } });
+    expect(signup({ groupDashboard: { shareCode: 'abc' } })).toBe(false);
+    expect(signup({ partnerInquiry: { inquiryId: 'p1' } })).toBe(false);
+    expect(signup({ affiliateApplication: { applicationId: 'a1' } })).toBe(false);
+    expect(signup({ opsInvoice: { draftOrderId: 'd1' } })).toBe(false);
+    // Email-only lead-magnet capture stays newsletter-only (no phone = no intent).
+    expect(signup({ leadMagnet: { magnetId: 'checklist' } })).toBe(true);
+  });
+
   it('requires contact info and SUBMITTED (or PARTIAL only when allowed)', () => {
     const asLite = (l: MockLead) => l as unknown as Parameters<typeof isBoardEligible>[0];
     const base = makeLead({ email: null, phone: null });

@@ -83,5 +83,9 @@ export const SOURCE_LABELS: Record<string, string> = {
   PARTNER_FAREHARBOR_WEBHOOK: 'Partner',
   PARTNER_EMAIL_OPTIN: 'Partner',
   PARTNER_LANDING_PAGE: 'Concierge',
+  GROUP_DASHBOARD: 'Party Dashboard',
+  PARTNER_INQUIRY: 'B2B / Partner',
+  OPS_INVOICE: 'Ops Invoice',
+  LEAD_MAGNET: 'Lead Magnet',
   OTHER: 'Site',
 };
