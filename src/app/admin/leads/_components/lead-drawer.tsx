@@ -94,8 +94,11 @@ export default function LeadDrawer({
   const name = lead ? [lead.firstName, lead.lastName].filter(Boolean).join(' ') || lead.email || 'Lead' : 'Lead';
 
   return (
-    <BottomSheet open={leadId !== null} onClose={onClose} title={name}>
-      <div className="px-4 pb-8 pt-2 max-h-[80vh] overflow-y-auto">
+    // centered: contained pop-up with a visible X — a full-height sheet read
+    // as an inescapable takeover (operator feedback 2026-07-14). The sheet
+    // owns scrolling, so no inner max-h/overflow here.
+    <BottomSheet open={leadId !== null} onClose={onClose} title={name} centered>
+      <div className="px-4 pb-8 pt-2">
         {loading && !detail && <div className="py-10 text-center text-gray-400">Loading…</div>}
         {lead && detail && (
           <>
