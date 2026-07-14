@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import type { TourStep } from './OnboardingTourProvider';
 import useTour from './useTour';
+import { loadDeliveryWindow } from '@/lib/deliveryWindow/window';
 
 interface Props {
   isHost: boolean;
@@ -71,14 +72,38 @@ export default function DashboardTour({
       // Ignore parse errors
     }
 
-    startedRef.current = true;
+    let startTimer: ReturnType<typeof setTimeout> | undefined;
+    let poll: ReturnType<typeof setInterval> | undefined;
 
-    const timer = setTimeout(() => {
-      const steps = buildSteps();
-      startTour('welcome', steps);
-    }, 500);
+    const begin = () => {
+      if (startedRef.current) return;
+      startedRef.current = true;
+      startTimer = setTimeout(() => {
+        startTour('welcome', buildSteps());
+      }, 500);
+    };
 
-    return () => clearTimeout(timer);
+    // Don't start the tour until the "When is your delivery?" gate
+    // (DeliveryWindowGate) has been answered. That gate fires on first
+    // /dashboard view and its choice persists via loadDeliveryWindow(); the
+    // tour renders above it (z-9999 vs z-210), so starting sooner drops the
+    // tour spotlight on top of a required modal. Poll until it's answered,
+    // then begin -- mirrors how the gate itself waits for the age gate.
+    if (loadDeliveryWindow() !== null) {
+      begin();
+    } else {
+      poll = setInterval(() => {
+        if (loadDeliveryWindow() !== null) {
+          if (poll) clearInterval(poll);
+          begin();
+        }
+      }, 300);
+    }
+
+    return () => {
+      if (startTimer) clearTimeout(startTimer);
+      if (poll) clearInterval(poll);
+    };
   }, [isHost, hasPartyType, isRunning, shareCode, startTour]);
 
   return null;
