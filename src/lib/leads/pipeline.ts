@@ -24,7 +24,11 @@ import {
   type PipelineStage,
   type StageChangeVia,
 } from './pipeline-types';
-import { phoneLast10 } from './phone';
+import { findWonOrder, matchFloor } from './won-match';
+
+// Identity/floor SQL assembly lives in won-match.ts; re-exported for callers
+// and tests that historically imported from here.
+export { matchFloor, wonOrderIdentity, wonGroupHostIdentity } from './won-match';
 
 /**
  * Metadata keys that mark a lead as a real party inquiry (vs newsletter).
@@ -78,18 +82,6 @@ export function isBoardEligible(
 /** Fractional rank: newest on top (lower sorts first). Drags write midpoints. */
 export function topSortOrder(now: Date = new Date()): number {
   return -Math.floor(now.getTime() / 1000);
-}
-
-/**
- * Earliest order/draft date that may count toward this lead's current
- * inquiry: the lead's creation, or its most recent reopen — a reopened
- * card's OLD order must not re-win it. Shared by the won matcher and the
- * quote-sent sweep.
- */
-export function matchFloor(lead: { createdAt: Date; reopenedAt: Date | null }): Date {
-  return lead.reopenedAt && lead.reopenedAt > lead.createdAt
-    ? lead.reopenedAt
-    : lead.createdAt;
 }
 
 async function appendStageEvent(
@@ -369,55 +361,6 @@ export async function sweepQuoteSent(): Promise<number> {
     }
   }
   return moved;
-}
-
-/**
- * Identity clauses + date floor for the won-order match, extracted pure so
- * the SQL inputs are testable without a database: email matches
- * case-insensitively, phone matches on the last 10 digits, and a lead with
- * neither yields no clauses (the caller must then skip the query).
- */
-export function wonOrderIdentity(lead: {
-  email: string | null;
-  phone: string | null;
-  createdAt: Date;
-  reopenedAt: Date | null;
-}): { floor: Date; identity: Prisma.Sql[] } {
-  const identity: Prisma.Sql[] = [];
-  if (lead.email) identity.push(Prisma.sql`LOWER(customer_email) = LOWER(${lead.email})`);
-  const last10 = phoneLast10(lead.phone);
-  if (last10) {
-    identity.push(
-      Prisma.sql`RIGHT(REGEXP_REPLACE(COALESCE(customer_phone, ''), '\\D', '', 'g'), 10) = ${last10}`,
-    );
-  }
-  return { floor: matchFloor(lead), identity };
-}
-
-/**
- * High-confidence paid-order match for one lead: email (case-insensitive) or
- * last-10-digit phone, created on/after the lead (or its reopen), and NOT a
- * GroupOrderV2 participant payment (a $40 guest chip-in is not a won party —
- * risk R1). Uses the idx_orders_customer_phone_last10 expression index.
- */
-async function findWonOrder(lead: {
-  email: string | null;
-  phone: string | null;
-  createdAt: Date;
-  reopenedAt: Date | null;
-}): Promise<{ id: string } | null> {
-  const { floor, identity } = wonOrderIdentity(lead);
-  if (identity.length === 0) return null;
-  const rows = await prisma.$queryRaw<Array<{ id: string }>>`
-    SELECT id FROM orders
-    WHERE financial_status IN ('PAID', 'PARTIALLY_REFUNDED')
-      AND group_order_v2_id IS NULL
-      AND created_at >= ${floor}
-      AND (${Prisma.join(identity, ' OR ')})
-    ORDER BY created_at ASC
-    LIMIT 1
-  `;
-  return rows[0] ?? null;
 }
 
 /**

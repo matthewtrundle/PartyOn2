@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/database/client';
 import { sendEmail } from '@/lib/email/resend-client';
 import { dashboardLinkEmail } from '@/lib/email/templates/dashboard-link';
+import { mirrorDashboardHostLead } from '@/lib/leads/dashboard-lead';
 import { postToCoreLinq } from '@/lib/webhooks/ghl';
 import { checkRateLimit } from '@/lib/security/rate-limit';
 
@@ -72,6 +73,17 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       await prisma.groupOrderV2.update({
         where: { shareCode: code },
         data: updateData,
+      });
+      // Lead Flow board: this is the host handing over their contact info on
+      // /dashboard/* — a form-watcher skip path, so without this mirror the
+      // host is invisible to /admin/leads. Never throws.
+      await mirrorDashboardHostLead({
+        groupOrderId: groupOrder.id,
+        shareCode: code,
+        hostName: groupOrder.hostName,
+        hostEmail: hostEmail || null,
+        hostPhone: hostPhone || null,
+        createdVia: 'send-link',
       });
     }
 

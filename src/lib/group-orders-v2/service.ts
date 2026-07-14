@@ -6,6 +6,7 @@
 import { prisma } from '@/lib/database/client';
 import { calculateDeliveryFee } from '@/lib/delivery/rates';
 import { isLastMinuteDate } from '@/lib/lastMinute/dates';
+import { mirrorDashboardHostLead } from '@/lib/leads/dashboard-lead';
 import { assertVariantsPurchasable } from '@/lib/products/availability';
 import {
   generateShareCode,
@@ -287,6 +288,22 @@ export async function createGroupOrder(
       },
     },
     include: fullGroupIncludes,
+  });
+
+  // Lead Flow board: a host with contact info is a sales lead. Never throws.
+  await mirrorDashboardHostLead({
+    groupOrderId: group.id,
+    shareCode: group.shareCode,
+    hostName: input.hostName,
+    hostEmail: input.hostEmail || null,
+    hostPhone: input.hostPhone || null,
+    partyType: group.partyType,
+    deliveryDate:
+      tabDeliveryDates.length > 0
+        ? new Date(Math.min(...tabDeliveryDates.map((d) => d.getTime())))
+        : null,
+    source: group.source,
+    createdVia: 'group-create',
   });
 
   return serializeGroup(group);
@@ -1036,6 +1053,28 @@ export async function createDashboardOrder(
     include: fullGroupIncludes,
   });
 
+  // Lead Flow board: a host with contact info is a sales lead. Never throws.
+  await mirrorDashboardHostLead({
+    groupOrderId: group.id,
+    shareCode: group.shareCode,
+    hostName: input.hostName,
+    hostEmail: input.hostEmail || null,
+    hostPhone: input.hostPhone || null,
+    partyType: input.partyType || null,
+    deliveryDate,
+    source: input.source || 'DIRECT',
+    createdVia: input.isLastMinute ? 'last-minute-order' : 'dashboard-order',
+    attribution: input.attribution
+      ? {
+          utmSource: input.attribution.utmSource ?? null,
+          utmMedium: input.attribution.utmMedium ?? null,
+          utmCampaign: input.attribution.utmCampaign ?? null,
+          utmTerm: input.attribution.utmTerm ?? null,
+          utmContent: input.attribution.utmContent ?? null,
+        }
+      : null,
+  });
+
   return serializeGroup(group);
 }
 
@@ -1101,6 +1140,21 @@ export async function createMultiTabDashboardOrder(
       // and becomes host at that point.
     },
     include: fullGroupIncludes,
+  });
+
+  // Lead Flow board: affiliate-created dashboards usually have no host
+  // contact yet (arrives via claim/send-link/settings, which also mirror) —
+  // this covers the ones created WITH contact info. Never throws.
+  await mirrorDashboardHostLead({
+    groupOrderId: group.id,
+    shareCode: group.shareCode,
+    hostName: input.hostName,
+    hostEmail: input.hostEmail || null,
+    hostPhone: input.hostPhone || null,
+    partyType: input.partyType || null,
+    deliveryDate,
+    source: input.source || 'PARTNER_PAGE',
+    createdVia: 'affiliate-dashboard',
   });
 
   return { ...serializeGroup(group), hostClaimToken };
@@ -1201,4 +1255,33 @@ export async function updateGroupOrderFields(
     where: { shareCode },
     data: updateData,
   });
+
+  // Lead Flow board: host contact typed into dashboard settings is exactly
+  // the "invisible host" gap (/dashboard/* is a form-watcher skip path).
+  if (updateData.hostEmail || updateData.hostPhone) {
+    const fresh = await prisma.groupOrderV2.findUnique({
+      where: { shareCode },
+      select: {
+        id: true,
+        shareCode: true,
+        hostName: true,
+        hostEmail: true,
+        hostPhone: true,
+        partyType: true,
+        source: true,
+      },
+    });
+    if (fresh) {
+      await mirrorDashboardHostLead({
+        groupOrderId: fresh.id,
+        shareCode: fresh.shareCode,
+        hostName: fresh.hostName,
+        hostEmail: fresh.hostEmail,
+        hostPhone: fresh.hostPhone,
+        partyType: fresh.partyType,
+        source: fresh.source,
+        createdVia: 'dashboard-settings',
+      });
+    }
+  }
 }
