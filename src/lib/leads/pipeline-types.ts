@@ -29,15 +29,10 @@ export type StageChangeVia =
   | 'reply' // email reply sent from the board (NEW → CONTACTED)
   | 'order' // paid order / deposit matched (→ WON)
   | 'reopen' // WON/LOST lead submitted a fresh inquiry (→ NEW)
-  | 'enroll' // lead entered the board (→ NEW)
-  | 'backfill'; // migration backfill
+  | 'enroll'; // lead entered the board (→ NEW)
 
 export function isPipelineStage(v: unknown): v is PipelineStage {
   return typeof v === 'string' && (PIPELINE_STAGES as readonly string[]).includes(v);
-}
-
-export function isActiveStage(v: unknown): v is ActiveStage {
-  return typeof v === 'string' && (ACTIVE_STAGES as readonly string[]).includes(v);
 }
 
 /**

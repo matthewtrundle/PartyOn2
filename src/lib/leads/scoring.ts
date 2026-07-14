@@ -43,8 +43,7 @@ export interface LeadScoringInput {
   metadata?: unknown;
   resumeCart?: unknown;
   createdAt: Date;
-  updatedAt?: Date | null;
-  /** Bumped by recordEvent; preferred recency signal. */
+  /** Bumped by recordEvent; the only recency signal besides createdAt. */
   lastActivityAt?: Date | null;
   /** Aggregated from lead_events by the caller (never scanned here). */
   engagement?: {
@@ -193,7 +192,9 @@ function sourceQualityPoints(sourceWidget: string | null | undefined, meta: unkn
 }
 
 function recencyPoints(input: LeadScoringInput, now: Date): number {
-  const last = input.lastActivityAt ?? input.updatedAt ?? input.createdAt;
+  // NEVER fall back to updatedAt: the daily rescore writes the lead row and
+  // bumps @updatedAt, which would pin recency fresh forever (review #2).
+  const last = input.lastActivityAt ?? input.createdAt;
   const hours = (now.getTime() - last.getTime()) / 3_600_000;
   if (hours < 0) return 15; // clock skew — treat as fresh
   if (hours <= 24) return 15;

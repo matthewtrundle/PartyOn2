@@ -1,7 +1,8 @@
 /**
  * GET /api/cron/lead-pipeline
  *
- * Daily Lead Flow board tick (vercel.json: 30 11 * * * = 6:30am CT), the
+ * Daily Lead Flow board tick (vercel.json: 30 11 * * * = 6:30am CDT /
+ * 5:30am CST), the
  * backstop behind the realtime hooks in leadCapture/enqueue:
  *   1. enroll  — SUBMITTED leads that never got a board card
  *   2. reopen  — WON/LOST leads with a fresh submit re-enter NEW
@@ -21,8 +22,11 @@ export const maxDuration = 300;
 const CRON_SECRET = process.env.CRON_SECRET;
 
 export async function GET(req: NextRequest) {
+  // Fail CLOSED when CRON_SECRET is unset (follow-up-engine precedent): this
+  // route mass-mutates board state, so a misconfigured environment must not
+  // leave it publicly triggerable.
   const auth = req.headers.get('authorization');
-  if (CRON_SECRET && auth !== `Bearer ${CRON_SECRET}`) {
+  if (!CRON_SECRET || auth !== `Bearer ${CRON_SECRET}`) {
     return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 });
   }
 

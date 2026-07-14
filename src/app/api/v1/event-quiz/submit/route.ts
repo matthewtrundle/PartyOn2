@@ -117,6 +117,7 @@ export async function POST(req: NextRequest) {
       // Record an explicit FORM_SUBMIT event for the funnel/tracker.
       await recordEvent({
         type: 'FORM_SUBMIT',
+        trustedSubmit: true, // server-validated form (zod) — may reopen closed board cards
         leadId: lead.id,
         page: '/event-quiz',
         widget: 'CONTACT_FORM',

@@ -71,6 +71,18 @@ export function topSortOrder(now: Date = new Date()): number {
   return -Math.floor(now.getTime() / 1000);
 }
 
+/**
+ * Earliest order/draft date that may count toward this lead's current
+ * inquiry: the lead's creation, or its most recent reopen — a reopened
+ * card's OLD order must not re-win it. Shared by the won matcher and the
+ * quote-sent sweep.
+ */
+export function matchFloor(lead: { createdAt: Date; reopenedAt: Date | null }): Date {
+  return lead.reopenedAt && lead.reopenedAt > lead.createdAt
+    ? lead.reopenedAt
+    : lead.createdAt;
+}
+
 async function appendStageEvent(
   leadId: string,
   from: PipelineStage | null,
@@ -103,7 +115,6 @@ export async function recomputeLeadScore(leadId: string): Promise<number | null>
     metadata: lead.metadata,
     resumeCart: lead.resumeCart,
     createdAt: lead.createdAt,
-    updatedAt: lead.updatedAt,
     lastActivityAt: lead.lastActivityAt,
     engagement: {
       hasCheckoutStart: checkoutStarts > 0,
@@ -277,6 +288,10 @@ export async function sweepEnrollSubmitted(): Promise<number> {
       pipelineStage: null,
       status: 'SUBMITTED',
       OR: [{ email: { not: null } }, { phone: { not: null } }],
+      // Newsletter signups stay off-board and would otherwise accumulate as
+      // permanent rejects that starve the batch (review #5). A signup that
+      // later submits a real inquiry enrolls via the realtime hooks.
+      NOT: { sourceWidget: 'EMAIL_SIGNUP' },
     },
     select: { id: true },
     orderBy: { updatedAt: 'desc' },
@@ -305,12 +320,11 @@ export async function sweepQuoteSent(): Promise<number> {
   });
   let moved = 0;
   for (const lead of leads) {
-    const floor = lead.reopenedAt && lead.reopenedAt > lead.createdAt ? lead.reopenedAt : lead.createdAt;
     const draft = await prisma.draftOrder.findFirst({
       where: {
         customerEmail: { equals: lead.email as string, mode: 'insensitive' },
         status: { in: ['SENT', 'VIEWED'] },
-        createdAt: { gte: floor },
+        createdAt: { gte: matchFloor(lead) },
         groupOrderId: null,
         amendmentForOrderId: null,
       },
@@ -345,8 +359,7 @@ async function findWonOrder(lead: {
   createdAt: Date;
   reopenedAt: Date | null;
 }): Promise<{ id: string } | null> {
-  const floor =
-    lead.reopenedAt && lead.reopenedAt > lead.createdAt ? lead.reopenedAt : lead.createdAt;
+  const floor = matchFloor(lead);
   const last10 = phoneLast10(lead.phone);
   const identity: Prisma.Sql[] = [];
   if (lead.email) identity.push(Prisma.sql`LOWER(customer_email) = LOWER(${lead.email})`);
@@ -439,6 +452,9 @@ export async function sweepReopens(): Promise<number> {
         leadId: id,
         type: { in: ['FORM_SUBMIT', 'CHECKOUT_START'] },
         occurredAt: { gt: lead.stageChangedAt },
+        // Server-originated submits only — a client-claimed pixel
+        // FORM_SUBMIT must not be able to reopen a closed card.
+        metadata: { path: ['trustedSubmit'], equals: true },
       },
       select: { id: true },
     });

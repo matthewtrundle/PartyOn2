@@ -13,6 +13,7 @@
 import { Prisma, type FollowUpJob } from '@prisma/client';
 import { prisma } from '@/lib/database/client';
 import { getJourney } from './journeys';
+import { isFeatureEnabled } from '@/lib/features/feature-flags';
 import { normalizeEmail } from './suppression';
 import { isCompleteEmail } from '@/lib/leads/email-validation';
 import { enrollLeadIfEligible } from '@/lib/leads/pipeline';
@@ -134,8 +135,11 @@ export async function enqueueJourney(
     });
     // Lead Flow board: anything flagged for a follow-up belongs on the board
     // (Allan's rule) — this is how abandoned-quote PARTIAL leads surface.
-    // Best-effort; a board hiccup must not fail the enqueue.
-    if (opts.leadId) {
+    // Gated on the journey's feature flag so an anonymous pixel POST can't
+    // push PARTIAL leads onto the board while follow-ups are switched off
+    // (security review HIGH-1); best-effort — a board hiccup must not fail
+    // the enqueue.
+    if (opts.leadId && (await isFeatureEnabled(journey.featureFlag))) {
       await enrollLeadIfEligible(opts.leadId, { allowPartial: true }).catch(() => undefined);
     }
     return { enqueued: true, jobId: job.id };

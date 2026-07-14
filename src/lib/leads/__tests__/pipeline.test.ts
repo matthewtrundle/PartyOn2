@@ -37,7 +37,8 @@ const db: {
   events: Array<Record<string, unknown>>;
   drafts: Array<{ id: string; customerEmail: string; status: string; createdAt: Date }>;
   wonOrderRows: Array<{ id: string }>;
-} = { leads: [], events: [], drafts: [], wonOrderRows: [] };
+  reopenRows: Array<{ id: string }>;
+} = { leads: [], events: [], drafts: [], wonOrderRows: [], reopenRows: [] };
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 function matchesWhere(lead: MockLead, where: Record<string, any>): boolean {
@@ -89,11 +90,16 @@ vi.mock('@/lib/database/client', () => ({
       }),
       count: vi.fn(async () => 0),
       findFirst: vi.fn(async ({ where }: any) => {
-        const hit = db.events.find(
-          (e) =>
-            e.leadId === where.leadId &&
-            (!where.type?.in || where.type.in.includes(e.type))
-        );
+        const hit = db.events.find((e) => {
+          if (e.leadId !== where.leadId) return false;
+          if (where.type?.in && !where.type.in.includes(e.type)) return false;
+          if (where.occurredAt?.gt && !((e.occurredAt as Date) > where.occurredAt.gt)) return false;
+          if (where.metadata?.path) {
+            const meta = (e.metadata ?? {}) as Record<string, unknown>;
+            if (meta[where.metadata.path[0]] !== where.metadata.equals) return false;
+          }
+          return true;
+        });
         return hit ?? null;
       }),
     },
@@ -109,7 +115,12 @@ vi.mock('@/lib/database/client', () => ({
         return hit ? { id: hit.id } : null;
       }),
     },
-    $queryRaw: vi.fn(async () => db.wonOrderRows),
+    $queryRaw: vi.fn(async (strings: TemplateStringsArray) => {
+      const sql = Array.isArray(strings) ? strings.join('?') : String(strings);
+      // sweepReopens' candidate query vs findWonOrder's order match.
+      if (sql.includes('last_activity_at')) return db.reopenRows;
+      return db.wonOrderRows;
+    }),
   },
 }));
 /* eslint-enable @typescript-eslint/no-explicit-any */
@@ -119,7 +130,9 @@ import {
   handleSubmitSignal,
   isBoardEligible,
   isNewsletterOnly,
+  matchFloor,
   sweepQuoteSent,
+  sweepReopens,
   sweepWonMatches,
   syncStageFromConversion,
   transitionStage,
@@ -164,6 +177,7 @@ beforeEach(() => {
   db.events = [];
   db.drafts = [];
   db.wonOrderRows = [];
+  db.reopenRows = [];
   seq = 0;
 });
 
@@ -369,5 +383,54 @@ describe('conversion sync + sweeps', () => {
     makeLead({ pipelineStage: 'NEW', stageChangedAt: new Date(), email: null, phone: null });
     db.wonOrderRows = [];
     expect(await sweepWonMatches()).toBe(0);
+  });
+
+  it('sweepReopens reopens only on trusted (server-originated) submits', async () => {
+    const staleStage = new Date('2026-07-01T12:00:00Z');
+    const untrusted = makeLead({
+      pipelineStage: 'WON',
+      stageChangedAt: staleStage,
+      wonAt: staleStage,
+      lastActivityAt: new Date('2026-07-10T12:00:00Z'),
+    });
+    const trusted = makeLead({
+      pipelineStage: 'LOST',
+      stageChangedAt: staleStage,
+      lostAt: staleStage,
+      lastActivityAt: new Date('2026-07-10T12:00:00Z'),
+    });
+    db.reopenRows = [{ id: untrusted.id }, { id: trusted.id }];
+    // Untrusted lead has only a client-claimed pixel FORM_SUBMIT.
+    db.events.push({
+      leadId: untrusted.id,
+      type: 'FORM_SUBMIT',
+      occurredAt: new Date('2026-07-10T12:00:00Z'),
+      metadata: {},
+    });
+    // Trusted lead has a server-validated submit (trustedSubmit stamp).
+    db.events.push({
+      leadId: trusted.id,
+      type: 'FORM_SUBMIT',
+      occurredAt: new Date('2026-07-10T12:00:00Z'),
+      metadata: { trustedSubmit: true },
+    });
+
+    const reopened = await sweepReopens();
+    expect(reopened).toBe(1);
+    expect(untrusted.pipelineStage).toBe('WON');
+    expect(trusted.pipelineStage).toBe('NEW');
+    expect(trusted.lostAt).toBeNull();
+  });
+});
+
+describe('matchFloor', () => {
+  it('uses the reopen date when newer than creation (old orders cannot re-win)', () => {
+    const createdAt = new Date('2026-06-01T00:00:00Z');
+    const reopenedAt = new Date('2026-07-01T00:00:00Z');
+    expect(matchFloor({ createdAt, reopenedAt })).toEqual(reopenedAt);
+    expect(matchFloor({ createdAt, reopenedAt: null })).toEqual(createdAt);
+    expect(
+      matchFloor({ createdAt: reopenedAt, reopenedAt: createdAt })
+    ).toEqual(reopenedAt); // stale reopen older than creation is ignored
   });
 });

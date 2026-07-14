@@ -192,6 +192,7 @@ export async function POST(req: NextRequest) {
 
       await recordEvent({
         type: 'FORM_SUBMIT',
+        trustedSubmit: true, // server-validated form (zod) — may reopen closed board cards
         leadId: lead.id,
         page: `/${body.source}`,
         widget: 'PARTNER_LANDING_PAGE',
