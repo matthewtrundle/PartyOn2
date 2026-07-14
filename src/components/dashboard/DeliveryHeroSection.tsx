@@ -31,13 +31,9 @@ function formatDeliveryDate(dateStr: string): string {
   }
 }
 
-function hasDeliveryDetails(tab: SubOrderFull): boolean {
-  return !!(
-    tab.deliveryDate &&
-    tab.deliveryDate !== 'TBD' &&
-    tab.deliveryDateConfirmed &&
-    tab.deliveryAddress?.address1
-  );
+/** Whether the tab has a confirmed delivery date (vs. the placeholder default). */
+function hasConfirmedDate(tab: SubOrderFull): boolean {
+  return !!(tab.deliveryDate && tab.deliveryDate !== 'TBD' && tab.deliveryDateConfirmed);
 }
 
 const PARTY_TYPE_LABELS: Record<string, string> = {
@@ -145,10 +141,14 @@ export default function DeliveryHeroSection({
   const heroTitle = activeTab.name
     || getTabLabel(activeTab, activeTabIndex);
 
-  const hasDetails = hasDeliveryDetails(activeTab);
-  const deliveryDate = formatDeliveryDate(activeTab.deliveryDate);
-  const deliveryTime = activeTab.deliveryTime && activeTab.deliveryTime !== 'TBD' ? activeTab.deliveryTime : '';
+  const dateConfirmed = hasConfirmedDate(activeTab);
   const addr = activeTab.deliveryAddress;
+  const hasAddress = !!addr?.address1;
+  // Show the details block if we have EITHER a confirmed date or a pre-filled
+  // address (e.g. a partner-seeded marina address, shown before the host picks a date).
+  const hasDetails = dateConfirmed || hasAddress;
+  const deliveryDate = dateConfirmed ? formatDeliveryDate(activeTab.deliveryDate) : '';
+  const deliveryTime = dateConfirmed && activeTab.deliveryTime && activeTab.deliveryTime !== 'TBD' ? activeTab.deliveryTime : '';
 
   function getTabLabel(tab: SubOrderFull, index: number): string {
     // Treat "Location N" as a default -- override with party type label for first tab
@@ -300,7 +300,7 @@ export default function DeliveryHeroSection({
                   <span className="truncate">
                     {deliveryDate}
                     {deliveryTime ? ` at ${deliveryTime}` : ''}
-                    {addr?.address1 ? ` \u2022 ${addr.address1}${addr.city ? ', ' + addr.city : ''}` : ''}
+                    {addr?.address1 ? `${deliveryDate ? ' \u2022 ' : ''}${addr.address1}${addr.city ? ', ' + addr.city : ''}` : ''}
                   </span>
                 </>
               ) : (
@@ -353,13 +353,23 @@ export default function DeliveryHeroSection({
               {/* Delivery details */}
               {hasDetails ? (
                 <div className="text-sm text-gray-600 space-y-1.5">
-                  {deliveryDate && (
+                  {deliveryDate ? (
                     <div className="flex items-center gap-2">
                       <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                       <span>{deliveryDate}{deliveryTime ? ` at ${deliveryTime}` : ''}</span>
                     </div>
+                  ) : (
+                    <button
+                      onClick={onEditDelivery}
+                      className="flex items-center gap-2 text-brand-blue hover:text-blue-700 font-medium"
+                    >
+                      <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <span>Add your delivery date</span>
+                    </button>
                   )}
                   {addr?.address1 && (
                     <div className="flex items-center gap-2">

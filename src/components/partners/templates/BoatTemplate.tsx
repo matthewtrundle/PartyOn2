@@ -12,6 +12,10 @@ type BoatTemplateProps = CategoryTemplateProps & {
   subhead?: ReactNode;
   /** Where every CTA button points. Defaults to /order; partners deep-link to /order?ref=CODE&p=boat&d=boat. */
   ctaHref?: string;
+  /** Full-bleed hero background image. Defaults to the shared PoD boat hero. */
+  heroBackgroundImage?: string;
+  /** Render the partner logo on a white rounded chip (for full-color logos) instead of the white-recolored treatment. */
+  logoLightChip?: boolean;
 };
 
 const BOAT_TESTIMONIALS = [
@@ -83,9 +87,10 @@ function StarIcon() {
   );
 }
 
-export function BoatTemplate({ affiliate, partnerLogo, partnerHeroImage, headline, subhead, ctaHref }: BoatTemplateProps) {
+export function BoatTemplate({ affiliate, partnerLogo, partnerHeroImage, headline, subhead, ctaHref, heroBackgroundImage, logoLightChip }: BoatTemplateProps) {
   const { businessName } = affiliate;
   const heroImage = partnerHeroImage || '/images/boat-heroes/boat-party-epic-sunset.webp';
+  const heroBg = heroBackgroundImage || '/images/boat-heroes/boat-party-epic-sunset.webp';
   const cta = ctaHref ?? '/order';
 
   return (
@@ -95,7 +100,7 @@ export function BoatTemplate({ affiliate, partnerLogo, partnerHeroImage, headlin
       {/* HERO */}
       <section className="relative overflow-hidden">
         <Image
-          src="/images/boat-heroes/boat-party-epic-sunset.webp"
+          src={heroBg}
           alt={`${businessName} x Party On Delivery - boat party on the lake`}
           fill
           className="object-cover"
@@ -109,13 +114,25 @@ export function BoatTemplate({ affiliate, partnerLogo, partnerHeroImage, headlin
             <div className="order-1 text-center">
               {partnerLogo && (
                 <div className="mb-6">
-                  <Image
-                    src={partnerLogo}
-                    alt={`${businessName} logo`}
-                    width={240}
-                    height={240}
-                    className="h-40 md:h-48 w-auto object-contain mx-auto drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] brightness-110"
-                  />
+                  {logoLightChip ? (
+                    <div className="inline-block bg-white rounded-2xl p-4 md:p-5 shadow-xl">
+                      <Image
+                        src={partnerLogo}
+                        alt={`${businessName} logo`}
+                        width={240}
+                        height={240}
+                        className="h-28 md:h-36 w-auto object-contain mx-auto"
+                      />
+                    </div>
+                  ) : (
+                    <Image
+                      src={partnerLogo}
+                      alt={`${businessName} logo`}
+                      width={240}
+                      height={240}
+                      className="h-40 md:h-48 w-auto object-contain mx-auto drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] brightness-110"
+                    />
+                  )}
                 </div>
               )}
 
