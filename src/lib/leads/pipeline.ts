@@ -84,13 +84,14 @@ export function matchFloor(lead: { createdAt: Date; reopenedAt: Date | null }): 
 }
 
 async function appendStageEvent(
+  db: Prisma.TransactionClient,
   leadId: string,
   from: PipelineStage | null,
   to: PipelineStage,
   via: StageChangeVia,
   extra?: Record<string, unknown>,
 ): Promise<void> {
-  await prisma.leadEvent.create({
+  await db.leadEvent.create({
     data: {
       leadId,
       type: 'CUSTOM',
@@ -197,15 +198,23 @@ export async function transitionStage(
     return { ok: true, moved: false, reason: 'not-in-from-stage', lead };
   }
 
-  const updated = await prisma.lead.updateMany({
-    where: { id: leadId, pipelineStage: lead.pipelineStage },
-    data: stageSideEffects(from, to, opts, now),
+  // Stage write + audit event commit together — a crash between them must
+  // not leave a stage change with no stage.changed event (deferred review
+  // finding). Rescore stays OUTSIDE: it is deliberately best-effort and must
+  // not roll back a landed move.
+  const moved = await prisma.$transaction(async (tx) => {
+    const updated = await tx.lead.updateMany({
+      where: { id: leadId, pipelineStage: lead.pipelineStage },
+      data: stageSideEffects(from, to, opts, now),
+    });
+    if (updated.count === 0) return false;
+    await appendStageEvent(tx, leadId, from, to, opts.via, opts.eventExtra);
+    return true;
   });
-  if (updated.count === 0) {
+  if (!moved) {
     return { ok: true, moved: false, reason: 'concurrent-change' };
   }
 
-  await appendStageEvent(leadId, from, to, opts.via, opts.eventExtra);
   await recomputeLeadScore(leadId).catch(() => undefined);
   const fresh = await prisma.lead.findUnique({ where: { id: leadId } });
   return { ok: true, moved: true, lead: fresh ?? undefined };
@@ -224,16 +233,22 @@ export async function enrollLeadIfEligible(
   if (!lead || lead.pipelineStage !== null) return false;
   if (!isBoardEligible(lead, { allowPartial: opts.allowPartial })) return false;
 
-  const updated = await prisma.lead.updateMany({
-    where: { id: leadId, pipelineStage: null },
-    data: {
-      pipelineStage: 'NEW',
-      stageChangedAt: now,
-      boardSortOrder: topSortOrder(now),
-    },
+  // Same atomicity rule as transitionStage: enroll + its audit event commit
+  // together.
+  const enrolled = await prisma.$transaction(async (tx) => {
+    const updated = await tx.lead.updateMany({
+      where: { id: leadId, pipelineStage: null },
+      data: {
+        pipelineStage: 'NEW',
+        stageChangedAt: now,
+        boardSortOrder: topSortOrder(now),
+      },
+    });
+    if (updated.count === 0) return false;
+    await appendStageEvent(tx, leadId, null, 'NEW', opts.via ?? 'enroll');
+    return true;
   });
-  if (updated.count === 0) return false;
-  await appendStageEvent(leadId, null, 'NEW', opts.via ?? 'enroll');
+  if (!enrolled) return false;
   await recomputeLeadScore(leadId).catch(() => undefined);
   return true;
 }
@@ -348,6 +363,29 @@ export async function sweepQuoteSent(): Promise<number> {
 }
 
 /**
+ * Identity clauses + date floor for the won-order match, extracted pure so
+ * the SQL inputs are testable without a database: email matches
+ * case-insensitively, phone matches on the last 10 digits, and a lead with
+ * neither yields no clauses (the caller must then skip the query).
+ */
+export function wonOrderIdentity(lead: {
+  email: string | null;
+  phone: string | null;
+  createdAt: Date;
+  reopenedAt: Date | null;
+}): { floor: Date; identity: Prisma.Sql[] } {
+  const identity: Prisma.Sql[] = [];
+  if (lead.email) identity.push(Prisma.sql`LOWER(customer_email) = LOWER(${lead.email})`);
+  const last10 = phoneLast10(lead.phone);
+  if (last10) {
+    identity.push(
+      Prisma.sql`RIGHT(REGEXP_REPLACE(COALESCE(customer_phone, ''), '\\D', '', 'g'), 10) = ${last10}`,
+    );
+  }
+  return { floor: matchFloor(lead), identity };
+}
+
+/**
  * High-confidence paid-order match for one lead: email (case-insensitive) or
  * last-10-digit phone, created on/after the lead (or its reopen), and NOT a
  * GroupOrderV2 participant payment (a $40 guest chip-in is not a won party —
@@ -359,15 +397,7 @@ async function findWonOrder(lead: {
   createdAt: Date;
   reopenedAt: Date | null;
 }): Promise<{ id: string } | null> {
-  const floor = matchFloor(lead);
-  const last10 = phoneLast10(lead.phone);
-  const identity: Prisma.Sql[] = [];
-  if (lead.email) identity.push(Prisma.sql`LOWER(customer_email) = LOWER(${lead.email})`);
-  if (last10) {
-    identity.push(
-      Prisma.sql`RIGHT(REGEXP_REPLACE(COALESCE(customer_phone, ''), '\\D', '', 'g'), 10) = ${last10}`,
-    );
-  }
+  const { floor, identity } = wonOrderIdentity(lead);
   if (identity.length === 0) return null;
   const rows = await prisma.$queryRaw<Array<{ id: string }>>`
     SELECT id FROM orders
@@ -404,23 +434,28 @@ export async function sweepWonMatches(): Promise<number> {
   for (const lead of leads) {
     const order = await findWonOrder(lead);
     if (!order) continue;
+    const from = isPipelineStage(lead.pipelineStage) ? lead.pipelineStage : null;
     // Guarded update — concurrent sweeps / a staff drag serialize on the row
     // and the loser's WHERE no longer matches (READ COMMITTED re-check).
-    const updated = await prisma.lead.updateMany({
-      where: { id: lead.id, pipelineStage: { in: [...ACTIVE_STAGES] } },
-      data: {
-        pipelineStage: 'WON',
-        stageChangedAt: now,
-        wonAt: now,
-        orderId: order.id,
-        status: 'CONVERTED',
-        boardSortOrder: topSortOrder(now),
-      },
+    // Wrapped with its audit event so the two commit together.
+    const wonMove = await prisma.$transaction(async (tx) => {
+      const updated = await tx.lead.updateMany({
+        where: { id: lead.id, pipelineStage: { in: [...ACTIVE_STAGES] } },
+        data: {
+          pipelineStage: 'WON',
+          stageChangedAt: now,
+          wonAt: now,
+          orderId: order.id,
+          status: 'CONVERTED',
+          boardSortOrder: topSortOrder(now),
+        },
+      });
+      if (updated.count === 0) return false;
+      await appendStageEvent(tx, lead.id, from, 'WON', 'order', { orderId: order.id });
+      return true;
     });
-    if (updated.count === 0) continue;
+    if (!wonMove) continue;
     won++;
-    const from = isPipelineStage(lead.pipelineStage) ? lead.pipelineStage : null;
-    await appendStageEvent(lead.id, from, 'WON', 'order', { orderId: order.id });
     await recomputeLeadScore(lead.id).catch(() => undefined);
   }
   return won;

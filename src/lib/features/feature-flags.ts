@@ -47,6 +47,12 @@ export const FEATURE_FLAGS = {
   // "postponed" state. Set by the deadline cron or the operator; reset to
   // resume selling. See src/lib/full-moon/event-state.ts.
   FULL_MOON_POSTPONED: 'full_moon_postponed',
+
+  // Not a rollout flag — a debounce stamp. The row's updatedAt records when
+  // the operator was last emailed about CoreLinq ingest failures, so a CRM
+  // outage alerts once per window instead of once per form submit. See
+  // src/lib/webhooks/corelinq-alert.ts.
+  CORELINQ_INGEST_ALERTED: 'corelinq_ingest_alerted',
 } as const;
 
 export type FeatureFlagKey = (typeof FEATURE_FLAGS)[keyof typeof FEATURE_FLAGS];

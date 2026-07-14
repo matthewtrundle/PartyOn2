@@ -5,6 +5,8 @@
  * No-ops silently when GHL_ORDER_WEBHOOK_URL is not set.
  */
 
+import { alertCoreLinqIngestFailure } from './corelinq-alert';
+
 const GHL_WEBHOOK_URL = process.env.GHL_ORDER_WEBHOOK_URL;
 const GHL_REVIEW_WEBHOOK_URL = process.env.GHL_REVIEW_WEBHOOK_URL;
 const GHL_DASHBOARD_WEBHOOK_URL = process.env.GHL_DASHBOARD_WEBHOOK_URL;
@@ -122,7 +124,8 @@ function buildItemsSummary(
  * only this fires. The payload must carry an `event` discriminator — the
  * ingest route switches on it.
  *
- * Fire-and-forget: logs errors, never throws. No-ops silently when
+ * Fire-and-forget: logs errors + emails the operator (debounced, see
+ * corelinq-alert.ts) on failure, never throws. No-ops silently when
  * CORELINQ_INGEST_URL is not set.
  */
 export async function postToCoreLinq<T extends { event: string }>(
@@ -137,14 +140,21 @@ export async function postToCoreLinq<T extends { event: string }>(
       body: JSON.stringify(payload),
       // These fan-outs are AWAITED on customer form-submit paths (Vercel
       // freezes un-awaited work) — a slow/down CRM must not hold the
-      // customer's response hostage.
-      signal: AbortSignal.timeout(3000),
+      // customer's response hostage. 1500ms per the cutover review: the
+      // ingest route is a single upsert, so anything slower IS an outage.
+      signal: AbortSignal.timeout(1500),
     });
     if (!res.ok) {
-      console.error('[CoreLinq Ingest] Failed:', payload.event, res.status, await res.text());
+      const body = await res.text();
+      console.error('[CoreLinq Ingest] Failed:', payload.event, res.status, body);
+      await alertCoreLinqIngestFailure(payload.event, `HTTP ${res.status}: ${body}`);
     }
   } catch (err) {
     console.error('[CoreLinq Ingest] Error:', payload.event, err);
+    await alertCoreLinqIngestFailure(
+      payload.event,
+      err instanceof Error ? `${err.name}: ${err.message}` : String(err),
+    );
   }
 }
 
