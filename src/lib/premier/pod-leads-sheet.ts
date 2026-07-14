@@ -119,13 +119,25 @@ function getSheetsClient() {
 export async function appendLeadToPodLeadsSheet(
   row: PodLeadSheetRow,
 ): Promise<boolean> {
+  return (await appendLeadsToPodLeadsSheet([row])) === 1;
+}
+
+/**
+ * Batch variant — appends many rows in ONE Sheets API call (used by the
+ * 60-day backfill script; one call instead of hundreds). Returns the
+ * number of rows appended, 0 on failure. Never throws.
+ */
+export async function appendLeadsToPodLeadsSheet(
+  rows: PodLeadSheetRow[],
+): Promise<number> {
+  if (rows.length === 0) return 0;
   const client = getSheetsClient();
   if (!client) {
     console.warn(
       '[pod-leads-sheet] Missing env vars — skipping sheet append. ' +
         'Required: PREMIER_SHEET_SERVICE_ACCOUNT_EMAIL, PREMIER_SHEET_SERVICE_ACCOUNT_KEY, POD_LEADS_SHEET_ID',
     );
-    return false;
+    return 0;
   }
 
   try {
@@ -134,12 +146,39 @@ export async function appendLeadToPodLeadsSheet(
       range: `'${TAB_NAME}'!A:Z`,
       valueInputOption: 'USER_ENTERED',
       insertDataOption: 'INSERT_ROWS',
-      requestBody: { values: [rowFromLead(row)] },
+      requestBody: { values: rows.map(rowFromLead) },
     });
-    return true;
+    return rows.length;
   } catch (err) {
     console.error('[pod-leads-sheet] Append failed:', err);
-    return false;
+    return 0;
+  }
+}
+
+/**
+ * Read the Lead URL column (last col) of every existing row so the
+ * backfill can skip leads that already landed via live mirroring.
+ * Returns an empty set on failure — caller treats that as "no dedupe
+ * info" and should abort rather than double-write.
+ */
+export async function readExistingLeadUrls(): Promise<Set<string> | null> {
+  const client = getSheetsClient();
+  if (!client) return null;
+  try {
+    const res = await client.sheets.spreadsheets.values.get({
+      spreadsheetId: client.sheetId,
+      range: `'${TAB_NAME}'!N:N`,
+      valueRenderOption: 'FORMATTED_VALUE',
+    });
+    const urls = new Set<string>();
+    for (const row of res.data.values ?? []) {
+      const v = row[0];
+      if (typeof v === 'string' && v.trim()) urls.add(v.trim());
+    }
+    return urls;
+  } catch (err) {
+    console.error('[pod-leads-sheet] readExistingLeadUrls failed:', err);
+    return null;
   }
 }
 
