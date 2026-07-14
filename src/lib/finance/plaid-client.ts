@@ -194,6 +194,142 @@ export async function removeItem(accessToken: string): Promise<void> {
   await client.itemRemove({ access_token: accessToken });
 }
 
+// ---------------------------------------------------------------------------
+// Webhook signature verification
+// ---------------------------------------------------------------------------
+
+/** Verification keys cached by kid — Plaid rotates rarely; refetch daily. */
+const webhookKeyCache = new Map<string, { jwk: Record<string, unknown>; fetchedAt: number }>();
+const WEBHOOK_KEY_TTL_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Anti-amplification guards (security review): the kid comes from an
+ * ATTACKER-CONTROLLED header, and each unknown kid would otherwise cost a live
+ * authenticated Plaid API call — a flood of random kids could exhaust our
+ * Plaid quota and break legitimate verification.
+ * - Negative cache: a kid that failed to resolve is not retried for 60s.
+ * - Global budget: at most 10 key fetches per rolling minute, fail-closed
+ *   beyond it (Plaid retries webhooks, so a legit fetch delayed by an active
+ *   flood only postpones a sync). Legitimate traffic uses ~1 kid per key
+ *   rotation, so the budget is generous.
+ */
+const webhookKeyNegativeCache = new Map<string, number>(); // kid → failedAt
+const WEBHOOK_KEY_NEGATIVE_TTL_MS = 60 * 1000;
+const WEBHOOK_KEY_FETCH_BUDGET = 10;
+const WEBHOOK_KEY_FETCH_WINDOW_MS = 60 * 1000;
+let keyFetchTimestamps: number[] = [];
+
+/** Test-only: reset module-level verification state between test cases. */
+export function __resetWebhookVerificationState(): void {
+  webhookKeyCache.clear();
+  webhookKeyNegativeCache.clear();
+  keyFetchTimestamps = [];
+}
+
+/** Production key fetcher: Plaid's /webhook_verification_key/get by kid. */
+async function fetchPlaidWebhookKey(kid: string): Promise<Record<string, unknown>> {
+  const client = createClient();
+  const res = await client.webhookVerificationKeyGet({ key_id: kid });
+  return res.data.key as unknown as Record<string, unknown>;
+}
+
+/**
+ * Verify a Plaid webhook: the `plaid-verification` header is an ES256 JWT
+ * whose payload carries `request_body_sha256` — the SHA-256 of the EXACT raw
+ * request body. Verification therefore requires the raw text, not the parsed
+ * JSON. Checks, all fail-closed:
+ *   1. alg pinned to ES256 (a token claiming any other alg is rejected before
+ *      any key is fetched — no algorithm-confusion surface);
+ *   2. signature against Plaid's published key for the token's kid (fetched
+ *      via /webhook_verification_key/get, cached 24h);
+ *   3. iat freshness ≤ 5 minutes (Plaid's own guidance — bounds replay);
+ *   4. body hash equality, constant-time.
+ *
+ * `getKey` is injectable so the crypto path is unit-testable with a local
+ * keypair; production uses the Plaid fetcher.
+ */
+export async function verifyPlaidWebhookJwt(
+  rawBody: string,
+  token: string,
+  getKey: (kid: string) => Promise<Record<string, unknown>> = fetchPlaidWebhookKey
+): Promise<{ ok: boolean; reason: string }> {
+  const { decodeProtectedHeader, importJWK, jwtVerify } = await import('jose');
+  const { createHash, timingSafeEqual } = await import('crypto');
+
+  let kid: string;
+  try {
+    const header = decodeProtectedHeader(token);
+    if (header.alg !== 'ES256') {
+      return { ok: false, reason: `unexpected alg ${String(header.alg)}` };
+    }
+    if (!header.kid || typeof header.kid !== 'string') {
+      return { ok: false, reason: 'missing kid' };
+    }
+    kid = header.kid;
+  } catch {
+    return { ok: false, reason: 'malformed verification JWT' };
+  }
+
+  let jwk: Record<string, unknown>;
+  const cached = webhookKeyCache.get(kid);
+  if (cached && Date.now() - cached.fetchedAt < WEBHOOK_KEY_TTL_MS) {
+    jwk = cached.jwk;
+  } else {
+    // Negative cache: don't re-fetch a kid that just failed.
+    const failedAt = webhookKeyNegativeCache.get(kid);
+    if (failedAt && Date.now() - failedAt < WEBHOOK_KEY_NEGATIVE_TTL_MS) {
+      return { ok: false, reason: 'verification key recently failed to resolve (negative cache)' };
+    }
+    // Global fetch budget: bound total outbound key lookups per minute.
+    const windowStart = Date.now() - WEBHOOK_KEY_FETCH_WINDOW_MS;
+    keyFetchTimestamps = keyFetchTimestamps.filter((t) => t > windowStart);
+    if (keyFetchTimestamps.length >= WEBHOOK_KEY_FETCH_BUDGET) {
+      return { ok: false, reason: 'verification key fetch budget exhausted — retry later' };
+    }
+    keyFetchTimestamps.push(Date.now());
+    try {
+      jwk = await getKey(kid);
+      webhookKeyCache.set(kid, { jwk, fetchedAt: Date.now() });
+      webhookKeyNegativeCache.delete(kid);
+    } catch (err) {
+      webhookKeyNegativeCache.set(kid, Date.now());
+      // Bound the negative cache so a kid flood can't grow memory unboundedly.
+      if (webhookKeyNegativeCache.size > 200) {
+        const oldest = webhookKeyNegativeCache.keys().next().value;
+        if (oldest !== undefined) webhookKeyNegativeCache.delete(oldest);
+      }
+      return {
+        ok: false,
+        reason: `verification key fetch failed: ${err instanceof Error ? err.message : String(err)}`,
+      };
+    }
+  }
+
+  let payload: Record<string, unknown>;
+  try {
+    const key = await importJWK(jwk as Parameters<typeof importJWK>[0], 'ES256');
+    const verified = await jwtVerify(token, key, {
+      algorithms: ['ES256'],
+      maxTokenAge: '5 minutes',
+    });
+    payload = verified.payload as Record<string, unknown>;
+  } catch {
+    return { ok: false, reason: 'signature or freshness verification failed' };
+  }
+
+  const expected = payload.request_body_sha256;
+  if (typeof expected !== 'string' || expected.length === 0) {
+    return { ok: false, reason: 'missing request_body_sha256 claim' };
+  }
+  const actual = createHash('sha256').update(rawBody).digest('hex');
+  const a = Buffer.from(actual, 'utf8');
+  const b = Buffer.from(expected.toLowerCase(), 'utf8');
+  if (a.length !== b.length || !timingSafeEqual(a, b)) {
+    return { ok: false, reason: 'request body hash mismatch' };
+  }
+  return { ok: true, reason: 'verified' };
+}
+
 /**
  * Update the webhook URL on an already-linked Item. Used for the one-shot
  * backfill that wires the webhook on every existing PlaidItem (which were
