@@ -1,0 +1,11 @@
+SEMrush Keyword Magic Tool — seed: "how much alcohol for party" — db=us — captured 2026-07-09
+Cluster totals: All keywords: 108 | Total Volume: 730 | Average KD: 15%
+Columns: keyword | intent | volume | KD% | CPC | SERP-feature-count
+
+how much alcohol to buy for a party | I | 140 | 19 | 0.58 | 4
+how much alcohol for a party | I | 50 | 23 | 0.64 | 5
+how much alcohol to buy for party | I | 40 | 5 | 0.66 | 7
+how much alcohol for a party of 50 | I | 30 | 14 | 1.60 | 7
+(long tail 10-20/mo: guest-count + calculator variants)
+
+CORPORATE NOTE: "office" appears in exactly 1 keyword ("how much alcohol should i get for an office party") at 0 volume. "christmas party" variant also 0. Corporate/office alcohol-quantity searches are effectively nonexistent on Google.

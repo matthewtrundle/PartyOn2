@@ -1,0 +1,26 @@
+SEMrush Keyword Magic Tool — seed: "how much alcohol for wedding" — db=us — captured 2026-07-09
+Cluster totals: All keywords: 264 | Total Volume: 3,580 | Average KD: 10%
+Columns: keyword | intent | volume | KD% | CPC | SERP-feature-count | freshness
+
+how much alcohol to buy for a wedding | I | 390 | 7 | 0.37 | 5 | 1 month
+how much alcohol to buy for wedding | I | 210 | 7 | 0.60 | 6 | 1 month
+how much alcohol for wedding | I | 170 | 5 | 0.47 | 6 | 2 weeks
+how much alcohol to order for a wedding | I | 110 | 12 | 0.37 | 4 | 1 month
+how much is alcohol for a wedding | I | 110 | 10 | 0.47 | 7 | 3 weeks
+how much alcohol for a wedding of 100 | I | 90 | 5 | 0.40 | 5 | 1 month
+how much alcohol for a wedding | I | 70 | 17 | 0.54 | 6 | 1 month
+how much does alcohol cost for a wedding | I | 70 | 12 | 0.72 | 6 | 3 weeks
+how much does alcohol cost for wedding | I | 70 | 17 | 0.80 | 6 | 1 month
+how much will alcohol cost for a wedding | I | 70 | 22 | 0.80 | 7 | 1 month
+how much alcohol do i need for my wedding | I | 50 | 5 | 0.00 | 5 | 1 month
+how much alcohol for wedding calculator | I | 50 | 9 | 0.00 | 5 | 1 month
+how much alcohol should you buy for a wedding | I | 50 | 3 | 0.00 | 5 | 1 month
+how much alcohol for a wedding calculator | I | 40 | 10 | 0.00 | 5 | 1 month
+how much alcohol for a wedding of 150 | n/a | 40 | n/a | 0.15 | needs refresh
+calculating how much alcohol to buy for a wedding | I | 30 | 14 | 1.05 | 6 | 1 month
+how much alcohol for my wedding | n/a | 30 | n/a | 0.00 | needs refresh
+how much alcohol for wedding of 100 | n/a | 30 | n/a | 0.18 | needs refresh
+how much alcohol should i buy for my wedding | n/a | 30 | n/a | 0.00 | needs refresh
+(long tail continues at 20/mo each: ~80 guest-count and phrasing variants, all n/a KD pending refresh)
+
+Notable modifier groups (keyword count): buy 53, person 42, cost 27, need 27, "100" 26, "150" 24, guest 21, "200" 16, calculator 16, spend 12, reception 10, budget 7

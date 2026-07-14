@@ -1,0 +1,54 @@
+SEMrush Keyword Magic Tool — QUESTIONS tab — seed: "bachelorette party" — db=us — captured 2026-07-10
+Cluster totals: 2,877 question keywords | Total Volume: 38,630/mo | Average KD: 13%
+Columns: keyword | intent | volume | KD% | CPC
+(page 1 of 29, sorted by volume — top ~100 rows)
+
+what is a bachelorette party | I | 2400 | 28 | 0.00
+is ybor city safe bachelorette party | n/a | 1900 | n/a | (tampa-specific, ignore)
+who pays for bachelorette party | I | 880 | 11 | 0.00
+how to plan a bachelorette party | I | 480 | 11 | 1.28
+who plans the bachelorette party | I | 390 | 16 | 1.64
+do you bring a gift to a bachelorette party | I | 320 | 12 | 0.15
+what to put in bachelorette party bags | I | 320 | 23 | 0.42
+what to wear to a bachelorette party | I | 320 | 18 | 0.40
+what's a bachelorette party | I | 320 | 12 | 0.00
+what happens at bachelorette parties | I | 260 | 12 | 0.00
+what to do for a bachelorette party | I | 260 | 21 | 0.41
+when is a bachelorette party | I | 260 | 14 | 0.00
+what to wear on a bachelorette party | I | 210 | 23 | 0.40
+when do you have a bachelorette party | I | 210 | 13 | 0.00
+when to have bachelorette party | I | 210 | 15 | 0.00
+who pays for the bachelorette party | I | 210 | 12 | 0.00
+how to organize a bachelorette party | I | 170 | 14 | 1.28
+what to do bachelorette party | I | 170 | 26 | 0.41
+when to have bridal shower and bachelorette party | I | 170 | 10 | 0.42
+what to bring to a bachelorette party | I | 140 | 6 | 0.18
+what's the difference between a bridal shower and bachelorette party | I | 140 | 16 | 0.01
+when should a/the bachelorette party be (4 variants) | I | 140 each | 7-13 | 0.00
+where to go for bachelorette party | I | 140 | 23 | 0.36
+who is invited to bachelorette party | I | 140 | 28 | 0.00
+who to invite to bachelorette party | I | 140 | 15 | 0.00
+does the bride pay for bachelorette party | I | 110 | 8 | 0.00
+what do you do at a bachelorette party | I | 110 | 11 | 0.06
+what to do for/in bachelorette party (variants) | I | 110 each | 18-19 | 0.41
+when to do bachelorette party | I | 110 | 6 | 0.00
+who pays for a bachelorette party | I | 110 | 12 | 0.00
+how to plan bachelorette party | I | 90 | 16 | 1.28
+must haves for a bachelorette party | I | 90 | 13 | 0.45
+what to get bride for bachelorette party | C | 90 | 18 | 0.52
+how long are bachelorette parties | I | 70 | 23 | 0.00
+how long is a bachelorette party | I | 70 | 23 | 0.00
+how long before the wedding is the bachelorette party | I | 70 | 7 | 0.00
+how much does a bachelorette party cost | I | 70 | 25 | 0.00
+does the maid of honor pay for the bachelorette party | I | 70 | 10 | 0.00
+where to have a bachelorette party | I/C | 70 | 17 | 0.86
+(+ long tail: gift/invite/supplies/timing variants 70-140/mo each)
+
+Modifier groups (kw count): plan 178, bride 177, gift 175, pay 140, wear 129, go 128, invitation 127, stay 107, much 77, throw 74, far 59, cost 35, book 29, austin 25
+
+QUESTION THEMES BY COMBINED VOLUME:
+1. definition/what-happens (~4,500/mo) — "what is", "what happens at" — top-funnel
+2. who-pays/cost (~1,700/mo, KD 8-25) — who pays, does bride pay, MOH pay, how much cost
+3. planning/how-to (~1,400/mo, KD 11-16) — how to plan/organize, who plans
+4. timing (~1,600/mo, KD 6-26) — when to have, how long before wedding, how long is
+5. etiquette: gifts/invites/wear (~2,500/mo) — bring a gift?, who to invite, what to wear

@@ -1,0 +1,19 @@
+SEMrush Keyword Magic Tool — seed: "bachelorette party drinks" — db=us — captured 2026-07-09
+Cluster totals: All keywords: 197 | Total Volume: 1,970 | Average KD: 8%
+Columns: keyword | intent | volume | KD% | CPC | SERP-feature-count
+
+bachelorette party drinking games | I | 260 | 16 | 0.21 | 7
+bachelorette party drinks | I | 210 | 4 | 0.32 | 7
+bachelorette party drink recipes | I | 140 | 6 | 0.37 | 5
+drink if bachelorette party game | C | 90 | 18 | 0.00 | 5
+bachelorette party drink if game | C | 70 | 8 | 0.00 | 5
+drinks for bachelorette party | I | 70 | 5 | 0.37 | 8
+non drinking bachelorette party ideas | I | 70 | 4 | 0.03 | 6
+bachelorette party drink ideas | I | 50 | 2 | 0.55 | 7
+bachelorette party drink markers | C | 40 | 19 | 0.34 | 5
+bachelorette party drinking game | n/a | 40 | pending
+drinking games for bachelorette party | C | 40 | 6 | 0.21 | 5
+bachelorette party signature drink | n/a | 20 | pending
+best bachelorette party drinks | n/a | 20 | pending
+where to order premixed spritz drinks for bachelorette party | n/a | 10 | pending
+(long tail: 10-30/mo recipe/game/name variants; notable modifier groups: game 54, ideas 21, fun 15, non 11, name 10, alcohol 8, signature 6, recipe 4)

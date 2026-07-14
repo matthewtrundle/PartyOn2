@@ -1,0 +1,16 @@
+SEMrush Keyword Magic Tool — seed: "bachelorette party alcohol" — db=us — captured 2026-07-09
+Cluster totals: All keywords: 53 | Total Volume: 420 | Average KD: n/a (most rows pending refresh)
+KEY FINDING: cluster is tiny and dominated by NON-alcoholic / alcohol-free intent (10 of 53 kws "non", 7 "without").
+
+Top rows (keyword | volume):
+non alcoholic bachelorette party ideas | 30
+alcohol for bachelorette party | 20
+alcohol free bachelorette party ideas | 20
+bachelorette party alcohol ideas | 20
+bachelorette party drinks alcoholic | 20
+how much alcohol to buy for bachelorette party | 20
+best alcohol for bachelorette party | 20
+bachelorette party alcohol delivery austin | 10
+how much alcohol for a bachelorette party | 10
+bachelorette party austin alcohol delivery | 0
+(rest of cluster: 0-20/mo, mostly no-alcohol variants)

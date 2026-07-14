@@ -1,0 +1,22 @@
+SEMrush Keyword Magic Tool — seed: "corporate event ideas" — db=us — captured 2026-07-09
+Cluster totals: All keywords: 1,285 | Total Volume: 13,450 | Average KD: 11%
+Columns: keyword | intent | volume | KD% | CPC | SERP-feature-count
+
+corporate event ideas | I | 1,900 | 20 | 3.95 | 10
+corporate team building event ideas | I | 1,000 | 44 | 3.13 | 8
+fun corporate event ideas | I | 480 | 28 | 3.88 | 6
+entertainment ideas for corporate events | I | 320 | 21 | 3.28 | 5
+ideas for corporate events | I | 320 | 9 | 3.95 | 6
+corporate event entertainment ideas | I | 260 | 16 | 3.28 | 5
+corporate event ideas for large groups | I | 260 | 13 | 4.51 | 6
+corporate events ideas | I | 260 | 11 | 3.00 | 7
+corporate networking event ideas | I | 210 | 12 | 0.00 | 7
+best corporate event ideas | C | 170 | 24 | 3.33 | 7
+corporate christmas event ideas | I | 140 | 15 | 1.94 | 6
+corporate social event ideas | I | 110 | 4 | 3.78 | 8
+corporate holiday event ideas | I | 50 | 14 | 4.60 | 6
+corporate holiday party event ideas | I | 40 | 16 | 2.89 | 7
+summer corporate event ideas | I | 70 | 2 | 4.51 | 5
+(1,285 kws total; city-modified variants 30-110/mo each — nyc, chicago, atlanta etc.; no Austin variant visible on page 1)
+
+FINDING: this is the real corporate cluster — 13.4k/mo, KD ~11 avg, CPC $3-5 (advertisers value it). Matches 2026-06 vidIQ finding that "corporate event ideas" wins on YouTube. Corporate video should target this broad term with a drinks/bar angle, not "corporate event drinks" (dead).
