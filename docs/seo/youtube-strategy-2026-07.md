@@ -49,6 +49,14 @@ Each video does two jobs. **On the landing page** it deepens the page that alrea
   5. CTA: happy-hour delivery + bartending → lander
 - **Positioning caveat (honest):** highest reach, weakest purchase intent, and CPC $3–5 says event *vendors* are the ones paying for this audience. Expect brand/discovery value more than direct orders; that's why it's third.
 
+## Distribution & targeting (added 2026-07-14)
+
+"Targeted to Austin" means three different things — the videos are built to work at all three layers without re-cutting:
+
+1. **Organic YouTube search: no geo-targeting exists.** Titles are deliberately BROAD because hyperlocal event terms have almost no YouTube volume (2026-06 vidIQ study + 2026-07 competitive reads; the one Austin-specific bachelorette short found has 2.5K views). Austin lives *inside* each video — venue names, Lake Travis footage, description, pinned comment, end-screen CTA to the lander. Out-of-market viewers cost nothing and their watch time helps ranking. Exception that proves the rule: the bach video's YouTube target IS "austin bachelorette party" — the one local phrasing verified as a top live autocomplete.
+2. **Landing-page embeds: Austin-targeted by construction.** Viewers on `/wedding-drink-calculator`, the bach landers, and the corporate pages arrived from Austin-intent searches or Austin ad clicks — this is the conversion layer and needs no targeting work.
+3. **Paid YouTube (if/when funded): the only layer with real geo-targeting, and it's a campaign setting, not a video property.** Build as a Google Ads video campaign targeting the **Austin DMA, presence-only**, mirroring the search campaigns — and apply the standard delivery-footprint exclusions (never target Round Rock, Pflugerville, Leander, Dripping Springs, Buda, Kyle). The per-question shorts are the ad creative (15–45s, question-first hooks); no separate cut needed. Use the per-occasion `lead_*` key events as conversion goals (never "Submit lead forms" — it double-counts).
+
 ## Production & measurement notes
 
 - **Channel reality check:** no posting integration exists anywhere in the stack; YouTube is embed-only today. Uploading is manual (that's fine — 3 videos).
