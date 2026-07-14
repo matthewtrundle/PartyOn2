@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactElement } from 'react';
+import { ReactElement, useEffect, useRef, useState } from 'react';
 import SegmentedControl from '@/components/backend/kit/SegmentedControl';
 import type { BoardFilters } from '@/lib/leads/board-types';
 
@@ -23,6 +23,19 @@ export default function BoardFilters({
   filters: BoardFilters;
   onChange: (next: BoardFilters) => void;
 }): ReactElement {
+  // Debounce the search box — every filter change triggers a board GET, and
+  // per-keystroke fetches waste server sweeps and can resolve out of order.
+  const [qDraft, setQDraft] = useState(filters.q ?? '');
+  const qTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => setQDraft(filters.q ?? ''), [filters.q]);
+  const onSearchChange = (value: string): void => {
+    setQDraft(value);
+    if (qTimer.current) clearTimeout(qTimer.current);
+    qTimer.current = setTimeout(() => {
+      onChange({ ...filters, q: value || undefined });
+    }, 300);
+  };
+
   return (
     <div className="flex flex-col md:flex-row md:items-center gap-2">
       <SegmentedControl
@@ -53,8 +66,8 @@ export default function BoardFilters({
         </select>
         <input
           type="search"
-          value={filters.q ?? ''}
-          onChange={(e) => onChange({ ...filters, q: e.target.value || undefined })}
+          value={qDraft}
+          onChange={(e) => onSearchChange(e.target.value)}
           placeholder="Search name, email, phone"
           className="flex-1 min-w-0 min-h-[44px] rounded-lg border border-white/20 bg-white/10 text-white placeholder:text-[#B7C4D0] text-base px-3"
           aria-label="Search leads"

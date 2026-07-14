@@ -171,7 +171,7 @@ export default function LeadDrawer({
             </section>
 
             <section className="mt-4 flex flex-wrap items-center gap-2 text-sm">
-              <label className="text-gray-500 font-semibold uppercase text-xs tracking-[0.08em]">Owner</label>
+              <label className="text-gray-600 font-semibold text-base">Owner</label>
               <select
                 value={lead.owner ?? ''}
                 onChange={(e) => void setOwner(e.target.value)}

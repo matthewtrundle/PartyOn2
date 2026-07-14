@@ -1,7 +1,8 @@
 /**
  * Client mutations for the Lead Flow board — stage moves, card metadata
- * patches — mirroring use-strategy-mutations. `mutating` suspends the board's
- * background refresh so an in-flight optimistic drag can't be clobbered.
+ * patches — mirroring use-strategy-mutations. `mutating` disables the
+ * drawer's action buttons while a call is in flight (the board has no
+ * background poll; data reloads after each mutation).
  */
 
 'use client';

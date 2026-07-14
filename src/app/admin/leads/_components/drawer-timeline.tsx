@@ -78,7 +78,7 @@ export default function DrawerTimeline({ detail }: { detail: LeadDetail }): Reac
           </HqBadge>
           <div className="min-w-0">
             <div className="text-gray-800">{entry.label}</div>
-            <div className="text-xs text-gray-400">
+            <div className="text-sm text-gray-400">
               {new Date(entry.at).toLocaleString('en-US', {
                 month: 'short',
                 day: 'numeric',

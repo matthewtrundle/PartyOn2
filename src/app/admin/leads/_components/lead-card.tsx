@@ -5,19 +5,14 @@ import { useDraggable } from '@dnd-kit/core';
 import HqBadge from '@/components/backend/kit/Badge';
 import type { BoardLead } from '@/lib/leads/board-types';
 import { SOURCE_LABELS } from '@/lib/leads/board-types';
+import { daysUntilCT } from '@/lib/leads/scoring';
 
-/** Days until the event, from YYYY-MM-DD (positive = future). */
-function daysUntil(dateStr: string): number {
-  const today = new Date();
-  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-  const ms = Date.parse(`${dateStr.slice(0, 10)}T12:00:00Z`) - Date.parse(`${todayStr}T12:00:00Z`);
-  return Math.round(ms / 86_400_000);
-}
-
+// Countdown uses the shared CT-safe date math (scoring.ts) — the business
+// runs on America/Chicago days, not the viewer's browser timezone.
 function eventChip(eventDate: string | null): string | null {
   if (!eventDate) return null;
-  const days = daysUntil(eventDate);
-  if (Number.isNaN(days)) return null;
+  const days = daysUntilCT(eventDate, new Date());
+  if (days == null) return null;
   if (days < 0) return `${Math.abs(days)}d ago`;
   if (days === 0) return 'Today';
   if (days === 1) return 'Tomorrow';
@@ -86,7 +81,7 @@ export default function LeadCard({
       <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-gray-600">
         {lead.occasion && <span className="capitalize">{lead.occasion.replace(/-/g, ' ')}</span>}
         {chip && (
-          <span className={daysUntil(lead.eventDate as string) < 0 ? 'text-gray-400' : 'text-brand-blue font-medium'}>
+          <span className={chip.endsWith('ago') ? 'text-gray-400' : 'text-brand-blue font-medium'}>
             {chip}
           </span>
         )}

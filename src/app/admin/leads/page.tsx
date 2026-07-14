@@ -5,8 +5,10 @@
  *
  * Every submitted lead lands here as a card: New → Contacted → Qualified →
  * Quote Sent → Won → Lost, scored cold/warm/hot. Deep-linkable via
- * ?lead=<id> (the URL GHL notifications carry). Data refreshes on demand and
- * after every mutation; refresh is suspended while a drag is in flight.
+ * ?lead=<id> (the URL GHL notifications carry). Data loads on open and after
+ * every mutation (no background poll); a request-sequence guard drops
+ * out-of-order responses, and a failed stage move re-syncs from the server
+ * rather than restoring a possibly-stale snapshot.
  */
 
 import { ReactElement, Suspense, useCallback, useEffect, useRef, useState } from 'react';
@@ -20,6 +22,8 @@ import BoardFiltersBar from './_components/board-filters';
 import LeadsBoard from './_components/leads-board';
 import LeadDrawer from './_components/lead-drawer';
 import { useLeadMutations } from './_components/use-lead-mutations';
+
+const TEMPS = ['hot', 'warm', 'cold'] as const;
 
 function filtersToQuery(f: BoardFilters): string {
   const params = new URLSearchParams();
@@ -36,17 +40,34 @@ function LeadsPageInner(): ReactElement {
   const search = useSearchParams();
   const router = useRouter();
   const [data, setData] = useState<BoardData | null>(null);
-  const [filters, setFilters] = useState<BoardFilters>(() => ({
-    temp: (search?.get('temp') as BoardFilters['temp']) ?? undefined,
-  }));
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [filters, setFilters] = useState<BoardFilters>(() => {
+    const temp = search?.get('temp');
+    return {
+      // Validate — a garbage ?temp= must not wedge the board in a 400 loop.
+      temp: TEMPS.includes(temp as (typeof TEMPS)[number])
+        ? (temp as BoardFilters['temp'])
+        : undefined,
+    };
+  });
   const [openLead, setOpenLead] = useState<string | null>(search?.get('lead') ?? null);
-  const snapshotRef = useRef<BoardData | null>(null);
+  // Out-of-order fetch guard: only the latest request may write state.
+  const loadSeqRef = useRef(0);
 
   const load = useCallback(async (): Promise<void> => {
-    const res = await fetch(`/api/v1/admin/leads/board?${filtersToQuery(filters)}`);
-    if (res.ok) {
-      const body = await res.json();
-      setData(body.data);
+    const seq = ++loadSeqRef.current;
+    try {
+      const res = await fetch(`/api/v1/admin/leads/board?${filtersToQuery(filters)}`);
+      if (seq !== loadSeqRef.current) return; // superseded by a newer request
+      if (res.ok) {
+        const body = await res.json();
+        setData(body.data);
+        setLoadFailed(false);
+      } else {
+        setLoadFailed(true);
+      }
+    } catch {
+      if (seq === loadSeqRef.current) setLoadFailed(true);
     }
   }, [filters]);
 
@@ -54,12 +75,17 @@ function LeadsPageInner(): ReactElement {
     void load();
   }, [load]);
 
+  // Deep links can also arrive via client-side nav while already mounted.
+  useEffect(() => {
+    const fromUrl = search?.get('lead') ?? null;
+    if (fromUrl) setOpenLead(fromUrl);
+  }, [search]);
+
   const mutations = useLeadMutations(load);
 
   const optimisticMove = useCallback((leadId: string, to: PipelineStage): void => {
     setData((prev) => {
       if (!prev) return prev;
-      snapshotRef.current = prev;
       const columns = Object.fromEntries(
         Object.entries(prev.columns).map(([k, cards]) => [k, cards.filter((c) => c.id !== leadId)]),
       ) as BoardData['columns'];
@@ -71,9 +97,11 @@ function LeadsPageInner(): ReactElement {
     });
   }, []);
 
+  // On a failed move, re-sync from the server — a stored snapshot could
+  // resurrect an older drag's state when two moves overlap (review #4).
   const rollback = useCallback((): void => {
-    if (snapshotRef.current) setData(snapshotRef.current);
-  }, []);
+    void load();
+  }, [load]);
 
   const openDrawer = (id: string): void => {
     setOpenLead(id);
@@ -121,6 +149,13 @@ function LeadsPageInner(): ReactElement {
               rollback={rollback}
             />
           </>
+        ) : loadFailed ? (
+          <div className="card text-center py-10">
+            <p className="text-gray-700">Couldn&apos;t load the board.</p>
+            <button type="button" onClick={() => void load()} className="btn-primary mt-3">
+              Try again
+            </button>
+          </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <SkeletonCard />

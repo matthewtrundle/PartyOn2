@@ -8,11 +8,11 @@
  * scan of lead_events.
  */
 
+import { Prisma, type Lead } from '@prisma/client';
 import { prisma } from '@/lib/database/client';
-import type { Lead } from '@prisma/client';
-import { extractLeadFacts, temperatureFor } from './scoring';
+import { dateStrCT, extractLeadFacts, temperatureFor, SCORE_THRESHOLDS } from './scoring';
 import { isNewsletterOnly, sweepEnrollSubmitted } from './pipeline';
-import { PIPELINE_STAGES, type PipelineStage } from './pipeline-types';
+import { ACTIVE_STAGES, PIPELINE_STAGES, type PipelineStage } from './pipeline-types';
 import type { BoardData, BoardFilters, BoardKpis, BoardLead } from './board-types';
 
 export type { BoardData, BoardFilters, BoardKpis, BoardLead } from './board-types';
@@ -28,19 +28,22 @@ function displayName(lead: Lead): string {
 function toBoardLead(
   lead: Lead,
   ctx: {
-    lastSubmitAt: Date | null;
     hasFollowUp: boolean;
     isDuplicate: boolean;
     now: Date;
   },
 ): BoardLead {
   const facts = extractLeadFacts(lead.metadata);
-  const lastSignal = ctx.lastSubmitAt ?? lead.createdAt;
+  // Same signal as getHotLeadsNeedingReply so the nav badge and the board's
+  // "Needs response" KPI can never disagree (review #9).
+  const lastSignal = lead.lastActivityAt ?? lead.createdAt;
   const needsResponse =
     lead.lastContactedAt === null || lastSignal > lead.lastContactedAt;
+  // CT calendar day, not UTC — a 7pm CT board view must not mark today's
+  // event as already passed (review #6).
   const eventPassed =
-    facts.eventDate != null && facts.eventDate < ctx.now.toISOString().slice(0, 10);
-  const quietMs = ctx.now.getTime() - (lead.lastActivityAt ?? lead.updatedAt).getTime();
+    facts.eventDate != null && facts.eventDate.slice(0, 10) < dateStrCT(ctx.now);
+  const quietMs = ctx.now.getTime() - (lead.lastActivityAt ?? lead.createdAt).getTime();
   const isOpenStage =
     lead.pipelineStage !== 'WON' && lead.pipelineStage !== 'LOST' && lead.pipelineStage !== null;
   return {
@@ -96,13 +99,18 @@ export async function getHotLeadsNeedingReply(): Promise<{
   count: number;
   oldestWaitHours: number | null;
 }> {
+  // Threshold + stage list interpolated from the shared constants (still
+  // bind parameters) so tweaking SCORE_THRESHOLDS never leaves this stale.
+  const stages = Prisma.join(ACTIVE_STAGES.map((s) => Prisma.sql`${s}`));
   const rows = await prisma.$queryRaw<
     Array<{ count: number; oldest: Date | null }>
   >`
-    SELECT COUNT(*)::int AS count, MIN(stage_changed_at) AS oldest
+    SELECT COUNT(*)::int AS count,
+           -- "waiting since" = the unanswered activity, not the stage age
+           MIN(COALESCE(last_activity_at, stage_changed_at)) AS oldest
     FROM leads
-    WHERE pipeline_stage IN ('NEW', 'CONTACTED', 'QUALIFIED', 'QUOTE_SENT')
-      AND lead_score >= 70
+    WHERE pipeline_stage IN (${stages})
+      AND lead_score >= ${SCORE_THRESHOLDS.hot}
       AND (snoozed_until IS NULL OR snoozed_until <= NOW())
       AND (
         last_contacted_at IS NULL
@@ -155,24 +163,11 @@ export async function getBoardData(filters: BoardFilters = {}): Promise<BoardDat
   const all = [...boarded, ...tray];
   const ids = all.map((l) => l.id);
 
-  const [submitAgg, followUps] = await Promise.all([
-    prisma.leadEvent.groupBy({
-      by: ['leadId'],
-      where: {
-        leadId: { in: ids },
-        type: { in: ['FORM_SUBMIT', 'CHECKOUT_START'] },
-      },
-      _max: { occurredAt: true },
-    }),
-    prisma.followUpJob.groupBy({
-      by: ['leadId'],
-      where: { leadId: { in: ids }, status: { in: ['scheduled', 'sent'] } },
-      _count: { _all: true },
-    }),
-  ]);
-  const lastSubmitByLead = new Map(
-    submitAgg.map((r) => [r.leadId, r._max.occurredAt]),
-  );
+  const followUps = await prisma.followUpJob.groupBy({
+    by: ['leadId'],
+    where: { leadId: { in: ids }, status: { in: ['scheduled', 'sent'] } },
+    _count: { _all: true },
+  });
   const followUpLeads = new Set(followUps.map((r) => r.leadId));
 
   const emailCounts = new Map<string, number>();
@@ -183,7 +178,6 @@ export async function getBoardData(filters: BoardFilters = {}): Promise<BoardDat
 
   const toCard = (lead: Lead): BoardLead =>
     toBoardLead(lead, {
-      lastSubmitAt: lastSubmitByLead.get(lead.id) ?? null,
       hasFollowUp: followUpLeads.has(lead.id),
       isDuplicate: (emailCounts.get(lead.email?.toLowerCase() ?? '') ?? 0) > 1,
       now,
