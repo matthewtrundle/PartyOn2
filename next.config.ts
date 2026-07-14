@@ -85,6 +85,12 @@ const nextConfig: NextConfig = {
         hostname: 'lirp.cdn-website.com',
         pathname: '/**',
       },
+      // Partner logos for bulk-imported affiliates (Affiliate.logoUrl)
+      {
+        protocol: 'https',
+        hostname: 'logo.clearbit.com',
+        pathname: '/**',
+      },
       {
         protocol: 'https',
         hostname: '**.cdn-website.com',

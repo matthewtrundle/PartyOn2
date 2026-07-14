@@ -16,8 +16,9 @@ export async function POST(
     const forwarded = request.headers.get('x-forwarded-for');
     const ip = forwarded?.split(',')[0]?.trim() || 'unknown';
 
-    // Fire-and-forget -- don't block the response on DB write
-    trackDashboardView(code, ip).catch((err) => {
+    // Awaited on purpose: un-awaited writes get killed by the serverless
+    // freeze when the response returns (same bug as the lead mirrors).
+    await trackDashboardView(code, ip).catch((err) => {
       console.error('[Track View] Error:', err);
     });
 

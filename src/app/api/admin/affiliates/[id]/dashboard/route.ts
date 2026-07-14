@@ -8,6 +8,7 @@ import { prisma } from '@/lib/database/client';
 import { requireOpsAuth } from '@/lib/auth/ops-session';
 import { CommissionStatus, GroupV2PaymentStatus } from '@prisma/client';
 import { getTierLabel, getTierProgress, getAnniversaryYearStart } from '@/lib/affiliates/commission-engine';
+import { getDashboardEngagement } from '@/lib/group-orders-v2/view-tracking';
 
 export async function GET(
   _request: NextRequest,
@@ -98,6 +99,7 @@ export async function GET(
               payments: true,
             },
           },
+          _count: { select: { participants: true } },
         },
       }),
       // Recent commissions for monthly stats
@@ -145,6 +147,7 @@ export async function GET(
     });
 
     // Build clientOrders (same format as /api/v1/affiliate/me/client-orders)
+    const engagement = await getDashboardEngagement(dashboardOrders.map((o) => o.shareCode));
     const now = new Date();
     const clientOrders = dashboardOrders.map((order) => {
       const hasPaidPayment = order.tabs.some((tab) =>
@@ -172,6 +175,12 @@ export async function GET(
         0
       );
 
+      const cartItemCount = order.tabs.reduce(
+        (sum, tab) => sum + tab.draftItems.reduce((s, item) => s + item.quantity, 0),
+        0
+      );
+      const eng = engagement.get(order.shareCode);
+
       return {
         id: order.id,
         type: 'dashboard' as const,
@@ -184,6 +193,12 @@ export async function GET(
         lifecycleStatus,
         dashboardUrl: `${appUrl}/dashboard/${order.shareCode}`,
         shareCode: order.shareCode,
+        // Engagement analytics
+        viewCount: eng?.uniqueVisitors ?? order.viewCount,
+        activeSeconds: eng?.totalActiveSeconds ?? 0,
+        lastActivityAt: eng?.lastActivityAt?.toISOString() ?? null,
+        participantCount: order._count.participants,
+        cartItemCount,
       };
     });
 

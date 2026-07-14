@@ -184,6 +184,24 @@ export default function DashboardPage(): ReactElement {
     fetch(`/api/v2/group-orders/${code}/track-view`, { method: 'POST' }).catch(() => {});
   }, [code]);
 
+  // Engagement heartbeat: every 30s while the tab is visible, credit
+  // 30s of active time so partners/admin can see time-on-dashboard.
+  useEffect(() => {
+    if (!code) return;
+    const HEARTBEAT_SECONDS = 30;
+    const ping = () => {
+      if (document.visibilityState !== 'visible') return;
+      fetch(`/api/v2/group-orders/${code}/heartbeat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ seconds: HEARTBEAT_SECONDS }),
+        keepalive: true,
+      }).catch(() => {});
+    };
+    const interval = setInterval(ping, HEARTBEAT_SECONDS * 1000);
+    return () => clearInterval(interval);
+  }, [code]);
+
   // Auto-load affiliate from cookie (with confetti on first apply)
   useEffect(() => {
     if (!code || !participantId) return;
