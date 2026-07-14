@@ -24,6 +24,7 @@ import { targetUrlFor } from '@/lib/eventQuiz/routing';
 import { recommendForChat } from '@/lib/chat/recommendation';
 import { isLastMinuteDate } from '@/lib/lastMinute/dates';
 import { mirrorLeadToSheet } from '@/lib/premier/pod-leads-sheet';
+import { mirrorLeadToCrm } from '@/lib/leads/crm-mirror';
 import { EmailType } from '@prisma/client';
 import { prisma } from '@/lib/database/client';
 
@@ -197,21 +198,22 @@ export async function POST(req: NextRequest) {
   // last-minute mode (delivery date is today or tomorrow in Austin TZ).
   const isLastMinute = isLastMinuteDate(body.deliveryDate);
 
-  // Mirror to the POD Leads Google Sheet. AWAITED — Vercel kills
-  // un-awaited promises when the response returns. Never throws.
-  await mirrorLeadToSheet({
-    source: 'party-chat',
-    firstName: body.firstName,
-    lastName: body.lastName ?? '',
-    email: body.email,
-    phone: body.phone ?? '',
-    arrivalDate: body.deliveryDate,
-    partyType: body.partyType,
-    headcount: body.headcount,
-    leadUrl: leadId
-      ? `https://partyondelivery.com/admin/brians-stuff?tab=leads&lead=${leadId}`
-      : '',
-  });
+  // Mirror to the POD Leads Google Sheet + CoreLinq CRM. AWAITED — Vercel
+  // kills un-awaited promises when the response returns. Never throw.
+  await Promise.allSettled([
+    mirrorLeadToSheet({
+      source: 'party-chat',
+      firstName: body.firstName,
+      lastName: body.lastName ?? '',
+      email: body.email,
+      phone: body.phone ?? '',
+      arrivalDate: body.deliveryDate,
+      partyType: body.partyType,
+      headcount: body.headcount,
+      leadUrl: leadId ? `https://partyondelivery.com/admin/leads?lead=${leadId}` : '',
+    }),
+    mirrorLeadToCrm({ leadId }, 'party-chat'),
+  ]);
 
   return NextResponse.json({
     ok: true,

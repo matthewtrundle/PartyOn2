@@ -135,6 +135,10 @@ export async function postToCoreLinq<T extends { event: string }>(
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
+      // These fan-outs are AWAITED on customer form-submit paths (Vercel
+      // freezes un-awaited work) — a slow/down CRM must not hold the
+      // customer's response hostage.
+      signal: AbortSignal.timeout(3000),
     });
     if (!res.ok) {
       console.error('[CoreLinq Ingest] Failed:', payload.event, res.status, await res.text());
@@ -403,4 +407,50 @@ export async function notifyConciergeLead(payload: GhlConciergeLeadPayload): Pro
   } catch (err) {
     console.error('[GHL Concierge Webhook] Error:', err);
   }
+}
+
+// ──────────────────────────────────────────────
+// Lead Flow board — CRM lead mirror
+// ──────────────────────────────────────────────
+
+export interface CoreLinqLeadCapturedPayload {
+  event: 'lead.captured';
+  /** Neon Lead.id — the fork's ingest upserts idempotently on this (the
+   *  submit routes fire on every re-submit and upsertLead reuses rows). */
+  leadId: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  /** Which surface captured it: 'party-chat' | 'premier-concierge' |
+   *  'event-quiz' | 'contact-form' | 'quote' | 'quickbuy:<occasion>'. */
+  source: string;
+  sourcePage: string;
+  occasion: string;
+  eventDate: string;         // ISO YYYY-MM-DD or ''
+  headcount: number | null;
+  budgetPerPerson: string;
+  /** Board state at capture time (score may still be null pre-cron). */
+  score: number | null;
+  temperature: string;       // 'hot' | 'warm' | 'cold' | ''
+  pipelineStage: string;     // usually 'NEW'
+  utmSource: string;
+  utmMedium: string;
+  utmCampaign: string;
+  /** Deep link to the Lead Flow board card. */
+  leadUrl: string;
+  capturedAt: string;
+}
+
+/**
+ * Mirror a captured lead to the CoreLinq CRM (no GHL leg — GHL already
+ * receives the concierge/newsletter events it cares about). Inert until
+ * CORELINQ_INGEST_URL is set, which must not happen before the fork's
+ * ingest accepts 'lead.captured' (else every submit logs a 400).
+ *
+ * Called AWAITED from the six submit routes only — never from the
+ * field-blur pixel route (that fires on every keystroke).
+ */
+export async function notifyLeadCaptured(payload: CoreLinqLeadCapturedPayload): Promise<void> {
+  await postToCoreLinq(payload);
 }

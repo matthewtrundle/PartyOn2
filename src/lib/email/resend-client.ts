@@ -51,6 +51,9 @@ export interface SendEmailOptions {
   tags?: Array<{ name: string; value: string }>;
   /** Extra headers (e.g. List-Unsubscribe) */
   headers?: Record<string, string>;
+  /** Reply-To mailbox — where customer replies land (e.g. info@ for 1:1
+      lead replies; without this they'd route to the From default). */
+  replyTo?: string;
 }
 
 /**
@@ -95,13 +98,15 @@ export async function sendEmail(options: SendEmailOptions): Promise<string | nul
 export async function sendEmailDetailed(
   options: SendEmailDetailedOptions
 ): Promise<SendEmailDetailedResult> {
-  const { to, cc, subject, html, text, type, orderId, customerId, draftOrderId, metadata, attachments, tags, headers, from, respectSuppression } = options;
+  const { to, cc, subject, html, text, type, orderId, customerId, draftOrderId, metadata, attachments, tags, headers, replyTo, from, respectSuppression } = options;
 
   if (respectSuppression) {
     // Lazy import keeps the common transactional path free of the check.
     const { isSuppressed } = await import('@/lib/followups/suppression');
     if (await isSuppressed(to)) {
-      console.log('[Email] Skipped (suppressed):', { to, subject, type });
+      // No recipient/subject at INFO (PII rule, commit 85d4159f) — the
+      // suppression row itself is the queryable record.
+      console.log('[Email] Skipped (suppressed):', { type });
       return { sent: false, emailLogId: null, resendId: null, suppressed: true };
     }
   }
@@ -144,6 +149,7 @@ export async function sendEmailDetailed(
       subject,
       html,
       text,
+      ...(replyTo ? { replyTo } : {}),
       ...(attachments && attachments.length > 0 ? { attachments } : {}),
       ...(tags && tags.length > 0 ? { tags } : {}),
       ...(headers && Object.keys(headers).length > 0 ? { headers } : {}),
@@ -157,7 +163,7 @@ export async function sendEmailDetailed(
         where: { id: emailLog.id },
         data: { status: EmailStatus.FAILED, errorMessage },
       });
-      console.error('[Email] Failed to send:', { to, subject, type, error: result.error });
+      console.error('[Email] Failed to send:', { type, emailLogId: emailLog.id, error: result.error });
       return { sent: false, emailLogId: emailLog.id, resendId: null, error: errorMessage };
     }
 
@@ -171,7 +177,8 @@ export async function sendEmailDetailed(
       },
     });
 
-    console.log('[Email] Sent successfully:', { to, subject, type, resendId: result.data?.id });
+    // Recipient/subject live on the EmailLog row — keep INFO logs PII-free.
+    console.log('[Email] Sent successfully:', { type, emailLogId: emailLog.id, resendId: result.data?.id });
     return { sent: true, emailLogId: emailLog.id, resendId: result.data?.id || null };
   } catch (error) {
     // Update log with error
@@ -184,7 +191,7 @@ export async function sendEmailDetailed(
       },
     });
 
-    console.error('[Email] Failed to send:', { to, subject, type, error: errorMessage });
+    console.error('[Email] Failed to send:', { type, emailLogId: emailLog.id, error: errorMessage });
     return { sent: false, emailLogId: emailLog.id, resendId: null, error: errorMessage };
   }
 }
