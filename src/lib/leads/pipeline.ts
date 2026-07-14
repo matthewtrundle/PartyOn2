@@ -26,7 +26,12 @@ import {
 } from './pipeline-types';
 import { phoneLast10 } from './phone';
 
-/** Metadata keys that mark a lead as a real party inquiry (vs newsletter). */
+/**
+ * Metadata keys that mark a lead as a real party inquiry (vs newsletter).
+ * `leadMagnet` is deliberately absent: an email-only lead-magnet capture must
+ * stay newsletter-only (only phone-carrying magnet submits get the
+ * LEAD_MAGNET sourceWidget, which is not EMAIL_SIGNUP and boards normally).
+ */
 const INQUIRY_META_KEYS = [
   'conciergeQuiz',
   'chatQuiz',
@@ -34,6 +39,10 @@ const INQUIRY_META_KEYS = [
   'contactForm',
   'unifiedQuote',
   'quote',
+  'groupDashboard',
+  'partnerInquiry',
+  'affiliateApplication',
+  'opsInvoice',
 ] as const;
 
 const SWEEP_BATCH = 200;
