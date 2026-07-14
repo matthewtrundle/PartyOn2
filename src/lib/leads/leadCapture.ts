@@ -188,6 +188,35 @@ export async function upsertLead(
     lead = await findLead({ email, phone });
   }
 
+  // Fragment merge: no exact match, but a recent PARTIAL lead's email is
+  // a strict prefix of this one ("x@gmail.co" captured while the visitor
+  // was still typing "x@gmail.com"). Reuse that row and upgrade its
+  // email to the fuller value instead of creating a keystroke sibling.
+  // Bounded to PARTIAL rows from the last 24h with ≥6-char emails so a
+  // short fragment can never hijack an unrelated address.
+  let matchedByPrefix = false;
+  if (!lead && email) {
+    const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const candidates = await prisma.lead.findMany({
+      where: {
+        status: 'PARTIAL',
+        createdAt: { gte: dayAgo },
+        email: { not: null },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+    });
+    lead =
+      candidates.find(
+        (c) =>
+          c.email != null &&
+          c.email.length >= 6 &&
+          c.email.length < email.length &&
+          email.startsWith(c.email),
+      ) ?? null;
+    matchedByPrefix = lead != null;
+  }
+
   const status: LeadStatus = 'PARTIAL';
   const clickIds = clickIdsFrom(ctx);
 
@@ -213,12 +242,13 @@ export async function upsertLead(
       },
     });
   } else {
-    // Only fill in blanks — never blow away existing data. Click ids are
-    // the exception: latest ad click wins (merged under metadata.attribution).
+    // Only fill in blanks — never blow away existing data. Two exceptions:
+    // click ids (latest ad click wins, merged under metadata.attribution)
+    // and prefix-matched fragments (the fuller email replaces the fragment).
     lead = await prisma.lead.update({
       where: { id: lead.id },
       data: {
-        email: lead.email ?? email,
+        email: matchedByPrefix ? email : (lead.email ?? email),
         phone: lead.phone ?? phone,
         firstName: lead.firstName ?? firstName,
         lastName: lead.lastName ?? lastName,
