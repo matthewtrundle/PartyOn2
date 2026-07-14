@@ -220,6 +220,7 @@ function sourceQualityPoints(sourceWidget: string | null | undefined, meta: unkn
     case 'PARTNER_FAREHARBOR_WEBHOOK':
     case 'PARTNER_EMAIL_OPTIN':
     case 'PARTNER_INQUIRY':
+    case 'INBOUND_EMAIL': // a customer who emails info@ is a real inquiry
       return 14;
     case 'DRINK_CALCULATOR':
       return 12;

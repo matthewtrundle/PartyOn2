@@ -115,8 +115,18 @@ const QUOTE_SENT_STATUSES = new Set(['SENT', 'VIEWED', 'PAID', 'CONVERTED']);
  * array when there's no activity worth flagging (caller renders nothing).
  */
 export function deriveActivitySummary(detail: LeadDetail, now: Date): ActivityChip[] {
-  const { events, emailLogs, drafts } = detail;
+  const { events, emailLogs, drafts, inboundEmails } = detail;
   const chips: ActivityChip[] = [];
+
+  // A customer emailed us — the freshest "they're waiting on you" signal, so
+  // it leads the strip.
+  if (inboundEmails.length > 0) {
+    const latest = inboundEmails.reduce((a, b) =>
+      new Date(a.receivedAt).getTime() >= new Date(b.receivedAt).getTime() ? a : b,
+    );
+    const rel = daysAgo(latest.receivedAt, now);
+    chips.push({ key: 'emailed-us', label: rel ? `Emailed us ${rel}` : 'Emailed us', variant: 'green' });
+  }
 
   // A quote/invoice actually went out — not a bare draft or a dead (expired/
   // cancelled) one, which would misstate the lead's status.

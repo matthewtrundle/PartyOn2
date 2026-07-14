@@ -71,7 +71,7 @@ export async function GET(
     return NextResponse.json({ success: false, error: 'not_found' }, { status: 404 });
   }
 
-  const [events, followUps, emailLogs, orders, drafts] = await Promise.all([
+  const [events, followUps, emailLogs, orders, drafts, inboundEmails] = await Promise.all([
     prisma.leadEvent.findMany({
       where: { leadId: id },
       orderBy: { occurredAt: 'desc' },
@@ -108,11 +108,25 @@ export async function GET(
           select: { id: true, status: true, total: true, createdAt: true, token: true },
         })
       : Promise.resolve([]),
+    prisma.inboundEmail.findMany({
+      where: { leadId: id },
+      orderBy: { receivedAt: 'desc' },
+      take: 20,
+      select: {
+        id: true,
+        fromEmail: true,
+        fromName: true,
+        subject: true,
+        snippet: true,
+        bodyText: true,
+        receivedAt: true,
+      },
+    }),
   ]);
 
   return NextResponse.json({
     success: true,
-    data: { lead, events, followUps, emailLogs, orders, drafts },
+    data: { lead, events, followUps, emailLogs, orders, drafts, inboundEmails },
   });
 }
 
