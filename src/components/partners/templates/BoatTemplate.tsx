@@ -1,8 +1,18 @@
+import type { ReactNode } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import type { CategoryTemplateProps } from './template-types';
+
+type BoatTemplateProps = CategoryTemplateProps & {
+  /** Override the default "Free Drink Delivery for {business}" H1 (co-branded partner headline). */
+  headline?: ReactNode;
+  /** Override the default hero subhead. */
+  subhead?: ReactNode;
+  /** Where every CTA button points. Defaults to /order; partners deep-link to /order?ref=CODE&p=boat&d=boat. */
+  ctaHref?: string;
+};
 
 const BOAT_TESTIMONIALS = [
   {
@@ -73,9 +83,10 @@ function StarIcon() {
   );
 }
 
-export function BoatTemplate({ affiliate, partnerLogo, partnerHeroImage }: CategoryTemplateProps) {
+export function BoatTemplate({ affiliate, partnerLogo, partnerHeroImage, headline, subhead, ctaHref }: BoatTemplateProps) {
   const { businessName } = affiliate;
   const heroImage = partnerHeroImage || '/images/boat-heroes/boat-party-epic-sunset.webp';
+  const cta = ctaHref ?? '/order';
 
   return (
     <div className="bg-white min-h-screen">
@@ -109,15 +120,19 @@ export function BoatTemplate({ affiliate, partnerLogo, partnerHeroImage }: Categ
               )}
 
               <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl text-white mb-4 tracking-wide leading-tight">
-                <span className="text-brand-yellow">Free Drink Delivery</span> for {businessName} Customers
+                {headline ?? (
+                  <>
+                    <span className="text-brand-yellow">Free Drink Delivery</span> for {businessName} Customers
+                  </>
+                )}
               </h1>
               <p className="text-gray-300 text-lg md:text-xl mb-8">
-                Book {businessName}. Get drinks delivered right to the dock.
+                {subhead ?? <>Book {businessName}. Get drinks delivered right to the dock.</>}
               </p>
 
               <div className="mb-8">
                 <Link
-                  href="/order"
+                  href={cta}
                   className="inline-block h-14 md:h-16 px-10 bg-yellow-500 hover:bg-brand-yellow text-gray-900 font-semibold tracking-wide transition-colors rounded-lg text-lg md:text-xl leading-[3.5rem] md:leading-[4rem]"
                 >
                   Start Your Order
@@ -209,7 +224,7 @@ export function BoatTemplate({ affiliate, partnerLogo, partnerHeroImage }: Categ
 
           <div className="mt-8 text-center">
             <Link
-              href="/order"
+              href={cta}
               className="inline-block px-8 py-3 bg-brand-blue text-white font-semibold rounded-lg hover:bg-brand-blue/90 transition-colors"
             >
               Order Your Drinks
@@ -378,7 +393,7 @@ export function BoatTemplate({ affiliate, partnerLogo, partnerHeroImage }: Categ
 
           <div className="mb-6">
             <Link
-              href="/order"
+              href={cta}
               className="inline-block px-10 py-4 bg-gray-900 text-white hover:bg-gray-800 font-semibold tracking-wider transition-colors rounded-lg"
             >
               Start Your Order

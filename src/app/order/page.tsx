@@ -24,7 +24,7 @@
 import { Suspense, useEffect, useState, useRef, useCallback, type ReactElement } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { createDashboardOrderV2 } from '@/lib/group-orders-v2/api-client';
+import { createDashboardOrderV2, createTabV2 } from '@/lib/group-orders-v2/api-client';
 import type { PartyType, DashboardSource, DeliveryContextType } from '@/lib/group-orders-v2/types';
 import { getAffiliateOrderDefaults } from '@/lib/affiliates/presets';
 import { trackCTAClick } from '@/lib/analytics/ga4-events';
@@ -252,6 +252,23 @@ function OrderRedirectInner(): ReactElement {
           `dashboard_participant_${group.shareCode}`,
           host.id
         );
+
+        // Boat partners (e.g. Lake Travis Yacht Rentals) seed a second "House
+        // Order" tab so guests can order for the boat AND stock the house from
+        // one dashboard. Awaited so both tabs exist on first dashboard load;
+        // non-blocking — a failure just means the host adds the tab later.
+        if (presets?.additionalTabs?.length) {
+          for (const extra of presets.additionalTabs) {
+            try {
+              await createTabV2(group.shareCode, {
+                participantId: host.id,
+                name: extra.name,
+              });
+            } catch (tabErr) {
+              console.error('Failed to add preset tab:', extra.name, tabErr);
+            }
+          }
+        }
       }
 
       // Keep the skip-party flag for backward compat with any consumer that
