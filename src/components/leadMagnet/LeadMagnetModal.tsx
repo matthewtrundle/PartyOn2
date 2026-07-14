@@ -15,6 +15,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { sendLeadEvent } from '@/lib/leads/client';
+import SmsConsentCheckbox from '@/components/consent/SmsConsentCheckbox';
 import type { LeadMagnet } from '@/lib/leadMagnet/config';
 
 type Props = {
@@ -29,6 +30,8 @@ export default function LeadMagnetModal({ magnet, open, onClose, modeBadge }: Pr
   const [firstName, setFirstName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  // A2P 10DLC: SMS opt-in is an affirmative action — default unchecked.
+  const [smsConsent, setSmsConsent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const lastBlurredRef = useRef<Record<string, string>>({});
@@ -88,6 +91,9 @@ export default function LeadMagnetModal({ magnet, open, onClose, modeBadge }: Pr
         leadMagnetId: magnet.id,
         rewardUrl: magnet.rewardUrl,
         flow: 'lead-magnet',
+        // A2P 10DLC consent proof: only true when a phone was given AND the
+        // customer affirmatively checked the (unchecked-by-default) opt-in.
+        smsConsent: phone.trim() ? smsConsent : false,
       },
       page: typeof window !== 'undefined' ? window.location.pathname : undefined,
     });
@@ -248,14 +254,22 @@ export default function LeadMagnetModal({ magnet, open, onClose, modeBadge }: Pr
                   navy={T.navy}
                 />
                 {magnet.askPhone && (
-                  <Input
-                    label="Phone (we'll text you reminders, no spam)"
-                    type="tel"
-                    value={phone}
-                    onChange={setPhone}
-                    onBlur={(v) => onFieldBlur('phone', v)}
-                    navy={T.navy}
-                  />
+                  <>
+                    <Input
+                      label="Phone (optional)"
+                      type="tel"
+                      value={phone}
+                      onChange={setPhone}
+                      onBlur={(v) => onFieldBlur('phone', v)}
+                      navy={T.navy}
+                    />
+                    <SmsConsentCheckbox
+                      id="lead-magnet-sms-consent"
+                      checked={smsConsent}
+                      onChange={setSmsConsent}
+                      className="pt-1"
+                    />
+                  </>
                 )}
                 <button
                   type="submit"
