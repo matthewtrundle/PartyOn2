@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import type { CategoryTemplateProps } from './template-types';
+import PartnerLogo from '@/components/partners/PartnerLogo';
 
 type BoatTemplateProps = CategoryTemplateProps & {
   /** Override the default "Free Drink Delivery for {business}" H1 (co-branded partner headline). */
@@ -112,29 +113,16 @@ export function BoatTemplate({ affiliate, partnerLogo, partnerHeroImage, headlin
         <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 pt-24 md:pt-28 pb-16 md:pb-20">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-12 items-center">
             <div className="order-1 text-center">
-              {partnerLogo && (
-                <div className="mb-6">
-                  {logoLightChip ? (
-                    <div className="inline-block bg-white rounded-2xl p-4 md:p-5 shadow-xl">
-                      <Image
-                        src={partnerLogo}
-                        alt={`${businessName} logo`}
-                        width={240}
-                        height={240}
-                        className="h-28 md:h-36 w-auto object-contain mx-auto"
-                      />
-                    </div>
-                  ) : (
-                    <Image
-                      src={partnerLogo}
-                      alt={`${businessName} logo`}
-                      width={240}
-                      height={240}
-                      className="h-40 md:h-48 w-auto object-contain mx-auto drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] brightness-110"
-                    />
-                  )}
-                </div>
-              )}
+              <PartnerLogo
+                logo={partnerLogo}
+                businessName={businessName}
+                lightChip={!!partnerLogo && !!logoLightChip}
+                imgClassName={
+                  logoLightChip
+                    ? 'h-28 md:h-36 w-auto object-contain mx-auto'
+                    : 'h-40 md:h-48 w-auto object-contain mx-auto drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] brightness-110'
+                }
+              />
 
               <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl text-white mb-4 tracking-wide leading-tight">
                 {headline ?? (

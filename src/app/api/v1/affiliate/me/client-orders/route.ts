@@ -6,6 +6,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/database/client';
 import { getAffiliateSession } from '@/lib/affiliates/affiliate-session';
+import { getDashboardEngagement } from '@/lib/group-orders-v2/view-tracking';
 import { GroupV2PaymentStatus } from '@prisma/client';
 
 type LifecycleStatus = 'draft' | 'in_progress' | 'paid' | 'completed';
@@ -23,13 +24,16 @@ export async function GET(): Promise<NextResponse> {
       include: {
         tabs: {
           include: {
+            draftItems: { select: { quantity: true } },
             purchasedItems: true,
             payments: true,
           },
         },
+        _count: { select: { participants: true } },
       },
     });
 
+    const engagement = await getDashboardEngagement(orders.map((o) => o.shareCode));
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://partyondelivery.com';
     const now = new Date();
 
@@ -65,6 +69,12 @@ export async function GET(): Promise<NextResponse> {
         0
       );
 
+      const cartItemCount = order.tabs.reduce(
+        (sum, tab) => sum + tab.draftItems.reduce((s, item) => s + item.quantity, 0),
+        0
+      );
+      const eng = engagement.get(order.shareCode);
+
       return {
         id: order.id,
         type: 'dashboard' as const,
@@ -77,6 +87,12 @@ export async function GET(): Promise<NextResponse> {
         lifecycleStatus,
         dashboardUrl: `${appUrl}/dashboard/${order.shareCode}`,
         shareCode: order.shareCode,
+        // Engagement analytics
+        viewCount: eng?.uniqueVisitors ?? order.viewCount,
+        activeSeconds: eng?.totalActiveSeconds ?? 0,
+        lastActivityAt: eng?.lastActivityAt?.toISOString() ?? null,
+        participantCount: order._count.participants,
+        cartItemCount,
       };
     });
 

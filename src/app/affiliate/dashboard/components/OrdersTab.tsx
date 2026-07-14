@@ -15,6 +15,12 @@ interface ClientOrder {
   lifecycleStatus: 'draft' | 'in_progress' | 'paid' | 'completed';
   dashboardUrl: string;
   shareCode: string;
+  // Engagement analytics (optional — older API payloads omit them)
+  viewCount?: number;
+  activeSeconds?: number;
+  lastActivityAt?: string | null;
+  participantCount?: number;
+  cartItemCount?: number;
 }
 
 interface CommissionOrder {
@@ -42,6 +48,13 @@ interface UnifiedOrder {
   commissionCents: number | null;
   lifecycleStatus: 'draft' | 'in_progress' | 'paid' | 'completed';
   dashboardUrl: string | null;
+  engagement: {
+    viewCount: number;
+    activeSeconds: number;
+    lastActivityAt: string | null;
+    participantCount: number;
+    cartItemCount: number;
+  } | null;
 }
 
 interface OrdersTabProps {
@@ -90,6 +103,14 @@ const statusLabel = (status: string) => {
 const cents = (c: number) =>
   `$${(c / 100).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
+/** "45s", "12m", "1h 20m" — compact time-on-dashboard label. */
+const activeTime = (seconds: number): string => {
+  if (seconds < 60) return `${seconds}s`;
+  const mins = Math.round(seconds / 60);
+  if (mins < 60) return `${mins}m`;
+  return `${Math.floor(mins / 60)}h ${mins % 60}m`;
+};
+
 const sourceBadge = (source: 'referral' | 'dashboard') => {
   if (source === 'referral') return 'bg-purple-50 text-purple-700';
   return 'bg-blue-50 text-blue-700';
@@ -102,6 +123,7 @@ export default function OrdersTab({
 }: OrdersTabProps): ReactElement {
   const [activeSubTab, setActiveSubTab] = useState<SubTab>('all');
   const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
 
   const handleCancel = async (id: string) => {
     if (!onCancelClientOrder) return;
@@ -130,6 +152,7 @@ export default function OrdersTab({
       commissionCents: o.commissionCents,
       lifecycleStatus: mapCommissionStatus(o.status),
       dashboardUrl: null,
+      engagement: null,
     })),
     ...clientOrders.map((o): UnifiedOrder => ({
       id: o.id,
@@ -142,6 +165,13 @@ export default function OrdersTab({
       commissionCents: null,
       lifecycleStatus: o.lifecycleStatus,
       dashboardUrl: `/dashboard/${o.shareCode}`,
+      engagement: {
+        viewCount: o.viewCount ?? 0,
+        activeSeconds: o.activeSeconds ?? 0,
+        lastActivityAt: o.lastActivityAt ?? null,
+        participantCount: o.participantCount ?? 0,
+        cartItemCount: o.cartItemCount ?? 0,
+      },
     })),
   ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
@@ -153,9 +183,19 @@ export default function OrdersTab({
     completed: unified.filter((o) => o.lifecycleStatus === 'completed').length,
   };
 
+  const query = search.trim().toLowerCase();
+  const searched = query
+    ? unified.filter(
+        (o) =>
+          o.customerName.toLowerCase().includes(query) ||
+          o.label.toLowerCase().includes(query) ||
+          (o.dashboardUrl ?? '').toLowerCase().includes(query)
+      )
+    : unified;
+
   const filtered = activeSubTab === 'all'
-    ? unified
-    : unified.filter((o) => o.lifecycleStatus === activeSubTab);
+    ? searched
+    : searched.filter((o) => o.lifecycleStatus === activeSubTab);
 
   const emptyMessages: Record<SubTab, string> = {
     all: 'No orders yet. Share your referral link to get started!',
@@ -167,6 +207,15 @@ export default function OrdersTab({
 
   return (
     <div className="space-y-4">
+      {/* Search */}
+      <input
+        type="search"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        placeholder="Search by client name, order name, or dashboard code…"
+        className="w-full md:max-w-md rounded-lg border-2 border-gray-200 px-4 py-2.5 text-base focus:border-brand-blue focus:outline-none"
+      />
+
       {/* Sub-tab bar */}
       <div className="flex gap-2 flex-wrap">
         {SUB_TABS.map((tab) => (
@@ -210,6 +259,7 @@ export default function OrdersTab({
                   <th className="px-4 py-3 text-left font-medium text-gray-600">Date</th>
                   <th className="px-4 py-3 text-left font-medium text-gray-600">Delivery</th>
                   <th className="px-4 py-3 text-right font-medium text-gray-600">Total</th>
+                  <th className="px-4 py-3 text-left font-medium text-gray-600">Engagement</th>
                   <th className="px-4 py-3 text-right font-medium text-gray-600">Commission</th>
                   <th className="px-4 py-3 text-center font-medium text-gray-600">Status</th>
                   <th className="px-4 py-3 text-right font-medium text-gray-600"></th>
@@ -237,6 +287,29 @@ export default function OrdersTab({
                     </td>
                     <td className="px-4 py-3 text-right text-gray-900 font-medium">
                       {order.totalCents > 0 ? cents(order.totalCents) : '--'}
+                    </td>
+                    <td className="px-4 py-3">
+                      {order.engagement ? (
+                        <div className="text-sm text-gray-700 whitespace-nowrap">
+                          <div>
+                            {order.engagement.viewCount} view{order.engagement.viewCount === 1 ? '' : 's'}
+                            {order.engagement.activeSeconds > 0 && (
+                              <> · {activeTime(order.engagement.activeSeconds)}</>
+                            )}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {order.engagement.participantCount} in group
+                            {order.engagement.cartItemCount > 0 && (
+                              <> · {order.engagement.cartItemCount} in cart</>
+                            )}
+                            {order.engagement.lastActivityAt && (
+                              <> · seen {new Date(order.engagement.lastActivityAt).toLocaleDateString()}</>
+                            )}
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-gray-400">--</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-right text-green-700 font-medium">
                       {order.commissionCents != null ? cents(order.commissionCents) : '--'}
@@ -315,6 +388,14 @@ export default function OrdersTab({
                     </div>
                   )}
                 </div>
+                {order.engagement && (
+                  <div className="text-sm text-gray-600 border-t border-gray-100 pt-2 mb-3">
+                    {order.engagement.viewCount} view{order.engagement.viewCount === 1 ? '' : 's'}
+                    {order.engagement.activeSeconds > 0 && <> · {activeTime(order.engagement.activeSeconds)}</>}
+                    {' · '}{order.engagement.participantCount} in group
+                    {order.engagement.cartItemCount > 0 && <> · {order.engagement.cartItemCount} in cart</>}
+                  </div>
+                )}
                 {order.dashboardUrl && (
                   <Link
                     href={order.dashboardUrl}

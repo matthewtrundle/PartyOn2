@@ -6,6 +6,7 @@ import HeroCarousel from '@/components/partners/HeroCarousel';
 import type { CategoryTemplateProps } from './template-types';
 import { getStrPartnerBySlug } from '@/lib/partners/str-partners';
 import StrStartOrderButton from '@/components/partners/StrStartOrderButton';
+import PartnerLogo from '@/components/partners/PartnerLogo';
 
 interface CategoryConfig {
   heroSubtitle: (name: string) => string;
@@ -200,16 +201,12 @@ export function DefaultTemplate({ affiliate, partnerLogo, partnerHeroImage, hero
         <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 pt-24 md:pt-28 pb-16 md:pb-20">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-12 items-center">
             <div className="order-1 text-center">
-              {partnerLogo && !strConfig && (
-                <div className="mb-6">
-                  <Image
-                    src={partnerLogo}
-                    alt={`${businessName} logo`}
-                    width={240}
-                    height={240}
-                    className="h-60 md:h-72 w-auto object-contain mx-auto drop-shadow-2xl"
-                  />
-                </div>
+              {!strConfig && (
+                <PartnerLogo
+                  logo={partnerLogo}
+                  businessName={businessName}
+                  imgClassName="h-60 md:h-72 w-auto object-contain mx-auto drop-shadow-2xl"
+                />
               )}
 
               <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl text-white mb-4 tracking-wide leading-tight">

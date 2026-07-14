@@ -2302,6 +2302,12 @@ model Affiliate {
   categoryRateOverride   Decimal? @map("category_rate_override") @db.Decimal(5, 4)
   customerPerk           String   @default("Free Delivery") @map("customer_perk")
 
+  /// Remote logo URL for bulk-created partners (e.g. Clearbit). The
+  /// committed file at public/images/partners/<slug>-logo.png still
+  /// wins when present; this is the runtime fallback so CSV bulk
+  /// creation never needs a code deploy.
+  logoUrl String? @map("logo_url")
+
   payoutMethod  String? @map("payout_method")
   payoutDetails Json?   @map("payout_details")
 
@@ -2378,6 +2384,10 @@ model DashboardView {
   shareCode   String   @map("share_code")
   visitorHash String   @map("visitor_hash")
   viewedAt    DateTime @default(now()) @map("viewed_at")
+  /// Heartbeat: last time this visitor had the dashboard open.
+  lastSeenAt  DateTime? @map("last_seen_at")
+  /// Heartbeat: accumulated seconds this visitor spent on the dashboard.
+  activeSeconds Int @default(0) @map("active_seconds")
 
   @@unique([shareCode, visitorHash])
   @@index([shareCode])

@@ -93,10 +93,14 @@ export default async function DynamicPartnerPage({ params }: Props) {
     notFound();
   }
 
-  const { logo: partnerLogo, heroImage: partnerHeroImage } = findPartnerData(
+  const { logo: diskLogo, heroImage: partnerHeroImage } = findPartnerData(
     affiliate.businessName,
     affiliate.partnerSlug ?? slug
   );
+  // Committed logo files win; Affiliate.logoUrl (set by bulk import,
+  // usually a Clearbit URL) is the runtime fallback so bulk-created
+  // partners get a logo without a code deploy.
+  const partnerLogo = diskLogo ?? affiliate.logoUrl ?? null;
   const CategoryTemplate = getCategoryTemplate(affiliate.category);
 
   // For PLANNER partners, build a hero carousel: [partnerHero, ...sharedPlannerHeros]
