@@ -127,6 +127,40 @@ function extractBudgetPerPerson(meta: unknown): number | null {
   return m ? Number(m[1]) : null;
 }
 
+export interface LeadFacts {
+  occasion: string | null;
+  eventDate: string | null;
+  headcount: number | null;
+  budgetPerPerson: number | null;
+}
+
+/**
+ * Card-facing facts extracted from the per-surface metadata payloads.
+ * Shared by the board API so extraction rules live in exactly one place.
+ */
+export function extractLeadFacts(meta: unknown): LeadFacts {
+  const occasionCandidates = [
+    metaSection(meta, 'conciergeQuiz')?.partyType,
+    metaSection(meta, 'chatQuiz')?.partyType,
+    metaSection(meta, 'unifiedQuote')?.partyType,
+    metaSection(meta, 'eventQuiz')?.partyType,
+    metaSection(meta, 'contactForm')?.eventType,
+  ];
+  let occasion: string | null = null;
+  for (const c of occasionCandidates) {
+    if (typeof c === 'string' && c.trim()) {
+      occasion = c.trim();
+      break;
+    }
+  }
+  return {
+    occasion,
+    eventDate: extractEventDate(meta),
+    headcount: extractHeadcount(meta),
+    budgetPerPerson: extractBudgetPerPerson(meta),
+  };
+}
+
 function eventProximityPoints(meta: unknown, now: Date): number {
   // event-quiz has no date — only a today/tomorrow/future chip.
   const timing = metaSection(meta, 'eventQuiz')?.timing;

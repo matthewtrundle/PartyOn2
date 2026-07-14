@@ -8,7 +8,7 @@ import type { HqIconName } from './icons';
  */
 export type StaffRole = 'admin' | 'employee';
 
-export type BadgeKey = 'orders' | 'recs';
+export type BadgeKey = 'orders' | 'recs' | 'leads';
 
 export interface NavDest {
   href: string;
@@ -49,6 +49,7 @@ export const BUSINESS_DESTS: NavDest[] = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: 'dashboard', match: ['/admin/dashboard'], roles: ['admin'] },
   { href: '/admin/analytics', label: 'Analytics', icon: 'analytics', match: ['/admin/analytics'], roles: ['admin'] },
   { href: '/admin/customers', label: 'Customers', icon: 'customers', match: ['/admin/customers'], roles: ['admin'] },
+  { href: '/admin/leads', label: 'Leads', icon: 'leads', match: ['/admin/leads'], roles: ['admin'], badge: 'leads' },
   { href: '/admin/emails', label: 'Email', icon: 'email', match: ['/admin/emails', '/admin/email-signups'], roles: ['admin'] },
   { href: '/admin/recommendations', label: 'Recs', icon: 'recs', match: ['/admin/recommendations'], roles: ['admin'], badge: 'recs' },
   { href: '/admin/finance', label: 'Money', icon: 'money', match: ['/admin/finance'], roles: ['admin'] },
@@ -87,6 +88,7 @@ const SCREEN_TITLES: Array<[string, string]> = [
   ['/admin/strategy', 'Game Plan'],
   ['/admin/analytics', 'Analytics'],
   ['/admin/customers', 'Customers'],
+  ['/admin/leads', 'Leads'],
   ['/admin/emails', 'Email'],
   ['/admin/email-signups', 'Email'],
   ['/admin/recommendations', 'Recommendations'],

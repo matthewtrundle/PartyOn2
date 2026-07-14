@@ -6,9 +6,11 @@ import { usePathname } from 'next/navigation';
 export interface NavBadges {
   ordersToday: number;
   recsOpen: number;
+  /** Hot Lead Flow cards waiting on a reply (admin only; 0 for employees). */
+  leadsHot: number;
 }
 
-const EMPTY: NavBadges = { ordersToday: 0, recsOpen: 0 };
+const EMPTY: NavBadges = { ordersToday: 0, recsOpen: 0, leadsHot: 0 };
 
 /**
  * Lightweight tab-badge counts. Refetches on route change (an operator who
@@ -31,6 +33,7 @@ export function useNavBadges(enabled: boolean): NavBadges {
             setBadges({
               ordersToday: data.ordersToday ?? 0,
               recsOpen: data.recsOpen ?? 0,
+              leadsHot: data.leadsHot ?? 0,
             });
           }
         })

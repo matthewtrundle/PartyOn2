@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 // Force-dynamic so the lead + upsell tracker queries always hit the DB.
 export const dynamic = 'force-dynamic';
 
-type SP = Promise<{ tab?: string }>;
+type SP = Promise<{ tab?: string; lead?: string }>;
 
 /**
  * Admin-only landing page for Brian's reference docs + tools.
@@ -55,7 +55,7 @@ export default async function Page({ searchParams }: { searchParams: SP }) {
       playbook={<PlaybookClient />}
       experiments={<ExperimentsView />}
       tracker={<UpsellTrackerView />}
-      leads={<LeadsView />}
+      leads={<LeadsView deepLinkedLeadId={params.lead ?? null} />}
       events={<EventsView />}
       magnets={<LeadMagnetView />}
       seo={<SeoIntelligenceView />}
