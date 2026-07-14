@@ -125,9 +125,10 @@ export async function sendEmailDetailed(
     },
   });
 
-  // If Resend is not configured, log and return
+  // If Resend is not configured, log and return (no recipient/subject at
+  // INFO — the EmailLog row above holds them; PII rule from 85d4159f)
   if (!resend) {
-    console.log('[Email] Would send email:', { to, subject, type });
+    console.log('[Email] Would send email:', { type, emailLogId: emailLog.id });
     await prisma.emailLog.update({
       where: { id: emailLog.id },
       data: {

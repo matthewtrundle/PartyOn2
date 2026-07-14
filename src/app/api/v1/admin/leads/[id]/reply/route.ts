@@ -14,7 +14,11 @@ import { prisma } from '@/lib/database/client';
 import { requireAdminRole } from '@/lib/auth/ops-session';
 import { sendEmailDetailed } from '@/lib/email/resend-client';
 import { buildLeadReplyEmail } from '@/lib/email/templates/lead-reply';
-import { recomputeLeadScore, transitionStage } from '@/lib/leads/pipeline';
+import {
+  enrollLeadIfEligible,
+  recomputeLeadScore,
+  transitionStage,
+} from '@/lib/leads/pipeline';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -84,26 +88,35 @@ export async function POST(
     );
   }
 
-  const now = new Date();
-  await prisma.leadEvent.create({
-    data: {
-      leadId: lead.id,
-      type: 'CUSTOM',
-      metadata: {
-        kind: 'email.reply',
-        emailLogId: result.emailLogId,
-        subject: email.subject,
-        sender: senderName,
-      } as never,
-    },
-  });
-  await prisma.lead.update({
-    where: { id: lead.id },
-    data: { lastContactedAt: now },
-  });
-  // Forward-only: a reply from NEW means the conversation started.
-  await transitionStage(lead.id, 'CONTACTED', { via: 'reply', onlyFrom: ['NEW'] });
-  await recomputeLeadScore(lead.id).catch(() => undefined);
+  // The email is OUT — a bookkeeping failure past this point must return
+  // success anyway, or the composer's "try again" would double-send the
+  // customer (review #11).
+  try {
+    const now = new Date();
+    await prisma.leadEvent.create({
+      data: {
+        leadId: lead.id,
+        type: 'CUSTOM',
+        metadata: {
+          kind: 'email.reply',
+          emailLogId: result.emailLogId,
+          subject: email.subject,
+          sender: senderName,
+        } as never,
+      },
+    });
+    await prisma.lead.update({
+      where: { id: lead.id },
+      data: { lastContactedAt: now },
+    });
+    // Replying IS working the lead — a tray (off-board) lead gets a card
+    // (review #12), and a reply from NEW starts the conversation.
+    await enrollLeadIfEligible(lead.id, { allowPartial: true });
+    await transitionStage(lead.id, 'CONTACTED', { via: 'reply', onlyFrom: ['NEW'] });
+    await recomputeLeadScore(lead.id).catch(() => undefined);
+  } catch (err) {
+    console.error('[leads/reply] post-send bookkeeping failed (email WAS sent)', err);
+  }
 
   return NextResponse.json({
     success: true,

@@ -17,7 +17,7 @@ const OWNERS = ['', 'Allan', 'Brian'];
 /**
  * Card detail drawer — BottomSheet on all sizes (portaled, esc-closes).
  * Stage buttons confirm the destructive-feeling moves; Lost prompts for a
- * reason. The reply composer lands here in the follow-up PR.
+ * reason. Includes the 1:1 email reply composer.
  */
 export default function LeadDrawer({
   leadId,
