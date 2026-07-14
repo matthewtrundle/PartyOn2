@@ -64,6 +64,16 @@ const STR_PARTNERS: Record<string, StrPartnerConfig> = {
     allowCustomAddress: true,
     properties: [],
   },
+  // First bulk-researched STR partner (Brian, 2026-07-14). Properties stay
+  // empty until Lynn sends the rental roster — guests enter their address.
+  'lynns-lodging': {
+    code: 'LYNNSLODGI41E7',
+    slug: 'lynns-lodging',
+    name: "Lynn's Lodging",
+    deliveryContextType: 'HOUSE',
+    allowCustomAddress: true,
+    properties: [],
+  },
 };
 
 /** Normalize an affiliate code for comparison (uppercase, strip dashes). */
