@@ -1,0 +1,19 @@
+SEMrush Keyword Magic Tool — QUESTIONS tab — seed: "office party" — db=us — captured 2026-07-14
+Cluster totals: 1,205 question keywords | Total Volume: 8,870/mo | Average KD: 30%
+NOTE: heavily polluted — most volume is the "Office Christmas Party" MOVIE (where to watch/stream ~2,300/mo), The Office TV episodes, and political party-switching questions. Clean signal below.
+
+Relevant rows (keyword | volume | KD):
+what to wear to office christmas/holiday party (cluster) | ~800/mo combined | 8-23   <- big but outfit intent, not ours
+what happens at office dinner parties | 480 | n/a
+how to plan an office christmas party | 20 | n/a
+how to plan an office holiday party | 20 | n/a
+how to plan an office party | 20 | n/a
+how to make an office party fun | 20 | n/a
+how to make office christmas party fun | 20 | n/a
+are office parties tax deductible | 20 | n/a
+how to categorize office party expense quickbooks | 30 | n/a
+how to categorize office party expense | 20 | n/a
+how to include remote employees in office parties | 20 | n/a (CPC 2.69!)
+how to hire a police officer for a party | 20 | n/a
+
+FINDING: corporate/office PLANNING questions are ~20/mo each on Google — confirms the 2026-07-09 verdict that the corporate video must target "corporate event ideas" (idea-browsing intent, 13.4k/mo cluster) rather than question-answering. The tax-deductible + expense-categorization questions are the only distinctly *corporate* questions with any pulse — usable as a differentiating chapter (nobody making event content answers the finance question).

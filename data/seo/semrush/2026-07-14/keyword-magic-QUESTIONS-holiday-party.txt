@@ -1,0 +1,17 @@
+SEMrush Keyword Magic Tool — QUESTIONS tab — seed: "holiday party" — db=us — captured 2026-07-14
+Cluster totals: 1,154 question keywords | Total Volume: 6,440/mo | Average KD: 19%
+What-to-wear dominates (~2,500/mo, not our topic). Corporate-planning signal:
+
+how to plan a corporate holiday party | I | 70 | KD 0 (!) | 0.00   <- best corporate question found anywhere
+how to host a holiday cocktail party | I | 70 | 9 | 0.00
+how to host a holiday party | I | 50 | 21 | 0.00
+how to plan a holiday party | I | 40 | 12 | 0.17
+what to bring to a holiday party | I | 170 | 15 | 0.00 (guest intent, adjacent)
+how long should a holiday party be | n/a | 20
+how to choose drinks for holiday open house party | n/a | 20
+how to plan a company/work/office holiday party (3 variants) | n/a | 20 each
+tax-deductible cluster: are holiday parties tax deductible 20 + company 2024 20 + meals-100%-deductible 20 + is-a-holiday-party 20 ≈ 80/mo combined
+how to have/host a virtual holiday party | n/a | 40 combined
+should i go to my company holiday party | n/a | 20
+
+FINDING: pairs with corporate-event-ideas cluster (corporate christmas event ideas 140 KD15 + corporate holiday event ideas 50 KD14 + corporate holiday party event ideas 40 KD16, from 2026-07-09 pull). Fall corporate video = holiday-party planning angle: "how to plan a corporate holiday party" (KD 0) as the question spine, ideas-listicle as the body, tax-deductibility as the differentiator chapter.

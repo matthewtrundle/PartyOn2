@@ -8,7 +8,7 @@ Companion to [youtube-keyword-research-2026-07.md](./youtube-keyword-research-20
 
 Each video does two jobs. **On the landing page** it deepens the page that already half-ranks for its money terms (dwell time, content depth, a second indexable asset) — note there is currently no video carousel on these SERPs to hijack, so the Google win is indirect. **On YouTube** it fishes where planners actually search, which per both this research and the 2026-06 vidIQ study means broad planning phrasings ("corporate event ideas", "austin bachelorette party"), not hyperlocal service terms. Titles use the exact live-autocomplete phrasing; the Austin/service specificity lives in the content, description, and end-screen CTA, not the title.
 
-## Video 1 — Wedding (FALL 2026)
+## Video 1 — Wedding (FALL 2026 — full brief: [wedding-video-brief-2026-07.md](./wedding-video-brief-2026-07.md), supersedes this sketch)
 
 - **Title:** How Much Alcohol Do You Need for a Wedding? (100–200 Guests)
 - **Target:** Google "how much alcohol to buy for a wedding" cluster (3,580/mo, KD~10); YouTube "how much alcohol for wedding" (live-verified autocomplete incl. "of 150" / "of 200")
@@ -36,7 +36,7 @@ Each video does two jobs. **On the landing page** it deepens the page that alrea
 - **One video covers both genders** — bachelorette carries ~3× bachelor volume; splitting halves the effort budget for the weakest marginal gain.
 - **Note:** the "how much alcohol for a bachelorette party" angle tested dead (20/mo, cluster skews non-alcoholic) — deliberately not the hook.
 
-## Video 3 — Corporate (FALL 2026 — holiday-party season timing)
+## Video 3 — Corporate (FALL 2026 — full brief: [corporate-video-brief-2026-07.md](./corporate-video-brief-2026-07.md), supersedes this sketch)
 
 - **Title:** Corporate Event Ideas That Aren't Lame (Happy Hour Edition)
 - **Target:** YouTube + Google "corporate event ideas" (1,900/mo KD20; 13,450/mo cluster; top live autocomplete). The briefed angles ("how much alcohol for corporate event", "office party bar setup", "company party drink calculator") all tested at ~0 volume — skipped per research.

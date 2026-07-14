@@ -1,0 +1,31 @@
+SEMrush Keyword Magic Tool — QUESTIONS tab — seed: "wedding alcohol" — db=us — captured 2026-07-14
+Cluster totals: 656 question keywords | Total Volume: 6,180/mo | Average KD: 11%
+Columns: keyword | intent | volume | KD% | CPC
+
+how much alcohol to buy for a wedding | I | 390 | 7 | 0.37
+how much alcohol to buy for wedding | I | 210 | 7 | 0.60
+how much alcohol for wedding | I | 170 | 5 | 0.47
+how much alcohol to order for a wedding | I | 110 | 12 | 0.37
+how much is alcohol for a wedding | I | 110 | 10 | 0.47
+where to buy alcohol in bulk for wedding | I | 110 | 16 | 0.76
+where to buy bulk alcohol for wedding | I | 110 | 19 | 1.25   <- transactional pair, 220/mo combined
+how much alcohol for a wedding of 100 | I | 90 | 5 | 0.40
+how to calculate alcohol for a wedding | I | 90 | 5 | 0.76
+how to calculate alcohol for wedding | I | 90 | 12 | 0.39
+how much does alcohol cost for a wedding | I | 70 | 12 | 0.72
+how to estimate alcohol for wedding | I | 70 | 4 | 0.76
+who pays for alcohol at wedding | I | 70 | 15 | 0.00
+who pays for alcohol at a wedding | I | 50 | 14 | 0.00
+who pays for the alcohol at a wedding | I | 50 | 14 | 0.00   <- who-pays-for-alcohol ~170/mo
+how much alcohol for wedding calculator (+4 calculator variants) | I | 40-50 each | 5-10
+where to buy alcohol for wedding | I | 50 | 18 | 1.48
+how much alcohol for a wedding of 150 | n/a | 40
+do you need an alcohol license for a wedding | n/a | 20
+do you need insurance to serve alcohol at a wedding | n/a | 20
+do wedding venues water down alcohol | n/a | 20   <- fun contrarian hook
+can i serve alcohol at my wedding | n/a | 20
+how many bottles of alcohol for a wedding | n/a | 20
+how many non alcoholic drinks per person at a wedding | n/a | 20
+(guest-count long tail 50-200 guests, 20/mo each; modifier groups: much 318, buy 97, person 54, cost 47, calculator 33, 100 27, 150 25)
+
+QUESTION THEMES: quantity/calculator (~2,500/mo, KD 3-12) · where-to-buy-bulk (~330/mo, transactional) · cost (~400/mo) · who-pays-for-alcohol (~170/mo) · rules/license/insurance (~100/mo) · per-person servings (~150/mo)
