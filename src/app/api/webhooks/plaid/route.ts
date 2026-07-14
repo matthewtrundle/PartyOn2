@@ -5,14 +5,18 @@
  * about TRANSACTIONS / SYNC_UPDATES_AVAILABLE — kicks off a sync for the
  * affected PlaidItem. Other webhook types are acknowledged but ignored.
  *
- * Auth: Plaid signs webhooks via the `plaid-verification` JWT header. For
- * V1 we trust the connection (sandbox / pre-prod) and just log; production
- * hardening adds JWT verification once the operator promotes to production.
+ * Auth: every request must carry Plaid's `plaid-verification` header — an
+ * ES256 JWT binding the exact request body (request_body_sha256). Verified
+ * fail-closed via verifyPlaidWebhookJwt (alg pinning, published-key signature,
+ * 5-minute freshness, constant-time body-hash check). Unverified requests get
+ * a 401 and are never processed; Plaid retries webhooks, so a transient
+ * key-fetch failure only delays the sync.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/database/client';
 import { syncItem } from '@/lib/finance/plaid-sync-service';
+import { verifyPlaidWebhookJwt } from '@/lib/finance/plaid-client';
 
 export const maxDuration = 60;
 
@@ -26,7 +30,32 @@ interface PlaidWebhookBody {
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const startedAt = Date.now();
   try {
-    const body = (await request.json().catch(() => ({}))) as PlaidWebhookBody;
+    // Verification needs the RAW body — the JWT signs its exact SHA-256.
+    // Read failure returns non-2xx explicitly (the generic catch below would
+    // 200, and Plaid only retries on non-2xx).
+    let rawBody: string;
+    try {
+      rawBody = await request.text();
+    } catch {
+      return NextResponse.json({ success: false, error: 'unreadable body' }, { status: 400 });
+    }
+    const verificationJwt = request.headers.get('plaid-verification');
+    if (!verificationJwt) {
+      console.warn('[plaid-webhook] rejected: missing plaid-verification header');
+      return NextResponse.json({ success: false, error: 'unauthorized' }, { status: 401 });
+    }
+    const verdict = await verifyPlaidWebhookJwt(rawBody, verificationJwt);
+    if (!verdict.ok) {
+      console.warn('[plaid-webhook] rejected:', verdict.reason);
+      return NextResponse.json({ success: false, error: 'unauthorized' }, { status: 401 });
+    }
+
+    let body: PlaidWebhookBody;
+    try {
+      body = JSON.parse(rawBody) as PlaidWebhookBody;
+    } catch {
+      body = {};
+    }
     const itemId = body.item_id;
     const type = body.webhook_type;
     const code = body.webhook_code;
