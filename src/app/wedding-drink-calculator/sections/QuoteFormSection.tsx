@@ -16,7 +16,10 @@ type Props = {
  */
 export default function QuoteFormSection({ plan }: Props): ReactElement {
   return (
-    <section id="quote-form" className="bg-gray-50 section-padding">
+    // data-lead-widget: the global FormCaptureWatcher captures this form's
+    // contact fields — the tag turns those leads from generic OTHER into
+    // DRINK_CALCULATOR (2026-07-13 audit provenance gap).
+    <section id="quote-form" className="bg-gray-50 section-padding" data-lead-widget="drink-calculator">
       <div className="container-custom max-w-3xl">
         <QuoteFormCard plan={plan} placement="bottom" />
       </div>

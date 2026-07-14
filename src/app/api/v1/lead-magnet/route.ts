@@ -4,9 +4,12 @@
  * Server endpoint called from the LeadMagnetModal when someone submits
  * the popup. Three jobs:
  *
- *   1. Send the welcome email via Resend (delivers the reward link)
- *   2. Stamp the lead row as SUBMITTED via the existing lead-event API
- *      (handled client-side; this endpoint only owns the email)
+ *   1. Own the Lead row (2026-07-13 audit gap): a phone-carrying submit is
+ *      real party intent → sourceWidget LEAD_MAGNET + SUBMITTED (boards);
+ *      an email-only submit stays EMAIL_SIGNUP (newsletter-only, off-board —
+ *      'leadMagnet' is deliberately NOT an inquiry metadata key). The client
+ *      pixel previously owned this and misfiled everything as EMAIL_SIGNUP.
+ *   2. Send the welcome email via Resend (delivers the reward link)
  *   3. Return ok=true so the modal can transition to the success state
  *
  * Silent failure mode: if Resend isn't configured (no RESEND_API_KEY),
@@ -17,6 +20,10 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { sendEmail } from '@/lib/email/resend-client';
 import { leadMagnetEmail } from '@/lib/email/templates/lead-magnet';
+import { markLeadStatus, upsertLead } from '@/lib/leads/leadCapture';
+import { enrollLeadIfEligible } from '@/lib/leads/pipeline';
+import { prisma } from '@/lib/database/client';
+import { checkRateLimit } from '@/lib/security/rate-limit';
 import { EmailType } from '@prisma/client';
 
 export const runtime = 'nodejs';
@@ -33,6 +40,18 @@ const schema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  // Public + unauthenticated: this route both writes a Lead and sends real
+  // email to a caller-supplied address. Without a cap it's an email-bomb
+  // primitive (via our own Resend domain) + a board-spam vector. Same
+  // helper/shape as /api/contact and /api/v1/landing/lead-event.
+  const ip =
+    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    req.headers.get('x-real-ip') ||
+    'unknown';
+  if (!(await checkRateLimit('lead-magnet', ip, 5, 60))) {
+    return NextResponse.json({ ok: false, error: 'rate_limited' }, { status: 429 });
+  }
+
   let body: z.infer<typeof schema>;
   try {
     body = schema.parse(await req.json());
@@ -41,6 +60,49 @@ export async function POST(req: NextRequest) {
       { ok: false, error: 'invalid_body', detail: String(err) },
       { status: 400 },
     );
+  }
+
+  // ─── Own the Lead row (before the email — system of record first) ────
+  try {
+    const hasPhone = Boolean(body.phone && body.phone.trim());
+    const lead = await upsertLead(
+      { email: body.email, phone: body.phone ?? null, firstName: body.firstName },
+      { sourcePage: '/lead-magnet', sourceWidget: hasPhone ? 'LEAD_MAGNET' : 'EMAIL_SIGNUP' },
+    );
+    if (lead) {
+      const prevMeta = (lead.metadata as Record<string, unknown> | null) ?? {};
+      // Phone present ⇒ claim provenance even over EMAIL_SIGNUP (the client
+      // pixel stamps that on this very lead while they type) — but never
+      // over a real inquiry widget.
+      const upgradeWidget =
+        hasPhone &&
+        (lead.sourceWidget === null ||
+          lead.sourceWidget === 'OTHER' ||
+          lead.sourceWidget === 'EMAIL_SIGNUP');
+      await prisma.lead.update({
+        where: { id: lead.id },
+        data: {
+          ...(upgradeWidget ? { sourceWidget: 'LEAD_MAGNET' } : {}),
+          metadata: {
+            ...prevMeta,
+            leadMagnet: {
+              magnetId: body.magnetId,
+              magnetTitle: body.magnetTitle,
+              submittedAt: new Date().toISOString(),
+            },
+          },
+        },
+      });
+      if (hasPhone) {
+        if (lead.status === 'PARTIAL' || lead.status === 'ANONYMOUS') {
+          await markLeadStatus(lead.id, 'SUBMITTED');
+        } else {
+          await enrollLeadIfEligible(lead.id);
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[lead-magnet] lead mirror failed', err);
   }
 
   const { subject, html, text } = leadMagnetEmail({

@@ -50,6 +50,9 @@ export type LeadContext = {
 
 const CLICK_ID_FIELDS = ['gclid', 'gbraid', 'wbraid', 'fbclid', 'msclkid'] as const;
 
+/** Widgets too weak to REPLACE an existing OTHER placeholder (see upsertLead). */
+const WEAK_SOURCE_WIDGETS: ReadonlySet<string> = new Set(['OTHER', 'EMAIL_SIGNUP']);
+
 /** Compact `{gclid: "..."}` object of the click ids present in ctx, or null. */
 function clickIdsFrom(ctx: LeadContext): Record<string, string> | null {
   const out: Record<string, string> = {};
@@ -253,7 +256,20 @@ export async function upsertLead(
         firstName: lead.firstName ?? firstName,
         lastName: lead.lastName ?? lastName,
         lastPage: nonEmpty(ctx.sourcePage) ?? lead.lastPage,
-        sourceWidget: lead.sourceWidget ?? ctx.sourceWidget ?? null,
+        // OTHER is a placeholder, not provenance — but only a STRONG named
+        // widget may replace it. EMAIL_SIGNUP is claimable by the public
+        // pixel, and letting it overwrite OTHER would let an anonymous
+        // caller who knows a victim's email flip their lead newsletter-only
+        // and hide it from board enrollment. A blank still takes any value
+        // (a true first source); a real widget is never overwritten.
+        sourceWidget:
+          lead.sourceWidget == null
+            ? ctx.sourceWidget ?? null
+            : lead.sourceWidget === 'OTHER' &&
+                ctx.sourceWidget &&
+                !WEAK_SOURCE_WIDGETS.has(ctx.sourceWidget)
+              ? ctx.sourceWidget
+              : lead.sourceWidget,
         utmSource: lead.utmSource ?? nonEmpty(ctx.utmSource),
         utmMedium: lead.utmMedium ?? nonEmpty(ctx.utmMedium),
         utmCampaign: lead.utmCampaign ?? nonEmpty(ctx.utmCampaign),
@@ -307,6 +323,16 @@ export async function recordEvent(opts: {
   if (!opts.sessionId && !opts.leadId) return null;
   const isSubmitType = opts.type === 'FORM_SUBMIT' || opts.type === 'CHECKOUT_START';
   const trusted = opts.trustedSubmit === true && isSubmitType;
+  // SECURITY: `trustedSubmit` inside a LeadEvent's metadata is what lets
+  // sweepReopens re-open a WON/LOST card. The public pixel route passes its
+  // caller-controlled `metadata` straight through here, so a forged
+  // `{trustedSubmit:true}` key must NEVER survive — strip it unconditionally
+  // and let only the server-set `trusted` flag re-add it. Without this, an
+  // anonymous caller who knows a victim's email could reopen any closed deal
+  // (the exact HIGH-1 threat this stamp exists to prevent).
+  const callerMeta: Record<string, unknown> = { ...(opts.metadata ?? {}) };
+  delete callerMeta.trustedSubmit;
+  const hasCallerMeta = Object.keys(callerMeta).length > 0;
   const event = await prisma.leadEvent.create({
     data: {
       type: opts.type,
@@ -319,8 +345,10 @@ export async function recordEvent(opts: {
       // Trusted submits are stamped so the reopen cron sweep can require
       // server-originated proof, not just a client-claimed FORM_SUBMIT.
       metadata: (trusted
-        ? { ...(opts.metadata ?? {}), trustedSubmit: true }
-        : (opts.metadata ?? null)) as never,
+        ? { ...callerMeta, trustedSubmit: true }
+        : hasCallerMeta
+          ? callerMeta
+          : null) as never,
     },
   });
   // Lead Flow board bookkeeping — must never break capture (module contract:
