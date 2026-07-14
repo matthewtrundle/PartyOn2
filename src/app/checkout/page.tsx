@@ -458,6 +458,15 @@ export default function CheckoutPage() {
                     />
                   </div>
                 </div>
+
+                {/* SMS opt-in — optional, unchecked by default (A2P 10DLC), paired with the phone field above */}
+                <div className="mt-4">
+                  <SmsConsentCheckbox
+                    id="checkout-sms-consent"
+                    checked={smsConsent}
+                    onChange={setSmsConsent}
+                  />
+                </div>
               </div>
 
               {/* Fulfillment Method Picker */}
@@ -819,15 +828,6 @@ export default function CheckoutPage() {
                     </Link>
                   </span>
                 </label>
-
-                {/* SMS opt-in — optional, unchecked by default (A2P 10DLC) */}
-                <div className="mt-3">
-                  <SmsConsentCheckbox
-                    id="checkout-sms-consent"
-                    checked={smsConsent}
-                    onChange={setSmsConsent}
-                  />
-                </div>
 
                 {/* Checkout Error */}
                 {checkoutError && (
