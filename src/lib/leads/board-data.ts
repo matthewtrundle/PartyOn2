@@ -20,12 +20,23 @@ export type { BoardData, BoardFilters, BoardKpis, BoardLead } from './board-type
 const CLOSED_WINDOW_DAYS = 30;
 const TRAY_LIMIT = 60;
 
+/** All-time Won/Lost tallies as returned by the pipelineStage groupBy. */
+interface StageCount {
+  pipelineStage: string | null;
+  _count: { _all: number };
+}
+
 function displayName(lead: Lead): string {
   const name = [lead.firstName, lead.lastName].filter(Boolean).join(' ').trim();
   return name || lead.email || lead.phone || 'Unknown lead';
 }
 
-function toBoardLead(
+/**
+ * Project a Lead row onto its board card. Pure given the flags in `ctx`
+ * (exported for tests — needs-response and suggest-lost derivations live
+ * here).
+ */
+export function toBoardLead(
   lead: Lead,
   ctx: {
     hasFollowUp: boolean;
@@ -125,12 +136,15 @@ export async function getHotLeadsNeedingReply(): Promise<{
   return { count: row.count, oldestWaitHours };
 }
 
-/** Build the full board payload. Runs the enroll sweep first so it's always fresh. */
-export async function getBoardData(filters: BoardFilters = {}): Promise<BoardData> {
-  const now = new Date();
-  await sweepEnrollSubmitted().catch(() => undefined);
-
-  const closedFloor = new Date(now.getTime() - CLOSED_WINDOW_DAYS * 86_400_000);
+/**
+ * The three parallel board reads: active + recently-closed cards, all-time
+ * Won/Lost tallies (no window — the column header shows the true total), and
+ * the uncommitted tray when requested.
+ */
+async function fetchBoardRows(
+  includePartial: boolean,
+  closedFloor: Date,
+): Promise<{ boarded: Lead[]; closedCountsRaw: StageCount[]; tray: Lead[] }> {
   const [boarded, closedCountsRaw, tray] = await Promise.all([
     prisma.lead.findMany({
       where: {
@@ -147,7 +161,7 @@ export async function getBoardData(filters: BoardFilters = {}): Promise<BoardDat
       where: { pipelineStage: { in: ['WON', 'LOST'] } },
       _count: { _all: true },
     }),
-    filters.includePartial
+    includePartial
       ? prisma.lead.findMany({
           where: {
             pipelineStage: null,
@@ -159,30 +173,40 @@ export async function getBoardData(filters: BoardFilters = {}): Promise<BoardDat
         })
       : Promise.resolve([] as Lead[]),
   ]);
+  return { boarded, closedCountsRaw, tray };
+}
 
-  const all = [...boarded, ...tray];
-  const ids = all.map((l) => l.id);
-
+/**
+ * Per-card flags that need the whole result set: active follow-up jobs
+ * (one grouped query) and duplicate-email detection across boarded + tray.
+ */
+async function loadCardFlags(all: Lead[]): Promise<{
+  followUpLeads: Set<string>;
+  emailCounts: Map<string, number>;
+}> {
   const followUps = await prisma.followUpJob.groupBy({
     by: ['leadId'],
-    where: { leadId: { in: ids }, status: { in: ['scheduled', 'sent'] } },
+    where: { leadId: { in: all.map((l) => l.id) }, status: { in: ['scheduled', 'sent'] } },
     _count: { _all: true },
   });
-  const followUpLeads = new Set(followUps.map((r) => r.leadId));
-
   const emailCounts = new Map<string, number>();
   for (const l of all) {
     const key = l.email?.toLowerCase();
     if (key) emailCounts.set(key, (emailCounts.get(key) ?? 0) + 1);
   }
+  return {
+    followUpLeads: new Set(followUps.flatMap((r) => (r.leadId ? [r.leadId] : []))),
+    emailCounts,
+  };
+}
 
-  const toCard = (lead: Lead): BoardLead =>
-    toBoardLead(lead, {
-      hasFollowUp: followUpLeads.has(lead.id),
-      isDuplicate: (emailCounts.get(lead.email?.toLowerCase() ?? '') ?? 0) > 1,
-      now,
-    });
-
+/** Group boarded cards into stage columns, then apply the view filters. */
+export function buildColumns(
+  boarded: Lead[],
+  toCard: (lead: Lead) => BoardLead,
+  filters: BoardFilters,
+  now: Date,
+): Record<PipelineStage, BoardLead[]> {
   const columns = Object.fromEntries(
     PIPELINE_STAGES.map((s) => [s, [] as BoardLead[]]),
   ) as Record<PipelineStage, BoardLead[]>;
@@ -193,13 +217,17 @@ export async function getBoardData(filters: BoardFilters = {}): Promise<BoardDat
   for (const stage of PIPELINE_STAGES) {
     columns[stage] = applyFilters(columns[stage], filters, now);
   }
+  return columns;
+}
 
-  const trayCards = applyFilters(
-    tray.filter((l) => !isNewsletterOnly(l)).map(toCard),
-    filters,
-    now,
-  );
-
+/**
+ * KPI tiles from the (already filtered) columns. Won/Lost tiles read the
+ * 30-day columns, NOT the all-time closed counts — "this month's win rate".
+ */
+export function computeKpis(
+  columns: Record<PipelineStage, BoardLead[]>,
+  now: Date,
+): BoardKpis {
   const weekFloor = new Date(now.getTime() - 7 * 86_400_000);
   const open = (['NEW', 'CONTACTED', 'QUALIFIED', 'QUOTE_SENT'] as const).flatMap(
     (s) => columns[s],
@@ -207,7 +235,7 @@ export async function getBoardData(filters: BoardFilters = {}): Promise<BoardDat
   const won30d = columns.WON.length;
   const lost30d = columns.LOST.length;
   const closedTotal = won30d + lost30d;
-  const kpis: BoardKpis = {
+  return {
     newThisWeek: open.filter((c) => new Date(c.createdAt) >= weekFloor).length,
     hot: open.filter((c) => c.temperature === 'hot').length,
     needsResponse: open.filter((c) => c.needsResponse).length,
@@ -215,17 +243,47 @@ export async function getBoardData(filters: BoardFilters = {}): Promise<BoardDat
     lost30d,
     conversionPct: closedTotal > 0 ? Math.round((won30d / closedTotal) * 100) : null,
   };
+}
 
-  const closedCounts = {
-    won: closedCountsRaw.find((r) => r.pipelineStage === 'WON')?._count._all ?? 0,
-    lost: closedCountsRaw.find((r) => r.pipelineStage === 'LOST')?._count._all ?? 0,
+/** All-time Won/Lost totals for the column headers. */
+export function summarizeClosedCounts(raw: StageCount[]): { won: number; lost: number } {
+  return {
+    won: raw.find((r) => r.pipelineStage === 'WON')?._count._all ?? 0,
+    lost: raw.find((r) => r.pipelineStage === 'LOST')?._count._all ?? 0,
   };
+}
+
+/** Build the full board payload. Runs the enroll sweep first so it's always fresh. */
+export async function getBoardData(filters: BoardFilters = {}): Promise<BoardData> {
+  const now = new Date();
+  await sweepEnrollSubmitted().catch(() => undefined);
+
+  const closedFloor = new Date(now.getTime() - CLOSED_WINDOW_DAYS * 86_400_000);
+  const { boarded, closedCountsRaw, tray } = await fetchBoardRows(
+    filters.includePartial === true,
+    closedFloor,
+  );
+  const { followUpLeads, emailCounts } = await loadCardFlags([...boarded, ...tray]);
+
+  const toCard = (lead: Lead): BoardLead =>
+    toBoardLead(lead, {
+      hasFollowUp: followUpLeads.has(lead.id),
+      isDuplicate: (emailCounts.get(lead.email?.toLowerCase() ?? '') ?? 0) > 1,
+      now,
+    });
+
+  const columns = buildColumns(boarded, toCard, filters, now);
+  const trayCards = applyFilters(
+    tray.filter((l) => !isNewsletterOnly(l)).map(toCard),
+    filters,
+    now,
+  );
 
   return {
     columns,
-    closedCounts,
+    closedCounts: summarizeClosedCounts(closedCountsRaw),
     tray: trayCards,
-    kpis,
+    kpis: computeKpis(columns, now),
     generatedAt: now.toISOString(),
   };
 }

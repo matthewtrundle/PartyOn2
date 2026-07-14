@@ -38,7 +38,8 @@ const db: {
   drafts: Array<{ id: string; customerEmail: string; status: string; createdAt: Date }>;
   wonOrderRows: Array<{ id: string }>;
   reopenRows: Array<{ id: string }>;
-} = { leads: [], events: [], drafts: [], wonOrderRows: [], reopenRows: [] };
+  queryLog: Array<{ strings: string[]; values: unknown[] }>;
+} = { leads: [], events: [], drafts: [], wonOrderRows: [], reopenRows: [], queryLog: [] };
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 function matchesWhere(lead: MockLead, where: Record<string, any>): boolean {
@@ -61,8 +62,8 @@ function matchesWhere(lead: MockLead, where: Record<string, any>): boolean {
   return true;
 }
 
-vi.mock('@/lib/database/client', () => ({
-  prisma: {
+vi.mock('@/lib/database/client', () => {
+  const client: any = {
     lead: {
       findUnique: vi.fn(async ({ where }: any) => db.leads.find((l) => l.id === where.id) ?? null),
       findMany: vi.fn(async ({ where, take }: any) =>
@@ -115,14 +116,30 @@ vi.mock('@/lib/database/client', () => ({
         return hit ? { id: hit.id } : null;
       }),
     },
-    $queryRaw: vi.fn(async (strings: TemplateStringsArray) => {
+    $queryRaw: vi.fn(async (strings: TemplateStringsArray, ...values: unknown[]) => {
+      db.queryLog.push({ strings: [...strings], values });
       const sql = Array.isArray(strings) ? strings.join('?') : String(strings);
       // sweepReopens' candidate query vs findWonOrder's order match.
       if (sql.includes('last_activity_at')) return db.reopenRows;
       return db.wonOrderRows;
     }),
-  },
-}));
+  };
+  // Interactive-transaction stub with honest rollback semantics: lead field
+  // mutations and event appends made inside the callback revert if it throws,
+  // so atomicity assertions mean something.
+  client.$transaction = vi.fn(async (fn: any) => {
+    const leadSnapshots = db.leads.map((l) => ({ ref: l, copy: { ...l } }));
+    const eventsLen = db.events.length;
+    try {
+      return await fn(client);
+    } catch (err) {
+      for (const { ref, copy } of leadSnapshots) Object.assign(ref, copy);
+      db.events.length = eventsLen;
+      throw err;
+    }
+  });
+  return { prisma: client };
+});
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
 import {
@@ -136,8 +153,37 @@ import {
   sweepWonMatches,
   syncStageFromConversion,
   transitionStage,
+  wonOrderIdentity,
 } from '../pipeline';
 import { validateTransition } from '../pipeline-types';
+import { prisma } from '@/lib/database/client';
+
+/**
+ * Flatten a captured tagged-template query (Prisma.sql fragments included)
+ * into plain SQL text + bind params, so tests can assert on the filters the
+ * real database would see.
+ */
+function flattenSql(
+  strings: readonly string[],
+  values: readonly unknown[],
+): { text: string; params: unknown[] } {
+  let text = '';
+  const params: unknown[] = [];
+  strings.forEach((s, i) => {
+    text += s;
+    if (i >= values.length) return;
+    const v = values[i] as { strings?: readonly string[]; values?: readonly unknown[] } | null;
+    if (v && typeof v === 'object' && Array.isArray(v.strings)) {
+      const inner = flattenSql(v.strings, v.values ?? []);
+      text += inner.text;
+      params.push(...inner.params);
+    } else {
+      text += '?';
+      params.push(values[i]);
+    }
+  });
+  return { text, params };
+}
 
 let seq = 0;
 function makeLead(overrides: Partial<MockLead> = {}): MockLead {
@@ -178,6 +224,7 @@ beforeEach(() => {
   db.drafts = [];
   db.wonOrderRows = [];
   db.reopenRows = [];
+  db.queryLog = [];
   seq = 0;
 });
 
@@ -432,5 +479,93 @@ describe('matchFloor', () => {
     expect(
       matchFloor({ createdAt: reopenedAt, reopenedAt: createdAt })
     ).toEqual(reopenedAt); // stale reopen older than creation is ignored
+  });
+});
+
+describe('stage-write atomicity', () => {
+  const txMock = () => prisma.$transaction as unknown as ReturnType<typeof vi.fn>;
+  const createMock = () => prisma.leadEvent.create as unknown as ReturnType<typeof vi.fn>;
+
+  it('routes the stage write + audit event through one transaction', async () => {
+    const lead = makeLead({ pipelineStage: 'NEW', stageChangedAt: new Date() });
+    const before = txMock().mock.calls.length;
+    await transitionStage(lead.id, 'CONTACTED', { via: 'drag' });
+    expect(txMock().mock.calls.length).toBe(before + 1);
+  });
+
+  it('rolls the stage write back when the audit-event append fails', async () => {
+    const lead = makeLead({ pipelineStage: 'NEW', stageChangedAt: new Date() });
+    createMock().mockRejectedValueOnce(new Error('db down'));
+    await expect(transitionStage(lead.id, 'CONTACTED', { via: 'drag' })).rejects.toThrow(
+      'db down'
+    );
+    expect(lead.pipelineStage).toBe('NEW'); // stage change did not survive alone
+    expect(db.events).toHaveLength(0);
+  });
+
+  it('rolls an enroll back when its audit-event append fails', async () => {
+    const lead = makeLead();
+    createMock().mockRejectedValueOnce(new Error('db down'));
+    await expect(enrollLeadIfEligible(lead.id)).rejects.toThrow('db down');
+    expect(lead.pipelineStage).toBeNull();
+    expect(db.events).toHaveLength(0);
+  });
+});
+
+describe('wonOrderIdentity', () => {
+  const base = { createdAt: new Date('2026-06-01T00:00:00Z'), reopenedAt: null };
+  const asClause = (sql: unknown) =>
+    sql as { strings: readonly string[]; values: readonly unknown[] };
+
+  it('builds a case-insensitive email clause', () => {
+    const { identity } = wonOrderIdentity({ ...base, email: 'Guest@Example.com', phone: null });
+    expect(identity).toHaveLength(1);
+    const { text, params } = flattenSql(asClause(identity[0]).strings, asClause(identity[0]).values);
+    expect(text).toBe('LOWER(customer_email) = LOWER(?)');
+    expect(params).toEqual(['Guest@Example.com']);
+  });
+
+  it('builds a last-10-digits phone clause', () => {
+    const { identity } = wonOrderIdentity({ ...base, email: null, phone: '(512) 555-0187' });
+    expect(identity).toHaveLength(1);
+    const { text, params } = flattenSql(asClause(identity[0]).strings, asClause(identity[0]).values);
+    expect(text).toBe(
+      "RIGHT(REGEXP_REPLACE(COALESCE(customer_phone, ''), '\\D', '', 'g'), 10) = ?"
+    );
+    expect(params).toEqual(['5125550187']);
+  });
+
+  it('emits both clauses when both identities exist, none when neither does', () => {
+    expect(
+      wonOrderIdentity({ ...base, email: 'a@b.co', phone: '5125550187' }).identity
+    ).toHaveLength(2);
+    expect(wonOrderIdentity({ ...base, email: null, phone: null }).identity).toHaveLength(0);
+  });
+
+  it('floors at the reopen date when newer than creation', () => {
+    const reopenedAt = new Date('2026-07-01T00:00:00Z');
+    expect(
+      wonOrderIdentity({ ...base, email: 'a@b.co', phone: null, reopenedAt }).floor
+    ).toEqual(reopenedAt);
+    expect(wonOrderIdentity({ ...base, email: 'a@b.co', phone: null }).floor).toEqual(
+      base.createdAt
+    );
+  });
+});
+
+describe('findWonOrder SQL filters (via sweepWonMatches)', () => {
+  it('excludes group-participant payments, requires PAID-ish status, floors at the lead date', async () => {
+    const lead = makeLead({ pipelineStage: 'QUOTE_SENT', stageChangedAt: new Date() });
+    db.wonOrderRows = [{ id: 'order-1' }];
+    await sweepWonMatches();
+
+    expect(db.queryLog).toHaveLength(1);
+    const { text, params } = flattenSql(db.queryLog[0].strings, db.queryLog[0].values);
+    expect(text).toContain("financial_status IN ('PAID', 'PARTIALLY_REFUNDED')");
+    expect(text).toContain('group_order_v2_id IS NULL');
+    expect(text).toContain('created_at >= ?');
+    expect(text).toContain('LOWER(customer_email) = LOWER(?)');
+    expect(params).toContainEqual(lead.createdAt); // the match floor
+    expect(params).toContainEqual('guest@example.com');
   });
 });
