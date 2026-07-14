@@ -6,6 +6,8 @@ import { addContactToAudience } from '@/lib/email/resend-audiences'
 import { kv, isKVConfigured, prisma } from '@/lib/database/client'
 import { isHoneypotTripped } from '@/lib/forms/honeypot'
 import { enqueueJourney } from '@/lib/followups/enqueue'
+import { markLeadStatus, upsertLead } from '@/lib/leads/leadCapture'
+import { enrollLeadIfEligible } from '@/lib/leads/pipeline'
 
 // Sources that trigger an automated outbound email with the partner one-pager
 // PDF + Calendly CTA (in addition to the existing ops notification).
@@ -252,6 +254,54 @@ export async function POST(request: NextRequest) {
       interests: inquiry.interests ? inquiry.interests.split(', ') : [],
       message: inquiry.message || inquiry.notes,
     })
+
+    // Lead Flow board: a B2B inquiry is a sales lead (2026-07-13 audit gap).
+    // Runs only after every bot gate + a successful save. Guarded promote —
+    // never downgrades an existing SUBMITTED/CONVERTED lead — and NO
+    // trustedSubmit (this route is not zod-validated, so it must not gain
+    // the power to reopen closed cards). Never throws.
+    if (dbResult?.id) {
+      try {
+        const [pFirst, ...pRest] = inquiry.contactName.split(/\s+/)
+        const lead = await upsertLead(
+          {
+            email: inquiry.email,
+            phone: inquiry.phone || null,
+            firstName: pFirst || null,
+            lastName: pRest.join(' ') || null,
+          },
+          { sourcePage: '/partners', sourceWidget: 'PARTNER_INQUIRY' }
+        )
+        if (lead) {
+          const prevMeta = (lead.metadata as Record<string, unknown> | null) ?? {}
+          await prisma.lead.update({
+            where: { id: lead.id },
+            data: {
+              // Last-touch stamp — this B2B submission is the active context.
+              sourcePage: '/partners',
+              sourceWidget: 'PARTNER_INQUIRY',
+              metadata: {
+                ...prevMeta,
+                partnerInquiry: {
+                  inquiryId: dbResult.id,
+                  businessName: inquiry.businessName || null,
+                  businessType: inquiry.businessType || inquiry.partnerType || null,
+                  source: inquiry.source || null,
+                  submittedAt: new Date().toISOString(),
+                },
+              },
+            },
+          })
+          if (lead.status === 'PARTIAL' || lead.status === 'ANONYMOUS') {
+            await markLeadStatus(lead.id, 'SUBMITTED')
+          } else {
+            await enrollLeadIfEligible(lead.id)
+          }
+        }
+      } catch (leadErr) {
+        console.warn('[Partner Inquiry] lead mirror failed:', leadErr)
+      }
+    }
 
     // Send email notification via Resend
     try {

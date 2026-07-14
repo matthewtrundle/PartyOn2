@@ -28,12 +28,22 @@ vi.mock('@/lib/email/resend-audiences', () => ({ addContactToAudience: vi.fn() }
 
 const prismaMock = vi.hoisted(() => ({
   partnerInquiry: { findFirst: vi.fn(), update: vi.fn() },
+  lead: { update: vi.fn() },
 }));
 vi.mock('@/lib/database/client', () => ({
   kv: {},
   isKVConfigured: () => false,
   prisma: prismaMock,
 }));
+
+const leadCaptureMock = vi.hoisted(() => ({
+  upsertLead: vi.fn(),
+  markLeadStatus: vi.fn(),
+}));
+vi.mock('@/lib/leads/leadCapture', () => leadCaptureMock);
+
+const pipelineMock = vi.hoisted(() => ({ enrollLeadIfEligible: vi.fn() }));
+vi.mock('@/lib/leads/pipeline', () => pipelineMock);
 
 import { POST } from '../route';
 
@@ -67,6 +77,15 @@ beforeEach(() => {
   emailMock.sendPartnerOnePagerEmail.mockReset();
   prismaMock.partnerInquiry.findFirst.mockReset();
   prismaMock.partnerInquiry.update.mockReset();
+  prismaMock.lead.update.mockReset();
+  leadCaptureMock.upsertLead.mockReset();
+  leadCaptureMock.markLeadStatus.mockReset();
+  pipelineMock.enrollLeadIfEligible.mockReset();
+  leadCaptureMock.upsertLead.mockResolvedValue({
+    id: 'lead-1',
+    status: 'PARTIAL',
+    metadata: null,
+  });
 });
 
 describe('POST /api/partners/inquiry', () => {
@@ -135,5 +154,49 @@ describe('POST /api/partners/inquiry', () => {
     expect(res.status).toBe(200);
     expect(json.success).toBe(true);
     expect(json.inquiryId).toBeUndefined();
+  });
+
+  it('mirrors a successful inquiry onto the Lead Flow board (PARTNER_INQUIRY, promoted)', async () => {
+    dbMock.savePartnerInquiry.mockResolvedValue({ id: 'inq_123' });
+
+    await POST(makeRequest(validBody));
+
+    expect(leadCaptureMock.upsertLead).toHaveBeenCalledWith(
+      expect.objectContaining({ email: 'jane@example.com', firstName: 'Jane' }),
+      expect.objectContaining({ sourceWidget: 'PARTNER_INQUIRY' }),
+    );
+    expect(prismaMock.lead.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          metadata: expect.objectContaining({
+            partnerInquiry: expect.objectContaining({ inquiryId: 'inq_123' }),
+          }),
+        }),
+      }),
+    );
+    expect(leadCaptureMock.markLeadStatus).toHaveBeenCalledWith('lead-1', 'SUBMITTED');
+  });
+
+  it('never downgrades a CONVERTED lead — enroll only', async () => {
+    dbMock.savePartnerInquiry.mockResolvedValue({ id: 'inq_124' });
+    leadCaptureMock.upsertLead.mockResolvedValue({
+      id: 'lead-2',
+      status: 'CONVERTED',
+      metadata: null,
+    });
+
+    await POST(makeRequest(validBody));
+
+    expect(leadCaptureMock.markLeadStatus).not.toHaveBeenCalled();
+    expect(pipelineMock.enrollLeadIfEligible).toHaveBeenCalledWith('lead-2');
+  });
+
+  it('writes NO lead when the honeypot trips or the save fails', async () => {
+    await POST(makeRequest({ ...validBody, [HONEYPOT_FIELD]: 'http://spam.example' }));
+    expect(leadCaptureMock.upsertLead).not.toHaveBeenCalled();
+
+    dbMock.savePartnerInquiry.mockResolvedValue(null);
+    await POST(makeRequest(validBody));
+    expect(leadCaptureMock.upsertLead).not.toHaveBeenCalled();
   });
 });
