@@ -49,6 +49,22 @@ function markShown(id: string) {
   }
 }
 
+/**
+ * Has the visitor cleared the site-wide 21+ age gate? AgeVerification stamps
+ * `age_verified` in localStorage on accept — this matches the truthy check
+ * DeliveryWindowGate uses, so both entrance gates read the flag identically.
+ * On a read error we return false: better to skip a non-essential marketing
+ * popup than risk painting it over a still-open gate.
+ */
+function isAgeVerified(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    return !!localStorage.getItem('age_verified');
+  } catch {
+    return false;
+  }
+}
+
 export default function LeadMagnetController() {
   const pathname = usePathname();
   const [activeMagnet, setActiveMagnet] = useState<LeadMagnet | null>(null);
@@ -90,24 +106,55 @@ export default function LeadMagnetController() {
       }
     };
 
-    for (const t of candidate.triggers) {
-      if (t.type === 'time') {
-        const id = window.setTimeout(() => fire('time'), t.seconds * 1000);
-        cleanupFns.push(() => clearTimeout(id));
-      } else if (t.type === 'scroll') {
-        const onScroll = () => {
-          const doc = document.documentElement;
-          const total = doc.scrollHeight - window.innerHeight;
-          if (total <= 0) return;
-          const pct = (window.scrollY / total) * 100;
-          if (pct >= t.percent) fire('scroll');
-        };
-        window.addEventListener('scroll', onScroll, { passive: true });
-        cleanupFns.push(() => window.removeEventListener('scroll', onScroll));
+    // Automatic triggers (time-on-page, scroll depth) must NOT fire until the
+    // visitor has cleared the 21+ age gate. AgeVerification (z-100) and
+    // DeliveryWindowGate (z-210) are the required entrance gates; this modal
+    // renders at z-200, so firing on a timer while the age gate is still open
+    // would drop a marketing popup ON TOP of a legally-required gate — and
+    // before the visitor has made the gating choice. Poll for `age_verified`
+    // before wiring the triggers, mirroring how DeliveryWindowGate/DashboardTour
+    // wait on their prerequisite flag.
+    //
+    // Every page the current LEAD_MAGNETS target ('/', '/services/*', '/flyer')
+    // is age-gated, and the config excludes '/dashboard/*' and never lists
+    // '/order', so the delivery-window gate is never in play here. If you ever
+    // point a magnet at an age-gate-EXEMPT page, its automatic triggers won't
+    // fire until `age_verified` exists — rely on a manual trigger there.
+    const wireAutoTriggers = () => {
+      if (fired) return;
+      for (const t of candidate.triggers) {
+        if (t.type === 'time') {
+          const id = window.setTimeout(() => fire('time'), t.seconds * 1000);
+          cleanupFns.push(() => clearTimeout(id));
+        } else if (t.type === 'scroll') {
+          const onScroll = () => {
+            const doc = document.documentElement;
+            const total = doc.scrollHeight - window.innerHeight;
+            if (total <= 0) return;
+            const pct = (window.scrollY / total) * 100;
+            if (pct >= t.percent) fire('scroll');
+          };
+          window.addEventListener('scroll', onScroll, { passive: true });
+          cleanupFns.push(() => window.removeEventListener('scroll', onScroll));
+        }
       }
+    };
+
+    if (isAgeVerified()) {
+      wireAutoTriggers();
+    } else {
+      const poll = window.setInterval(() => {
+        if (isAgeVerified()) {
+          clearInterval(poll);
+          wireAutoTriggers();
+        }
+      }, 300);
+      cleanupFns.push(() => clearInterval(poll));
     }
 
-    // Manual trigger: any code can dispatch 'lead-magnet:open' to force it.
+    // Manual trigger stays live regardless of the age gate: it only fires on an
+    // explicit user action (e.g. the flyer page's "preview" button dispatches
+    // 'lead-magnet:open'), so it can never queue-jump a gate.
     const onManual = (ev: Event) => {
       const ce = ev as CustomEvent<{ id?: string }>;
       if (!ce.detail?.id || ce.detail.id === candidate.id) {
