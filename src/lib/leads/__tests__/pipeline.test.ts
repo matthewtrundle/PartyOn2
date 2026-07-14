@@ -153,6 +153,7 @@ import {
   sweepWonMatches,
   syncStageFromConversion,
   transitionStage,
+  wonGroupHostIdentity,
   wonOrderIdentity,
 } from '../pipeline';
 import { validateTransition } from '../pipeline-types';
@@ -528,22 +529,34 @@ describe('wonOrderIdentity', () => {
   const asClause = (sql: unknown) =>
     sql as { strings: readonly string[]; values: readonly unknown[] };
 
-  it('builds a case-insensitive email clause', () => {
+  it('builds a case-insensitive email clause on the order columns', () => {
     const { identity } = wonOrderIdentity({ ...base, email: 'Guest@Example.com', phone: null });
     expect(identity).toHaveLength(1);
     const { text, params } = flattenSql(asClause(identity[0]).strings, asClause(identity[0]).values);
-    expect(text).toBe('LOWER(customer_email) = LOWER(?)');
+    expect(text).toBe('LOWER(o.customer_email) = LOWER(?)');
     expect(params).toEqual(['Guest@Example.com']);
   });
 
-  it('builds a last-10-digits phone clause', () => {
+  it('builds a last-10-digits phone clause on the order columns', () => {
     const { identity } = wonOrderIdentity({ ...base, email: null, phone: '(512) 555-0187' });
     expect(identity).toHaveLength(1);
     const { text, params } = flattenSql(asClause(identity[0]).strings, asClause(identity[0]).values);
     expect(text).toBe(
-      "RIGHT(REGEXP_REPLACE(COALESCE(customer_phone, ''), '\\D', '', 'g'), 10) = ?"
+      "RIGHT(REGEXP_REPLACE(COALESCE(o.customer_phone, ''), '\\D', '', 'g'), 10) = ?"
     );
     expect(params).toEqual(['5125550187']);
+  });
+
+  it('wonGroupHostIdentity mirrors the clauses onto the group HOST columns', () => {
+    const clauses = wonGroupHostIdentity({ email: 'Host@Example.com', phone: '(512) 555-0187' });
+    expect(clauses).toHaveLength(2);
+    const email = flattenSql(asClause(clauses[0]).strings, asClause(clauses[0]).values);
+    const phone = flattenSql(asClause(clauses[1]).strings, asClause(clauses[1]).values);
+    expect(email.text).toBe('LOWER(g.host_email) = LOWER(?)');
+    expect(phone.text).toBe(
+      "RIGHT(REGEXP_REPLACE(COALESCE(g.host_phone, ''), '\\D', '', 'g'), 10) = ?"
+    );
+    expect(wonGroupHostIdentity({ email: null, phone: null })).toHaveLength(0);
   });
 
   it('emits both clauses when both identities exist, none when neither does', () => {
@@ -565,18 +578,23 @@ describe('wonOrderIdentity', () => {
 });
 
 describe('findWonOrder SQL filters (via sweepWonMatches)', () => {
-  it('excludes group-participant payments, requires PAID-ish status, floors at the lead date', async () => {
+  it('direct branch excludes group payments; host branch matches HOST columns only', async () => {
     const lead = makeLead({ pipelineStage: 'QUOTE_SENT', stageChangedAt: new Date() });
     db.wonOrderRows = [{ id: 'order-1' }];
     await sweepWonMatches();
 
     expect(db.queryLog).toHaveLength(1);
     const { text, params } = flattenSql(db.queryLog[0].strings, db.queryLog[0].values);
-    expect(text).toContain("financial_status IN ('PAID', 'PARTIALLY_REFUNDED')");
-    expect(text).toContain('group_order_v2_id IS NULL');
-    expect(text).toContain('created_at >= ?');
-    expect(text).toContain('LOWER(customer_email) = LOWER(?)');
+    expect(text).toContain("o.financial_status IN ('PAID', 'PARTIALLY_REFUNDED')");
+    expect(text).toContain('o.created_at >= ?');
+    // Direct branch: the lead's own order, group payments excluded (R1).
+    expect(text).toContain('o.group_order_v2_id IS NULL AND (LOWER(o.customer_email) = LOWER(?)');
+    // Host branch: any paid order on a dashboard the LEAD hosts — the join
+    // is on the group's HOST columns, so a guest's chip-in can't win the
+    // guest's own lead.
+    expect(text).toContain('o.group_order_v2_id IS NOT NULL AND (LOWER(g.host_email) = LOWER(?)');
+    expect(text).toContain('LEFT JOIN group_orders_v2 g ON g.id = o.group_order_v2_id');
     expect(params).toContainEqual(lead.createdAt); // the match floor
-    expect(params).toContainEqual('guest@example.com');
+    expect(params.filter((p) => p === 'guest@example.com')).toHaveLength(2); // both branches
   });
 });
