@@ -6,6 +6,7 @@ import { type PipelineStage } from '@/lib/leads/pipeline-types';
 import type { LeadMutations } from './use-lead-mutations';
 import type { LeadDetail } from './drawer-types';
 import DrawerHeader from './drawer-header';
+import DrawerSummary from './drawer-summary';
 import DrawerStageActions from './drawer-stage-actions';
 import DrawerFacts from './drawer-facts';
 import DrawerTimeline from './drawer-timeline';
@@ -103,6 +104,7 @@ export default function LeadDrawer({
         {lead && detail && (
           <>
             <DrawerHeader lead={lead} name={name} />
+            <DrawerSummary detail={detail} />
             <DrawerStageActions
               lead={lead}
               mutating={mutations.mutating}
