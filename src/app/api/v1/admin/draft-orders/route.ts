@@ -7,6 +7,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createDraftOrder, listDraftOrders, calculateDraftOrderAmounts } from '@/lib/draft-orders';
+import { markLeadStatus, upsertLead } from '@/lib/leads/leadCapture';
+import { enrollLeadIfEligible } from '@/lib/leads/pipeline';
+import { requireOpsAuth } from '@/lib/auth/ops-session';
 import { DraftOrderStatus } from '@prisma/client';
 import { prisma } from '@/lib/database/client';
 
@@ -121,6 +124,12 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
+    // Defense in depth: middleware already gates /api/v1/admin/**, but this
+    // route creates invoices + mirrors leads — carry its own ops-auth so a
+    // future middleware-matcher change can't silently expose it.
+    const auth = await requireOpsAuth();
+    if (auth instanceof NextResponse) return auth;
+
     const body = await request.json();
     const validated = CreateDraftOrderSchema.parse(body);
 
@@ -147,6 +156,56 @@ export async function POST(request: NextRequest) {
       discountAmount: amounts.discountAmount,
       expiresAt,
     });
+
+    // Lead Flow board: an ops invoice to a brand-new contact had no Lead, so
+    // QUOTE_SENT tracking missed them entirely (2026-07-13 audit gap #7).
+    // Hooked HERE, not in the draft-orders lib — the full-moon ticket path
+    // calls the lib directly and must stay lead-free. Group-attached drafts
+    // skip (the dashboard-host mirror owns those). Card enters NEW; the
+    // existing sweepQuoteSent moves it to QUOTE_SENT once the invoice is
+    // SENT/VIEWED. Never throws.
+    if (!validated.groupOrderId) {
+      try {
+        const [cFirst, ...cRest] = validated.customerName.split(/\s+/);
+        const lead = await upsertLead(
+          {
+            email: validated.customerEmail,
+            phone: validated.customerPhone || null,
+            firstName: cFirst || null,
+            lastName: cRest.join(' ') || null,
+          },
+          { sourcePage: '/ops/orders/create', sourceWidget: 'OPS_INVOICE' },
+        );
+        if (lead) {
+          const prevMeta = (lead.metadata as Record<string, unknown> | null) ?? {};
+          // Ops acted, not the customer — only claim provenance when the
+          // lead has none (null/OTHER); never clobber a real widget.
+          const upgradeWidget = lead.sourceWidget === null || lead.sourceWidget === 'OTHER';
+          await prisma.lead.update({
+            where: { id: lead.id },
+            data: {
+              draftOrderId: draftOrder.id,
+              ...(upgradeWidget ? { sourceWidget: 'OPS_INVOICE' } : {}),
+              metadata: {
+                ...prevMeta,
+                opsInvoice: {
+                  draftOrderId: draftOrder.id,
+                  deliveryDate: validated.deliveryDate.toISOString().slice(0, 10),
+                  submittedAt: new Date().toISOString(),
+                },
+              },
+            },
+          });
+          if (lead.status === 'PARTIAL' || lead.status === 'ANONYMOUS') {
+            await markLeadStatus(lead.id, 'SUBMITTED');
+          } else {
+            await enrollLeadIfEligible(lead.id);
+          }
+        }
+      } catch (leadErr) {
+        console.warn('[Draft Orders API] lead mirror failed:', leadErr);
+      }
+    }
 
     // Generate invoice URL
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://partyondelivery.com';
