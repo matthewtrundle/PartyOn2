@@ -21,6 +21,7 @@ import { z } from 'zod';
 import { sendEmail } from '@/lib/email/resend-client';
 import { eventQuizWelcomeEmail } from '@/lib/email/templates/event-quiz-welcome';
 import { upsertLead, recordEvent } from '@/lib/leads/leadCapture';
+import { attributionSchema, compactAttribution } from '@/lib/leads/attribution-schema';
 import { targetUrlFor } from '@/lib/eventQuiz/routing';
 import { enqueueJourney } from '@/lib/followups/enqueue';
 import { mirrorLeadToSheet } from '@/lib/premier/pod-leads-sheet';
@@ -58,6 +59,9 @@ const schema = z.object({
       ]),
     )
     .default([]),
+  // Optional/nullable so older cached client bundles never 400 (audit gap:
+  // event-quiz was the only trusted route dropping UTM attribution).
+  attribution: attributionSchema,
 });
 
 export async function POST(req: NextRequest) {
@@ -87,6 +91,17 @@ export async function POST(req: NextRequest) {
       {
         sourcePage: '/event-quiz',
         sourceWidget: 'CONTACT_FORM',
+        // UTM columns blank-fill + click ids merge into metadata.attribution.
+        utmSource: body.attribution?.utmSource,
+        utmMedium: body.attribution?.utmMedium,
+        utmCampaign: body.attribution?.utmCampaign,
+        utmContent: body.attribution?.utmContent,
+        utmTerm: body.attribution?.utmTerm,
+        gclid: body.attribution?.gclid,
+        gbraid: body.attribution?.gbraid,
+        wbraid: body.attribution?.wbraid,
+        fbclid: body.attribution?.fbclid,
+        msclkid: body.attribution?.msclkid,
       },
     );
 
@@ -94,6 +109,29 @@ export async function POST(req: NextRequest) {
       leadId = lead.id;
       // Promote to SUBMITTED + stamp the quiz answers in metadata so
       // the Leads dashboard can render them.
+      const prevMeta = (lead.metadata as Record<string, unknown> | null) ?? {};
+      const prevAttribution =
+        prevMeta.attribution &&
+        typeof prevMeta.attribution === 'object' &&
+        !Array.isArray(prevMeta.attribution)
+          ? (prevMeta.attribution as Record<string, unknown>)
+          : {};
+      const nextMeta: Record<string, unknown> = {
+        ...prevMeta,
+        eventQuiz: {
+          partyType: body.partyType,
+          timing: body.timing,
+          needs: body.needs,
+          submittedAt: new Date().toISOString(),
+          resumePath,
+        },
+      };
+      if (body.attribution) {
+        nextMeta.attribution = {
+          ...prevAttribution,
+          ...compactAttribution(body.attribution),
+        };
+      }
       await prisma.lead.update({
         where: { id: lead.id },
         data: {
@@ -102,16 +140,7 @@ export async function POST(req: NextRequest) {
           // even when the email matched an older lead row.
           sourcePage: '/event-quiz',
           sourceWidget: 'CONTACT_FORM',
-          metadata: {
-            ...((lead.metadata as Record<string, unknown> | null) ?? {}),
-            eventQuiz: {
-              partyType: body.partyType,
-              timing: body.timing,
-              needs: body.needs,
-              submittedAt: new Date().toISOString(),
-              resumePath,
-            },
-          },
+          metadata: nextMeta as never,
         },
       });
 
@@ -128,6 +157,10 @@ export async function POST(req: NextRequest) {
           partyType: body.partyType,
           timing: body.timing,
           needs: body.needs,
+          ...(body.attribution?.gclid && { gclid: body.attribution.gclid }),
+          ...(body.attribution?.utmCampaign && {
+            utmCampaign: body.attribution.utmCampaign,
+          }),
         },
       });
     }

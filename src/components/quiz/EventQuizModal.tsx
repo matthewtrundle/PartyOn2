@@ -34,6 +34,7 @@ import {
   type EventNeed,
 } from '@/lib/eventQuiz/routing';
 import { sendLeadEvent } from '@/lib/leads/client';
+import { getAttribution } from '@/lib/analytics/attribution';
 
 const NAVY = '#0A1F33';
 const GOLD = '#F2D34F'; // brand-yellow — matches bachelor landing theme.primary
@@ -127,6 +128,9 @@ export default function EventQuizModal() {
           partyType,
           timing: timingSentinel,
           needs: Array.from(needs),
+          // First-touch UTM/click-id snapshot — the server persists it onto
+          // the Lead (the other quiz/quote surfaces already send this).
+          attribution: getAttribution(),
         }),
       });
       const json = await res.json();

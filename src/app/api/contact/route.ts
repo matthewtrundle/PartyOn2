@@ -4,7 +4,9 @@
  * Historically this ONLY forwarded to a Zapier webhook: if Zapier was down
  * or the env var missing, the message was lost with no trace. Now the
  * submission is stored as a Lead (source CONTACT_FORM, full message in
- * metadata.contactForm) FIRST, then forwarded to Zapier as before, and the
+ * metadata.contactForm) FIRST — promoted to SUBMITTED with a trusted
+ * FORM_SUBMIT so it lands on the /admin/leads board in realtime (one of the
+ * 5 server-zod trusted routes) — then forwarded to Zapier as before, and the
  * contact-form follow-up journey is queued (ack on the next engine tick,
  * "did my reply reach you?" at +72h — flag-gated, deduped per submission).
  */
@@ -12,7 +14,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/database/client';
-import { upsertLead } from '@/lib/leads/leadCapture';
+import { recordEvent, upsertLead } from '@/lib/leads/leadCapture';
 import { enqueueJourney } from '@/lib/followups/enqueue';
 import { checkRateLimit } from '@/lib/security/rate-limit';
 import { mirrorLeadToSheet } from '@/lib/premier/pod-leads-sheet';
@@ -72,6 +74,13 @@ export async function POST(request: NextRequest) {
         await prisma.lead.update({
           where: { id: lead.id },
           data: {
+            // A full contact-form send is a real inquiry — promote so the
+            // lead gets a board card instead of sitting PARTIAL in the tray
+            // forever (2026-07-13 audit gap #10). Last-touch source stamp:
+            // this submission is now the lead's active surface.
+            status: 'SUBMITTED',
+            sourcePage: '/contact',
+            sourceWidget: 'CONTACT_FORM',
             metadata: {
               ...existingMeta,
               contactForm: {
@@ -83,6 +92,18 @@ export async function POST(request: NextRequest) {
               },
             },
           },
+        });
+        // 5th trusted route (server-zod-validated + rate-limited): enrolls a
+        // new card in realtime and may reopen a closed one — a fresh contact
+        // message from a WON/LOST lead is a new conversation.
+        await recordEvent({
+          type: 'FORM_SUBMIT',
+          leadId: lead.id,
+          page: '/contact',
+          widget: 'CONTACT_FORM',
+          fieldName: 'contact-form-submit',
+          metadata: { eventType: body.eventType || null, submittedAt },
+          trustedSubmit: true,
         });
       }
     } catch (storageError) {
