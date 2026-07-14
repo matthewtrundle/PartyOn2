@@ -508,6 +508,97 @@ export default function OrderPathwaysView() {
         </table>
       </div>
 
+      {/* ─── PARKED — PPC leads integration playbook ─────────────────── */}
+      <SectionHeading id="ppc-integration">
+        ⛵ Parked: Premier Party Cruises leads integration
+      </SectionHeading>
+      <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-5 mb-8 text-sm leading-relaxed">
+        <p className="mb-3 text-gray-800">
+          <strong>Status (2026-07-14):</strong> the POD side is LIVE and
+          smoke-tested. Premier website forms can start posting leads any
+          time — the only remaining work is wiring the Premier site&apos;s
+          forms (via the Premier Claude agent) and, optionally, the GHL
+          contact sync. Resume by saying <em>&ldquo;PPC leads
+          integration&rdquo;</em> in a Claude session.
+        </p>
+
+        <div className="text-[10px] font-bold tracking-widest text-blue-800 mb-1">
+          ✅ ALREADY LIVE ON POD
+        </div>
+        <ul className="list-disc list-inside text-gray-800 mb-3 space-y-1">
+          <li>
+            <code className="text-xs bg-white px-1 rounded">POST https://partyondelivery.com/api/v1/partner/lead</code>{' '}
+            — CORS-open partner intake. Honeypot + 5/min per-IP rate limit +
+            partner allowlist (<code className="text-xs bg-white px-1 rounded">premier-party-cruises</code>).
+            Requires email OR phone.
+          </li>
+          <li>
+            Each submit creates a Lead (widget PARTNER_LANDING_PAGE, page{' '}
+            <code className="text-xs bg-white px-1 rounded">partner:premier-party-cruises/&lt;path&gt;</code>,
+            full form payload in <code className="text-xs bg-white px-1 rounded">metadata.partnerLead</code>)
+            and appends a row to the POD Leads Google Sheet with source{' '}
+            <code className="text-xs bg-white px-1 rounded">partner:premier-party-cruises</code>.
+          </li>
+          <li>
+            Verified 2026-07-14 with the live smoke lead &ldquo;PPC SmokeTest
+            DELETE-ME&rdquo;.
+          </li>
+        </ul>
+
+        <div className="text-[10px] font-bold tracking-widest text-blue-800 mb-1">
+          📋 PAYLOAD SCHEMA
+        </div>
+        <pre className="text-xs bg-white rounded p-3 overflow-x-auto mb-3">{`{
+  "partner": "premier-party-cruises",   // required, exact value
+  "formName": "boat-booking",           // distinct per form
+  "sourcePage": "/book-now",            // path on Premier site
+  "firstName": "Jane", "lastName": "Doe",
+  "email": "jane@example.com",          // email OR phone required
+  "phone": "5125551234",
+  "eventDate": "2026-08-22", "eventType": "bachelorette-boat",
+  "headcount": 14, "message": "free text"
+}`}</pre>
+
+        <div className="text-[10px] font-bold tracking-widest text-blue-800 mb-1">
+          🤖 PROMPT FOR THE PREMIER CLAUDE AGENT
+        </div>
+        <p className="text-gray-800 mb-3">
+          &ldquo;Wire every lead-capture form on this site to POST the JSON
+          above to the POD endpoint after the form&apos;s own success path.
+          Never block the user&apos;s submission if the call fails
+          (try/catch + log). Use a distinct formName per form. Success
+          response is <code className="text-xs bg-white px-1 rounded">{'{ ok: true, leadId }'}</code>.
+          Never send fields named hp_partner_notes, website_url, or
+          fax_number (spam traps). Test each form with a +test email and
+          confirm it appears in POD admin.&rdquo;
+        </p>
+
+        <div className="text-[10px] font-bold tracking-widest text-blue-800 mb-1">
+          ⏳ STILL PENDING (optional)
+        </div>
+        <ul className="list-disc list-inside text-gray-800 space-y-1">
+          <li>
+            GHL contact sync for form leads: decision parked between (A) one
+            generic inbound-webhook workflow + new{' '}
+            <code className="text-xs bg-white px-1 rounded">GHL_LEAD_WEBHOOK_URL</code>{' '}
+            env var, or (B) direct API via the dormant{' '}
+            <code className="text-xs bg-white px-1 rounded">GHL_API_PIT</code> credentials.
+            Recommendation on file: A.
+          </li>
+          <li>
+            Concierge GHL sync just needs{' '}
+            <code className="text-xs bg-white px-1 rounded">GHL_CONCIERGE_LEAD_WEBHOOK_URL</code>{' '}
+            set in Vercel (create an Inbound Webhook workflow in GHL, paste
+            URL, map first_name/last_name/email/phone + apply the tags
+            array).
+          </li>
+          <li>
+            New partner sites later: one-line addition to KNOWN_PARTNERS in{' '}
+            <code className="text-xs bg-white px-1 rounded">src/app/api/v1/partner/lead/route.ts</code>.
+          </li>
+        </ul>
+      </div>
+
       {/* ─── SECTION 6 — Strategic flags ───────────────────────────── */}
       <SectionHeading id="flags">
         🛑 Things worth flagging
