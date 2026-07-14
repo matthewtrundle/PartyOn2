@@ -27,6 +27,7 @@ import { sendEmail } from '@/lib/email/resend-client';
 import { attributionSchema, attributionNoteLine } from '@/lib/leads/attribution-schema';
 import { cancelJobsForEmail, enqueueJourney } from '@/lib/followups/enqueue';
 import { mirrorLeadToSheet } from '@/lib/premier/pod-leads-sheet';
+import { mirrorLeadToCrm } from '@/lib/leads/crm-mirror';
 import { EmailType, DraftOrderStatus } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
@@ -248,21 +249,26 @@ export async function POST(request: NextRequest) {
       console.warn('[landing/quote] abandoned-quote cancel failed:', err);
     }
 
-    // Mirror to the POD Leads Google Sheet. AWAITED — Vercel kills
-    // un-awaited promises when the response returns. Never throws.
+    // Mirror to the POD Leads Google Sheet + CoreLinq CRM. AWAITED — Vercel
+    // kills un-awaited promises when the response returns. Never throw.
+    // (No Lead row in scope here — the pixel creates it client-side, so the
+    // CRM mirror resolves by email.)
     const nameParts = (body.customerName ?? '').trim().split(/\s+/);
-    await mirrorLeadToSheet({
-      source: `quickbuy:${body.occasion}`,
-      firstName: nameParts[0] ?? '',
-      lastName: nameParts.slice(1).join(' '),
-      email: body.customerEmail,
-      phone: body.customerPhone ?? '',
-      arrivalDate: body.deliveryDate,
-      partyType: body.occasion,
-      headcount: body.groupSize,
-      notes: `${body.mode} · invoice: ${draftOrder.token} · $${Number(draftOrder.total).toFixed(2)}`,
-      leadUrl: invoiceUrl,
-    });
+    await Promise.allSettled([
+      mirrorLeadToSheet({
+        source: `quickbuy:${body.occasion}`,
+        firstName: nameParts[0] ?? '',
+        lastName: nameParts.slice(1).join(' '),
+        email: body.customerEmail,
+        phone: body.customerPhone ?? '',
+        arrivalDate: body.deliveryDate,
+        partyType: body.occasion,
+        headcount: body.groupSize,
+        notes: `${body.mode} · invoice: ${draftOrder.token} · $${Number(draftOrder.total).toFixed(2)}`,
+        leadUrl: invoiceUrl,
+      }),
+      mirrorLeadToCrm({ email: body.customerEmail }, `quickbuy:${body.occasion}`),
+    ]);
 
     return NextResponse.json({
       success: true,

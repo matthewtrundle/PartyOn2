@@ -30,6 +30,7 @@ import { prisma } from '@/lib/database/client';
 import { upsertLead, recordEvent } from '@/lib/leads/leadCapture';
 import { attributionSchema, compactAttribution } from '@/lib/leads/attribution-schema';
 import { notifyConciergeLead } from '@/lib/webhooks/ghl';
+import { mirrorLeadToCrm } from '@/lib/leads/crm-mirror';
 import {
   appendLeadToPodLeadsSheet,
   formatCentralTimestamp,
@@ -213,9 +214,11 @@ export async function POST(req: NextRequest) {
   // ─── 2) Compose the tag array for GHL ────────────────────────────
   const tags = buildTags(body);
   const now = new Date();
+  // Deep link to the Lead Flow board (old brians-stuff URLs in GHL history
+  // still work — the leads tab forwards ?lead= to the board).
   const leadUrl = leadId
-    ? `https://partyondelivery.com/admin/brians-stuff?tab=leads&lead=${leadId}`
-    : 'https://partyondelivery.com/admin/brians-stuff?tab=leads';
+    ? `https://partyondelivery.com/admin/leads?lead=${leadId}`
+    : 'https://partyondelivery.com/admin/leads';
 
   // ─── 3) Side effects — ALL AWAITED ───────────────────────────────
   // GHL + email + sheet MUST be awaited before the response returns:
@@ -223,6 +226,10 @@ export async function POST(req: NextRequest) {
   // fire-and-forget promise gets killed mid-flight. That's exactly how
   // the founder's first bachelorette test lead vanished from the sheet.
   const sideEffects: Promise<unknown>[] = [];
+
+  // CoreLinq CRM lead mirror (inert until CORELINQ_INGEST_URL is set;
+  // internally never-throwing).
+  sideEffects.push(mirrorLeadToCrm({ leadId }, body.source));
 
   // GHL webhook (no-op until GHL_CONCIERGE_LEAD_WEBHOOK_URL is set;
   // internally never-throwing).

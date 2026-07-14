@@ -9,6 +9,7 @@ import { temperatureFor } from '@/lib/leads/scoring';
 import type { LeadMutations } from './use-lead-mutations';
 import type { LeadDetail } from './drawer-types';
 import DrawerTimeline from './drawer-timeline';
+import ReplyComposer from './reply-composer';
 
 const TEMP_VARIANT = { hot: 'red', warm: 'amber', cold: 'gray' } as const;
 const OWNERS = ['', 'Allan', 'Brian'];
@@ -16,7 +17,7 @@ const OWNERS = ['', 'Allan', 'Brian'];
 /**
  * Card detail drawer — BottomSheet on all sizes (portaled, esc-closes).
  * Stage buttons confirm the destructive-feeling moves; Lost prompts for a
- * reason. The reply composer lands here in the follow-up PR.
+ * reason. Includes the 1:1 email reply composer.
  */
 export default function LeadDrawer({
   leadId,
@@ -222,6 +223,20 @@ export default function LeadDrawer({
                 </ul>
               </section>
             )}
+
+            <section className="mt-4">
+              <h3 className="font-heading font-bold text-sm tracking-[0.1em] uppercase text-gray-500">
+                Reply by email
+              </h3>
+              <div className="mt-2">
+                <ReplyComposer
+                  leadId={lead.id}
+                  leadEmail={lead.email}
+                  defaultSubject="Your Party On Delivery inquiry"
+                  onSent={() => void load()}
+                />
+              </div>
+            </section>
 
             <section className="mt-4">
               <h3 className="font-heading font-bold text-sm tracking-[0.1em] uppercase text-gray-500">
