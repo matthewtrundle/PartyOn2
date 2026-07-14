@@ -71,7 +71,8 @@ export async function urlServesImage(url: string): Promise<boolean> {
 
 /** Resolve a possibly-relative src against the page URL; null if unusable. */
 function absolutize(src: string, pageUrl: string): string | null {
-  const trimmed = src.trim();
+  // srcs come from raw HTML attributes — unescape entities like &amp;
+  const trimmed = src.trim().replaceAll('&amp;', '&');
   if (!trimmed || trimmed.startsWith('data:')) return null;
   try {
     return new URL(trimmed, pageUrl).toString();
