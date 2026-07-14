@@ -3,11 +3,18 @@
  * Public endpoint — accumulates time-on-dashboard for engagement
  * analytics. The dashboard pings this every 30s while visible; each
  * ping bumps lastSeenAt and adds `seconds` (server-capped) to the
- * visitor's activeSeconds.
+ * visitor's activeSeconds. Writes are rejected for unknown share codes
+ * and throttled server-side (min 20s between credited heartbeats per
+ * visitor), so replay/forgery cannot inflate the metrics or grow the
+ * table unbounded.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { recordDashboardHeartbeat } from '@/lib/group-orders-v2/view-tracking';
+import {
+  recordDashboardHeartbeat,
+  shareCodeExists,
+} from '@/lib/group-orders-v2/view-tracking';
+import { clientIpFrom } from '@/lib/group-orders-v2/client-ip';
 
 export async function POST(
   request: NextRequest,
@@ -16,8 +23,9 @@ export async function POST(
   try {
     const { code } = await params;
 
-    const forwarded = request.headers.get('x-forwarded-for');
-    const ip = forwarded?.split(',')[0]?.trim() || 'unknown';
+    if (!(await shareCodeExists(code))) {
+      return NextResponse.json({ success: false }, { status: 404 });
+    }
 
     let seconds = 30;
     try {
@@ -29,7 +37,7 @@ export async function POST(
 
     // Awaited on purpose: un-awaited writes get killed by the serverless
     // freeze when the response returns.
-    await recordDashboardHeartbeat(code, ip, seconds);
+    await recordDashboardHeartbeat(code, clientIpFrom(request), seconds);
 
     return NextResponse.json({ success: true });
   } catch (err) {

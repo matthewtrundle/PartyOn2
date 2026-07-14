@@ -170,7 +170,19 @@ export default function AffiliatesPage(): ReactElement {
       <div className="max-w-7xl mx-auto px-4 py-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
         <h1 className="font-heading font-bold text-2xl sm:text-3xl tracking-[0.06em] uppercase text-gray-900">Affiliates</h1>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <Link
+            href="/admin/affiliates/dashboards"
+            className="px-4 py-2 text-sm font-semibold text-white bg-gray-800 rounded-lg hover:bg-gray-900 transition-all shadow-sm"
+          >
+            Client Dashboards
+          </Link>
+          <Link
+            href="/admin/affiliates/bulk-import"
+            className="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-all shadow-sm"
+          >
+            Bulk Import
+          </Link>
           <Link
             href="/admin/affiliates/payouts"
             className="px-4 py-2 text-sm font-semibold text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-all shadow-sm"

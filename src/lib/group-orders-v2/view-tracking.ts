@@ -42,9 +42,27 @@ export async function trackDashboardView(
 const MAX_HEARTBEAT_SECONDS = 120;
 
 /**
+ * Guard for the public tracking endpoints: true only when the share
+ * code belongs to a real GroupOrderV2. Prevents unbounded garbage-row
+ * writes for arbitrary codes (dashboard_views.share_code has no FK).
+ */
+export async function shareCodeExists(shareCode: string): Promise<boolean> {
+  if (!shareCode || shareCode.length > 64) return false;
+  const group = await prisma.groupOrderV2.findUnique({
+    where: { shareCode },
+    select: { id: true },
+  });
+  return group !== null;
+}
+
+/**
  * Record a dashboard heartbeat: bump lastSeenAt and accumulate active
  * time on this visitor's view row. Creates the row if the initial
  * track-view call was missed (e.g. ad blocker raced it).
+ *
+ * Rate limit: the SQL only credits time when the previous heartbeat is
+ * at least 20s old, so replaying requests faster than the 30s client
+ * interval cannot inflate active_seconds beyond real elapsed time.
  */
 export async function recordDashboardHeartbeat(
   shareCode: string,
@@ -63,6 +81,8 @@ export async function recordDashboardHeartbeat(
     ON CONFLICT (share_code, visitor_hash) DO UPDATE
     SET last_seen_at = NOW(),
         active_seconds = dashboard_views.active_seconds + ${credit}
+    WHERE dashboard_views.last_seen_at IS NULL
+       OR dashboard_views.last_seen_at < NOW() - INTERVAL '20 seconds'
   `;
 }
 

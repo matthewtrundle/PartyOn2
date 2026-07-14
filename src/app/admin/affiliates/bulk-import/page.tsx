@@ -165,8 +165,11 @@ export default function BulkImportPage() {
         <p className="text-sm text-gray-600 mt-1 max-w-2xl">
           Paste CSV or upload a file. Each row becomes a DRAFT affiliate +
           live partner page at <code className="bg-gray-100 px-1 rounded">/partners/&lt;slug&gt;</code>{' '}
-          with the logo auto-fetched from the company website. Activate each
-          partner by sending the welcome email from the affiliate detail page.
+          with the logo extracted from the company website (verified to load;
+          if no usable logo is found the page shows the business name as an
+          all-caps wordmark, so every page is ready to send immediately).
+          Activate each partner by sending the welcome email from the
+          affiliate detail page.
         </p>
         <p className="text-xs text-gray-500 mt-2 font-mono">
           business_name, website, category, commission_percent, contact_name, email, phone
@@ -275,6 +278,7 @@ export default function BulkImportPage() {
                   <th className="text-left p-2">Result</th>
                   <th className="text-left p-2">Partner page</th>
                   <th className="text-left p-2">Referral code</th>
+                  <th className="text-left p-2">Logo</th>
                   <th className="text-left p-2">Notes</th>
                 </tr>
               </thead>
@@ -297,6 +301,17 @@ export default function BulkImportPage() {
                       ) : '—'}
                     </td>
                     <td className="p-2 font-mono text-xs">{r.code ?? '—'}</td>
+                    <td className="p-2 text-xs">
+                      {!r.ok ? (
+                        '—'
+                      ) : r.logoUrl ? (
+                        <a href={r.logoUrl} target="_blank" rel="noopener noreferrer" className="text-green-700 underline">
+                          found
+                        </a>
+                      ) : (
+                        <span className="text-gray-600">name wordmark</span>
+                      )}
+                    </td>
                     <td className="p-2 text-xs text-amber-700">
                       {r.placeholderEmail ? 'placeholder email — set the real one before activating' : ''}
                     </td>

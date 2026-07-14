@@ -11,11 +11,15 @@
  * Per row:
  *   - slug from business name (deduped with -2, -3 … suffixes)
  *   - referral code via the shared generateReferralCode()
- *   - logoUrl: explicit value, else Clearbit derived from the website
- *     domain (https://logo.clearbit.com/<domain>). The partner page
- *     prefers a committed file at public/images/partners/<slug>-logo.png
- *     when one exists; logoUrl is the runtime fallback so bulk creation
- *     never needs a code deploy.
+ *   - logoUrl: resolved by src/lib/partners/logo-scraper.ts — explicit
+ *     CSV value, else scraped from the partner's own homepage (logo
+ *     <img> / apple-touch-icon / og:image), else validated Clearbit.
+ *     Every candidate is verified to actually serve an image; when
+ *     nothing validates the partner page renders an all-caps
+ *     business-name wordmark, so the page always looks finished. The
+ *     partner page prefers a committed file at
+ *     public/images/partners/<slug>-logo.png when one exists; logoUrl
+ *     is the runtime fallback so bulk creation never needs a deploy.
  *   - commissionPercent → Affiliate.commissionRateOverride (e.g. 10 → 0.10)
  *   - email optional: placeholder partners+<slug>@partyondelivery.com
  *     until the real contact is known (portal magic-links need a real
@@ -32,10 +36,13 @@ import { z } from 'zod';
 import { requireAdminRole } from '@/lib/auth/ops-session';
 import { prisma } from '@/lib/database/client';
 import { generateReferralCode } from '@/lib/affiliates/affiliate-service';
+import { resolveLogoUrl } from '@/lib/partners/logo-scraper';
 import { AffiliateCategory, AffiliateStatus } from '@prisma/client';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+// Logo scraping fetches each partner's homepage — allow time for big CSVs
+export const maxDuration = 120;
 
 const CATEGORIES = ['BARTENDER', 'BOAT', 'VENUE', 'LODGING', 'PLANNER', 'OTHER'] as const;
 
@@ -62,18 +69,6 @@ function slugify(s: string): string {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 60);
-}
-
-function domainFrom(website: string): string | null {
-  if (!website.trim()) return null;
-  try {
-    const url = new URL(
-      website.startsWith('http') ? website : `https://${website.trim()}`,
-    );
-    return url.hostname.replace(/^www\./, '');
-  } catch {
-    return null;
-  }
 }
 
 type RowResult = {
@@ -104,7 +99,16 @@ export async function POST(request: NextRequest) {
   const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://partyondelivery.com';
   const results: RowResult[] = [];
 
-  for (const row of body.rows) {
+  // Resolve all logos up front, in parallel — each resolution may fetch
+  // the partner's homepage plus a few image candidates, so doing this
+  // inside the sequential DB loop would make big CSVs crawl.
+  const resolvedLogos = await Promise.all(
+    body.rows.map((row) =>
+      resolveLogoUrl(row.website, row.logoUrl).catch(() => null)
+    )
+  );
+
+  for (const [rowIndex, row] of body.rows.entries()) {
     try {
       // ── Slug: derive + dedupe ─────────────────────────────────
       const baseSlug = slugify(row.businessName);
@@ -132,10 +136,10 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
-      // ── Logo: explicit > Clearbit-from-domain > none ──────────
-      const domain = domainFrom(row.website);
-      const logoUrl =
-        row.logoUrl ?? (domain ? `https://logo.clearbit.com/${domain}` : null);
+      // ── Logo: explicit > scraped-from-site > Clearbit > none ──
+      // (all validated to actually serve an image; null falls back to
+      // the all-caps business-name wordmark on the partner page)
+      const logoUrl = resolvedLogos[rowIndex];
 
       // ── Code + create (same objects as the single-create flow) ─
       const code = generateReferralCode(row.businessName);
@@ -195,7 +199,11 @@ export async function POST(request: NextRequest) {
         placeholderEmail,
       });
     } catch (err) {
-      console.error('[bulk-import] row failed:', row.businessName, err);
+      console.error(
+        '[bulk-import] row failed:',
+        row.businessName,
+        err instanceof Error ? err.message : 'unknown error'
+      );
       results.push({
         businessName: row.businessName,
         ok: false,
