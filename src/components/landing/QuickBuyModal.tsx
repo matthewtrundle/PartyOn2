@@ -103,10 +103,11 @@ export default function QuickBuyModal({
   const sundaySelected = isSunday(deliveryDate);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Age compliance — pre-checked per product policy. Replaces the old
-  // site-wide entrance modal (now removed). Customer can still uncheck
-  // to block submit; legal control remains carding at the door.
-  const [ageConfirmed, setAgeConfirmed] = useState(true);
+  // Age compliance — UNCHECKED by default (A2P 10DLC: express consent must be
+  // an affirmative user action, never pre-checked). This is the age control on
+  // the paid landers (exempt from the site-wide gate); customer must check it
+  // to submit. Carding at the door is the backstop.
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
   const handleAgeConfirmedChange = (checked: boolean) => {
     setAgeConfirmed(checked);
     if (checked) {

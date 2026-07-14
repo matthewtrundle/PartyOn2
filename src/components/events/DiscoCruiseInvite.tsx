@@ -101,7 +101,9 @@ export default function DiscoCruiseInvite({ sections }: Props): ReactElement {
   const [phone, setPhone] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [ageConfirmed, setAgeConfirmed] = useState(true);
+  // 21+ acknowledgement — UNCHECKED by default (A2P 10DLC: express consent must
+  // be an affirmative user action, never pre-checked).
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
 
   // Flat product index for cheap subtotal + summary lookups.
   const productById = useMemo(() => {

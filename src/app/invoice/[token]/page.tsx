@@ -21,10 +21,10 @@ export default function InvoicePage(): ReactElement {
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [updatingItems, setUpdatingItems] = useState(false);
 
-  // Pre-checked 21+ acknowledgement — replaces the old site-wide
-  // age-verification modal. Customer can uncheck to block payment;
-  // legal control remains carding at the door.
-  const [ageConfirmed, setAgeConfirmed] = useState(true);
+  // 21+ acknowledgement — UNCHECKED by default (A2P 10DLC: express consent
+  // must be an affirmative user action, never pre-checked). Blocks payment
+  // until the customer checks it; carding at the door is the backstop.
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
 
   // Discount code state
   const [discountInput, setDiscountInput] = useState('');

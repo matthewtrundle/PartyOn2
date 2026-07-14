@@ -25,6 +25,7 @@ const GroupOrderProvider = dynamic(
 // Imported as a regular client component — App Router doesn't allow
 // `dynamic({ ssr: false })` inside Server Components (this layout is one).
 import PixelMount from '@/components/leads/PixelMount';
+import AgeVerification from '@/components/AgeVerification';
 
 const barlowCondensed = Barlow_Condensed({
   subsets: ['latin'],
@@ -137,12 +138,13 @@ export default function RootLayout({
         <CustomerProvider>
           <CartProvider>
             <GroupOrderProvider>
-              {/* Age verification is no longer a site-wide entrance gate.
-                  It moved to a pre-checked "21+" acknowledgement on the
-                  final checkout step (DashboardCheckoutModal, QuickBuyModal,
-                  /invoice/<token>). Legal control remains carding at the
-                  door — TABC compliance is identical, the modal was just
-                  costing us paid-traffic bounces. */}
+              {/* Site-wide 21+ entrance gate. Restored 2026-07-13 for A2P
+                  10DLC compliance — Twilio Trust & Safety requires an effective
+                  age-verification gate restricting site access to 21+. The gate
+                  blocks first-visit access (localStorage-persisted) and exempts
+                  only the paid-ad landers (AGE_GATE_EXEMPT_PATHS), which carry
+                  their own required, unchecked 21+ checkbox in-checkout. */}
+              <AgeVerification />
               <PixelMount />
               <ClientLayoutWrapper>
                 {children}

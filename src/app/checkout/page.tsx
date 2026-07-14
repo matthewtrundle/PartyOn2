@@ -7,6 +7,7 @@ import DeliveryDateTimePicker from '@/components/checkout/DeliveryDateTimePicker
 import { useCartContext } from '@/contexts/CartContext';
 import { useCustomerContext } from '@/contexts/CustomerContext';
 import CustomerAuth from '@/components/CustomerAuth';
+import SmsConsentCheckbox from '@/components/consent/SmsConsentCheckbox';
 
 /** In-store pickup location — 7600 N. Lamar Blvd #A2, Austin TX 78752 */
 const STORE_PICKUP_ADDRESS = {
@@ -47,6 +48,9 @@ export default function CheckoutPage() {
   });
 
   const [acceptTerms, setAcceptTerms] = useState(false);
+  // A2P 10DLC: SMS opt-in is an affirmative action, unchecked by default and
+  // NOT required to check out (consent is not a condition of purchase).
+  const [smsConsent, setSmsConsent] = useState(false);
   const [discountCode, setDiscountCode] = useState('');
   const [isApplyingDiscount, setIsApplyingDiscount] = useState(false);
   const [discountFeedback, setDiscountFeedback] = useState<{ type: 'success' | 'error' | null; message: string }>({ type: null, message: '' });
@@ -294,6 +298,9 @@ export default function CheckoutPage() {
           customerEmail: billingAddress.email,
           customerName: `${billingAddress.firstName} ${billingAddress.lastName}`.trim(),
           customerPhone: billingAddress.phone,
+          // A2P 10DLC consent proof: true only when a phone is present AND the
+          // customer affirmatively checked the (unchecked-by-default) opt-in.
+          smsConsent: billingAddress.phone ? smsConsent : false,
           tipAmount: tipAmount > 0 ? tipAmount : undefined,
           attribution,
         }),
@@ -812,6 +819,15 @@ export default function CheckoutPage() {
                     </Link>
                   </span>
                 </label>
+
+                {/* SMS opt-in — optional, unchecked by default (A2P 10DLC) */}
+                <div className="mt-3">
+                  <SmsConsentCheckbox
+                    id="checkout-sms-consent"
+                    checked={smsConsent}
+                    onChange={setSmsConsent}
+                  />
+                </div>
 
                 {/* Checkout Error */}
                 {checkoutError && (

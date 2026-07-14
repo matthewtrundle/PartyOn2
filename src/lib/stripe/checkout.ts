@@ -27,6 +27,8 @@ export interface CheckoutMetadata {
   discountCode?: string;
   affiliateCode?: string;
   tipAmount?: string;
+  /** 'true' | 'false' — A2P 10DLC SMS marketing opt-in captured at checkout. */
+  smsConsent?: string;
 
   // First-touch marketing attribution (captured on landing, forwarded by client)
   landingPage?: string;
@@ -63,6 +65,8 @@ export interface CreateCheckoutOptions {
   affiliateCode?: string;
   overrideDeliveryFee?: number;
   tipAmount?: number;
+  /** A2P 10DLC: customer affirmatively opted in to marketing/reminder SMS. */
+  smsConsent?: boolean;
   attribution?: {
     landingPage?: string | null;
     utmSource?: string | null;
@@ -80,7 +84,7 @@ export interface CreateCheckoutOptions {
 export async function createCheckoutSession(
   options: CreateCheckoutOptions
 ): Promise<Stripe.Checkout.Session> {
-  const { cart, successUrl, cancelUrl, customerEmail, stripeCustomerId, affiliateCode, overrideDeliveryFee, tipAmount, attribution } = options;
+  const { cart, successUrl, cancelUrl, customerEmail, stripeCustomerId, affiliateCode, overrideDeliveryFee, tipAmount, attribution, smsConsent } = options;
 
   // Defense-in-depth: refuse to charge for any product that isn't ACTIVE (or whose variant isn't
   // availableForSale), re-read from the DB rather than trusting the cart snapshot. A product
@@ -157,6 +161,7 @@ export async function createCheckoutSession(
     discountCode: cart.discountCode || undefined,
     affiliateCode: affiliateCode || undefined,
     tipAmount: tipAmount && tipAmount > 0 ? tipAmount.toFixed(2) : undefined,
+    smsConsent: smsConsent === undefined ? undefined : smsConsent ? 'true' : 'false',
     landingPage: attribution?.landingPage || undefined,
     utmSource: attribution?.utmSource || undefined,
     utmMedium: attribution?.utmMedium || undefined,
@@ -185,11 +190,14 @@ export async function createCheckoutSession(
       enabled: true,
     },
     billing_address_collection: 'required',
-    // SMS consent disclosure shown at the phone-number field (A2P 10DLC opt-in).
+    // Transactional order/delivery texts for THIS order shown at the phone
+    // field. Marketing/reminder SMS consent is collected separately via an
+    // explicit, unchecked opt-in checkbox on our checkout + lead forms (A2P
+    // 10DLC express consent) — this disclosure is not the marketing opt-in.
     custom_text: {
       submit: {
         message:
-          'By providing your phone number, you agree to receive order and delivery text messages from Party On Delivery. Message and data rates may apply. Reply STOP to opt out. See our Privacy Policy at partyondelivery.com/privacy.',
+          'We may text you order and delivery updates for this order at the number you provide. Msg & data rates may apply. Reply STOP to opt out, HELP for help. See our Privacy Policy at partyondelivery.com/privacy.',
       },
     },
   };
