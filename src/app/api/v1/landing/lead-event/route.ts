@@ -149,7 +149,10 @@ export async function POST(req: NextRequest) {
     parsed.identify ?? {},
     {
       sourcePage: parsed.page ?? null,
-      sourceWidget: (parsed.widget ?? null) as LeadSourceWidget | null,
+      // Raw pixel POSTs may omit widget — default to OTHER so board filters
+      // and scoring always see a named source (never null). upsertLead can
+      // later upgrade OTHER when a real widget arrives.
+      sourceWidget: (parsed.widget ?? 'OTHER') as LeadSourceWidget,
       ...parsed.utm,
     },
     session,

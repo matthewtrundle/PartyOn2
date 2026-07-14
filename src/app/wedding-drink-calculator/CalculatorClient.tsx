@@ -52,7 +52,10 @@ export default function CalculatorClient({ onResultsComputed }: Props = {}): Rea
   };
 
   return (
-    <div className="grid lg:grid-cols-5 gap-5 lg:gap-8">
+    // data-lead-widget: the global FormCaptureWatcher captures the quote
+    // form's contact fields — without this tag those leads land as generic
+    // OTHER instead of DRINK_CALCULATOR (2026-07-13 audit provenance gap).
+    <div className="grid lg:grid-cols-5 gap-5 lg:gap-8" data-lead-widget="drink-calculator">
       {/* Inputs column */}
       <div className="lg:col-span-2 space-y-3">
         {/* Guest count */}
