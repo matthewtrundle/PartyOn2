@@ -115,7 +115,13 @@ function shouldSkip(el: Element): boolean {
 const MIN_CAPTURE_LEN = 1;
 // Debounce window for in-progress typing. After this many ms of no
 // keystrokes, we snapshot the current value.
-const INPUT_DEBOUNCE_MS = 700;
+//
+// 10s per founder spec (2026-07-13): the old 700ms window snapshotted
+// mid-typing values, producing sibling Lead rows per typing pause
+// ("x@gmail.co" then "x@gmail.com"). Blur + beforeunload still capture
+// immediately, so nothing is lost when the visitor leaves the field or
+// closes the tab — this only stops keystroke-cadence snapshots.
+const INPUT_DEBOUNCE_MS = 10_000;
 
 type PendingEntry = {
   value: string;
