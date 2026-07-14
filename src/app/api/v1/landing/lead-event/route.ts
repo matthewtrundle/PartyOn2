@@ -26,6 +26,7 @@ import {
 import { ensureVisitorCookie, COOKIE_NAME } from '@/lib/leads/cookie';
 import { normalizeEmail } from '@/lib/leads/email-validation';
 import { enqueueJourney } from '@/lib/followups/enqueue';
+import { checkRateLimit } from '@/lib/security/rate-limit';
 import type {
   LeadEventType,
   LeadSourceWidget,
@@ -61,13 +62,11 @@ const eventTypeEnum = z.enum([
   'CUSTOM',
 ]);
 
-const statusEnum = z.enum([
-  'ANONYMOUS',
-  'PARTIAL',
-  'SUBMITTED',
-  'CONVERTED',
-  'ARCHIVED',
-]);
+// Public browser input may only promote a lead to SUBMITTED — never
+// CONVERTED/ARCHIVED (those are server-side facts: Stripe webhooks + the won
+// matcher). The legitimate client (src/lib/leads/client.ts) only ever sends
+// SUBMITTED; anything wider lets curl vandalize the Lead Flow board.
+const statusEnum = z.enum(['PARTIAL', 'SUBMITTED']);
 
 const bodySchema = z.object({
   type: eventTypeEnum,
@@ -106,6 +105,17 @@ const bodySchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  // Public + unauthenticated + does real DB writes per request — throttle
+  // (same helper/pattern as /api/contact). Generous: the pixel legitimately
+  // fires on page views + field blurs during a real form session.
+  const ip =
+    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    req.headers.get('x-real-ip') ||
+    'unknown';
+  if (!(await checkRateLimit('lead-event', ip, 30, 60))) {
+    return NextResponse.json({ error: 'rate_limited' }, { status: 429 });
+  }
+
   let parsed: z.infer<typeof bodySchema>;
   try {
     parsed = bodySchema.parse(await req.json());

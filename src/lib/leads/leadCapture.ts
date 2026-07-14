@@ -20,6 +20,8 @@ import type {
   VisitorSession,
 } from '@prisma/client';
 import { normalizeEmail } from './email-validation';
+import { normPhone } from './phone';
+import { enrollLeadIfEligible, handleSubmitSignal } from './pipeline';
 
 export type IdentifyInput = {
   email?: string | null;
@@ -87,11 +89,7 @@ const MAX_FIELD_VALUE_LEN = 1000;
 // mid-typing fragments like `an@` / `@gmail.com`, so a Lead is only ever
 // keyed/created on a syntactically complete address.
 
-function normPhone(v?: string | null) {
-  if (!v) return null;
-  const digits = v.replace(/[^\d+]/g, '');
-  return digits.length >= 7 ? digits : null;
-}
+// normPhone lives in ./phone (shared with the Lead Flow pipeline + order matching).
 
 function nonEmpty(v?: string | null) {
   if (v == null) return null;
@@ -267,9 +265,19 @@ export async function recordEvent(opts: {
   fieldName?: string | null;
   fieldValue?: string | null;
   metadata?: Record<string, unknown> | null;
+  /**
+   * Set ONLY by server-validated submit routes (chat, concierge, event-quiz,
+   * quote/start). The public pixel route must never set this: event `type`
+   * is client-chosen there, and a trusted submit is what re-opens WON/LOST
+   * board cards — an anonymous caller must not be able to do that with a
+   * victim's email (security review HIGH-1, 2026-07-13).
+   */
+  trustedSubmit?: boolean;
 }) {
   if (!opts.sessionId && !opts.leadId) return null;
-  return prisma.leadEvent.create({
+  const isSubmitType = opts.type === 'FORM_SUBMIT' || opts.type === 'CHECKOUT_START';
+  const trusted = opts.trustedSubmit === true && isSubmitType;
+  const event = await prisma.leadEvent.create({
     data: {
       type: opts.type,
       sessionId: opts.sessionId ?? null,
@@ -278,9 +286,32 @@ export async function recordEvent(opts: {
       widget: nonEmpty(opts.widget),
       fieldName: nonEmpty(opts.fieldName),
       fieldValue: opts.fieldValue ? truncate(opts.fieldValue) : null,
-      metadata: (opts.metadata ?? null) as never,
+      // Trusted submits are stamped so the reopen cron sweep can require
+      // server-originated proof, not just a client-claimed FORM_SUBMIT.
+      metadata: (trusted
+        ? { ...(opts.metadata ?? {}), trustedSubmit: true }
+        : (opts.metadata ?? null)) as never,
     },
   });
+  // Lead Flow board bookkeeping — must never break capture (module contract:
+  // intentionally tolerant).
+  if (opts.leadId) {
+    try {
+      // Board cards + scoring read this instead of scanning lead_events.
+      await prisma.lead.update({
+        where: { id: opts.leadId },
+        data: { lastActivityAt: new Date() },
+      });
+      // A real (server-validated) submit enrolls a new card / re-opens a
+      // WON-LOST one as NEW.
+      if (trusted) {
+        await handleSubmitSignal(opts.leadId);
+      }
+    } catch (err) {
+      console.warn('[leadCapture] pipeline bookkeeping failed', err);
+    }
+  }
+  return event;
 }
 
 /**
@@ -297,7 +328,7 @@ export async function markLeadStatus(
     orderId?: string | null;
   },
 ) {
-  return prisma.lead.update({
+  const lead = await prisma.lead.update({
     where: { id: leadId },
     data: {
       status,
@@ -307,4 +338,15 @@ export async function markLeadStatus(
       orderId: extras?.orderId ?? undefined,
     },
   });
+  // Lead Flow board: a pixel-driven SUBMITTED promotion happens AFTER its
+  // recordEvent call (see landing/lead-event), so enroll here too. Idempotent;
+  // never breaks the caller.
+  if (status === 'SUBMITTED') {
+    try {
+      await enrollLeadIfEligible(leadId);
+    } catch (err) {
+      console.warn('[leadCapture] board enroll failed', err);
+    }
+  }
+  return lead;
 }

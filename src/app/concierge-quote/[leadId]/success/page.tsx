@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/database/client';
 import { stripe } from '@/lib/stripe/client';
+import { syncStageFromConversion } from '@/lib/leads/pipeline';
 import { computeQuoteTotals, type Quote } from '@/lib/concierge/quote';
 
 export const dynamic = 'force-dynamic';
@@ -91,6 +92,8 @@ export default async function ConciergeDepositSuccessPage({
             } as never,
           },
         });
+        // Lead Flow board: keep stage in sync (webhook may have already done it).
+        await syncStageFromConversion(leadId);
       } else if (!matchesLead) {
         verifiedError = 'session_lead_mismatch';
       } else {

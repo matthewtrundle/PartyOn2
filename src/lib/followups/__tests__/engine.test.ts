@@ -25,8 +25,9 @@ const mockDb: {
   suppressions: Array<{ email: string }>;
   paidOrders: Array<{ customerEmail: string; createdAt: Date }>;
   emailLogs: Array<{ id: string; metadata: Record<string, unknown>; status: string }>;
+  leads: Array<{ id: string; pipelineStage: string | null }>;
   seq: number;
-} = { jobs: [], suppressions: [], paidOrders: [], emailLogs: [], seq: 0 };
+} = { jobs: [], suppressions: [], paidOrders: [], emailLogs: [], leads: [], seq: 0 };
 
 const flagState: Record<string, boolean> = {};
 
@@ -68,6 +69,11 @@ vi.mock('@/lib/database/client', () => ({
     emailSuppression: {
       findUnique: vi.fn(async ({ where }: any) =>
         mockDb.suppressions.find((s) => s.email === where.email) ?? null
+      ),
+    },
+    lead: {
+      findUnique: vi.fn(async ({ where }: any) =>
+        mockDb.leads.find((l) => l.id === where.id) ?? null
       ),
     },
     order: {
@@ -167,6 +173,7 @@ beforeEach(() => {
   mockDb.suppressions = [];
   mockDb.paidOrders = [];
   mockDb.emailLogs = [];
+  mockDb.leads = [];
   mockDb.seq = 0;
   for (const key of Object.keys(flagState)) delete flagState[key];
   process.env.UNSUBSCRIBE_SECRET = 'engine-test-secret';
@@ -219,6 +226,30 @@ describe('processJob pipeline', () => {
     expect(outcome).toBe('suppressed');
     expect(mockDb.jobs[0].status).toBe('suppressed');
     expect(sendEmailDetailed).not.toHaveBeenCalled();
+  });
+
+  it('a lead moved to LOST on the Lead Flow board cancels the job', async () => {
+    mockDb.leads.push({ id: 'lead-1', pipelineStage: 'LOST' });
+    const job = makeJob();
+    const outcome = await processJob(job, makeJourney());
+    expect(outcome).toBe('canceled');
+    expect(mockDb.jobs[0].cancelReason).toBe('pipeline-lost');
+    expect(sendEmailDetailed).not.toHaveBeenCalled();
+  });
+
+  it('a lead moved to WON on the Lead Flow board cancels the job', async () => {
+    mockDb.leads.push({ id: 'lead-1', pipelineStage: 'WON' });
+    const job = makeJob();
+    const outcome = await processJob(job, makeJourney());
+    expect(outcome).toBe('canceled');
+    expect(mockDb.jobs[0].cancelReason).toBe('pipeline-won');
+  });
+
+  it('an active-stage lead does NOT cancel the job', async () => {
+    mockDb.leads.push({ id: 'lead-1', pipelineStage: 'CONTACTED' });
+    const job = makeJob();
+    const outcome = await processJob(job, makeJourney());
+    expect(outcome).toBe('sent');
   });
 
   it('journey shouldCancel cancels with its reason', async () => {

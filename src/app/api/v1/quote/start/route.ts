@@ -181,6 +181,7 @@ export async function POST(req: NextRequest) {
       });
       await recordEvent({
         type: 'CHECKOUT_START',
+        trustedSubmit: true, // server-validated quote request — may reopen closed board cards
         leadId: lead.id,
         page: `/${body.source}`,
         widget: 'CONTACT_FORM',
