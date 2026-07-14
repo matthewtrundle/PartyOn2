@@ -37,11 +37,15 @@ export default function SmsConsentCheckbox({
         className="mt-0.5 rounded border-gray-300 text-brand-blue focus:ring-brand-blue"
       />
       <span className="text-gray-600 leading-snug">
-        Text me order updates and occasional offers from Party On Delivery. Message
-        frequency varies; msg &amp; data rates may apply. Reply STOP to opt out, HELP for
-        help. Consent is not a condition of purchase. See our{' '}
+        I agree to receive text messages from Party On Delivery about my orders. Message
+        frequency varies; message &amp; data rates may apply. Reply STOP to opt out, HELP for
+        help. See our{' '}
         <Link href="/privacy" target="_blank" className="underline hover:text-gray-900">
           Privacy Policy
+        </Link>{' '}
+        and{' '}
+        <Link href="/terms" target="_blank" className="underline hover:text-gray-900">
+          Terms and Conditions
         </Link>
         .
       </span>
