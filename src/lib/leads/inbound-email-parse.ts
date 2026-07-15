@@ -152,12 +152,22 @@ export function parseGmailMessage(msg: gmail_v1.Schema$Message): ParsedInbound |
   };
 }
 
-// Anchored AND boundary-guarded (the token must be the whole local-part or end
-// at a separator/digit) so real people — notifyjane@, updateme@, bouncer@,
-// mailerman@ — aren't dropped. Ambiguous words (notify/updates/alerts) are left
-// to the stronger List-*/Precedence/Auto-Submitted header checks below.
+// Role / automated local-parts. A real party inquiry comes from a person's own
+// address; mail FROM a role address (support@, help@, billing@ of some vendor)
+// to our info@ is almost always automated/transactional (login codes, receipts,
+// account reports) that carries none of the bulk/list headers below. Anchored
+// AND boundary-guarded (token must be the whole local-part or end at a
+// separator/digit) so real people — notifyjane@, updateme@, bouncer@,
+// mailerman@, helpful@ — aren't dropped.
 const AUTOMATED_LOCALPART =
-  /^(no-?reply|do-?not-?reply|donotreply|mailer-daemon|mailer|postmaster|bounces?|notifications?|newsletter|auto-?confirm|automated)(?=$|[._+-]|\d)/i;
+  /^(no-?reply|do-?not-?reply|donotreply|mailer-daemon|mailer|postmaster|bounces?|notifications?|notify|newsletter|auto-?confirm|automated|support|help|hello|team|billing|accounts?|security|system|marketing|sales|alerts?|updates?)(?=$|[._+-]|\d)/i;
+
+/**
+ * Vendor / SaaS domains whose mail is never a customer inquiry — a precise
+ * complement to the local-part heuristic (catches e.g. transactional mail from
+ * a non-role address). Grow as new tools surface in the skipped-mail logs.
+ */
+const NOISE_SENDER_DOMAINS: ReadonlySet<string> = new Set(['leadgenjay.com']);
 
 /**
  * Should this inbound email become a lead card? Filters out our own mail and
@@ -170,6 +180,8 @@ export function shouldIngestInbound(parsed: ParsedInbound): { ingest: boolean; r
   if (email.endsWith('@partyondelivery.com')) return { ingest: false, reason: 'self' };
 
   const localPart = email.split('@')[0] ?? '';
+  const domain = email.split('@')[1] ?? '';
+  if (NOISE_SENDER_DOMAINS.has(domain)) return { ingest: false, reason: 'vendor-domain' };
   if (AUTOMATED_LOCALPART.test(localPart)) return { ingest: false, reason: 'automated-sender' };
 
   const h = parsed.headers;
