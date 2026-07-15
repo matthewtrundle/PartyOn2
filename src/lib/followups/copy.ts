@@ -30,7 +30,7 @@ export const POSTAL_ADDRESS = '7600 N Lamar #A2, Austin, TX 78752';
  */
 export const GOOGLE_REVIEW_URL = 'https://123.partyondelivery.com/reviews';
 
-const SIGNATURE = 'Allan\nParty On Delivery';
+const SIGNATURE = 'Allan\nParty On Delivery\n(737) 371-9700';
 
 /** One journey step's copy: a subject and a plain-text body template. */
 export interface StepCopy {
