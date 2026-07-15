@@ -57,6 +57,7 @@ describe('buildStepEmail', () => {
     expect(email!.text).toContain('about 25 people');
     expect(email!.text).toContain('https://partyondelivery.com/order');
     expect(email!.text).toContain(POSTAL_ADDRESS);
+    expect(email!.text).toContain('(737) 371-9700'); // sign-off carries the phone number
     expect(email!.text).toContain('Unsubscribe:');
     expect(email!.html).toContain(POSTAL_ADDRESS.replace(/&/g, '&amp;'));
   });
