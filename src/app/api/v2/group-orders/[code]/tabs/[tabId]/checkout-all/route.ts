@@ -21,7 +21,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     const { code, tabId } = await params;
     const body = await request.json();
-    const { participantId, discountCode, tipAmount, email } = body;
+    const { participantId, discountCode, tipAmount, email, phone, smsConsent } = body;
 
     if (!participantId) {
       return NextResponse.json(
@@ -46,6 +46,17 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json(
         { success: false, error: 'Participant not found' },
         { status: 404 }
+      );
+    }
+
+    // Authorization: the participant must belong to THIS group. getParticipantById
+    // looks up by id alone, so without this check a shareCode holder could pass
+    // another group's participantId and forge that person's phone / SMS-consent
+    // record (and clobber their delivery contact). Scope it to the URL's group.
+    if (participant.groupOrderId !== group.id) {
+      return NextResponse.json(
+        { success: false, error: 'Participant does not belong to this group' },
+        { status: 403 }
       );
     }
 
@@ -78,6 +89,14 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         console.error('[Group V2] Failed to save participant email:', err);
       }
     }
+
+    // Bound + type-guard the optional phone from the (untrusted) request body.
+    // We deliberately do NOT persist it to the participant here: Stripe collects
+    // the authoritative order phone (phone_number_collection), and writing
+    // guestPhone from this participantId-only path would let one group member set
+    // another member's contact number. cleanPhone is used only to pair the opt-in
+    // with a number and to gate the smsConsent record below.
+    const cleanPhone = typeof phone === 'string' ? phone.trim().slice(0, 40) : '';
 
     // Include delivery fee in checkout if not already paid/waived
     let shouldIncludeDeliveryFee = !tab.deliveryFeeWaived
@@ -126,6 +145,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       subOrderId: tabId,
       participantId,
       participantEmail: effectiveEmail,
+      participantPhone: cleanPhone || participant.guestPhone || undefined,
+      smsConsent: typeof smsConsent === 'boolean' ? smsConsent : undefined,
       participantName: participant.guestName || 'Guest',
       draftItems,
       discountCode,

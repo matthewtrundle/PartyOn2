@@ -48,6 +48,13 @@ interface CreateCheckoutInput {
   subOrderId: string;
   participantId: string;
   participantEmail?: string;
+  /** Optional phone from our checkout modal, used only to pair the SMS opt-in
+   *  with a number and to gate the smsConsent metadata below. Not persisted to
+   *  the participant; Stripe collects the authoritative order phone. */
+  participantPhone?: string;
+  /** A2P 10DLC express SMS opt-in from the modal checkbox. Recorded to Stripe
+   *  metadata only when a phone is present; not enforced yet (deferred). */
+  smsConsent?: boolean;
   participantName: string;
   draftItems: DraftItemForCheckout[];
   discountCode?: string;
@@ -230,12 +237,21 @@ export async function createGroupV2CheckoutSession(input: CreateCheckoutInput) {
           ? { deliveryFee: '0', deliveryFeeWaivedByAffiliate: 'true' }
           : {}),
       ...(input.affiliateCode ? { affiliateCode: input.affiliateCode } : {}),
+      // A2P 10DLC: record express SMS opt-in only when a phone was provided.
+      ...(input.participantPhone && input.smsConsent !== undefined
+        ? { smsConsent: input.smsConsent ? 'true' : 'false' }
+        : {}),
     },
     billing_address_collection: 'required',
     phone_number_collection: { enabled: true },
+    // Transactional order/delivery texts for THIS order shown at the phone
+    // field. Marketing/reminder SMS consent is collected separately via the
+    // explicit, unchecked opt-in checkbox on our checkout modal (A2P 10DLC
+    // express consent) — this disclosure is not the marketing opt-in.
     custom_text: {
       submit: {
-        message: `Payment for your group order items (${draftItems.length} items).`,
+        message:
+          'We may text you order and delivery updates for this order at the number you provide. Msg & data rates may apply. Reply STOP to opt out, HELP for help. See our Privacy Policy at partyondelivery.com/privacy.',
       },
     },
   };

@@ -2,6 +2,7 @@
 
 import { useState, ReactElement } from 'react';
 import { checkoutParticipantV2, validateGroupDiscount } from '@/lib/group-orders-v2/api-client';
+import SmsConsentCheckbox from '@/components/consent/SmsConsentCheckbox';
 import type { DraftCartItemView, SubOrderFull } from '@/lib/group-orders-v2/types';
 
 interface Props {
@@ -27,6 +28,11 @@ export default function CheckoutSummaryModal({
   const [discountApplied, setDiscountApplied] = useState<{ code: string; type: string; value: number; discountAmount: number; freeShipping?: boolean } | null>(null);
   const [discountError, setDiscountError] = useState('');
   const [applyingDiscount, setApplyingDiscount] = useState(false);
+  const [phone, setPhone] = useState('');
+  // UNCHECKED by default — A2P 10DLC express consent must be an affirmative
+  // user action. Optional: never gates checkout; recorded only when a phone
+  // is provided.
+  const [smsConsent, setSmsConsent] = useState(false);
 
   if (!isOpen) return null;
 
@@ -67,7 +73,11 @@ export default function CheckoutSummaryModal({
         shareCode,
         tab.id,
         participantId,
-        discountApplied?.code || undefined
+        discountApplied?.code || undefined,
+        undefined,
+        undefined,
+        phone.trim() || undefined,
+        smsConsent
       );
       if (!result.checkoutUrl) {
         throw new Error('No checkout URL returned');
@@ -185,6 +195,29 @@ export default function CheckoutSummaryModal({
           {discountError && (
             <p className="text-sm text-red-600 mt-1">{discountError}</p>
           )}
+        </div>
+
+        {/* Phone + SMS opt-in — optional, unchecked (A2P 10DLC express consent).
+            Neither gates checkout; Stripe still collects the order phone. */}
+        <div className="mb-4">
+          <label htmlFor="group-summary-phone" className="block text-sm font-medium text-gray-700 mb-1">
+            Phone <span className="text-gray-400 font-normal">(optional)</span>
+          </label>
+          <input
+            id="group-summary-phone"
+            type="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="(555) 555-5555"
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-900 focus:ring-2 focus:ring-brand-blue"
+          />
+          <div className="mt-2">
+            <SmsConsentCheckbox
+              id="group-summary-sms-consent"
+              checked={smsConsent}
+              onChange={setSmsConsent}
+            />
+          </div>
         </div>
 
         {/* Totals */}

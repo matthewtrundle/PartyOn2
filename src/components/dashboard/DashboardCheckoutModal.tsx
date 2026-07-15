@@ -7,6 +7,7 @@ import {
   checkoutAllV2,
   validateGroupDiscount,
 } from '@/lib/group-orders-v2/api-client';
+import SmsConsentCheckbox from '@/components/consent/SmsConsentCheckbox';
 
 interface Props {
   shareCode: string;
@@ -35,6 +36,11 @@ export default function DashboardCheckoutModal({
   const [error, setError] = useState('');
   const [email, setEmail] = useState(participantEmail || '');
   const [emailError, setEmailError] = useState('');
+  const [phone, setPhone] = useState('');
+  // UNCHECKED by default — A2P 10DLC express consent must be an affirmative
+  // user action. Optional: never gates checkout; recorded only when a phone
+  // is provided.
+  const [smsConsent, setSmsConsent] = useState(false);
 
   // ─── Two checkout acknowledgements ────────────────────────────────
   // 1. Substitutions OK — pre-checked, customer can opt out. Lets ops
@@ -132,7 +138,9 @@ export default function DashboardCheckoutModal({
           participantId,
           discountApplied?.code,
           tip,
-          trimmedEmail
+          trimmedEmail,
+          phone.trim() || undefined,
+          smsConsent
         );
         window.location.href = result.checkoutUrl;
       } else {
@@ -142,7 +150,9 @@ export default function DashboardCheckoutModal({
           participantId,
           discountApplied?.code,
           tip,
-          trimmedEmail
+          trimmedEmail,
+          phone.trim() || undefined,
+          smsConsent
         );
         window.location.href = result.checkoutUrl;
       }
@@ -215,6 +225,30 @@ export default function DashboardCheckoutModal({
               <p className="text-xs text-red-600 mt-1">{emailError}</p>
             )}
             <p className="text-xs text-gray-400 mt-1">For order confirmation and updates</p>
+          </div>
+
+          {/* Phone + SMS opt-in — optional. The phone field is paired with an
+              unchecked, affirmative SMS consent checkbox (A2P 10DLC). Neither
+              gates checkout; Stripe still collects the order phone at payment. */}
+          <div>
+            <label htmlFor="checkout-phone" className="block text-sm font-medium text-gray-700 mb-1">
+              Phone <span className="text-gray-400 font-normal">(optional)</span>
+            </label>
+            <input
+              id="checkout-phone"
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="(555) 555-5555"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:border-brand-blue focus:ring-0 transition-all"
+            />
+            <div className="mt-2">
+              <SmsConsentCheckbox
+                id="group-checkout-sms-consent"
+                checked={smsConsent}
+                onChange={setSmsConsent}
+              />
+            </div>
           </div>
 
           {/* Discount code */}
