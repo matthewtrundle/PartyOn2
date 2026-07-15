@@ -120,6 +120,18 @@ function draft(status = 'SENT'): LeadDetail['drafts'][number] {
   return { id: `dr-${seq++}`, status, total: 500, createdAt: NOW.toISOString(), token: 't' };
 }
 
+function inbound(receivedAt: string): LeadDetail['inboundEmails'][number] {
+  return {
+    id: `in-${seq++}`,
+    fromEmail: 'jane@example.com',
+    fromName: 'Jane',
+    subject: 'Boat party?',
+    snippet: 'Hi, wondering about a boat...',
+    bodyText: 'Hi, wondering about a boat party for 20 on Aug 15.',
+    receivedAt,
+  };
+}
+
 function makeDetail(over: Partial<LeadDetail>): LeadDetail {
   return {
     lead: {
@@ -148,6 +160,7 @@ function makeDetail(over: Partial<LeadDetail>): LeadDetail {
     emailLogs: [],
     orders: [],
     drafts: [],
+    inboundEmails: [],
     ...over,
   };
 }
@@ -155,6 +168,11 @@ function makeDetail(over: Partial<LeadDetail>): LeadDetail {
 describe('deriveActivitySummary', () => {
   it('returns no chips when there is no activity', () => {
     expect(deriveActivitySummary(makeDetail({}), NOW)).toEqual([]);
+  });
+
+  it('leads with "Emailed us" when a customer emailed in', () => {
+    const chips = deriveActivitySummary(makeDetail({ inboundEmails: [inbound(isoDaysAgo(1))] }), NOW);
+    expect(chips[0]).toEqual({ key: 'emailed-us', label: 'Emailed us 1d ago', variant: 'green' });
   });
 
   it('flags a quote only when an invoice actually went out', () => {
@@ -224,13 +242,15 @@ describe('deriveActivitySummary', () => {
     expect(chips).toContainEqual({ key: 'visits', label: '1 site visit', variant: 'gray' });
   });
 
-  it('orders chips: quote → emailed → engagement → checkout → submit → visits', () => {
+  it('orders chips: emailed-us → quote → emailed → engagement → checkout → submit → visits', () => {
     const detail = makeDetail({
+      inboundEmails: [inbound(isoDaysAgo(1))],
       drafts: [draft()],
       emailLogs: [emailLog('opened', isoDaysAgo(2))],
       events: [ev('CHECKOUT_START'), ev('FORM_SUBMIT'), ev('PAGE_VIEW')],
     });
     expect(deriveActivitySummary(detail, NOW).map((c) => c.key)).toEqual([
+      'emailed-us',
       'quote',
       'emailed',
       'opened',

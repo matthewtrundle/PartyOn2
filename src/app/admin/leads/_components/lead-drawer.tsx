@@ -9,6 +9,7 @@ import DrawerHeader from './drawer-header';
 import DrawerSummary from './drawer-summary';
 import DrawerStageActions from './drawer-stage-actions';
 import DrawerFacts from './drawer-facts';
+import DrawerInbound from './drawer-inbound';
 import DrawerTimeline from './drawer-timeline';
 import ReplyComposer from './reply-composer';
 
@@ -113,6 +114,7 @@ export default function LeadDrawer({
               onSnooze={(days) => void snooze(days)}
             />
             <DrawerFacts detail={detail} />
+            <DrawerInbound inboundEmails={detail.inboundEmails} />
 
             <section className="mt-4">
               <h3 className="font-heading font-bold text-sm tracking-[0.1em] uppercase text-gray-500">

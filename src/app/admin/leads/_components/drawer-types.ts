@@ -64,4 +64,14 @@ export interface LeadDetail {
     createdAt: string;
     token: string;
   }>;
+  /** Customer emails received at info@ (Gmail poller), newest first. */
+  inboundEmails: Array<{
+    id: string;
+    fromEmail: string;
+    fromName: string | null;
+    subject: string | null;
+    snippet: string | null;
+    bodyText: string | null;
+    receivedAt: string;
+  }>;
 }

@@ -1,15 +1,23 @@
 'use client';
 
 import { ReactElement } from 'react';
-import HqBadge from '@/components/backend/kit/Badge';
+import HqBadge, { type HqBadgeVariant } from '@/components/backend/kit/Badge';
 import type { LeadDetail } from './drawer-types';
 
 interface TimelineEntry {
   at: string;
-  kind: 'event' | 'email' | 'followup';
+  kind: 'event' | 'email' | 'followup' | 'inbound';
   label: string;
   detail?: string | null;
 }
+
+/** Badge style + label per timeline entry kind. */
+const KIND_BADGE: Record<TimelineEntry['kind'], { variant: HqBadgeVariant; label: string }> = {
+  event: { variant: 'gray', label: 'site' },
+  email: { variant: 'blue', label: 'email' },
+  followup: { variant: 'amber', label: 'followup' },
+  inbound: { variant: 'green', label: 'inbox' },
+};
 
 function eventLabel(e: LeadDetail['events'][number]): string {
   const meta = (e.metadata ?? {}) as Record<string, unknown>;
@@ -60,6 +68,12 @@ export default function DrawerTimeline({ detail }: { detail: LeadDetail }): Reac
           ? `Follow-up queued: ${f.journeyKey} step ${f.step}`
           : `Follow-up ${f.status}: ${f.journeyKey} step ${f.step}${f.cancelReason ? ` (${f.cancelReason})` : ''}`,
     })),
+    ...detail.inboundEmails.map((m) => ({
+      at: m.receivedAt,
+      kind: 'inbound' as const,
+      label: `Emailed us${m.subject ? `: "${m.subject}"` : ''}`,
+      detail: m.snippet,
+    })),
   ].sort((a, b) => (a.at < b.at ? 1 : -1));
 
   if (entries.length === 0) {
@@ -70,11 +84,8 @@ export default function DrawerTimeline({ detail }: { detail: LeadDetail }): Reac
     <ol className="space-y-2">
       {entries.slice(0, 60).map((entry, i) => (
         <li key={i} className="flex items-start gap-2 text-sm">
-          <HqBadge
-            variant={entry.kind === 'email' ? 'blue' : entry.kind === 'followup' ? 'amber' : 'gray'}
-            className="mt-[1px] shrink-0"
-          >
-            {entry.kind === 'event' ? 'site' : entry.kind}
+          <HqBadge variant={KIND_BADGE[entry.kind].variant} className="mt-[1px] shrink-0">
+            {KIND_BADGE[entry.kind].label}
           </HqBadge>
           <div className="min-w-0">
             <div className="text-gray-800">{entry.label}</div>

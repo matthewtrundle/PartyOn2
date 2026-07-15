@@ -216,6 +216,7 @@ describe('computeLeadScore — gap-closure sources (2026-07-14)', () => {
       computeLeadScore({ ...base, sourceWidget: w, metadata: {} }).breakdown.sourceQuality;
     expect(q('OPS_INVOICE')).toBe(16);
     expect(q('PARTNER_INQUIRY')).toBe(14);
+    expect(q('INBOUND_EMAIL')).toBe(14);
     expect(q('LEAD_MAGNET')).toBe(6);
     expect(q('EMAIL_SIGNUP')).toBe(2); // unchanged
   });

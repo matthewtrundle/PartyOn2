@@ -47,6 +47,9 @@ const INQUIRY_META_KEYS = [
   'partnerInquiry',
   'affiliateApplication',
   'opsInvoice',
+  // A customer who emails info@ IS a party inquiry — a newsletter-only
+  // (EMAIL_SIGNUP) contact who writes in must board, not stay hidden.
+  'inboundEmail',
 ] as const;
 
 const SWEEP_BATCH = 200;
