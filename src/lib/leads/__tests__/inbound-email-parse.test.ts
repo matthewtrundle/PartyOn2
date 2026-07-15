@@ -127,7 +127,7 @@ describe('shouldIngestInbound', () => {
     expect(shouldIngestInbound(parsed({ fromEmail: 'allan@partyondelivery.com' })).reason).toBe('self');
   });
 
-  it('skips automated senders by local-part', () => {
+  it('skips automated / role-address senders by local-part', () => {
     for (const addr of [
       'no-reply@vendor.com',
       'noreply@vendor.com',
@@ -135,9 +135,22 @@ describe('shouldIngestInbound', () => {
       'mailer-daemon@x.com',
       'notifications@app.com',
       'newsletter@brand.com',
+      'support@acme.com',
+      'help@acme.com',
+      'billing@acme.com',
+      'team@acme.com',
+      'marketing@acme.com',
+      'security@acme.com',
     ]) {
       expect(shouldIngestInbound(parsed({ fromEmail: addr })).reason).toBe('automated-sender');
     }
+  });
+
+  it('skips known vendor/SaaS domains (checked before local-part)', () => {
+    // The exact sender that slipped through in production — automated LeadGenJay
+    // mail from help@leadgenjay.com. Domain rule fires first.
+    expect(shouldIngestInbound(parsed({ fromEmail: 'help@leadgenjay.com' })).reason).toBe('vendor-domain');
+    expect(shouldIngestInbound(parsed({ fromEmail: 'jane@leadgenjay.com' })).reason).toBe('vendor-domain');
   });
 
   it('keeps real people whose local-part merely starts with an automated-ish token', () => {
@@ -147,6 +160,9 @@ describe('shouldIngestInbound', () => {
       'bouncer@x.com',
       'mailerman@x.com',
       'alerta@x.com',
+      'helpful@gmail.com',
+      'teamsters@gmail.com',
+      'salesperson@gmail.com',
     ]) {
       expect(shouldIngestInbound(parsed({ fromEmail: addr }))).toEqual({ ingest: true });
     }
