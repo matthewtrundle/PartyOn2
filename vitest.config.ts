@@ -7,7 +7,13 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/__tests__/setup.ts'],
-    include: ['src/**/*.{test,spec}.{js,ts,jsx,tsx}'],
+    include: [
+      'src/**/*.{test,spec}.{js,ts,jsx,tsx}',
+      // Money-critical ops scripts keep colocated unit tests (pure-planner logic
+      // that decides which prod rows get deleted). Scoped to scripts/ops so the
+      // gate stays green and unrelated script trees aren't pulled in.
+      'scripts/ops/**/*.{test,spec}.mjs',
+    ],
     globals: true,
     coverage: {
       provider: 'v8',
