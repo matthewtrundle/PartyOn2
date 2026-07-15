@@ -18,9 +18,12 @@
  *   - MERGE: a real Stripe refund that has NO stamped row but DOES have a
  *     matching-amount orphan → stamp the orphan with the Stripe refund id
  *     (claim it) rather than deleting + re-creating.
- *   - DELETE: an orphan row (stripeRefundId=NULL AND reason='Stripe refund')
- *     whose amount is already covered by a stamped, Stripe-verified row → the
- *     webhook duplicate. Deleted.
+ *   - DELETE: an orphan row (stripeRefundId=NULL AND reason='Stripe refund') on
+ *     an order whose every live Stripe refund is already represented by a
+ *     stamped, Stripe-verified row → the webhook duplicate. Deleted regardless
+ *     of its amount, so this also removes the pre-#171 "cumulative total" orphan
+ *     the old webhook wrote from charge.amount_refunded (e.g. order #197's
+ *     $534.83 orphan = the running total of two real refunds $238.93 + $295.90).
  *
  * SAFETY — it will only APPLY changes to an order when, AFTER the planned
  * changes, the order's remaining DB refund rows map 1:1 onto Stripe's live
@@ -42,28 +45,36 @@
 
 import { PrismaClient } from '@prisma/client';
 import Stripe from 'stripe';
+import { writeFileSync } from 'fs';
+import os from 'os';
+import path from 'path';
+import { pathToFileURL } from 'url';
 
-// Hard guard: without a LIVE Stripe key, refunds.list() silently returns empty
-// for every order and the script would "reconcile" against nothing — flagging
-// every order needs-manual while looking like it ran. Fail loudly instead.
 const STRIPE_KEY = process.env.STRIPE_SECRET_KEY;
-if (!STRIPE_KEY) {
-  console.error('ERROR: STRIPE_SECRET_KEY is not set. Run: set -a && source .env.local && set +a');
-  process.exit(1);
-}
-if (STRIPE_KEY.startsWith('sk_test_') || STRIPE_KEY.startsWith('rk_test_')) {
-  console.error('ERROR: STRIPE_SECRET_KEY is a TEST key. This reconciles LIVE refund data — refusing to run.');
-  process.exit(1);
-}
 
-const prisma = new PrismaClient();
-const stripe = new Stripe(STRIPE_KEY);
+// The live-key guard, the Prisma/Stripe clients, and main() run ONLY when this
+// file is executed directly as a script (see the entrypoint at the bottom). When
+// it is imported instead — e.g. a unit test exercising the pure planOrder() —
+// nothing here touches the network, the DB, or process.exit, and these stay
+// undefined. Keeping the pure planner import-safe is what lets it be tested.
+let prisma;
+let stripe;
 
 const args = process.argv.slice(2);
 const APPLY = args.includes('--apply');
 const OUT_JSON = args.includes('--json');
 const ONLY_ORDER = num(flag('--order'), 0);
 const CENT_TOLERANCE = 1; // 1 cent of slack on total comparisons
+
+// The instant the charge.refunded webhook became idempotent (PR #171, merged
+// 2026-06-27 21:13 UTC; last observed pre-fix duplicate was 2026-06-26 22:32
+// UTC). We use the next-day boundary as a safe margin past the deploy. This is
+// the hard fence for amount-blind deletion: a null-id 'Stripe refund' row can
+// only be a webhook duplicate if it was written BEFORE this instant. After it,
+// the webhook cannot create such a row, so a matching row is treated as a
+// (possibly legitimate) route create/stamp-race artifact and left for manual
+// review rather than deleted. Exported so tests can pin both sides of the fence.
+export const WEBHOOK_IDEMPOTENT_SINCE = new Date('2026-06-28T00:00:00Z');
 
 function flag(name) {
   const a = args.find((x) => x.startsWith(`${name}=`));
@@ -73,10 +84,10 @@ function num(v, d) {
   const n = Number(v);
   return Number.isFinite(n) ? n : d;
 }
-function cents(decimalLike) {
+export function cents(decimalLike) {
   return Math.round(Number(decimalLike) * 100);
 }
-function usd(c) {
+export function usd(c) {
   return `$${(c / 100).toFixed(2)}`;
 }
 function log(...a) {
@@ -99,7 +110,7 @@ async function liveStripeRefunds(paymentIntentId) {
  * plan.ok === true means the post-change DB state matches Stripe exactly and is
  * safe to apply.
  */
-function planOrder(order, dbRows, stripeRefunds, amendmentRefundIds) {
+export function planOrder(order, dbRows, stripeRefunds, amendmentRefundIds) {
   const merges = []; // { rowId, stripeRefundId, amountCents }
   const deletes = []; // { rowId, amountCents, reason }
   const notes = [];
@@ -140,28 +151,50 @@ function planOrder(order, dbRows, stripeRefunds, amendmentRefundIds) {
     }
   }
 
-  // Pass 2 — DELETE: leftover orphan duplicates. Strict signature: webhook-created
-  // ('Stripe refund'), null id, amount already covered by a stamped real refund.
-  const stampedAmountCounts = new Map(); // amountCents -> count of stamped rows of that amount
-  for (const r of stamped) {
-    const k = cents(r.amount);
-    stampedAmountCounts.set(k, (stampedAmountCounts.get(k) || 0) + 1);
-  }
-  for (const m of merges) {
-    stampedAmountCounts.set(m.amountCents, (stampedAmountCounts.get(m.amountCents) || 0) + 1);
-  }
+  // Pass 2 — DELETE: leftover orphan duplicates. A webhook orphan carries the
+  // literal reason 'Stripe refund' and a null id. No admin/route path writes that
+  // exact reason (verified across src — only handleChargeRefunded does, and in
+  // current code only WITH a stamped id), so it reads as a webhook artifact.
+  //
+  // But that reason is a naming CONVENTION, not a schema guarantee: the admin
+  // refund route accepts free-text reasons and creates its Refund row, THEN stamps
+  // the Stripe id in a separate (non-atomic) step. A crash in that window could
+  // leave a *legitimate* null-id 'Stripe refund' row — indistinguishable by shape
+  // from a webhook dupe. That failure can only occur AFTER the webhook became
+  // idempotent (#171); every genuine webhook dupe was written before it. So the
+  // amount-blind delete is fenced to rows that PREDATE the cutover
+  // (WEBHOOK_IDEMPOTENT_SINCE). A same-shaped row created after the cutover is
+  // flagged for manual review, never swept up.
+  //
+  // A qualifying pre-cutover orphan is deleted when the order's REAL refunds are
+  // already fully represented (every live Stripe refund maps to a stamped/merged
+  // row), regardless of the orphan's amount — this clears both the common
+  // same-amount dupe AND the pre-#171 "cumulative total" orphan the old webhook
+  // derived from charge.amount_refunded (order #197's $534.83 = two real refunds
+  // $238.93 + $295.90, which matches no single Stripe refund amount).
+  //
+  // If a live Stripe refund still lacks a stamped row (a genuinely missing
+  // record), we do NOT guess — orphans are left as-is and the post-condition
+  // below fails the order into NEEDS-MANUAL.
+  const everyStripeRefundCovered =
+    stripeRefunds.length > 0 && stripeRefunds.every((r) => stampedIds.has(r.id));
 
   for (const o of pool) {
     if (o.claimed) continue;
     const amt = cents(o.amount);
     const isWebhookOrphan = o.reason === 'Stripe refund';
-    const coveredByStamped = (stampedAmountCounts.get(amt) || 0) > 0;
     const referencedByAmendment = amendmentRefundIds.has(o.id);
+    const predatesCutover = new Date(o.createdAt) < WEBHOOK_IDEMPOTENT_SINCE;
 
-    if (isWebhookOrphan && coveredByStamped && !referencedByAmendment) {
-      deletes.push({ rowId: o.id, amountCents: amt, reason: o.reason });
-    } else if (referencedByAmendment) {
+    if (referencedByAmendment) {
       notes.push(`orphan ${o.id.slice(0, 8)} (${usd(amt)}) is referenced by an OrderAmendment — left as-is`);
+    } else if (isWebhookOrphan && everyStripeRefundCovered && predatesCutover) {
+      deletes.push({ rowId: o.id, amountCents: amt, reason: o.reason });
+    } else if (isWebhookOrphan && everyStripeRefundCovered && !predatesCutover) {
+      notes.push(
+        `orphan ${o.id.slice(0, 8)} (${usd(amt)}) created ${new Date(o.createdAt).toISOString()}, ` +
+          `AFTER the #171 idempotency cutover — cannot be a webhook dupe by construction; manual review`
+      );
     } else {
       notes.push(`orphan ${o.id.slice(0, 8)} (${usd(amt)}, reason="${o.reason}") not a safe webhook dupe — left as-is`);
     }
@@ -225,6 +258,7 @@ async function main() {
   let totalMerges = 0;
   let needsManual = 0;
   let applied = 0;
+  let applyFailed = 0;
 
   for (const orderId of orderIds) {
     const order = await prisma.order.findUnique({
@@ -302,21 +336,38 @@ async function main() {
     totalDeletes += plan.deletes.length;
 
     if (APPLY) {
-      await prisma.$transaction(async (tx) => {
-        for (const m of plan.merges) {
-          await tx.refund.update({
-            where: { id: m.rowId },
-            data: { stripeRefundId: m.stripeRefundId, status: 'SUCCEEDED' },
-          });
+      try {
+        await prisma.$transaction(async (tx) => {
+          for (const m of plan.merges) {
+            await tx.refund.update({
+              where: { id: m.rowId },
+              data: { stripeRefundId: m.stripeRefundId, status: 'SUCCEEDED' },
+            });
+          }
+          for (const d of plan.deletes) {
+            await tx.refund.delete({ where: { id: d.rowId } });
+          }
+        });
+        // Re-label financialStatus from the reconciled rows. This re-reads
+        // aggregates and runs OUTSIDE the transaction above; a failure here does
+        // not undo the committed row changes, so we record it and keep going
+        // (re-running the script is idempotent and will relabel).
+        try {
+          await recomputeFinancialStatus(order.id);
+        } catch (statusErr) {
+          entry.notes.push('applied; financialStatus relabel failed (safe to re-run): ' + (statusErr?.message || String(statusErr)));
+          log('  ⚠ applied; status relabel failed (re-run to fix)');
         }
-        for (const d of plan.deletes) {
-          await tx.refund.delete({ where: { id: d.rowId } });
-        }
-      });
-      // Re-label financialStatus from the reconciled rows.
-      await recomputeFinancialStatus(order.id);
-      applied++;
-      log('  ✓ applied');
+        applied++;
+        log('  ✓ applied');
+      } catch (applyErr) {
+        // The transaction rolled back — this order's rows are untouched. Record
+        // the failure and continue so one bad order cannot truncate the batch.
+        entry.status = 'apply-failed';
+        entry.notes.push('APPLY failed (transaction rolled back, rows untouched): ' + (applyErr?.message || String(applyErr)));
+        applyFailed++;
+        log('  ✗ apply FAILED (rolled back): ' + (applyErr?.message || String(applyErr)));
+      }
     }
 
     report.push(entry);
@@ -327,8 +378,33 @@ async function main() {
   log(`Rows to MERGE:      ${totalMerges}`);
   log(`Rows to DELETE:     ${totalDeletes}`);
   log(`Needs manual review:${needsManual}`);
-  if (APPLY) log(`Orders applied:     ${applied}`);
-  else log('\n(DRY RUN — re-run with --apply to write these changes.)');
+  if (APPLY) {
+    log(`Orders applied:     ${applied}`);
+    if (applyFailed) log(`Apply FAILURES:     ${applyFailed} (rows untouched — see notes above; safe to re-run)`);
+    // Durable audit trail — an --apply deletes financial rows and is not
+    // reversible from inside the app, so always persist exactly what changed,
+    // independent of the --json flag.
+    const auditPath = path.join(os.tmpdir(), `reconcile-refunds-audit-${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
+    try {
+      writeFileSync(
+        auditPath,
+        JSON.stringify(
+          {
+            appliedAt: new Date().toISOString(),
+            summary: { orders: orderIds.length, merges: totalMerges, deletes: totalDeletes, applied, applyFailed, needsManual },
+            report,
+          },
+          null,
+          2
+        )
+      );
+      log(`Audit trail written: ${auditPath}`);
+    } catch (auditErr) {
+      log(`WARN: failed to write audit file: ${auditErr?.message || String(auditErr)}`);
+    }
+  } else {
+    log('\n(DRY RUN — re-run with --apply to write these changes.)');
+  }
 
   if (OUT_JSON) console.log(JSON.stringify({ mode: APPLY ? 'apply' : 'dry-run', report }, null, 2));
 }
@@ -362,9 +438,33 @@ async function recomputeFinancialStatus(orderId) {
   }
 }
 
-main()
-  .catch((err) => {
-    console.error(err);
-    process.exitCode = 1;
-  })
-  .finally(() => prisma.$disconnect());
+// ---- CLI entrypoint — runs ONLY on direct execution, never on import --------
+// (`import`ing this file, e.g. from a unit test, must not hit the network or exit
+// the process; the live-key guard and client creation therefore live here.)
+// `typeof pathToFileURL === 'function'` also short-circuits under the vitest
+// jsdom environment, where `url` resolves to a browser shim without it — so the
+// import test never enters this block. pathToFileURL (not string interpolation)
+// is required because the repo path contains spaces, which must be %20-encoded
+// to match import.meta.url.
+if (
+  typeof pathToFileURL === 'function' &&
+  process.argv[1] &&
+  import.meta.url === pathToFileURL(process.argv[1]).href
+) {
+  if (!STRIPE_KEY) {
+    console.error('ERROR: STRIPE_SECRET_KEY is not set. Run: set -a && source .env.local && set +a');
+    process.exit(1);
+  }
+  if (STRIPE_KEY.startsWith('sk_test_') || STRIPE_KEY.startsWith('rk_test_')) {
+    console.error('ERROR: STRIPE_SECRET_KEY is a TEST key. This reconciles LIVE refund data — refusing to run.');
+    process.exit(1);
+  }
+  prisma = new PrismaClient();
+  stripe = new Stripe(STRIPE_KEY);
+  main()
+    .catch((err) => {
+      console.error(err);
+      process.exitCode = 1;
+    })
+    .finally(() => prisma.$disconnect());
+}
