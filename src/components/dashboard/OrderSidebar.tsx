@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef, forwardRef, type ReactElement } from 'react';
+import { useState, useCallback, useEffect, useRef, forwardRef, type ReactElement } from 'react';
 import Image from 'next/image';
 import type {
   DraftCartItemView,
@@ -55,9 +55,34 @@ const OrderSidebar = forwardRef<HTMLDivElement, Props>(function OrderSidebar(
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState('');
   const editInputRef = useRef<HTMLInputElement>(null);
+  const desktopScrollRef = useRef<HTMLDivElement>(null);
+  const prevItemIdsRef = useRef<Set<string> | null>(null);
 
   // Derive current item from props so qty updates reactively after onItemChanged
   const selectedItem = selectedItemId ? draftItems.find((i) => i.id === selectedItemId) ?? null : null;
+
+  // Whenever a genuinely new item lands in the cart (not just a quantity
+  // bump on one already there), scroll the desktop panel to reveal it --
+  // the panel has its own bounded scroll (see the sticky container below),
+  // so a newly added item can otherwise land off-screen with no indication.
+  useEffect(() => {
+    const currentIds = draftItems.map((item) => item.id);
+    const prevIds = prevItemIdsRef.current;
+    if (prevIds) {
+      const newestId = currentIds.filter((id) => !prevIds.has(id)).pop();
+      if (newestId) {
+        // 'instant' (not 'smooth'): this fires on every SWR-driven refresh,
+        // and an in-flight smooth animation can get cut short by the next
+        // one landing before it finishes, leaving the newest item still
+        // out of view -- the guarantee that matters is that it's visible,
+        // not that getting there is animated.
+        desktopScrollRef.current
+          ?.querySelector(`[data-item-id="${newestId}"]`)
+          ?.scrollIntoView({ behavior: 'instant', block: 'nearest' });
+      }
+    }
+    prevItemIdsRef.current = new Set(currentIds);
+  }, [draftItems]);
 
   const openProductModal = useCallback(async (item: DraftCartItemView) => {
     if (!item.handle) return;
@@ -132,7 +157,7 @@ const OrderSidebar = forwardRef<HTMLDivElement, Props>(function OrderSidebar(
     const isFreeItem = item.price === 0;
     const clickable = !!item.handle;
     return (
-      <div key={item.id} className="flex items-start gap-3 py-3">
+      <div key={item.id} data-item-id={item.id} className="flex items-start gap-3 py-3">
         <button
           type="button"
           onClick={() => clickable && openProductModal(item)}
@@ -446,11 +471,25 @@ const OrderSidebar = forwardRef<HTMLDivElement, Props>(function OrderSidebar(
 
   return (
     <>
-      {/* Desktop sidebar -- hidden on mobile */}
-      <div className="hidden lg:block">
+      {/* Desktop sidebar -- hidden on mobile. h-full is load-bearing: this
+          div is nested one level inside the grid cell (itself stretched
+          to the row height by the parent grid's default align-items:
+          stretch). Without h-full here, this wrapper auto-sizes to its
+          sticky child's own height, leaving the sticky child zero room
+          to move -- it immediately scrolls away instead of sticking. */}
+      <div className="hidden lg:block h-full">
         {/* Direction E: no border on cream -- rely on the warm shadow alone.
             rounded-2xl matches the WelcomeHero family. */}
-        <div data-tour="cart" className="sticky top-20 h-[calc(100vh-5rem)] overflow-y-auto bg-white rounded-2xl shadow-warm-md">
+        <div
+          ref={desktopScrollRef}
+          data-tour="cart"
+          // overflowAnchor: 'none' -- without this, Chrome's scroll-anchoring
+          // silently re-corrects scrollTop right after our own
+          // scrollIntoView() runs (it treats the SWR-driven re-render as
+          // "content shifted above the viewport" and "fixes" the scroll back).
+          style={{ overflowAnchor: 'none' }}
+          className="sticky top-20 h-[calc(100vh-5rem)] overflow-y-auto bg-white rounded-2xl shadow-warm-md"
+        >
           <div className="px-5 py-4 border-b border-gray-100">
             <div className="flex items-center gap-3">
               <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

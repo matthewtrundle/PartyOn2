@@ -588,13 +588,22 @@ const nextConfig: NextConfig = {
           },
         ],
       },
-      // Cache headers for static files
+      // Cache headers for static files. Production-only: production chunk
+      // filenames are content-hashed, so caching them forever is safe.
+      // Turbopack dev-mode chunk filenames are stable across edits (their
+      // *contents* change without the URL changing), so an immutable
+      // year-long cache here means a dev's browser silently keeps serving
+      // pre-edit JS after every save -- code changes stop showing up in
+      // the browser with no error, until the cache is manually cleared.
       {
         source: '/_next/static/:path*',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
+            value:
+              process.env.NODE_ENV === 'production'
+                ? 'public, max-age=31536000, immutable'
+                : 'no-cache',
           },
         ],
       },
