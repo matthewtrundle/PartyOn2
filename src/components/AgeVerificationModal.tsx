@@ -12,17 +12,43 @@ interface AgeVerificationModalProps {
   onVerify: () => void
 }
 
-/** Self-certification age gate: visitor checks a box confirming they're 21+. */
+/**
+ * Whole years from a YYYY-MM-DD date of birth to today. Returns null if the
+ * string isn't a valid calendar date.
+ */
+export function ageFromDob(dob: string): number | null {
+  const parts = dob.split('-').map((n) => parseInt(n, 10))
+  if (parts.length !== 3 || parts.some((n) => Number.isNaN(n))) return null
+  const [y, m, d] = parts
+  const birth = new Date(y, m - 1, d)
+  // Reject impossible dates (e.g. Feb 30 normalizes to March).
+  if (birth.getFullYear() !== y || birth.getMonth() !== m - 1 || birth.getDate() !== d) return null
+  const today = new Date()
+  let age = today.getFullYear() - y
+  const beforeBirthday = today.getMonth() + 1 < m || (today.getMonth() + 1 === m && today.getDate() < d)
+  if (beforeBirthday) age -= 1
+  return age
+}
+
 export default function AgeVerificationModal({ isOpen, onClose, onVerify }: AgeVerificationModalProps) {
   // Lock body scroll when modal is open
   useBodyScrollLock(isOpen)
-  const [confirmed, setConfirmed] = useState(false)
+  const [dob, setDob] = useState('')
   const [error, setError] = useState('')
+
+  // Renders client-side only (parent opens via useEffect), so new Date() here
+  // never runs during SSR and can't cause a hydration mismatch.
+  const todayStr = new Date().toISOString().slice(0, 10)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!confirmed) {
-      setError('Please confirm you are 21 or older to enter this site.')
+    const age = ageFromDob(dob)
+    if (age === null) {
+      setError('Please enter your date of birth.')
+      return
+    }
+    if (age < 21) {
+      setError('Sorry — you must be 21 or older to enter this site.')
       return
     }
     localStorage.setItem('age_verified', 'true')
@@ -75,23 +101,26 @@ export default function AgeVerificationModal({ isOpen, onClose, onVerify }: AgeV
               </div>
 
               <form onSubmit={handleSubmit}>
-                {/* Age self-certification */}
+                {/* Date of birth entry */}
                 <div className="bg-gray-50 py-4 px-4 mb-4 sm:py-6 sm:px-6 sm:mb-6">
-                  <label htmlFor="age-gate-confirm" className="flex items-start gap-3 cursor-pointer">
-                    <input
-                      id="age-gate-confirm"
-                      type="checkbox"
-                      checked={confirmed}
-                      onChange={(e) => {
-                        setConfirmed(e.target.checked)
-                        setError('')
-                      }}
-                      className="mt-0.5 h-5 w-5 shrink-0 accent-brand-yellow border-gray-300 focus:outline-none focus:ring-2 focus:ring-brand-yellow"
-                    />
-                    <span className="text-base text-gray-800 font-light tracking-wide">
-                      Yes, I&apos;m over 21 years old
-                    </span>
+                  <label
+                    htmlFor="age-gate-dob"
+                    className="block text-base sm:text-lg text-gray-800 font-light tracking-wide text-center mb-3"
+                  >
+                    Please enter your date of birth
                   </label>
+                  <input
+                    id="age-gate-dob"
+                    type="date"
+                    value={dob}
+                    max={todayStr}
+                    required
+                    onChange={(e) => {
+                      setDob(e.target.value)
+                      setError('')
+                    }}
+                    className="w-full px-4 py-3 border border-gray-300 text-center text-gray-900 focus:border-brand-yellow focus:outline-none"
+                  />
                   {error && <p className="mt-3 text-sm text-red-600 text-center">{error}</p>}
                 </div>
 
