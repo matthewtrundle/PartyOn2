@@ -2,6 +2,7 @@
 
 import { ReactElement, useState } from 'react';
 import CreateHeroTestModal from './CreateHeroTestModal';
+import { CtrTrendChart, CountsBars } from './ExperimentCharts';
 import type { Experiment, VariantRow } from './ExperimentResultCard';
 import { experimentPathsFor, type LandingPageDef } from '@/lib/analytics/landing-pages';
 
@@ -131,6 +132,23 @@ function ExperimentScore({
             </div>
           );
         })}
+      </div>
+
+      {/* Charts: cumulative CTR over time + current counts (event-based
+          trend is directional; the decision numbers stay counter-based) */}
+      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="min-h-[104px]">
+          <div className="mb-1 text-xs font-medium uppercase tracking-wide text-gray-400">
+            {goalIsClick ? 'CTR' : 'Conversion'} over time (cumulative)
+          </div>
+          <CtrTrendChart variants={exp.variants} trends={exp.trends ?? {}} />
+        </div>
+        <div className="min-h-[104px]">
+          <div className="mb-1 text-xs font-medium uppercase tracking-wide text-gray-400">
+            Current counts
+          </div>
+          <CountsBars variants={exp.variants} goalIsClick={goalIsClick} />
+        </div>
       </div>
 
       {/* Verdict: confidence + when we can make the call */}

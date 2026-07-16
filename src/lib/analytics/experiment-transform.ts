@@ -67,6 +67,74 @@ export function successCount(
     : v.conversions;
 }
 
+export interface TrendPoint {
+  /** ISO yyyy-mm-dd (UTC day). */
+  date: string;
+  exposures: number;
+  clicks: number;
+  cumExposures: number;
+  cumClicks: number;
+  /** Cumulative goal rate up to this day, PERCENT units (matches clickRate). */
+  cumRate: number;
+}
+
+interface TrendInputRow {
+  variantId: string;
+  day: string;
+  exposures: number;
+  clicks: number;
+}
+
+/**
+ * Build per-variant CUMULATIVE CTR trends from daily event counts. Cumulative
+ * (not daily) because at this site's volumes a per-day rate is pure noise —
+ * the converging/diverging cumulative lines are what an operator can read.
+ * Days between the first and last observed day are gap-filled so the x-axis
+ * is linear in time.
+ */
+export function buildVariantTrends(
+  rows: TrendInputRow[],
+  variantIds: string[]
+): Record<string, TrendPoint[]> {
+  const trends: Record<string, TrendPoint[]> = {};
+  if (rows.length === 0) return trends;
+
+  const days = rows.map((r) => r.day).sort();
+  const firstDay = days[0];
+  const lastDay = days[days.length - 1];
+
+  const byKey = new Map<string, TrendInputRow>();
+  for (const r of rows) byKey.set(`${r.variantId}:${r.day}`, r);
+
+  for (const variantId of variantIds) {
+    const points: TrendPoint[] = [];
+    let cumExposures = 0;
+    let cumClicks = 0;
+    for (
+      let t = new Date(`${firstDay}T00:00:00Z`).getTime();
+      t <= new Date(`${lastDay}T00:00:00Z`).getTime();
+      t += 86_400_000
+    ) {
+      const date = new Date(t).toISOString().slice(0, 10);
+      const row = byKey.get(`${variantId}:${date}`);
+      const exposures = row?.exposures ?? 0;
+      const clicks = row?.clicks ?? 0;
+      cumExposures += exposures;
+      cumClicks += clicks;
+      points.push({
+        date,
+        exposures,
+        clicks,
+        cumExposures,
+        cumClicks,
+        cumRate: cumExposures > 0 ? (cumClicks / cumExposures) * 100 : 0,
+      });
+    }
+    trends[variantId] = points;
+  }
+  return trends;
+}
+
 /**
  * Cap the MDE so the target rate stays below 1 (high-baseline pages).
  * resolveBaselineRate clamps baselines to ≤0.95, so the cap here is always
@@ -86,6 +154,8 @@ export type TransformedExperiment = Omit<TransformableExperiment, 'variants'> & 
   significance: ReturnType<typeof computeSignificance>;
   /** Absent when the decision math failed for this row (degraded, not fatal). */
   decision?: ExperimentDecision;
+  /** Per-variant cumulative CTR trend (event-based, directional). */
+  trends: Record<string, TrendPoint[]>;
   variants: TransformedVariant[];
 };
 
@@ -96,13 +166,16 @@ export type TransformedExperiment = Omit<TransformableExperiment, 'variants'> & 
  * @param exposureWindowDays - the window the counts were collected over.
  * @param baselinePrior - page-level prior CTA rate used until the experiment
  *   has ≥200 impressions of its own.
+ * @param seriesRows - this experiment's daily event counts (see
+ *   getExperimentDailySeries); builds the per-variant cumulative CTR trend.
  */
 export function transformExperiment(
   exp: TransformableExperiment,
   now: Date,
   exposureCounts: Map<string, number> = new Map(),
   exposureWindowDays = 7,
-  baselinePrior = 0.1
+  baselinePrior = 0.1,
+  seriesRows: TrendInputRow[] = []
 ): TransformedExperiment {
   const totalImpressions = exp.variants.reduce((sum, v) => sum + v.impressions, 0);
 
@@ -195,6 +268,7 @@ export function transformExperiment(
     daysRunning,
     significance,
     decision,
+    trends: buildVariantTrends(seriesRows, exp.variants.map((v) => v.id)),
     variants: exp.variants.map((v) => {
       const successes = successCount(exp.goalMetric, v);
       const ci = wilsonInterval(successes, v.impressions);

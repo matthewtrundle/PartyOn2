@@ -8,6 +8,7 @@ import { describe, it, expect } from 'vitest';
 import {
   transformExperiment,
   successCount,
+  buildVariantTrends,
   type TransformableExperiment,
 } from '@/lib/analytics/experiment-transform';
 
@@ -59,6 +60,29 @@ describe('successCount', () => {
     expect(successCount('scroll_depth', v)).toBe(7);
     expect(successCount('conversion', v)).toBe(2);
     expect(successCount('revenue', v)).toBe(2);
+  });
+});
+
+describe('buildVariantTrends', () => {
+  it('computes cumulative rates and gap-fills missing days', () => {
+    const rows = [
+      { variantId: 'a', day: '2026-07-10', exposures: 10, clicks: 1 },
+      // 07-11 missing entirely — must be gap-filled with zeros
+      { variantId: 'a', day: '2026-07-12', exposures: 10, clicks: 3 },
+      { variantId: 'b', day: '2026-07-10', exposures: 8, clicks: 2 },
+    ];
+    const trends = buildVariantTrends(rows, ['a', 'b']);
+    expect(trends['a'].map((p) => p.date)).toEqual(['2026-07-10', '2026-07-11', '2026-07-12']);
+    expect(trends['a'][1].exposures).toBe(0); // gap-filled
+    expect(trends['a'][1].cumRate).toBeCloseTo(10, 5); // 1/10 carried forward
+    expect(trends['a'][2].cumRate).toBeCloseTo(20, 5); // 4/20
+    // variant b has no rows after day 1 — cumulative carries forward flat
+    expect(trends['b'][2].cumExposures).toBe(8);
+    expect(trends['b'][2].cumRate).toBeCloseTo(25, 5);
+  });
+
+  it('returns empty for no rows', () => {
+    expect(buildVariantTrends([], ['a'])).toEqual({});
   });
 });
 
@@ -180,6 +204,20 @@ describe('transformExperiment', () => {
     );
     expect(t.decision).toBeDefined();
     expect(Number.isFinite(t.decision!.requiredPerVariant)).toBe(true);
+  });
+
+  it('attaches per-variant trends when series rows are provided', () => {
+    const rows = [
+      { variantId: 'v-control', day: '2026-07-10', exposures: 20, clicks: 2 },
+      { variantId: 'v-b', day: '2026-07-10', exposures: 22, clicks: 3 },
+      { variantId: 'v-control', day: '2026-07-11', exposures: 30, clicks: 3 },
+      { variantId: 'v-b', day: '2026-07-11', exposures: 28, clicks: 5 },
+    ];
+    const t = transformExperiment(makeExperiment(), NOW, new Map(), 7, 0.1, rows);
+    expect(t.trends['v-control']).toHaveLength(2);
+    // cumulative: day2 control = 5/50 = 10%
+    expect(t.trends['v-control'][1].cumRate).toBeCloseTo(10, 5);
+    expect(t.trends['v-b'][1].cumClicks).toBe(8);
   });
 
   it('caps the MDE for very high baselines instead of throwing', () => {

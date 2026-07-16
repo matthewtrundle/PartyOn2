@@ -10,7 +10,7 @@ import { z } from 'zod';
 import { requireOpsAuth } from '@/lib/auth/ops-session';
 import { CreateExperimentSchema } from '@/lib/experiments/experiment-schemas';
 import { transformExperiment } from '@/lib/analytics/experiment-transform';
-import { getTrailingExposureRates } from '@/lib/analytics/variant-rollup';
+import { getExperimentDailySeries, getTrailingExposureRates } from '@/lib/analytics/variant-rollup';
 
 /**
  * GET /api/admin/experiments
@@ -58,17 +58,27 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     // Trailing 7-day exposure counts feed the projected-decision-date math;
     // the transform falls back to lifetime counters when the stream is empty.
-    const exposureCounts = await getTrailingExposureRates(
-      experiments.map((e) => e.id),
-      7
-    );
+    // Daily series feeds the cumulative CTR trend chart.
+    const experimentIds = experiments.map((e) => e.id);
+    const [exposureCounts, seriesRows] = await Promise.all([
+      getTrailingExposureRates(experimentIds, 7),
+      getExperimentDailySeries(experimentIds),
+    ]);
+    const seriesByExperiment = new Map<string, typeof seriesRows>();
+    for (const row of seriesRows) {
+      const list = seriesByExperiment.get(row.experimentId) ?? [];
+      list.push(row);
+      seriesByExperiment.set(row.experimentId, list);
+    }
 
     // Per-row guard: one pathological row (counters are publicly writable)
     // must degrade to a skipped row, never blank the whole tab.
     const now = new Date();
     const transformedExperiments = experiments.flatMap((exp) => {
       try {
-        return [transformExperiment(exp, now, exposureCounts)];
+        return [
+          transformExperiment(exp, now, exposureCounts, 7, 0.1, seriesByExperiment.get(exp.id) ?? []),
+        ];
       } catch (e) {
         console.error(`experiments GET: transform failed for ${exp.id}:`, e);
         return [];

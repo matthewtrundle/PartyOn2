@@ -51,6 +51,14 @@ export interface ExperimentDecision {
   trendingVariantId: string | null;
   confidenceLevel: number;
 }
+export interface TrendPoint {
+  date: string;
+  exposures: number;
+  clicks: number;
+  cumExposures: number;
+  cumClicks: number;
+  cumRate: number;
+}
 export interface Experiment {
   id: string;
   name: string;
@@ -64,6 +72,8 @@ export interface Experiment {
   significance: Significance;
   /** Absent when the server's decision math degraded for this row. */
   decision?: ExperimentDecision;
+  /** Per-variant cumulative CTR trend (event-based, directional). */
+  trends?: Record<string, TrendPoint[]>;
   variants: VariantRow[];
 }
 

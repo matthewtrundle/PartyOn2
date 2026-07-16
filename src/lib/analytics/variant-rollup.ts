@@ -122,6 +122,60 @@ export async function getTrailingExposureRates(
   );
 }
 
+export interface DailySeriesRow {
+  experimentId: string;
+  variantId: string;
+  /** ISO yyyy-mm-dd (UTC day). */
+  day: string;
+  exposures: number;
+  clicks: number;
+}
+
+/**
+ * Per-day, per-variant exposure + hero-CTA click counts for a set of
+ * experiments — feeds the CTR-over-time trend chart in the analytics hub.
+ * Sourced from AnalyticsEvent rows (experiment_exposure / cta_click stamped
+ * with experiment_id + variant_id). NOTE: the trend is directional — the
+ * DECISION numbers stay on the lifetime variant counters, and the two
+ * pipelines can differ slightly (ad blockers, beacon loss).
+ */
+export async function getExperimentDailySeries(
+  experimentIds: string[],
+  maxDays = 90
+): Promise<DailySeriesRow[]> {
+  if (experimentIds.length === 0) return [];
+  const since = new Date();
+  since.setDate(since.getDate() - maxDays);
+
+  const rows = await prisma.$queryRawUnsafe<
+    Array<{ experiment_id: string; variant_id: string; day: Date; exposures: bigint; clicks: bigint }>
+  >(
+    `
+    SELECT experiment_id, variant_id,
+           date_trunc('day', occurred_at)::date AS day,
+           COUNT(*) FILTER (WHERE name = 'experiment_exposure')::bigint AS exposures,
+           COUNT(*) FILTER (WHERE name = 'cta_click')::bigint           AS clicks
+    FROM analytics_events
+    WHERE experiment_id = ANY($1::text[])
+      AND variant_id IS NOT NULL
+      AND name IN ('experiment_exposure', 'cta_click')
+      AND occurred_at >= $2
+    GROUP BY experiment_id, variant_id, day
+    ORDER BY day
+  `,
+    experimentIds,
+    since
+  );
+
+  return rows.map((r) => ({
+    experimentId: r.experiment_id,
+    variantId: r.variant_id,
+    day: r.day.toISOString().slice(0, 10),
+    exposures: Number(r.exposures),
+    clicks: Number(r.clicks),
+  }));
+}
+
 export interface PageEngagement {
   path: string;
   sessions: number;
