@@ -319,13 +319,18 @@ const nextConfig: NextConfig = {
         destination: '/',
         permanent: true,
       },
+      // NOTE: ':suffix(.*)' not ':suffix*' — path-to-regexp bundled with
+      // Next >=15.5 rejects a '*' repeat on a param glued to literal text
+      // ("Can not repeat \"suffix\" without a prefix and suffix"), which
+      // crashed dev startup. The custom-regex form matches the exact same
+      // URLs (zero or more trailing chars).
       {
-        source: '/downloa:suffix*',
+        source: '/downloa:suffix(.*)',
         destination: '/',
         permanent: true,
       },
       {
-        source: '/fast-deliver:suffix*',
+        source: '/fast-deliver:suffix(.*)',
         destination: '/delivery-areas',
         permanent: true,
       },
@@ -342,7 +347,7 @@ const nextConfig: NextConfig = {
 
       // Dead product pages (crawled but no longer in catalog)
       {
-        source: '/products/heb-cage-free-white-extra-l:suffix*',
+        source: '/products/heb-cage-free-white-extra-l:suffix(.*)',
         destination: '/order',
         permanent: true,
       },
