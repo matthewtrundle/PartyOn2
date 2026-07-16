@@ -6,6 +6,7 @@ import Link from 'next/link';
 export interface HeroContent {
   eyebrow?: string;
   headline?: string;
+  headlineAccent?: string;
   subhead?: string;
   ctaText?: string;
 }
@@ -19,24 +20,52 @@ export interface VariantRow {
   conversions: number;
   clickRate: number;
   conversionRate: number;
+  /** Wilson 95% CI on the goal rate, percent units (matches clickRate). */
+  goalRateCi?: { lo: number; hi: number };
   content: HeroContent | null;
 }
-export interface SigVariant { id: string; confidence: number; liftPct: number; pValue: number }
-export interface Significance { variants: SigVariant[]; winner: string | null; hasEnoughData: boolean }
+export interface SigVariant {
+  id: string;
+  name?: string;
+  confidence: number | null;
+  liftPct: number | null;
+  pValue: number | null;
+}
+/** Mirrors SignificanceResult from computeSignificance — winner is the full
+ * variant object (a previous version of this file typed it as a string id,
+ * which made the winner badge silently never match). */
+export interface Significance {
+  variants: SigVariant[];
+  winner: SigVariant | null;
+  hasEnoughData: boolean;
+}
+export interface ExperimentDecision {
+  verdict: 'winner' | 'no-difference' | 'collecting' | 'underpowered' | 'no-traffic';
+  message: string;
+  requiredPerVariant: number;
+  minVariantImpressions: number;
+  remainingDays: number | null;
+  projectedDecisionDate: string | null;
+  dailyExposurePerVariant: number;
+  reachable: boolean;
+  trendingVariantId: string | null;
+  confidenceLevel: number;
+}
 export interface Experiment {
   id: string;
   name: string;
+  /** Route this test runs on (a tab can span several hero routes). */
+  page: string;
   status: 'DRAFT' | 'RUNNING' | 'PAUSED' | 'COMPLETED';
   goalMetric: string;
   winningVariant: string | null;
   winnerReason: string | null;
   daysRunning: number;
   significance: Significance;
+  /** Absent when the server's decision math degraded for this row. */
+  decision?: ExperimentDecision;
   variants: VariantRow[];
 }
-
-/** Matches the per-variant impression floor in computeSignificance. */
-const MIN_SAMPLE = 100;
 
 const STATUS_STYLES: Record<string, string> = {
   DRAFT: 'bg-gray-100 text-gray-700',
@@ -91,7 +120,12 @@ function VariantCard({
       <div className="flex items-end justify-between">
         <div>
           <div className="text-4xl font-bold text-gray-900 leading-none">{rateOf(v, goalIsClick).toFixed(1)}%</div>
-          <div className="text-sm text-gray-500 mt-1">{goalIsClick ? 'click rate' : 'conversion rate'}</div>
+          <div className="text-sm text-gray-500 mt-1">
+            {goalIsClick ? 'click rate' : 'conversion rate'}
+            {v.goalRateCi && v.impressions > 0 && (
+              <span className="text-gray-400"> · likely {v.goalRateCi.lo.toFixed(1)}–{v.goalRateCi.hi.toFixed(1)}%</span>
+            )}
+          </div>
         </div>
         <div className="text-right text-sm text-gray-600">
           <div>{v.impressions.toLocaleString()} views</div>
@@ -114,31 +148,24 @@ export default function ExperimentResultCard({ exp, canonicalPath, onStatus, onD
   const goalIsClick = exp.goalMetric === 'cta_click' || exp.goalMetric === 'scroll_depth';
   const sorted = [...exp.variants].sort((a, b) => rateOf(b, goalIsClick) - rateOf(a, goalIsClick));
   const leaderId = sorted[0]?.id ?? null;
-  const minImpr = exp.variants.length ? Math.min(...exp.variants.map((v) => v.impressions)) : 0;
-  const needViews = Math.max(0, MIN_SAMPLE - minImpr);
-  const nonControlIds = new Set(exp.variants.filter((v) => !v.isControl).map((v) => v.id));
-  const topConf = Math.round(
-    Math.max(0, ...exp.significance.variants.filter((s) => nonControlIds.has(s.id)).map((s) => s.confidence))
-  );
-  const leaderName = exp.variants.find((v) => v.id === leaderId)?.name ?? '—';
 
   function badgeFor(v: VariantRow): 'winner' | 'ahead' | null {
-    if (exp.significance.winner === v.id || exp.winningVariant === v.id) return 'winner';
-    if (!exp.significance.winner && v.id === leaderId && exp.status !== 'DRAFT') return 'ahead';
+    const callable = exp.decision?.verdict === 'winner';
+    if ((callable && exp.significance.winner?.id === v.id) || exp.winningVariant === v.id) return 'winner';
+    if (exp.winningVariant == null && !callable && v.id === leaderId && exp.status !== 'DRAFT') return 'ahead';
     return null;
   }
 
+  // The decision message (verdict + CI + projected call date) is pre-baked
+  // server-side in experiment-planning.ts — this card just renders it.
   let summary: string;
   if (exp.status === 'COMPLETED') {
     const w = exp.variants.find((v) => v.id === exp.winningVariant);
     summary = w ? `Concluded — winner: ${w.name}.` : 'Concluded.';
-  } else if (exp.significance.winner) {
-    summary = `Significant — ${leaderName} wins at ${topConf}% confidence.`;
-  } else if (needViews > 0) {
-    summary = `Not enough data yet — ~${needViews.toLocaleString()} more views on the smaller variant to reach the minimum sample. Confidence ${topConf}% (need 95% to call it).`;
   } else {
-    summary = `${leaderName} ahead, but not conclusive — confidence ${topConf}% (need 95% to call it).`;
+    summary = exp.decision?.message ?? 'Stats temporarily unavailable for this test.';
   }
+  const summaryIsWin = exp.decision?.verdict === 'winner';
 
   return (
     <div className="rounded-lg border border-gray-200 p-4">
@@ -156,7 +183,7 @@ export default function ExperimentResultCard({ exp, canonicalPath, onStatus, onD
         ))}
       </div>
 
-      <p className={`mt-3 text-sm ${exp.significance.winner ? 'text-green-700' : 'text-gray-600'}`}>{summary}</p>
+      <p className={`mt-3 text-sm ${summaryIsWin ? 'text-green-700' : 'text-gray-600'}`}>{summary}</p>
       {exp.status === 'COMPLETED' && exp.winnerReason && (
         <p className="mt-1 text-sm text-gray-600"><span className="font-medium">Why it won:</span> {exp.winnerReason}</p>
       )}

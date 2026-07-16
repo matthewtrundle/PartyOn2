@@ -28,6 +28,8 @@ import { createDashboardOrderV2, createTabV2 } from '@/lib/group-orders-v2/api-c
 import type { PartyType, DashboardSource, DeliveryContextType } from '@/lib/group-orders-v2/types';
 import { getAffiliateOrderDefaults } from '@/lib/affiliates/presets';
 import { trackCTAClick } from '@/lib/analytics/ga4-events';
+import { useHeroExperiment } from '@/hooks/useHeroExperiment';
+import { trackExperimentClick } from '@/hooks/useExperimentVariant';
 import { getAttributionForDashboard } from '@/lib/analytics/attribution';
 import { getEventPreset } from '@/lib/events/event-presets';
 
@@ -101,6 +103,11 @@ function OrderRedirectInner(): ReactElement {
   // a party type). null = still deciding.
   const [autoMode, setAutoMode] = useState<boolean | null>(null);
   const creating = useRef(false);
+
+  // Self-serve hero headline test — ONLY when the chip selector actually
+  // renders. Auto-mode visitors (query-param / affiliate presets) never see
+  // the headline; assigning them would inflate impressions and poison CTR.
+  const hero = useHeroExperiment('/order', { skip: autoMode !== false });
 
   // Pull the URL inputs once -- they don't change across renders.
   const ref = searchParams?.get('ref') ?? null;
@@ -345,17 +352,24 @@ function OrderRedirectInner(): ReactElement {
           className="h-24 md:h-32 w-auto mx-auto mb-8"
         />
         <h1 className="font-heading font-bold text-3xl md:text-5xl tracking-[0.06em] text-gray-900 mb-2">
-          What are we celebrating?
+          {hero.content?.headline ?? 'What are we celebrating?'}
         </h1>
         <p className="font-fraunces italic text-gray-600 text-lg md:text-xl mb-8">
-          {"One tap and we'll set up your order page."}
+          {hero.content?.subhead ?? "One tap and we'll set up your order page."}
         </p>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
           {CHIPS.map((chip) => (
             <button
               key={chip.partyType}
               type="button"
-              onClick={() => { trackCTAClick(chip.label, '/order', 'party_type_chip'); runCreate(chip.partyType); }}
+              onClick={() => {
+                trackCTAClick(chip.label, '/order', 'party_type_chip', hero.experimentId ?? undefined, hero.variantId ?? undefined);
+                if (hero.experimentId && hero.variantId) {
+                  // Fire-and-forget — must never delay dashboard creation.
+                  void trackExperimentClick(hero.experimentId, hero.variantId, chip.label);
+                }
+                runCreate(chip.partyType);
+              }}
               disabled={busy}
               className="flex flex-col items-center justify-center gap-2 px-4 py-5 md:py-6 bg-white rounded-2xl shadow-warm-sm hover:shadow-warm-md active:bg-cream font-heading font-semibold tracking-[0.04em] text-gray-900 transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
             >

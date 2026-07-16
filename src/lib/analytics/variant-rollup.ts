@@ -87,6 +87,41 @@ export async function getExperimentRollup(
   return { experimentId, windowDays, ...sig };
 }
 
+/**
+ * Per-variant trailing exposure counts for a set of experiments — feeds the
+ * "projected decision date" math (experiment-planning.ts). Counts
+ * `experiment_exposure` AnalyticsEvents in the trailing window; the caller
+ * divides by windowDays (and falls back to lifetime counters / daysRunning
+ * when the event stream is empty for an experiment).
+ *
+ * @returns Map keyed `${experimentId}:${variantId}` → exposure count in window.
+ */
+export async function getTrailingExposureRates(
+  experimentIds: string[],
+  windowDays = 7
+): Promise<Map<string, number>> {
+  if (experimentIds.length === 0) return new Map();
+  const since = new Date();
+  since.setDate(since.getDate() - windowDays);
+
+  const rows = await prisma.analyticsEvent.groupBy({
+    by: ['experimentId', 'variantId'],
+    where: {
+      experimentId: { in: experimentIds },
+      name: 'experiment_exposure',
+      occurredAt: { gte: since },
+      variantId: { not: null },
+    },
+    _count: { _all: true },
+  });
+
+  return new Map(
+    rows
+      .filter((r) => r.experimentId && r.variantId)
+      .map((r) => [`${r.experimentId}:${r.variantId}`, r._count._all])
+  );
+}
+
 export interface PageEngagement {
   path: string;
   sessions: number;

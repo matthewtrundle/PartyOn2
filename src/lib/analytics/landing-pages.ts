@@ -44,6 +44,14 @@ export interface LandingPageDef {
   ctaSections: CtaSectionDef[];
   /** Pre-fills the "element" field when creating an A/B test for this page. */
   defaultExperimentElementId: string;
+  /**
+   * Routes on this tab that render their OWN hero and can host a hero A/B
+   * test. Defaults to [canonicalPath]. Only set when a tab unions several
+   * physically different pages (weddings: the service page, the calculator,
+   * and the ads lander each have a distinct hero). Redirect-only aliases
+   * (/bach-parties, /corporate) never render a hero and don't belong here.
+   */
+  experimentPaths?: string[];
 }
 
 export const LANDING_PAGES: LandingPageDef[] = [
@@ -82,6 +90,11 @@ export const LANDING_PAGES: LandingPageDef[] = [
       { id: 'final_cta', label: 'Final CTA' },
     ],
     defaultExperimentElementId: 'hero',
+    experimentPaths: [
+      '/weddings',
+      '/wedding-drink-calculator',
+      '/austin-wedding-weekend-delivery',
+    ],
   },
   {
     key: 'boat-parties',
@@ -173,6 +186,11 @@ export function normalizePath(path: string): string {
   const clean = (path.split('?')[0] ?? '').split('#')[0] ?? '';
   if (clean.length > 1 && clean.endsWith('/')) return clean.slice(0, -1);
   return clean || '/';
+}
+
+/** Routes on a tab that can host a hero A/B test (canonical path by default). */
+export function experimentPathsFor(def: LandingPageDef): string[] {
+  return def.experimentPaths ?? [def.canonicalPath];
 }
 
 /** Canonical path + all alias paths for a landing page (empty if key unknown). */

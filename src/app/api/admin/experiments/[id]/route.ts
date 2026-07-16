@@ -17,7 +17,7 @@ const UpdateExperimentSchema = z.object({
   description: z.string().max(500).optional(),
   status: z.enum(['DRAFT', 'RUNNING', 'PAUSED', 'COMPLETED']).optional(),
   goalMetric: z.enum(['cta_click', 'scroll_depth', 'conversion', 'revenue']).optional(),
-  goalValue: z.string().optional(),
+  goalValue: z.string().max(120).optional(),
   winningVariant: z.string().optional(),
   winnerReason: z.string().max(1000).optional(),
   confidence: z.number().min(0).max(100).optional(),

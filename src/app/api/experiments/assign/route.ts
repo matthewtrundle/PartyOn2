@@ -10,6 +10,7 @@ import {
   getActiveExperiment,
   assignVariantByWeight,
 } from '@/lib/experiments/experiment-service';
+import { mapVariantNameToContentId } from '@/lib/experiments/hero-variants';
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const { searchParams } = new URL(request.url);
@@ -90,19 +91,3 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   }
 }
 
-/**
- * Map variant name from database to hero content ID
- * Database variants are named "Control", "Variant A", "Variant B", etc.
- * Hero content uses IDs like "control", "variant-a", "variant-b", etc.
- */
-function mapVariantNameToContentId(variantName: string): string {
-  const normalized = variantName.toLowerCase().trim();
-
-  if (normalized === 'control') return 'control';
-  if (normalized === 'variant a') return 'variant-a';
-  if (normalized === 'variant b') return 'variant-b';
-  if (normalized === 'variant c') return 'variant-c';
-
-  // Default to control for unknown names
-  return 'control';
-}

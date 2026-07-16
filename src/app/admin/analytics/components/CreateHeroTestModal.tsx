@@ -8,6 +8,7 @@ interface VariantForm {
   isControl: boolean;
   eyebrow: string;
   headline: string;
+  headlineAccent: string;
   subhead: string;
   ctaText: string;
 }
@@ -15,6 +16,8 @@ interface VariantForm {
 interface CreateHeroTestModalProps {
   /** Canonical route the experiment is scoped to (e.g. '/weddings'). */
   canonicalPath: string;
+  /** Routes on this tab that render their own hero — a selector shows when >1. */
+  pathOptions?: string[];
   elementId: string;
   pageLabel: string;
   onClose: () => void;
@@ -22,12 +25,13 @@ interface CreateHeroTestModalProps {
 }
 
 function blankVariant(name: string, isControl: boolean): VariantForm {
-  return { name, weight: 50, isControl, eyebrow: '', headline: '', subhead: '', ctaText: '' };
+  return { name, weight: 50, isControl, eyebrow: '', headline: '', headlineAccent: '', subhead: '', ctaText: '' };
 }
 
-const FIELDS: { key: keyof Pick<VariantForm, 'eyebrow' | 'headline' | 'subhead' | 'ctaText'>; label: string }[] = [
+const FIELDS: { key: keyof Pick<VariantForm, 'eyebrow' | 'headline' | 'headlineAccent' | 'subhead' | 'ctaText'>; label: string }[] = [
   { key: 'eyebrow', label: 'Eyebrow' },
   { key: 'headline', label: 'Headline' },
+  { key: 'headlineAccent', label: 'Headline 2nd line (Austin landers)' },
   { key: 'subhead', label: 'Subhead' },
   { key: 'ctaText', label: 'Button text' },
 ];
@@ -39,12 +43,14 @@ const FIELDS: { key: keyof Pick<VariantForm, 'eyebrow' | 'headline' | 'subhead' 
  */
 export default function CreateHeroTestModal({
   canonicalPath,
+  pathOptions,
   elementId,
   pageLabel,
   onClose,
   onCreated,
 }: CreateHeroTestModalProps): ReactElement {
   const [name, setName] = useState('');
+  const [page, setPage] = useState(canonicalPath);
   const [goalMetric, setGoalMetric] = useState<'cta_click' | 'conversion'>('cta_click');
   const [variants, setVariants] = useState<VariantForm[]>([
     blankVariant('Control', true),
@@ -79,7 +85,7 @@ export default function CreateHeroTestModal({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: name.trim(),
-          page: canonicalPath,
+          page,
           elementId,
           goalMetric,
           variants: variants.map((v) => ({
@@ -89,6 +95,7 @@ export default function CreateHeroTestModal({
             content: {
               ...(v.eyebrow.trim() && { eyebrow: v.eyebrow.trim() }),
               ...(v.headline.trim() && { headline: v.headline.trim() }),
+              ...(v.headlineAccent.trim() && { headlineAccent: v.headlineAccent.trim() }),
               ...(v.subhead.trim() && { subhead: v.subhead.trim() }),
               ...(v.ctaText.trim() && { ctaText: v.ctaText.trim() }),
             },
@@ -118,6 +125,17 @@ export default function CreateHeroTestModal({
         <label className="block text-base font-medium text-gray-700 mb-1">Test name</label>
         <input className="input-premium mb-4" value={name} placeholder="e.g. Wedding hero — benefit vs urgency"
           onChange={(e) => setName(e.target.value)} />
+
+        {pathOptions && pathOptions.length > 1 && (
+          <>
+            <label className="block text-base font-medium text-gray-700 mb-1">Which page&apos;s hero?</label>
+            <select className="input-premium mb-4" value={page} onChange={(e) => setPage(e.target.value)}>
+              {pathOptions.map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
+          </>
+        )}
 
         <label className="block text-base font-medium text-gray-700 mb-1">Goal</label>
         <select className="input-premium mb-4" value={goalMetric} onChange={(e) => setGoalMetric(e.target.value as 'cta_click' | 'conversion')}>
