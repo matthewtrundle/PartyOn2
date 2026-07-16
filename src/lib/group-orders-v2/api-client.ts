@@ -256,13 +256,15 @@ export async function checkoutAllV2(
   participantId: string,
   discountCode?: string,
   tipAmount?: number,
-  email?: string
+  email?: string,
+  phone?: string,
+  smsConsent?: boolean
 ): Promise<{ checkoutUrl: string; sessionId: string }> {
   const session = await apiFetch<{ checkoutUrl: string; sessionId: string }>(
     `${API_BASE}/${code}/tabs/${tabId}/checkout-all`,
     {
       method: 'POST',
-      body: JSON.stringify({ participantId, discountCode, tipAmount, email }),
+      body: JSON.stringify({ participantId, discountCode, tipAmount, email, phone, smsConsent }),
     }
   );
   // Checkout is what locks a v2 tab, so this is the lock moment of the funnel.
@@ -277,13 +279,15 @@ export async function checkoutParticipantV2(
   participantId: string,
   discountCode?: string,
   tipAmount?: number,
-  email?: string
+  email?: string,
+  phone?: string,
+  smsConsent?: boolean
 ): Promise<{ checkoutUrl: string; sessionId: string; paymentId: string }> {
   const session = await apiFetch<{ checkoutUrl: string; sessionId: string; paymentId: string }>(
     `${API_BASE}/${code}/tabs/${tabId}/checkout`,
     {
       method: 'POST',
-      body: JSON.stringify({ participantId, discountCode, tipAmount, email }),
+      body: JSON.stringify({ participantId, discountCode, tipAmount, email, phone, smsConsent }),
     }
   );
   trackEvent(ANALYTICS_EVENTS.LOCK_GROUP_ORDER, { share_code: code, scope: 'participant' });

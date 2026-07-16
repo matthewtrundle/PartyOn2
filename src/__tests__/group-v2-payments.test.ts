@@ -21,12 +21,15 @@ const mockPrismaDeliveryTaskCreate = vi.fn();
 const mockPrismaProductVariantFindUnique = vi.fn();
 const mockPrismaProductVariantFindMany = vi.fn();
 const mockPrismaGroupOrderV2FindUnique = vi.fn();
+const mockPrismaParticipantPaymentCreate = vi.fn();
+const mockStripeCheckoutSessionsCreate = vi.fn();
 
 vi.mock('@/lib/database/client', () => ({
   prisma: {
     participantPayment: {
       findFirst: (...args: unknown[]) => mockPrismaParticipantPaymentFindFirst(...args),
       update: (...args: unknown[]) => mockPrismaParticipantPaymentUpdate(...args),
+      create: (...args: unknown[]) => mockPrismaParticipantPaymentCreate(...args),
     },
     groupParticipantV2: {
       findUnique: (...args: unknown[]) => mockPrismaGroupParticipantV2FindUnique(...args),
@@ -79,8 +82,19 @@ vi.mock('@/lib/affiliates/commission-engine', () => ({
 vi.mock('@/lib/affiliates/affiliate-service', () => ({
   getAffiliateByCode: vi.fn().mockResolvedValue(null),
 }));
-vi.mock('./client', () => ({
-  stripe: {},
+// NOTE: the SUT imports `stripe` from '@/lib/stripe/client' (a lazy Proxy that
+// throws without STRIPE_SECRET_KEY). Mock that exact module id — a relative
+// './client' here resolves against the test dir and silently no-ops.
+vi.mock('@/lib/stripe/client', () => ({
+  stripe: {
+    checkout: {
+      sessions: { create: (...args: unknown[]) => mockStripeCheckoutSessionsCreate(...args) },
+    },
+    coupons: { create: vi.fn().mockResolvedValue({ id: 'coupon_test' }) },
+  },
+  getStripe: vi.fn(),
+  STRIPE_PUBLISHABLE_KEY: 'pk_test',
+  STRIPE_WEBHOOK_SECRET: 'whsec_test',
 }));
 vi.mock('@/lib/tax', () => ({
   DEFAULT_TAX_RATE: 0.0825,
@@ -492,5 +506,72 @@ describe('createGroupV2CheckoutSession availability guard', () => {
     await expect(createGroupV2CheckoutSession(baseInput)).rejects.toBeInstanceOf(
       ProductNotPurchasableError
     );
+  });
+});
+
+describe('createGroupV2CheckoutSession — SMS consent metadata (A2P 10DLC)', () => {
+  const purchasableInput = {
+    groupOrderId: 'group-order-id-1',
+    subOrderId: 'sub-order-id-1',
+    participantId: 'participant-id-1',
+    participantName: 'Guest',
+    draftItems: [
+      {
+        id: 'draft-1',
+        productId: 'product-id-1',
+        variantId: 'variant-id-1',
+        title: 'Test Beer Pack',
+        variantTitle: '12 Pack',
+        price: 22.99,
+        imageUrl: null,
+        quantity: 1,
+      },
+    ],
+    successUrl: 'https://example.com/success',
+    cancelUrl: 'https://example.com/cancel',
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Product purchasable → availability guard passes → we reach the Stripe call.
+    mockPrismaProductVariantFindMany.mockResolvedValue([
+      {
+        id: 'variant-id-1',
+        availableForSale: true,
+        product: { id: 'product-id-1', status: 'ACTIVE', title: 'Test Beer Pack' },
+      },
+    ]);
+    mockStripeCheckoutSessionsCreate.mockResolvedValue({ id: 'cs_test_x', url: 'https://stripe.test/x' });
+    mockPrismaParticipantPaymentCreate.mockResolvedValue({ id: 'payment-x' });
+  });
+
+  function lastSessionParams(): Stripe.Checkout.SessionCreateParams {
+    return mockStripeCheckoutSessionsCreate.mock.calls[0][0] as Stripe.Checkout.SessionCreateParams;
+  }
+
+  it('omits smsConsent from metadata when no phone was provided (even if consent is true)', async () => {
+    await createGroupV2CheckoutSession({ ...purchasableInput, smsConsent: true });
+    expect(lastSessionParams().metadata).not.toHaveProperty('smsConsent');
+  });
+
+  it("records smsConsent 'false' when a phone is present but the box is unchecked", async () => {
+    await createGroupV2CheckoutSession({
+      ...purchasableInput,
+      participantPhone: '5551234567',
+      smsConsent: false,
+    });
+    expect(lastSessionParams().metadata?.smsConsent).toBe('false');
+  });
+
+  it("records smsConsent 'true' with a phone, and never leaks the raw phone into the session", async () => {
+    await createGroupV2CheckoutSession({
+      ...purchasableInput,
+      participantPhone: '5559998888',
+      smsConsent: true,
+    });
+    const params = lastSessionParams();
+    expect(params.metadata?.smsConsent).toBe('true');
+    // The raw phone must never appear in metadata, custom_text, or anywhere in the params.
+    expect(JSON.stringify(params)).not.toContain('5559998888');
   });
 });
