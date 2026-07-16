@@ -13,6 +13,8 @@ import {
   recordConversion,
   getExperimentById,
 } from '@/lib/experiments/experiment-service';
+import { checkRateLimit } from '@/lib/security/rate-limit';
+import { mapVariantNameToContentId } from '@/lib/experiments/hero-variants';
 
 // Validation schema for tracking events
 const TrackingEventSchema = z.object({
@@ -20,13 +22,25 @@ const TrackingEventSchema = z.object({
   experimentId: z.string().min(1),
   variantId: z.string().min(1), // This is the content ID (control, variant-a, etc.)
   metadata: z.object({
-    buttonText: z.string().optional(),
-    revenue: z.number().optional(),
+    buttonText: z.string().max(200).optional(),
+    // Bounded — these counters feed the A/B winner readout, so an arbitrary
+    // revenue number from a public endpoint must be clamped.
+    revenue: z.number().finite().min(0).max(10_000).optional(),
   }).optional(),
 });
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
+    // Throttle: unauthenticated write path whose counters drive winner
+    // declarations. A real visitor fires a handful of events per page view;
+    // 60/min per IP is generous headroom while blunting counter-stuffing.
+    const ip =
+      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    const allowed = await checkRateLimit('experiment-track', ip, 60, 60);
+    if (!allowed) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+    }
+
     const body = await request.json();
     const validatedData = TrackingEventSchema.parse(body);
 
@@ -40,6 +54,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         { error: 'Experiment not found' },
         { status: 404 }
       );
+    }
+
+    // Only RUNNING experiments accept events — pages only fire these after a
+    // live assignment, so anything else is noise or deliberate stuffing.
+    if (experiment.status !== 'RUNNING') {
+      return NextResponse.json({ success: true, warning: 'Experiment not running' });
     }
 
     // Resolve the variant. Self-serve hero tests pass the real DB variant id;
@@ -98,18 +118,4 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       { status: 500 }
     );
   }
-}
-
-/**
- * Map variant name from database to hero content ID
- */
-function mapVariantNameToContentId(variantName: string): string {
-  const normalized = variantName.toLowerCase().trim();
-
-  if (normalized === 'control') return 'control';
-  if (normalized === 'variant a') return 'variant-a';
-  if (normalized === 'variant b') return 'variant-b';
-  if (normalized === 'variant c') return 'variant-c';
-
-  return 'control';
 }

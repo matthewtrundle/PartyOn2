@@ -8,6 +8,8 @@ import TrafficPanel from './components/TrafficPanel';
 import CtaClickTable from './components/CtaClickTable';
 import ConversionPanel from './components/ConversionPanel';
 import PageExperimentsPanel from './components/PageExperimentsPanel';
+import ExperimentSummaryBanner from './components/ExperimentSummaryBanner';
+import { useExperiments } from './useExperiments';
 import { isLandingPageKey, landingPageByKey, type LandingPageKey } from '@/lib/analytics/landing-pages';
 import type {
   AnalyticsPeriod,
@@ -69,6 +71,10 @@ function AnalyticsHub(): ReactElement {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // One experiment fetch per tab, shared by the top scoreboard and the
+  // bottom management panel so actions in either refresh both.
+  const experimentsState = useExperiments(activeDef);
+
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -118,6 +124,15 @@ function AnalyticsHub(): ReactElement {
 
       {error && <div className="card bg-red-50 border-red-200 text-sm text-red-700">{error}</div>}
 
+      {activeDef && (
+        <ExperimentSummaryBanner
+          def={activeDef}
+          experiments={experimentsState.experiments}
+          loading={experimentsState.loading}
+          reload={experimentsState.reload}
+        />
+      )}
+
       <TrafficPanel
         traffic={data?.traffic ?? EMPTY_TRAFFIC}
         period={period}
@@ -131,15 +146,23 @@ function AnalyticsHub(): ReactElement {
         engagement={data?.engagement ?? EMPTY_ENGAGEMENT}
         loading={loading}
       />
-      {activeDef && <PageExperimentsPanel def={activeDef} />}
+      {activeDef && (
+        <PageExperimentsPanel
+          def={activeDef}
+          experiments={experimentsState.experiments}
+          loading={experimentsState.loading}
+          reload={experimentsState.reload}
+        />
+      )}
     </div>
   );
 }
 
 /**
- * Per-landing-page analytics hub. Top tab bar selects a page; panels show its
- * traffic (GA4), CTA-click breakdown (first-party), and conversion (orders by
- * Order.landingPage). A/B-test management is added in Phase 2.
+ * Per-landing-page analytics hub. Top tab bar selects a page; the experiment
+ * scoreboard (visitors / CTA CTR / confidence / projected decision date per
+ * variant) leads, followed by traffic (GA4), CTA-click breakdown (first-party),
+ * conversion (orders by Order.landingPage), and A/B test management.
  */
 export default function AnalyticsHubPage(): ReactElement {
   return (

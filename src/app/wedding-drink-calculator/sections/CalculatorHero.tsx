@@ -4,6 +4,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import type { ReactElement } from 'react';
 import { trackCTAClick } from '@/lib/analytics/ga4-events';
+import { useHeroExperiment } from '@/hooks/useHeroExperiment';
+import { trackExperimentClick } from '@/hooks/useExperimentVariant';
 
 /**
  * Paid-ad landing hero. Editorial-luxury aesthetic (espresso ground,
@@ -19,8 +21,27 @@ import { trackCTAClick } from '@/lib/analytics/ga4-events';
  *   - Staggered 600ms entrance reads as composed/premium
  */
 export default function CalculatorHero(): ReactElement {
+  // Self-serve hero A/B test (page + elementId='hero' in /admin/analytics).
+  // SEO note for variant copy: the H1 is the exact-match paid keyword —
+  // variants should keep "Wedding Drink Calculator" as a substring.
+  const hero = useHeroExperiment('/wedding-drink-calculator');
+  const ctaLabel = hero.content?.ctaText ?? 'Start the Calculator';
+  // Historical analytics rows use the lowercase-c label — keep the default's
+  // tracked string identical so the CTA-click table doesn't split into two
+  // rows across the deploy. Variant overrides track their own text.
+  const trackedLabel = hero.content?.ctaText ?? 'Start the calculator';
+
   const handleHeroCta = () => {
-    trackCTAClick('Start the calculator', '#calculator', 'wedding_calc_hero');
+    trackCTAClick(
+      trackedLabel,
+      '#calculator',
+      'wedding_calc_hero',
+      hero.experimentId ?? undefined,
+      hero.variantId ?? undefined
+    );
+    if (hero.experimentId && hero.variantId) {
+      void trackExperimentClick(hero.experimentId, hero.variantId, trackedLabel);
+    }
   };
 
   return (
@@ -41,16 +62,20 @@ export default function CalculatorHero(): ReactElement {
         <h1
           className="font-heading text-4xl md:text-5xl lg:text-6xl font-light tracking-tight leading-[1.05] opacity-0 animate-[fadeUp_0.6s_cubic-bezier(0.22,1,0.36,1)_forwards]"
         >
-          Wedding Drink Calculator
+          {hero.content?.headline ?? 'Wedding Drink Calculator'}
         </h1>
 
         <p
           className="mt-6 max-w-xl text-lg md:text-xl text-white/85 font-light leading-relaxed opacity-0 animate-[fadeUp_0.6s_cubic-bezier(0.22,1,0.36,1)_0.2s_forwards]"
         >
-          Get{' '}
-          <span className="font-cormorant italic text-[#C8A96A]">exact</span>{' '}
-          beer, wine, spirits, and bubbly counts for your Austin wedding.
-          Delivered cold to your venue.
+          {hero.content?.subhead ?? (
+            <>
+              Get{' '}
+              <span className="font-cormorant italic text-[#C8A96A]">exact</span>{' '}
+              beer, wine, spirits, and bubbly counts for your Austin wedding.
+              Delivered cold to your venue.
+            </>
+          )}
         </p>
 
         <a
@@ -58,7 +83,7 @@ export default function CalculatorHero(): ReactElement {
           onClick={handleHeroCta}
           className="group mt-8 inline-flex items-center gap-3 bg-[#C8A96A] text-[#1a1410] hover:bg-[#d8b97a] transition-colors duration-300 px-10 py-4 text-sm tracking-[0.25em] uppercase font-medium rounded-lg opacity-0 animate-[fadeUp_0.6s_cubic-bezier(0.22,1,0.36,1)_0.4s_forwards]"
         >
-          Start the Calculator
+          {ctaLabel}
           <span className="transition-transform duration-300 group-hover:translate-y-0.5">
             ↓
           </span>

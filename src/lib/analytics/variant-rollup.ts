@@ -87,6 +87,95 @@ export async function getExperimentRollup(
   return { experimentId, windowDays, ...sig };
 }
 
+/**
+ * Per-variant trailing exposure counts for a set of experiments — feeds the
+ * "projected decision date" math (experiment-planning.ts). Counts
+ * `experiment_exposure` AnalyticsEvents in the trailing window; the caller
+ * divides by windowDays (and falls back to lifetime counters / daysRunning
+ * when the event stream is empty for an experiment).
+ *
+ * @returns Map keyed `${experimentId}:${variantId}` → exposure count in window.
+ */
+export async function getTrailingExposureRates(
+  experimentIds: string[],
+  windowDays = 7
+): Promise<Map<string, number>> {
+  if (experimentIds.length === 0) return new Map();
+  const since = new Date();
+  since.setDate(since.getDate() - windowDays);
+
+  const rows = await prisma.analyticsEvent.groupBy({
+    by: ['experimentId', 'variantId'],
+    where: {
+      experimentId: { in: experimentIds },
+      name: 'experiment_exposure',
+      occurredAt: { gte: since },
+      variantId: { not: null },
+    },
+    _count: { _all: true },
+  });
+
+  return new Map(
+    rows
+      .filter((r) => r.experimentId && r.variantId)
+      .map((r) => [`${r.experimentId}:${r.variantId}`, r._count._all])
+  );
+}
+
+export interface DailySeriesRow {
+  experimentId: string;
+  variantId: string;
+  /** ISO yyyy-mm-dd (UTC day). */
+  day: string;
+  exposures: number;
+  clicks: number;
+}
+
+/**
+ * Per-day, per-variant exposure + hero-CTA click counts for a set of
+ * experiments — feeds the CTR-over-time trend chart in the analytics hub.
+ * Sourced from AnalyticsEvent rows (experiment_exposure / cta_click stamped
+ * with experiment_id + variant_id). NOTE: the trend is directional — the
+ * DECISION numbers stay on the lifetime variant counters, and the two
+ * pipelines can differ slightly (ad blockers, beacon loss).
+ */
+export async function getExperimentDailySeries(
+  experimentIds: string[],
+  maxDays = 90
+): Promise<DailySeriesRow[]> {
+  if (experimentIds.length === 0) return [];
+  const since = new Date();
+  since.setDate(since.getDate() - maxDays);
+
+  const rows = await prisma.$queryRawUnsafe<
+    Array<{ experiment_id: string; variant_id: string; day: Date; exposures: bigint; clicks: bigint }>
+  >(
+    `
+    SELECT experiment_id, variant_id,
+           date_trunc('day', occurred_at)::date AS day,
+           COUNT(*) FILTER (WHERE name = 'experiment_exposure')::bigint AS exposures,
+           COUNT(*) FILTER (WHERE name = 'cta_click')::bigint           AS clicks
+    FROM analytics_events
+    WHERE experiment_id = ANY($1::text[])
+      AND variant_id IS NOT NULL
+      AND name IN ('experiment_exposure', 'cta_click')
+      AND occurred_at >= $2
+    GROUP BY experiment_id, variant_id, day
+    ORDER BY day
+  `,
+    experimentIds,
+    since
+  );
+
+  return rows.map((r) => ({
+    experimentId: r.experiment_id,
+    variantId: r.variant_id,
+    day: r.day.toISOString().slice(0, 10),
+    exposures: Number(r.exposures),
+    clicks: Number(r.clicks),
+  }));
+}
+
 export interface PageEngagement {
   path: string;
   sessions: number;

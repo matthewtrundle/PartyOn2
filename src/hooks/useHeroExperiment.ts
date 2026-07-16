@@ -26,6 +26,8 @@ const VISITOR_ID_MAX_AGE = 30 * 24 * 60 * 60; // 30 days
 export interface HeroContent {
   eyebrow?: string;
   headline?: string;
+  /** Gold second line on the LandingPageTemplate landers; other pages ignore it. */
+  headlineAccent?: string;
   subhead?: string;
   ctaText?: string;
 }
@@ -80,11 +82,23 @@ interface AssignResponse {
 /**
  * @param page - canonical landing-page path (e.g. '/weddings'); experiments are
  *   scoped to (page, elementId='hero').
+ * @param opts.skip - when true, no variant is assigned and NO impression is
+ *   recorded (the hook fires an exposure internally on assignment, so this is
+ *   the only clean opt-out). Used when another system owns the hero (Brian's
+ *   registry test running) or the hero isn't shown (/order auto-mode).
  */
-export function useHeroExperiment(page: string): HeroExperiment {
+export function useHeroExperiment(
+  page: string,
+  opts?: { skip?: boolean }
+): HeroExperiment {
+  const skip = opts?.skip === true;
   const [state, setState] = useState<HeroExperiment>(EMPTY);
 
   useEffect(() => {
+    if (skip) {
+      setState({ ...EMPTY, ready: true });
+      return;
+    }
     let cancelled = false;
     const visitorId = getOrCreateVisitorId();
 
@@ -125,7 +139,7 @@ export function useHeroExperiment(page: string): HeroExperiment {
     return () => {
       cancelled = true;
     };
-  }, [page]);
+  }, [page, skip]);
 
   return state;
 }

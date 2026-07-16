@@ -8,44 +8,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import { requireOpsAuth } from '@/lib/auth/ops-session';
-import { computeSignificance, type VariantStat } from '@/lib/analytics/experiment-significance';
-
-// Hero-copy payload an operator can set per variant (all fields optional —
-// an absent field falls back to the page's default copy).
-const VariantContentSchema = z.object({
-  eyebrow: z.string().max(200).optional(),
-  headline: z.string().max(300).optional(),
-  subhead: z.string().max(500).optional(),
-  ctaText: z.string().max(120).optional(),
-});
-
-// Validation schema for creating an experiment
-const CreateExperimentSchema = z.object({
-  name: z.string().min(1, 'Name is required').max(100),
-  description: z.string().max(500).optional(),
-  page: z.string().min(1, 'Page is required'),
-  elementId: z.string().min(1, 'Element ID is required'),
-  goalMetric: z.enum(['cta_click', 'scroll_depth', 'conversion', 'revenue']),
-  goalValue: z.string().optional(),
-  variants: z.array(z.object({
-    name: z.string().min(1),
-    description: z.string().optional(),
-    isControl: z.boolean().default(false),
-    weight: z.number().min(0).max(100).default(50),
-    content: VariantContentSchema.optional(),
-  })).min(2, 'At least 2 variants required'),
-});
-
-/**
- * Per-variant success count for the significance test: for click-style goals the
- * "success" is a click; for conversion/revenue goals it's a recorded conversion.
- */
-function successCount(
-  goalMetric: string,
-  v: { clicks: number; conversions: number }
-): number {
-  return goalMetric === 'cta_click' || goalMetric === 'scroll_depth' ? v.clicks : v.conversions;
-}
+import { CreateExperimentSchema } from '@/lib/experiments/experiment-schemas';
+import { transformExperiment } from '@/lib/analytics/experiment-transform';
+import { getExperimentDailySeries, getTrailingExposureRates } from '@/lib/analytics/variant-rollup';
 
 /**
  * GET /api/admin/experiments
@@ -59,6 +24,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
     const page = searchParams.get('page');
+    // `pages=` (comma-separated) scopes to a set of routes — the analytics hub
+    // uses it because one tab can span several physical heroes (e.g. weddings
+    // = /weddings + /wedding-drink-calculator + /austin-wedding-weekend-delivery).
+    const pages = searchParams.get('pages');
 
     const where: Record<string, unknown> = {};
 
@@ -66,7 +35,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       where.status = status;
     }
 
-    if (page) {
+    if (pages) {
+      const paths = pages.split(',').map((p) => p.trim()).filter(Boolean);
+      if (paths.length > 0) where.page = { in: paths };
+    } else if (page) {
       where.page = page;
     }
 
@@ -81,54 +53,36 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         { status: 'asc' },
         { createdAt: 'desc' },
       ],
+      take: 100,
     });
 
-    // Transform to include calculated metrics
-    const transformedExperiments = experiments.map((exp) => {
-      const totalImpressions = exp.variants.reduce((sum, v) => sum + v.impressions, 0);
-      const controlVariant = exp.variants.find((v) => v.isControl);
-      const bestVariant = exp.variants.reduce((best, v) => {
-        if (v.isControl) return best;
-        const vRate = v.impressions > 0 ? v.clicks / v.impressions : 0;
-        const bestRate = best && best.impressions > 0 ? best.clicks / best.impressions : 0;
-        return vRate > bestRate ? v : best;
-      }, null as typeof exp.variants[0] | null);
+    // Trailing 7-day exposure counts feed the projected-decision-date math;
+    // the transform falls back to lifetime counters when the stream is empty.
+    // Daily series feeds the cumulative CTR trend chart.
+    const experimentIds = experiments.map((e) => e.id);
+    const [exposureCounts, seriesRows] = await Promise.all([
+      getTrailingExposureRates(experimentIds, 7),
+      getExperimentDailySeries(experimentIds),
+    ]);
+    const seriesByExperiment = new Map<string, typeof seriesRows>();
+    for (const row of seriesRows) {
+      const list = seriesByExperiment.get(row.experimentId) ?? [];
+      list.push(row);
+      seriesByExperiment.set(row.experimentId, list);
+    }
 
-      let uplift = 0;
-      if (controlVariant && bestVariant && controlVariant.impressions > 0 && bestVariant.impressions > 0) {
-        const controlRate = controlVariant.clicks / controlVariant.impressions;
-        const bestRate = bestVariant.clicks / bestVariant.impressions;
-        uplift = controlRate > 0 ? ((bestRate - controlRate) / controlRate) * 100 : 0;
+    // Per-row guard: one pathological row (counters are publicly writable)
+    // must degrade to a skipped row, never blank the whole tab.
+    const now = new Date();
+    const transformedExperiments = experiments.flatMap((exp) => {
+      try {
+        return [
+          transformExperiment(exp, now, exposureCounts, 7, 0.1, seriesByExperiment.get(exp.id) ?? []),
+        ];
+      } catch (e) {
+        console.error(`experiments GET: transform failed for ${exp.id}:`, e);
+        return [];
       }
-
-      const startDate = exp.startDate ? new Date(exp.startDate) : null;
-      const daysRunning = startDate
-        ? Math.floor((Date.now() - startDate.getTime()) / (1000 * 60 * 60 * 24))
-        : 0;
-
-      // Two-proportion z-test significance over the variant counters, using the
-      // goal-appropriate success count (clicks for click goals, conversions otherwise).
-      const sigStats: VariantStat[] = exp.variants.map((v) => ({
-        id: v.id,
-        name: v.name,
-        isControl: v.isControl,
-        impressions: v.impressions,
-        conversions: successCount(exp.goalMetric, v),
-      }));
-      const significance = computeSignificance(sigStats);
-
-      return {
-        ...exp,
-        totalImpressions,
-        uplift: Math.round(uplift * 10) / 10,
-        daysRunning,
-        significance,
-        variants: exp.variants.map((v) => ({
-          ...v,
-          clickRate: v.impressions > 0 ? (v.clicks / v.impressions) * 100 : 0,
-          conversionRate: v.impressions > 0 ? (v.conversions / v.impressions) * 100 : 0,
-        })),
-      };
     });
 
     // Group by status for summary

@@ -19,6 +19,9 @@ import { trackContactClick, trackCTAClick } from '@/lib/analytics/ga4-events';
 import { experimentsForPath, type BachelorHeroPayload, type CtaCopyPayload } from '@/lib/experiments/registry';
 import { useVariant } from '@/lib/experiments/clientAssign';
 import { useFunnelTracker } from '@/lib/experiments/funnelTrack';
+import { useHeroExperiment } from '@/hooks/useHeroExperiment';
+import { trackExperimentClick } from '@/hooks/useExperimentVariant';
+import { resolveHeroCopy } from './heroCopy';
 import { useSearchParams } from 'next/navigation';
 
 // All 4 /austin-*-delivery landing pages. Used to render an "other event
@@ -120,25 +123,34 @@ export default function LandingPageTemplate({
   const ctaVariantPayload = ctaExp?.variants.find((v) => v.key === ctaVariantKey)
     ?.payload as CtaCopyPayload | undefined;
 
-  // Effective copy = variant override OR config default.
-  // ?welcome=1 (set by the /event-quiz redirect) further overrides the
-  // hero copy with the "Step one: drinks → rest of weekend" framing.
+  // ?welcome=1 (the /event-quiz redirect) replaces the hero copy wholesale,
+  // so quiz arrivals must ALSO skip System B below — otherwise they'd be
+  // assigned + counted as impressions while seeing identical quiz copy on
+  // both arms, diluting the test toward a false "no difference".
   const searchParams = useSearchParams();
   const cameFromQuiz = searchParams?.get('welcome') === '1';
 
-  const heroEyebrow = cameFromQuiz
-    ? 'WELCOME — STEP 1 OF 2'
-    : heroVariantPayload?.eyebrow ?? config.heroEyebrow;
-  const heroHeadline = cameFromQuiz
-    ? "Step one: Let's get started with"
-    : heroVariantPayload?.headline ?? config.heroHeadline;
-  const heroHeadlineAccent = cameFromQuiz
-    ? 'your drinks.'
-    : heroVariantPayload?.headlineAccent ?? config.heroHeadlineAccent;
-  const heroSubhead = cameFromQuiz
-    ? "Then we'll plan the rest of your weekend. Pick a package below or build your own — your contact info is already on file so checkout takes 30 seconds."
-    : heroVariantPayload?.subhead ?? config.heroSubhead;
-  const primaryCtaText = ctaVariantPayload?.primary ?? config.ctaText;
+  // System B (DB-backed self-serve hero tests, created from /admin/analytics).
+  // Hard rules: while a Brian's-registry hero test is RUNNING on this path,
+  // System B is skipped entirely — no variant assignment, no impression
+  // recorded — so his data can't be polluted and precedence is unambiguous.
+  // Quiz arrivals are skipped for the data-integrity reason above.
+  const dbHero = useHeroExperiment(pagePath, { skip: !!heroExp || cameFromQuiz });
+
+  const {
+    eyebrow: heroEyebrow,
+    headline: heroHeadline,
+    headlineAccent: heroHeadlineAccent,
+    subhead: heroSubhead,
+    showBullets: heroShowBullets,
+    primaryCtaText,
+  } = resolveHeroCopy({
+    cameFromQuiz,
+    brianHero: heroVariantPayload,
+    brianCta: ctaVariantPayload,
+    dbContent: dbHero.content,
+    config,
+  });
 
   // Funnel tracker — fires LeadEvents stamped with the bachelor-hero key
   // (the most consequential one). The CTA experiment piggybacks via
@@ -294,12 +306,14 @@ export default function LandingPageTemplate({
               style={{ textShadow: '0 2px 12px rgba(0,0,0,0.55)' }}
             >
               {heroHeadline}
-              <span className="block" style={{ color: T.primary }}>
-                {heroHeadlineAccent}
-              </span>
+              {heroHeadlineAccent && (
+                <span className="block" style={{ color: T.primary }}>
+                  {heroHeadlineAccent}
+                </span>
+              )}
             </h2>
 
-            {config.heroBullets && config.heroBullets.length > 0 ? (
+            {heroShowBullets && config.heroBullets && config.heroBullets.length > 0 ? (
               <ul
                 className="text-base sm:text-lg text-white mb-8 max-w-2xl space-y-1.5"
                 style={{ textShadow: '0 1px 6px rgba(0,0,0,0.6)' }}
@@ -329,7 +343,17 @@ export default function LandingPageTemplate({
               <button
                 type="button"
                 onClick={() => {
-                  trackCTAClick(primaryCtaText, '#builder', 'hero');
+                  trackCTAClick(
+                    primaryCtaText,
+                    '#builder',
+                    'hero',
+                    dbHero.experimentId ?? undefined,
+                    dbHero.variantId ?? undefined
+                  );
+                  if (dbHero.experimentId && dbHero.variantId) {
+                    // Fire-and-forget — counter click for the System B test.
+                    void trackExperimentClick(dbHero.experimentId, dbHero.variantId, primaryCtaText);
+                  }
                   openBuilder();
                 }}
                 className="inline-flex items-center justify-center font-bold text-base sm:text-lg px-8 py-5 rounded-lg tracking-[0.08em] transition-colors shadow-xl"

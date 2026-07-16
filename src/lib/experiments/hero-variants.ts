@@ -134,6 +134,27 @@ export const heroVariantRegistry: Record<string, HeroVariantContent> = {
 };
 
 /**
+ * Map a DB variant NAME to a hero content id in this registry — the legacy
+ * homepage pipeline stores copy here (not in ExperimentVariant.content) and
+ * resolves it by name. Unknown names fall back to 'control', which silently
+ * renders control copy on BOTH arms of a test — so homepage experiment
+ * variants must be named exactly Control / Variant A / Variant B / Variant C.
+ * Single source of truth for /api/experiments/assign, /api/experiments/track,
+ * and the seed-validity tests.
+ */
+export function mapVariantNameToContentId(variantName: string): string {
+  const normalized = variantName.toLowerCase().trim();
+
+  if (normalized === 'control') return 'control';
+  if (normalized === 'variant a') return 'variant-a';
+  if (normalized === 'variant b') return 'variant-b';
+  if (normalized === 'variant c') return 'variant-c';
+
+  // Default to control for unknown names
+  return 'control';
+}
+
+/**
  * Get variant content by ID
  * Falls back to control if variant not found
  */
