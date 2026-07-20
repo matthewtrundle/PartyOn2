@@ -24,6 +24,20 @@ function Tile({
 }): ReactElement {
   const count =
     dest.badge === 'recs' ? badges.recsOpen : dest.badge === 'leads' ? badges.leadsHot : 0;
+  if (dest.external) {
+    return (
+      <a
+        href={dest.href}
+        target="_blank"
+        rel="noreferrer"
+        onClick={onNavigate}
+        className="relative flex flex-col items-center justify-center gap-1.5 min-h-[74px] rounded-xl border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-700 transition-colors touch-manipulation"
+      >
+        <HqIcon name={dest.icon} size={22} />
+        <span className="text-xs font-semibold text-center leading-tight px-1">{dest.label}</span>
+      </a>
+    );
+  }
   return (
     <Link
       href={dest.href}

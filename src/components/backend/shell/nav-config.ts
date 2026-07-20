@@ -18,6 +18,8 @@ export interface NavDest {
   /** Roles that see this destination. Omitted = everyone. */
   roles?: StaffRole[];
   badge?: BadgeKey;
+  /** Absolute URL to another app — renders a plain <a target="_blank">. */
+  external?: boolean;
 }
 
 /** The four route tabs; the fifth tab (More) is shell chrome, not a route. */
@@ -50,6 +52,7 @@ export const BUSINESS_DESTS: NavDest[] = [
   { href: '/admin/analytics', label: 'Analytics', icon: 'analytics', match: ['/admin/analytics'], roles: ['admin'] },
   { href: '/admin/customers', label: 'Customers', icon: 'customers', match: ['/admin/customers'], roles: ['admin'] },
   { href: '/admin/leads', label: 'Leads', icon: 'leads', match: ['/admin/leads'], roles: ['admin'], badge: 'leads' },
+  { href: 'https://crm.partyondelivery.com', label: 'CRM', icon: 'crm', match: [], roles: ['admin'], external: true },
   { href: '/admin/emails', label: 'Email', icon: 'email', match: ['/admin/emails', '/admin/email-signups'], roles: ['admin'] },
   { href: '/admin/recommendations', label: 'Recs', icon: 'recs', match: ['/admin/recommendations'], roles: ['admin'], badge: 'recs' },
   { href: '/admin/finance', label: 'Money', icon: 'money', match: ['/admin/finance'], roles: ['admin'] },

@@ -32,6 +32,19 @@ function SidebarItem({
         : dest.badge === 'leads'
           ? badges.leadsHot
           : 0;
+  if (dest.external) {
+    return (
+      <a
+        href={dest.href}
+        target="_blank"
+        rel="noreferrer"
+        className="flex items-center gap-3 px-4 min-h-[40px] text-sm font-medium border-l-[3px] border-transparent text-[#B7C4D0] hover:text-white hover:bg-white/5 transition-colors"
+      >
+        <HqIcon name={dest.icon} size={18} />
+        <span className="flex-1">{dest.label}</span>
+      </a>
+    );
+  }
   return (
     <Link
       href={dest.href}
