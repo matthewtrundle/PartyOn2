@@ -26,6 +26,34 @@ describe('classifyBankInflow', () => {
     ).toBe('owner_capital');
   });
 
+  it('classifies PeopleFund advances as loan proceeds (financing, not income)', () => {
+    // Real descriptors from the 2024 statement import (loan #0006957). ~$328K of
+    // these in 2024 H1 alone — must never read as phantom sales.
+    expect(
+      classifyBankInflow({
+        name: 'Peoplefund Advance 0006957 Full and Final Funding; Working Capital',
+        merchantName: null,
+      })
+    ).toBe('loan_proceeds');
+    expect(
+      classifyBankInflow({
+        name: 'Peoplefund Advances 0006957 Partial Funding; Inventory Category to Wc',
+        merchantName: null,
+      })
+    ).toBe('loan_proceeds');
+  });
+
+  it('does NOT sweep a PeopleFund LOAN PAYMENT or a bare mention into loan proceeds', () => {
+    // The outflow payment ("Pymt") is not an inflow class; and the rule requires
+    // BOTH "peoplefund" AND "advance" so an unrelated mention can't false-match.
+    expect(
+      classifyBankInflow({ name: 'Peoplefund Pymt Web Pmts 032124 Party on Delivery', merchantName: null })
+    ).toBe('sales_or_other');
+    expect(classifyBankInflow({ name: 'CASH ADVANCE FROM A CUSTOMER', merchantName: null })).toBe(
+      'sales_or_other'
+    );
+  });
+
   it('classifies credits from COGS merchants as vendor refunds (not sales)', () => {
     expect(
       classifyBankInflow({ name: "Southern Glazer' FINTECHEFT 051826 XXXXX6635", merchantName: null })

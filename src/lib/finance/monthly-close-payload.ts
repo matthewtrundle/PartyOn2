@@ -63,6 +63,10 @@ interface RollupDataHealth {
   ownerCapitalCents?: number | null;
   /** Per-transfer audit trail of the owner-capital classification. */
   ownerCapitalTxns?: Array<{ name: string; cents: number }>;
+  /** Loan proceeds (PeopleFund advances) recognized as financing this month. */
+  loanProceedsCents?: number | null;
+  /** Per-advance audit trail of the loan-proceeds classification. */
+  loanProceedsTxns?: Array<{ name: string; cents: number }>;
   /** Distributor refund credits excluded from the income check. */
   vendorRefundCents?: number | null;
   /** Accrual-COGS estimate (cost of what SOLD) + revenue coverage. */
@@ -124,6 +128,10 @@ export interface MonthlyClosePayload {
   ownerCapitalCents: number | null;
   /** Per-transfer audit trail (descriptor + amount) of the owner-capital rows. */
   ownerCapitalTxns: Array<{ name: string; cents: number }>;
+  /** Loan proceeds (PeopleFund advances, financing) recognized this month. */
+  loanProceedsCents: number | null;
+  /** Per-advance audit trail (descriptor + amount) of the loan-proceeds rows. */
+  loanProceedsTxns: Array<{ name: string; cents: number }>;
   /** Distributor refund credits excluded from the income check. */
   vendorRefundCents: number | null;
   // Accrual view (estimate) — cost of what SOLD, vs the cash-basis COGS above.
@@ -190,6 +198,8 @@ export function shapeMonthlyClosePayload(args: {
     otherIncomeCents: health.otherIncomeCents ?? null,
     ownerCapitalCents: health.ownerCapitalCents ?? null,
     ownerCapitalTxns: Array.isArray(health.ownerCapitalTxns) ? health.ownerCapitalTxns : [],
+    loanProceedsCents: health.loanProceedsCents ?? null,
+    loanProceedsTxns: Array.isArray(health.loanProceedsTxns) ? health.loanProceedsTxns : [],
     vendorRefundCents: health.vendorRefundCents ?? null,
     accrualCogsCents: health.accrual?.cogsCents ?? null,
     accrualCoveragePct: health.accrual?.coveragePct ?? null,
