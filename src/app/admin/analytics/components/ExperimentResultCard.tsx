@@ -62,6 +62,8 @@ export interface TrendPoint {
 export interface Experiment {
   id: string;
   name: string;
+  /** The hypothesis/angle line, shown on draft review. */
+  description?: string | null;
   /** Route this test runs on (a tab can span several hero routes). */
   page: string;
   status: 'DRAFT' | 'RUNNING' | 'PAUSED' | 'COMPLETED';
