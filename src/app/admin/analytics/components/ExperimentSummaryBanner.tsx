@@ -25,6 +25,43 @@ function goalRate(v: VariantRow, goalIsClick: boolean): number {
   return goalIsClick ? v.clickRate : v.conversionRate;
 }
 
+const COPY_FIELD_LABELS: Array<[keyof NonNullable<VariantRow['content']>, string]> = [
+  ['eyebrow', 'Eyebrow'],
+  ['headline', 'Headline'],
+  ['headlineAccent', 'Headline 2nd line'],
+  ['subhead', 'Subhead'],
+  ['ctaText', 'Button'],
+];
+
+/** One variant's copy in a draft matchup — exactly what that group will see. */
+function DraftVariantCopy({ v }: { v: VariantRow }): ReactElement {
+  const overrides = COPY_FIELD_LABELS.filter(([key]) => v.content?.[key]);
+  return (
+    <div className={`rounded-lg border p-3 ${v.isControl ? 'border-gray-200 bg-gray-50' : 'border-blue-200 bg-blue-50/40'}`}>
+      <div className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-gray-500">
+        {v.name}
+        {v.isControl && <span className="font-normal normal-case text-gray-400"> · what&apos;s live today</span>}
+      </div>
+      {v.isControl ? (
+        <p className="text-sm text-gray-600">Current page copy, unchanged.</p>
+      ) : overrides.length > 0 ? (
+        <dl className="space-y-1">
+          {overrides.map(([key, label]) => (
+            <div key={key} className="text-sm">
+              <dt className="inline text-gray-400">{label}: </dt>
+              <dd className="inline font-medium text-gray-900">&ldquo;{v.content?.[key]}&rdquo;</dd>
+            </div>
+          ))}
+        </dl>
+      ) : (
+        <p className="text-sm text-gray-600">
+          Copy comes from the in-code variant registry (hero-variants.ts) — see the homepage note below.
+        </p>
+      )}
+    </div>
+  );
+}
+
 /** One live experiment as a compact scoreboard row set. */
 function ExperimentScore({
   exp,
@@ -43,21 +80,31 @@ function ExperimentScore({
   const maxRate = Math.max(1e-9, ...exp.variants.map((v) => goalRate(v, goalIsClick)));
 
   if (exp.status === 'DRAFT') {
+    // Drafts are a copy-review surface: show the full matchup so the operator
+    // can read exactly what each visitor group will see BEFORE pressing Start.
     return (
-      <div className="flex items-center justify-between gap-3 rounded-lg border border-dashed border-gray-300 px-4 py-3">
-        <div className="min-w-0">
-          <span className="text-sm font-medium text-gray-900">{exp.name}</span>
-          {showPath && <span className="ml-2 text-sm text-gray-500">{exp.page}</span>}
-          <span className="ml-2 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">DRAFT</span>
+      <div className="rounded-lg border border-dashed border-gray-300 px-4 py-3">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <span className="text-sm font-medium text-gray-900">{exp.name}</span>
+            {showPath && <span className="ml-2 text-sm text-gray-500">{exp.page}</span>}
+            <span className="ml-2 rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">DRAFT</span>
+          </div>
+          <button
+            type="button"
+            className="btn-primary text-sm shrink-0 disabled:opacity-50"
+            disabled={starting}
+            onClick={() => onStart(exp.id)}
+          >
+            {starting ? 'Starting…' : 'Start test'}
+          </button>
         </div>
-        <button
-          type="button"
-          className="btn-primary text-sm shrink-0 disabled:opacity-50"
-          disabled={starting}
-          onClick={() => onStart(exp.id)}
-        >
-          {starting ? 'Starting…' : 'Start test'}
-        </button>
+        {exp.description && <p className="mt-1 text-sm text-gray-500">{exp.description}</p>}
+        <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {exp.variants.map((v) => (
+            <DraftVariantCopy key={v.id} v={v} />
+          ))}
+        </div>
       </div>
     );
   }
