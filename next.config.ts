@@ -497,7 +497,10 @@ const nextConfig: NextConfig = {
       "font-src 'self' fonts.gstatic.com data:",
       "img-src 'self' data: blob: https: http: *.shopify.com *.myshopify.com images.unsplash.com *.squarespace-cdn.com *.wixstatic.com *.showit.co *.googleapis.com *.website-files.com *.simpleviewinc.com *.facebook.com www.facebook.com *.clarity.ms",
       "connect-src 'self' *.shopify.com *.myshopify.com *.google-analytics.com *.googletagmanager.com vitals.vercel-insights.com hooks.zapier.com connect.facebook.net *.facebook.com *.doubleclick.net www.googleadservices.com *.google.com api.stripe.com *.clarity.ms production.plaid.com sandbox.plaid.com development.plaid.com",
-      "frame-src 'self' *.shopify.com *.myshopify.com *.youtube.com *.youtube-nocookie.com *.recomsale.com vercel.live *.googletagmanager.com *.instagram.com js.stripe.com hooks.stripe.com checkout.stripe.com cdn.plaid.com",
+      // premierpartycruises.com + booking.* — Premier boat-quote embed on
+      // two-tab partner pages (PartnerPageTabs). Without these, Chrome
+      // blocks the frame with the broken-page icon (ERR_BLOCKED_BY_CSP).
+      "frame-src 'self' *.shopify.com *.myshopify.com *.youtube.com *.youtube-nocookie.com *.recomsale.com vercel.live *.googletagmanager.com *.instagram.com js.stripe.com hooks.stripe.com checkout.stripe.com cdn.plaid.com premierpartycruises.com *.premierpartycruises.com",
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self' *.shopify.com *.myshopify.com",
