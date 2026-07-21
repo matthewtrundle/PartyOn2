@@ -173,6 +173,41 @@ If we earned it, a quick review genuinely helps us more than any ad: {reviewLink
 And if anything was off — late, wrong item, anything — reply and tell me first. I'll make it right.`,
     },
   ],
+  'partner-outreach': [
+    // Step 1 is normally the PERSONALIZED email from the prospect database
+    // (enrichment.outreachEmail, looked up at send time in journeys.ts).
+    // This template is only the fallback when the prospect row is missing.
+    {
+      subject: 'Partnering with {company} — free drink delivery for your clients',
+      body: `Hi {firstName},
+
+I'm Brian, founder of Party On Delivery — Austin's premium alcohol delivery and guest-concierge service. We partner with companies like {company} to handle the drinks side of every booking: free delivery for your clients, a co-branded ordering page, group dashboards with split payments, and a commission to you on every order.
+
+Your page is ready to go: {partnerUrl}
+
+Worth a 15-minute call this week?
+
+Brian Hill
+Founder, Party On Delivery
+partyondelivery.com · (737) 371-9700`,
+    },
+    {
+      subject: 'quick follow-up — free perk for {company} clients',
+      body: `Hi {firstName},
+
+Following up on my note from a couple of days ago — the short version:
+
+We stock the bar for your clients (free delivery, iced and on time, TABC-licensed), they order from a page with {company}'s branding on it, and you earn a commission on every order. Zero work for your team — you just share a link.
+
+Your co-branded page: {partnerUrl}
+
+If it's a fit, reply here and I'll walk you through it in 15 minutes. If not, no worries — tell me and I won't follow up again.
+
+Brian Hill
+Founder, Party On Delivery
+partyondelivery.com · (737) 371-9700`,
+    },
+  ],
 };
 
 /** Tokens available per journey, shown in the admin editor. */
@@ -204,6 +239,11 @@ export const TOKEN_REFERENCE: Record<JourneyKey, Array<{ token: string; descript
   'post-purchase-review': [
     { token: 'firstName', description: 'Customer first name ("there" when unknown)' },
     { token: 'reviewLink', description: 'The review page (123.partyondelivery.com/reviews)' },
+  ],
+  'partner-outreach': [
+    { token: 'firstName', description: 'Contact first name ("there" when unknown)' },
+    { token: 'company', description: 'Prospect company name' },
+    { token: 'partnerUrl', description: 'Their co-branded partner page (line drops when not created yet)' },
   ],
 };
 
@@ -249,7 +289,7 @@ export function renderTemplate(
 }
 
 /** Subjects never drop — unresolved tokens are removed and spaces tidied. */
-function renderSubject(
+export function renderSubject(
   template: string,
   tokens: Record<string, string | null | undefined>
 ): string {
@@ -320,6 +360,12 @@ export function buildTokens(
       // External subdomain (GHL-managed) — used verbatim, no UTM appending.
       tokens.reviewLink = GOOGLE_REVIEW_URL;
       break;
+    case 'partner-outreach': {
+      tokens.company = str(ctx.payload, 'company') ?? 'your business';
+      const slug = str(ctx.payload, 'partnerSlug');
+      tokens.partnerUrl = slug ? ctx.link(`/partners/${slug}`) : null;
+      break;
+    }
     default:
       break;
   }

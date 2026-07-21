@@ -1,21 +1,26 @@
 'use client';
 
 /**
- * Generic partner-prospect database view for Brian's Stuff tabs.
+ * Generic partner-prospect database view (Partners → STR / Bartending
+ * Prospects).
  *
  * Renders a searchable prospect table (website, logo, contact, socials,
  * partner-page status), a category master outreach template, per-row
- * enrichment dropdowns with a personalized outreach draft, and a
- * "Copy CSV for Bulk Import" button emitting rows in the exact
- * /admin/affiliates/bulk-import format.
+ * enrichment dropdowns with a personalized outreach draft, a "Copy CSV
+ * for Bulk Import" button, and the outreach-campaign controls:
+ *   - Sync to CRM — upserts every company as a tagged Lead
+ *     ('partner-prospect' + vertical; 'partner-active' when signed)
+ *   - Send test to info@ — the mandatory pre-send review of each email
+ *   - Enroll selected (≤10) — queues the 2-touch partner-outreach
+ *     journey; NOTHING sends while its feature flag is off
  *
- * Category tabs (STR Partners, Bartending Partners, …) are thin wrappers
- * that pass their JSON data + labels — see StrPartnersView.tsx and
- * BartendingPartnersView.tsx.
+ * Category tabs are thin wrappers passing their JSON data + labels —
+ * see StrPartnersView.tsx and BartendingPartnersView.tsx.
  */
 
-import { Fragment, useMemo, useState, type ReactElement } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useState, type ReactElement } from 'react';
 import Link from 'next/link';
+import ProspectEnrichmentPanel from '@/components/admin/ProspectEnrichmentPanel';
 
 interface Socials {
   instagram?: string | null;
@@ -93,6 +98,12 @@ export interface ProspectViewConfig {
   masterOutreach: { subject: string; body: string };
 }
 
+interface LeadState {
+  leadId: string;
+  tags: string[];
+  campaign: string; // none | enrolled | sent | replied
+}
+
 const SOCIAL_LABELS: [keyof Socials, string][] = [
   ['instagram', 'IG'],
   ['facebook', 'FB'],
@@ -106,6 +117,22 @@ function csvEscape(v: string): string {
   return /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
 }
 
+/** Mirror of websiteKey() in src/lib/partners/prospect-datasets.ts. */
+function websiteKey(website: string): string {
+  try {
+    const u = new URL(website);
+    return `${u.hostname.replace(/^www\./, '')}${u.pathname.replace(/\/$/, '')}`.toLowerCase();
+  } catch {
+    return website.toLowerCase();
+  }
+}
+
+const CAMPAIGN_CHIP: Record<string, { label: string; cls: string }> = {
+  replied: { label: '💬 Replied', cls: 'bg-purple-100 text-purple-800' },
+  sent: { label: '✉️ Sent', cls: 'bg-green-100 text-green-800' },
+  enrolled: { label: '⏳ Enrolled', cls: 'bg-blue-100 text-blue-800' },
+};
+
 export default function PartnerProspectsView({
   config,
   prospects,
@@ -117,6 +144,24 @@ export default function PartnerProspectsView({
   const [copied, setCopied] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [leadMap, setLeadMap] = useState<Record<string, LeadState>>({});
+  const [busy, setBusy] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  const refreshLeadMap = useCallback(async () => {
+    try {
+      const res = await fetch('/api/v1/admin/partner-prospects/sync');
+      const json = await res.json();
+      if (json.success) setLeadMap(json.data.leads);
+    } catch {
+      /* soft-fail — table still renders */
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshLeadMap();
+  }, [refreshLeadMap]);
 
   const copyOutreach = async (p: Prospect) => {
     if (!p.enrichment) return;
@@ -140,9 +185,9 @@ export default function PartnerProspectsView({
   }, [prospects, search]);
 
   const withContact = prospects.filter((p) => p.email || p.phone).length;
-  const withLogo = prospects.filter((p) => p.logoUrl).length;
   const enriched = prospects.filter((p) => p.enrichment).length;
   const created = prospects.filter((p) => p.partnerSlug).length;
+  const synced = prospects.filter((p) => leadMap[websiteKey(p.website)]).length;
 
   const copyBulkImportCsv = async () => {
     const header = 'business_name,website,category,commission_percent,contact_name,email,phone';
@@ -164,18 +209,100 @@ export default function PartnerProspectsView({
     setTimeout(() => setCopied(false), 2500);
   };
 
+  const syncToCrm = async () => {
+    setBusy('sync');
+    setNotice(null);
+    try {
+      const res = await fetch('/api/v1/admin/partner-prospects/sync', { method: 'POST' });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error);
+      setNotice(
+        `CRM sync: ${json.data.created} created, ${json.data.updated} updated, ${json.data.taggedActive} tagged active partner.`
+      );
+      await refreshLeadMap();
+    } catch (err) {
+      setNotice(`Sync failed: ${err instanceof Error ? err.message : 'error'}`);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const testSend = async (website: string) => {
+    setBusy(`test:${website}`);
+    setNotice(null);
+    try {
+      const res = await fetch('/api/v1/admin/partner-prospects/test-send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ website }),
+      });
+      const json = await res.json();
+      setNotice(json.success ? `Test sent to ${json.data.to}.` : `Test failed: ${json.error}`);
+    } catch {
+      setNotice('Test failed: network error');
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const enrollSelected = async () => {
+    const websites = [...selected].slice(0, 10);
+    if (websites.length === 0) return;
+    if (
+      !confirm(
+        `Enroll ${websites.length} prospect(s) in the 2-touch outreach campaign?\n\nEmails only go out once the partner-outreach flag is ON (currently sends are held).`
+      )
+    )
+      return;
+    setBusy('enroll');
+    setNotice(null);
+    try {
+      const res = await fetch('/api/v1/admin/partner-prospects/enroll', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ websites }),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error);
+      const skipped = json.data.results.filter((r: { ok: boolean }) => !r.ok);
+      setNotice(
+        `Enrolled ${json.data.enrolled}/${websites.length}.` +
+          (skipped.length
+            ? ` Skipped: ${skipped
+                .map((r: { website: string; reason?: string }) => `${websiteKey(r.website)} (${r.reason})`)
+                .join(', ')}`
+            : '')
+      );
+      setSelected(new Set());
+      await refreshLeadMap();
+    } catch (err) {
+      setNotice(`Enroll failed: ${err instanceof Error ? err.message : 'error'}`);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const toggleSelected = (website: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(website)) next.delete(website);
+      else if (next.size < 10) next.add(website);
+      return next;
+    });
+  };
+
   return (
     <div className="max-w-7xl mx-auto">
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-900">{config.title}</h2>
         <p className="text-sm text-gray-600 mt-1 max-w-3xl">
           {config.intro} {prospects.length} companies · {withContact} with direct contact
-          info · {withLogo} logos scraped · {enriched} enriched · {created} partner page
+          info · {enriched} enriched · {synced} in CRM · {created} partner page
           {created === 1 ? '' : 's'} created.
         </p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 mb-4">
+      <div className="flex flex-wrap items-center gap-3 mb-2">
         <input
           type="search"
           value={search}
@@ -183,13 +310,42 @@ export default function PartnerProspectsView({
           placeholder="Search company, website, contact, email…"
           className="flex-1 min-w-[240px] rounded-lg border-2 border-gray-200 px-4 py-2.5 text-base focus:border-brand-blue focus:outline-none"
         />
-        <button type="button" onClick={copyBulkImportCsv} className="btn-primary px-4 py-2.5 text-sm">
+        <button type="button" onClick={copyBulkImportCsv} className="btn-secondary px-4 py-2.5 text-sm">
           {copied ? 'Copied ✓' : 'Copy CSV for Bulk Import'}
         </button>
-        <Link href="/admin/affiliates/bulk-import" className="btn-secondary px-4 py-2.5 text-sm">
+        <Link href="/admin/affiliates/bulk-import" className="btn-ghost px-3 py-2.5">
           Open Bulk Import
         </Link>
       </div>
+
+      {/* Campaign controls */}
+      <div className="flex flex-wrap items-center gap-3 mb-3">
+        <button
+          type="button"
+          onClick={syncToCrm}
+          disabled={busy !== null}
+          className="btn-primary px-4 py-2.5 text-sm disabled:opacity-50"
+        >
+          {busy === 'sync' ? 'Syncing…' : 'Sync to CRM'}
+        </button>
+        <button
+          type="button"
+          onClick={enrollSelected}
+          disabled={busy !== null || selected.size === 0}
+          className="btn-cart px-4 py-2.5 text-sm disabled:opacity-50"
+        >
+          {busy === 'enroll' ? 'Enrolling…' : `Enroll selected in campaign (${selected.size}/10)`}
+        </button>
+        <span className="text-sm text-gray-500">
+          Campaign sends are held until the partner-outreach flag is switched on.
+        </span>
+      </div>
+
+      {notice && (
+        <div className="mb-3 rounded-lg bg-blue-50 border border-blue-200 p-3 text-sm text-blue-900">
+          {notice}
+        </div>
+      )}
 
       {/* Master outreach template */}
       <details className="mb-4 rounded-lg border border-gray-200 bg-white">
@@ -221,20 +377,35 @@ export default function PartnerProspectsView({
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-600">
             <tr>
+              <th className="p-3"></th>
               <th className="text-left p-3">Company</th>
               <th className="text-left p-3">Logo</th>
               <th className="text-left p-3">{config.sizeLabel}</th>
               <th className="text-left p-3">Contact</th>
               <th className="text-left p-3">Email / phone</th>
               <th className="text-left p-3">Socials</th>
-              <th className="text-left p-3">About</th>
+              <th className="text-left p-3">Campaign</th>
               <th className="text-left p-3">Partner page</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 align-top">
-            {filtered.map((p) => (
+            {filtered.map((p) => {
+              const state = leadMap[websiteKey(p.website)];
+              const chip = state ? CAMPAIGN_CHIP[state.campaign] : undefined;
+              const active = state?.tags.includes('partner-active');
+              return (
               <Fragment key={p.website}>
               <tr>
+                <td className="p-3">
+                  <input
+                    type="checkbox"
+                    checked={selected.has(p.website)}
+                    onChange={() => toggleSelected(p.website)}
+                    disabled={!p.email || !state}
+                    title={!p.email ? 'No email' : !state ? 'Run Sync to CRM first' : 'Select for campaign'}
+                    className="mt-1 h-4 w-4 accent-[#0B74B8]"
+                  />
+                </td>
                 <td className="p-3 min-w-[200px]">
                   <div className="flex items-start gap-1.5">
                     {p.enrichment && (
@@ -320,7 +491,36 @@ export default function PartnerProspectsView({
                     <span className="text-xs text-gray-400">—</span>
                   )}
                 </td>
-                <td className="p-3 text-gray-600 max-w-[280px]">{p.description}</td>
+                <td className="p-3 whitespace-nowrap">
+                  <div className="flex flex-col items-start gap-1">
+                    {active && (
+                      <span className="text-xs font-bold px-1.5 py-0.5 rounded bg-green-100 text-green-800">
+                        🤝 Active Partner
+                      </span>
+                    )}
+                    {chip && (
+                      <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${chip.cls}`}>{chip.label}</span>
+                    )}
+                    {state && (
+                      <Link
+                        href={`/admin/leads?lead=${state.leadId}`}
+                        className="text-xs text-brand-blue hover:underline"
+                      >
+                        Lead →
+                      </Link>
+                    )}
+                    {p.enrichment && p.email && (
+                      <button
+                        type="button"
+                        onClick={() => testSend(p.website)}
+                        disabled={busy !== null}
+                        className="text-xs text-gray-600 underline disabled:opacity-50"
+                      >
+                        {busy === `test:${p.website}` ? 'Sending…' : 'Test → info@'}
+                      </button>
+                    )}
+                  </div>
+                </td>
                 <td className="p-3 whitespace-nowrap">
                   {p.partnerSlug ? (
                     <a
@@ -338,8 +538,8 @@ export default function PartnerProspectsView({
               </tr>
               {p.enrichment && expanded === p.website && (
                 <tr className="bg-blue-50/40">
-                  <td colSpan={8} className="p-4 md:p-6">
-                    <EnrichmentPanel
+                  <td colSpan={9} className="p-4 md:p-6">
+                    <ProspectEnrichmentPanel
                       prospect={p}
                       labels={config.portfolioLabels}
                       onCopyEmail={() => copyOutreach(p)}
@@ -349,114 +549,10 @@ export default function PartnerProspectsView({
                 </tr>
               )}
               </Fragment>
-            ))}
+              );
+            })}
           </tbody>
         </table>
-      </div>
-    </div>
-  );
-}
-
-/** Expanded dropdown: the researched profile + personalized outreach draft. */
-function EnrichmentPanel({
-  prospect,
-  labels,
-  onCopyEmail,
-  emailCopied,
-}: {
-  prospect: Prospect;
-  labels: ProspectViewConfig['portfolioLabels'];
-  onCopyEmail: () => void;
-  emailCopied: boolean;
-}): ReactElement {
-  const e = prospect.enrichment!;
-  return (
-    <div className="max-w-5xl">
-      <div className="flex items-baseline justify-between flex-wrap gap-2 mb-4">
-        <h3 className="text-lg font-bold text-gray-900">
-          Enriched profile — {prospect.name}
-        </h3>
-        <span className="text-xs text-gray-500">researched {e.enrichedAt}</span>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-2">Management</h4>
-          <dl className="text-sm text-gray-700 space-y-1">
-            {e.management.ownerName && <div><span className="font-semibold">Owner:</span> {e.management.ownerName}</div>}
-            {e.management.ownerNotes && <div className="text-gray-600">{e.management.ownerNotes}</div>}
-            {e.management.team && <div><span className="font-semibold">Team:</span> {e.management.team}</div>}
-            {e.management.operatingSince && <div><span className="font-semibold">Operating since:</span> {e.management.operatingSince}</div>}
-            {e.management.entity && <div><span className="font-semibold">Entity:</span> {e.management.entity}</div>}
-            {e.management.linkedin && (
-              <div>
-                <a href={e.management.linkedin} target="_blank" rel="noopener noreferrer" className="text-brand-blue underline">LinkedIn</a>
-              </div>
-            )}
-          </dl>
-        </div>
-
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-2">{labels.heading}</h4>
-          <dl className="text-sm text-gray-700 space-y-1">
-            <div><span className="font-semibold">{labels.count}:</span> {e.portfolio.propertyCount}</div>
-            <div><span className="font-semibold">{labels.types}:</span> {e.portfolio.propertyTypes}</div>
-            <div><span className="font-semibold">{labels.locations}:</span> {e.portfolio.locations}</div>
-            {e.portfolio.maxGroupSize && (
-              <div><span className="font-semibold">{labels.maxGroupSize}:</span> {e.portfolio.maxGroupSize}</div>
-            )}
-          </dl>
-          {e.portfolio.notableProperties.length > 0 && (
-            <ul className="mt-2 text-sm text-gray-600 list-disc pl-5 space-y-0.5">
-              {e.portfolio.notableProperties.map((np) => (
-                <li key={np.name}><span className="font-medium text-gray-800">{np.name}</span> — {np.blurb}</li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-2">Business</h4>
-          <dl className="text-sm text-gray-700 space-y-1">
-            <div><span className="font-semibold">Model:</span> {e.business.bookingModel}</div>
-            <div><span className="font-semibold">Services:</span> {e.business.services}</div>
-            <div><span className="font-semibold">Positioning:</span> {e.business.positioning}</div>
-            <div><span className="font-semibold">Clients:</span> {e.business.guestDemographic}</div>
-          </dl>
-        </div>
-
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-2">Reputation</h4>
-          <p className="text-sm text-gray-700">{e.reputation.summary}</p>
-          {e.reputation.ratings && <p className="text-sm text-gray-600 mt-1">{e.reputation.ratings}</p>}
-          {e.reputation.praiseThemes && (
-            <p className="text-sm text-gray-600 mt-1"><span className="font-semibold text-gray-800">Clients praise:</span> {e.reputation.praiseThemes}</p>
-          )}
-        </div>
-      </div>
-
-      <div className="bg-white rounded-lg border border-gray-200 p-4 mb-4">
-        <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-2">Partnership angles</h4>
-        <ul className="text-sm text-gray-700 list-disc pl-5 space-y-1">
-          {e.partnershipAngles.map((a) => (
-            <li key={a}>{a}</li>
-          ))}
-        </ul>
-      </div>
-
-      <div className="bg-white rounded-lg border-2 border-brand-blue/30 p-4">
-        <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
-          <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wide">
-            Personalized outreach draft
-          </h4>
-          <button type="button" onClick={onCopyEmail} className="btn-primary px-4 py-2 text-sm">
-            {emailCopied ? 'Copied ✓' : 'Copy email'}
-          </button>
-        </div>
-        <p className="text-sm font-semibold text-gray-800 mb-2">Subject: {e.outreachEmail.subject}</p>
-        <pre className="whitespace-pre-wrap text-sm text-gray-700 font-sans bg-gray-50 rounded-lg p-4 border border-gray-100">
-          {e.outreachEmail.body}
-        </pre>
       </div>
     </div>
   );

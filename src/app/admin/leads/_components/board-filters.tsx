@@ -6,6 +6,8 @@ import type { BoardFilters } from '@/lib/leads/board-types';
 
 const SOURCE_OPTIONS = [
   ['', 'All sources'],
+  ['CONSUMER', 'Consumers only'],
+  ['PARTNER', '🤝 Partner Prospects'],
   ['GROUP_DASHBOARD', 'Party Dashboard'],
   ['PARTNER_LANDING_PAGE', 'Concierge'],
   ['CONTACT_FORM', 'Contact / Quote'],

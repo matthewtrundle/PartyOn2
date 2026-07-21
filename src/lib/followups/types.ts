@@ -30,7 +30,8 @@ export type JourneyKey =
   | 'newsletter-welcome'
   | 'affiliate-apply'
   | 'event-quiz'
-  | 'post-purchase-review';
+  | 'post-purchase-review'
+  | 'partner-outreach';
 
 /** Follow-up job lifecycle states (mirrors the CHECK constraint on follow_up_jobs.status). */
 export type FollowUpJobStatus =
@@ -111,6 +112,12 @@ export interface JourneyDef {
   skipGlobalPaidGuard?: boolean;
   /** Optional hook run after a step sends (e.g. stamp Order.reviewRequestSentAt). */
   afterSend?: (job: FollowUpJob) => Promise<void>;
+  /**
+   * Per-journey sender identity. Defaults to the engine's
+   * FOLLOWUP_FROM_EMAIL/NAME; partner-outreach sends from info@ in Brian's
+   * voice so replies land in the monitored inbox.
+   */
+  from?: { email: string; name: string };
 }
 
 /** Result summary returned by one engine run (cron tick). */

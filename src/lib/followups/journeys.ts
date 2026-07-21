@@ -15,7 +15,8 @@ import type { FollowUpJob } from '@prisma/client';
 import { prisma } from '@/lib/database/client';
 import { FEATURE_FLAGS } from '@/lib/features/feature-flags';
 import { entityIdFromDedupeKey, type JourneyDef, type JourneyKey } from './types';
-import { buildStepEmail } from './copy';
+import { buildStepEmail, renderFollowUpEmail } from './copy';
+import { findProspectByWebsite } from '@/lib/partners/prospect-datasets';
 
 /**
  * Step renderer: default copy lives in copy.ts (DEFAULT_COPY); admin
@@ -241,6 +242,58 @@ export const JOURNEYS: JourneyDef[] = [
         where: { id: job.orderId, reviewRequestSentAt: null },
         data: { reviewRequestSentAt: new Date() },
       });
+    },
+  },
+  {
+    key: 'partner-outreach',
+    label: 'Partner outreach',
+    description:
+      'B2B campaign to the STR/bartending prospect databases: the personalized enrichment email immediately on enroll, abridged follow-up at +48h. Enroll from Partners → Prospects (batches of ≤10). Flag OFF until Brian approves sends.',
+    featureFlag: FEATURE_FLAGS.FOLLOWUPS_PARTNER_OUTREACH,
+    phase: 3,
+    // Prospects may also be past customers — a paid order says nothing
+    // about this B2B conversation.
+    skipGlobalPaidGuard: true,
+    from: {
+      email: process.env.PARTNER_OUTREACH_FROM_EMAIL || 'info@partyondelivery.com',
+      name: 'Brian at Party On Delivery',
+    },
+    steps: [
+      {
+        delayHours: 0,
+        // Step 1 = the PERSONALIZED email from the prospect database,
+        // looked up fresh at send time so copy edits in the JSON ship
+        // without re-enrolling. Falls back to the generic template when
+        // the prospect row disappeared.
+        buildEmail: (ctx) => {
+          const website = typeof ctx.payload.website === 'string' ? ctx.payload.website : null;
+          const prospect = website ? findProspectByWebsite(website) : null;
+          const outreach = prospect?.enrichment?.outreachEmail;
+          if (outreach?.subject && outreach?.body) {
+            return renderFollowUpEmail(outreach.subject, outreach.body, ctx.unsubscribeUrl);
+          }
+          return buildStepEmail('partner-outreach', 1, ctx);
+        },
+      },
+      { delayHours: 48, buildEmail: step('partner-outreach', 2) },
+    ],
+    shouldCancel: async (job: FollowUpJob) => {
+      if (!job.leadId) return 'missing-lead-ref';
+      const lead = await prisma.lead.findUnique({
+        where: { id: job.leadId },
+        select: { pipelineStage: true, tags: true },
+      });
+      if (!lead) return 'lead-missing';
+      if (lead.pipelineStage === 'WON') return 'lead-won';
+      if (lead.pipelineStage === 'LOST') return 'lead-lost';
+      if (lead.tags.includes('partner-active')) return 'already-active-partner';
+      // They replied — a human owns the thread now.
+      const reply = await prisma.inboundEmail.findFirst({
+        where: { leadId: job.leadId },
+        select: { id: true },
+      });
+      if (reply) return 'replied';
+      return null;
     },
   },
 ];
