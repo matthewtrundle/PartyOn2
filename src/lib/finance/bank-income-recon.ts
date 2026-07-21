@@ -60,27 +60,33 @@ export const OWNER_CAPITAL_RULES: readonly RegExp[] = [
 ];
 
 /**
- * Loan-proceeds (financing) inflow descriptors — the PeopleFund term-loan
- * DISBURSEMENTS, ANCHORED to the exact shape on the real Wells Fargo feed
- * (surfaced by the 2024 statement import, operator-confirmed loan #0006957):
+ * Loan-proceeds (financing) inflow descriptors — term-loan / merchant-cash-advance
+ * DISBURSEMENTS, ANCHORED to the exact shapes on the real Wells Fargo feed:
  *
- *   "Peoplefund Advance 0006957 Full and Final Funding; Working Capital"
- *   "Peoplefund Advances 0006957 Partial Funding; Inventory Category…"
+ *   PeopleFund CDFI term loan (#0006957), surfaced by the 2024 statement import:
+ *     "Peoplefund Advance 0006957 Full and Final Funding; Working Capital"
+ *     "Peoplefund Advances 0006957 Partial Funding; Inventory Category…"
  *
- * These are loan proceeds — financing, never income — and must not trip the
- * "deposits exceed revenue" flag (2024 H1 alone was ~$328K of PeopleFund
- * advances, which would otherwise read as phantom sales). The loan PAYMENTS
- * ("Peoplefund Pymt…") are the matching outflow, already mapped `non_operating`
- * via the PFC / statement LOAN_PAYMENTS hint.
+ *   Shopify Capital merchant cash advance ($25,000 on 2025-12-09):
+ *     "SHOPIFY CAPITAL SHOPIFY 251208 45834452 Premier Conc"
  *
- * Anchored like OWNER_CAPITAL_RULES: PeopleFund is Party On's CDFI lender, not a
- * customer, and the "advance" wording + loan number pin it to a disbursement —
- * a real sale (Stripe/Square "ST-…" / Square Inc) can't be laundered as
- * financing by this rule. If the descriptor drifts, the month re-flags as excess
- * deposits (see the drift hint) rather than silently misclassifying.
+ * These are financing proceeds — never income — and must not trip the "deposits
+ * exceed revenue" flag (2024 H1 alone was ~$328K of PeopleFund advances; the
+ * Shopify advance is $25K of Dec-2025 inflows). The matching outflows are the
+ * loan PAYMENTS ("Peoplefund Pymt…") / Shopify Capital remittances, handled on
+ * the expense side.
+ *
+ * Anchored like OWNER_CAPITAL_RULES: each rule pins the LENDER, not a customer.
+ *   - PeopleFund: the "advance" wording + loan number pin it to a disbursement.
+ *   - Shopify Capital: the literal word "capital" is Shopify's lending arm. A
+ *     regular Shopify sales payout never carries it — sales settle via Stripe
+ *     ("ST-…") — so a real sale can't be laundered as financing by this rule.
+ * If a descriptor drifts, the month re-flags as excess deposits (see the drift
+ * hint) rather than silently misclassifying.
  */
 export const LOAN_PROCEEDS_RULES: readonly RegExp[] = [
   /\bpeoplefund\b.*\badvance/i, // "Peoplefund Advance(s) 0006957 … Funding"
+  /\bshopify\s+capital\b/i, // "SHOPIFY CAPITAL SHOPIFY … Premier Conc" — Shopify's MCA arm (sales settle via Stripe "ST-…", never this)
 ];
 
 /**
