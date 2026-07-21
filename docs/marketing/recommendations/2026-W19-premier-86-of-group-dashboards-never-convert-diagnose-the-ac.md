@@ -3,9 +3,9 @@ title: "PREMIER: 86% of group dashboards never convert — diagnose the activati
 period_proposed: 2026-W19
 date_proposed: 2026-05-05
 date_accepted: 2026-05-05
-date_executed: null
+date_executed: 2026-07-06
 date_measured: null
-status: accepted
+status: executed
 risk_tier: recommend
 effort: M
 impact_dollars_monthly: null
@@ -33,10 +33,93 @@ Action: Allan to pull GHL message-delivery and link-click metrics for the 356 no
 
 Why now: PREMIER drove $15K of attributed revenue at 14% activation. Even moving to 25% activation would add roughly $11K/month. This is the highest-impact narrative finding from the W19 audit cycle and isn't covered by any open rec or heuristic.
 
+## Notes
+
+[2026-07-04 diagnosis — Claude Code backend-triage session]
+Reproduced on fresh 90d window: 300 webhook dashboards -> 142 viewed (47%) -> 119 joined -> 37 paid (12.3%). Confirmed conversion problem, not attribution.
+FINDINGS:
+1. Claim-link delivery is NOT the failure: 293/300 have host phone; sampled 3 never-viewed hosts in GHL — all got the automated intro SMS with dashboard link. (Per-message carrier delivery status unverifiable: MCP token lacks conversations/message scope.)
+2. The intro SMS defers action: "about a month before your cruise, hop on a call" — sent at booking, no follow-up containing the dashboard link. 62% of bookings are 21+ days out; they convert WORST (9%).
+3. The T-7 recap SMS omits the dashboard link entirely — the highest-intent moment has no link.
+4. Deadline copy mismatch: SMS says "Deadline: Sunday before your cruise" but the system accepts orders until 4h pre-delivery (computeOrderDeadline). Trip-week joiners convert at 48% — the copy tells the best cohort they are too late.
+5. Join timing: never-joined 181 (0 paid), day-0 joiners 52 (23% pay), trip-week joiners 27 (48% pay).
+IMPACT RESIZE: rec claimed +$11K/mo at 25% activation — actuals do not support it. 90d revenue from these dashboards = $8,845 (69 orders, AOV $128). Realistic prize at 25% activation is +$1.3-1.6K/mo.
+RECOMMENDED FIXES (GHL workflow, no site code): add dashboard link to T-7 recap; fix deadline copy (order until day before / 4h); add T-10 nudge with link for 21d+ bookings; change intro CTA from "in a month" to immediate.
+
+[2026-07-06 SHIPPED - Claude Code browser session, operator-authorized]
+Edited the live GHL workflow Xola Booking SMS Drip (published, 92 active enrollments) directly in the workflow builder. Reviewed all 15 SMS nodes across the 3 lead-time branches; edited 11, left 4 already-good ones (cocktail-kit MMS + share-pitch messages that had the dashboard link).
+Correction to the diagnosis: a multi-touch drip DID already exist (up to 5 follow-ups on long-lead bookings). The failure was narrower: all 3 recap-style messages had NO dashboard link plus the false Deadline-Sunday-before-your-cruise claim, two more claimed free delivery ends this Sunday, intros deferred action (about a month before), and the T-5 message had a your-vs-you-are typo.
+Fixes applied: dashboard link merge tag added to every recap; all false deadlines replaced with truthful order-up-to-the-day-before copy; intro CTAs made immediate (sub-15d branch got an urgency variant); typos fixed. No new T-10 step needed - the existing 9-days-out touch now carries the link.
+Measure: premier-activation-rate on a fresh 90d window ~2026-08-05+ (target 25%, baseline 12.3% on 300 dashboards Apr-Jul).
+
+
+## Measurement
+
+### Before (snapshot at time of shipping)
+_(not captured)_
+
+### After
+
+```json
+{
+  "orders": 63,
+  "revenue": 12582.78,
+  "segments": [
+    {
+      "margin": 463.53,
+      "orders": 42,
+      "revenue": 8589.93,
+      "segment": "general",
+      "averageMarginPct": 5.4,
+      "averageOrderValue": 204.52,
+      "marginCoveragePct": 18
+    },
+    {
+      "margin": 468.66,
+      "orders": 21,
+      "revenue": 3992.85,
+      "segment": "unknown",
+      "averageMarginPct": 11.7,
+      "averageOrderValue": 190.14,
+      "marginCoveragePct": 39.9
+    }
+  ],
+  "capturedAt": "2026-07-21T08:00:44.168Z",
+  "affiliateRoi": [
+    {
+      "code": "PREMIER",
+      "margin": 649.55,
+      "orders": 47,
+      "roiPct": 1426.6,
+      "revenue": 7332.54,
+      "netMargin": 607,
+      "affiliateId": "d21bac1a-3f99-489c-89fd-e1980c264a8d",
+      "businessName": "Premier Party Cruises",
+      "commissionPaid": 42.55,
+      "marginCoveragePct": 30.4
+    },
+    {
+      "code": "DTRbartending",
+      "margin": null,
+      "orders": 1,
+      "roiPct": null,
+      "revenue": 1342.66,
+      "netMargin": null,
+      "affiliateId": "f029d561-1c6f-45ba-9cac-7135eac17ce2",
+      "businessName": "DTR Bartending",
+      "commissionPaid": 94.85,
+      "marginCoveragePct": 0
+    }
+  ],
+  "snapshotDate": "2026-07-21",
+  "averageOrderValue": 199.7266666666667,
+  "marginCoveragePct": null
+}
+```
 ## Updates
 
-- 2026-05-05 — Created with status `accepted` from source `director`.
-- 2026-05-06 — Status open → approved (operator).
+- 2026-05-05 — Created with status `executed` from source `director`.
+- 2026-07-21 — Status shipped → shipped (cron:measure-recommendations). Notes: Auto-captured 14-day measurement
 
 ---
 _Mirror file. Edited automatically by the triage queue when status changes. Source of truth is the database (id: `4fe8e34e-83cb-4ee7-9576-4a60386400dc`). Slug: `premier-86-of-group-dashboards-never-convert-diagnose-the-ac`._
