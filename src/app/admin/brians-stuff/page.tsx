@@ -9,8 +9,6 @@ import SeoIntelligenceView from '@/components/admin/SeoIntelligenceView';
 import OrderPathwaysView from '@/components/admin/OrderPathwaysView';
 import RecommendationLogicView from '@/components/admin/RecommendationLogicView';
 import EnrichmentDocsView from '@/components/admin/EnrichmentDocsView';
-import StrPartnersView from '@/components/admin/StrPartnersView';
-import BartendingPartnersView from '@/components/admin/BartendingPartnersView';
 import BriansStuffTabs from './BriansStuffTabs';
 
 export const metadata: Metadata = {
@@ -44,8 +42,6 @@ export default async function Page({ searchParams }: { searchParams: SP }) {
     'pathways',
     'logic',
     'docs',
-    'str',
-    'bartenders',
   ] as const;
   const initialTab = (
     (VALID_TABS as readonly string[]).includes(params.tab ?? '')
@@ -66,8 +62,6 @@ export default async function Page({ searchParams }: { searchParams: SP }) {
       pathways={<OrderPathwaysView />}
       logic={<RecommendationLogicView />}
       docs={<EnrichmentDocsView />}
-      str={<StrPartnersView />}
-      bartenders={<BartendingPartnersView />}
     />
   );
 }

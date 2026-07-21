@@ -58,6 +58,7 @@ export async function mirrorLeadToCrm(ref: LeadRef, source: string): Promise<voi
       utmMedium: lead.utmMedium ?? '',
       utmCampaign: lead.utmCampaign ?? '',
       leadUrl: leadBoardUrl(lead.id),
+      tags: lead.tags ?? [],
       capturedAt: new Date().toISOString(),
     });
   } catch (err) {

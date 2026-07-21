@@ -3330,6 +3330,10 @@ enum LeadSourceWidget {
   /// Customer emailed info@partyondelivery.com — ingested by the Gmail poller
   /// (2026-07-14-lead-source-inbound-email.sql). Server-stamped, not pixel-claimable.
   INBOUND_EMAIL
+  /// Lead created by the partner-prospect CRM sync (STR + bartending outreach
+  /// databases, 2026-07-21-lead-source-partner-outreach.sql). Server-stamped,
+  /// not pixel-claimable.
+  PARTNER_OUTREACH
   OTHER
 }
 
@@ -3362,6 +3366,10 @@ model Lead {
   metadata        Json?
   /// Internal sales notes.
   notes           String?         @db.Text
+  /// Segmentation tags ('partner-prospect', 'partner-active', 'str',
+  /// 'bartender', ...) — separates partner leads from consumer leads.
+  /// (2026-07-21-lead-tags-partner-outreach.sql; GIN-indexed.)
+  tags            String[]        @default([])
   /// Affiliate attribution — populated by partner-attribution code added
   /// in a later PR. Kept here so `prisma db push` doesn't drop the column.
   affiliateId     String?         @map("affiliate_id")

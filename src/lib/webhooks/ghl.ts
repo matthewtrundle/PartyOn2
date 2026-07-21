@@ -449,6 +449,10 @@ export interface CoreLinqLeadCapturedPayload {
   utmCampaign: string;
   /** Deep link to the Lead Flow board card. */
   leadUrl: string;
+  /** Segmentation tags (e.g. 'partner-prospect', 'partner-active', 'str',
+   *  'bartender') — lets the CRM tag the contact. Optional: consumer
+   *  submit routes omit it. */
+  tags?: string[];
   capturedAt: string;
 }
 

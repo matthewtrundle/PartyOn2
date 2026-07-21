@@ -14,6 +14,8 @@ import { dateStrCT, extractLeadFacts, temperatureFor, SCORE_THRESHOLDS } from '.
 import { isNewsletterOnly, sweepEnrollSubmitted } from './pipeline';
 import { ACTIVE_STAGES, PIPELINE_STAGES, type PipelineStage } from './pipeline-types';
 import type { BoardData, BoardFilters, BoardKpis, BoardLead } from './board-types';
+import { SOURCE_FILTER_CONSUMER, SOURCE_FILTER_PARTNER } from './board-types';
+import { isPartnerLead } from './partner-tags';
 
 export type { BoardData, BoardFilters, BoardKpis, BoardLead } from './board-types';
 
@@ -72,6 +74,7 @@ export function toBoardLead(
     budgetPerPerson: facts.budgetPerPerson,
     sourceWidget: lead.sourceWidget,
     sourcePage: lead.sourcePage,
+    tags: lead.tags ?? [],
     owner: lead.owner,
     needsResponse: isOpenStage ? needsResponse : false,
     hasFollowUp: ctx.hasFollowUp,
@@ -90,7 +93,11 @@ function applyFilters(cards: BoardLead[], f: BoardFilters, now: Date): BoardLead
   return cards.filter((c) => {
     if (f.temp && c.temperature !== f.temp) return false;
     if (f.occasion && (c.occasion ?? '').toLowerCase() !== f.occasion.toLowerCase()) return false;
-    if (f.source && c.sourceWidget !== f.source) return false;
+    if (f.source === SOURCE_FILTER_PARTNER) {
+      if (!isPartnerLead(c.tags) && c.sourceWidget !== 'PARTNER_OUTREACH') return false;
+    } else if (f.source === SOURCE_FILTER_CONSUMER) {
+      if (isPartnerLead(c.tags) || c.sourceWidget === 'PARTNER_OUTREACH') return false;
+    } else if (f.source && c.sourceWidget !== f.source) return false;
     if (!f.showSnoozed && c.snoozedUntil && new Date(c.snoozedUntil) > now) return false;
     if (f.q) {
       const hay = `${c.name} ${c.email ?? ''} ${c.phone ?? ''}`.toLowerCase();

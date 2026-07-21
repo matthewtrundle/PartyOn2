@@ -41,6 +41,10 @@ export const FEATURE_FLAGS = {
   FOLLOWUPS_AFFILIATE_APPLY: 'followups_affiliate_apply',
   FOLLOWUPS_EVENT_QUIZ: 'followups_event_quiz',
   FOLLOWUPS_POST_PURCHASE_REVIEW: 'followups_post_purchase_review',
+  // Partner-prospect outreach campaign (STR + bartending databases).
+  // DEFAULT OFF per Brian 2026-07-21 — no real sends until partner pages
+  // are built and each email has been test-sent to info@.
+  FOLLOWUPS_PARTNER_OUTREACH: 'followups_partner_outreach',
 
   // Full Moon Party — set true when the event is postponed/cancelled (short of
   // the minimum at the deadline). Flips the public threshold widget to its

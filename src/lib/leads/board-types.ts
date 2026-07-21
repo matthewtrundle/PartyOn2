@@ -21,6 +21,8 @@ export interface BoardLead {
   budgetPerPerson: number | null;
   sourceWidget: string | null;
   sourcePage: string | null;
+  /** Segmentation tags — partner-prospect / partner-active / vertical. */
+  tags: string[];
   owner: string | null;
   needsResponse: boolean;
   hasFollowUp: boolean;
@@ -87,5 +89,15 @@ export const SOURCE_LABELS: Record<string, string> = {
   PARTNER_INQUIRY: 'B2B / Partner',
   OPS_INVOICE: 'Ops Invoice',
   LEAD_MAGNET: 'Lead Magnet',
+  INBOUND_EMAIL: 'Inbound Email',
+  PARTNER_OUTREACH: 'Partner Prospect',
   OTHER: 'Site',
 };
+
+/**
+ * Pseudo-source filter values (not LeadSourceWidget members) — resolved in
+ * applyFilters() via tags: PARTNER = partner leads only, CONSUMER = exclude
+ * partner leads.
+ */
+export const SOURCE_FILTER_PARTNER = 'PARTNER';
+export const SOURCE_FILTER_CONSUMER = 'CONSUMER';

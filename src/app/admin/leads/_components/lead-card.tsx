@@ -94,6 +94,11 @@ export default function LeadCard({
           {SOURCE_LABELS[lead.sourceWidget ?? ''] ?? 'Site'}
         </span>
         <span className="flex items-center gap-1.5">
+          {lead.tags.includes('partner-active') ? (
+            <HqBadge variant="green">🤝 Active Partner</HqBadge>
+          ) : lead.tags.includes('partner-prospect') ? (
+            <HqBadge variant="blue">🤝 Partner</HqBadge>
+          ) : null}
           {lead.isDuplicate && <HqBadge variant="gray">dupe</HqBadge>}
           {lead.hasFollowUp && (
             <span title="Automated follow-up scheduled/sent" aria-label="Follow-up scheduled">

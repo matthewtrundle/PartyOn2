@@ -29,9 +29,7 @@ type TabKey =
   | 'seo'
   | 'pathways'
   | 'logic'
-  | 'docs'
-  | 'str'
-  | 'bartenders';
+  | 'docs';
 
 export default function BriansStuffTabs({
   playbook,
@@ -44,8 +42,6 @@ export default function BriansStuffTabs({
   pathways,
   logic,
   docs,
-  str,
-  bartenders,
   initialTab = 'playbook',
 }: {
   playbook: ReactNode;
@@ -58,8 +54,6 @@ export default function BriansStuffTabs({
   pathways: ReactNode;
   logic: ReactNode;
   docs: ReactNode;
-  str: ReactNode;
-  bartenders: ReactNode;
   initialTab?: TabKey;
 }) {
   const [tab, setTab] = useState<TabKey>(initialTab);
@@ -110,12 +104,6 @@ export default function BriansStuffTabs({
           <TabButton active={tab === 'docs'} onClick={() => setTab('docs')}>
             📚 Enrichment Docs
           </TabButton>
-          <TabButton active={tab === 'str'} onClick={() => setTab('str')}>
-            🏡 STR Partners
-          </TabButton>
-          <TabButton active={tab === 'bartenders'} onClick={() => setTab('bartenders')}>
-            🍸 Bartending Partners
-          </TabButton>
         </div>
       </div>
 
@@ -151,12 +139,6 @@ export default function BriansStuffTabs({
       </div>
       <div hidden={tab !== 'docs'} className="px-6 md:px-10 py-8">
         <TabErrorBoundary tabName="Enrichment Docs">{docs}</TabErrorBoundary>
-      </div>
-      <div hidden={tab !== 'str'} className="px-6 md:px-10 py-8">
-        <TabErrorBoundary tabName="STR Partners">{str}</TabErrorBoundary>
-      </div>
-      <div hidden={tab !== 'bartenders'} className="px-6 md:px-10 py-8">
-        <TabErrorBoundary tabName="Bartending Partners">{bartenders}</TabErrorBoundary>
       </div>
     </div>
   );

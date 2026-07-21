@@ -342,7 +342,7 @@ export async function processJob(
       'List-Unsubscribe': `<${buildOneClickUnsubscribeUrl(job.email)}>`,
       'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
     },
-    from: {
+    from: journey.from ?? {
       email: process.env.FOLLOWUP_FROM_EMAIL as string,
       name: process.env.FOLLOWUP_FROM_NAME || 'Allan at Party On Delivery',
     },
