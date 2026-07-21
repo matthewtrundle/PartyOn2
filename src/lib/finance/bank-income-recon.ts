@@ -60,6 +60,30 @@ export const OWNER_CAPITAL_RULES: readonly RegExp[] = [
 ];
 
 /**
+ * Loan-proceeds (financing) inflow descriptors — the PeopleFund term-loan
+ * DISBURSEMENTS, ANCHORED to the exact shape on the real Wells Fargo feed
+ * (surfaced by the 2024 statement import, operator-confirmed loan #0006957):
+ *
+ *   "Peoplefund Advance 0006957 Full and Final Funding; Working Capital"
+ *   "Peoplefund Advances 0006957 Partial Funding; Inventory Category…"
+ *
+ * These are loan proceeds — financing, never income — and must not trip the
+ * "deposits exceed revenue" flag (2024 H1 alone was ~$328K of PeopleFund
+ * advances, which would otherwise read as phantom sales). The loan PAYMENTS
+ * ("Peoplefund Pymt…") are the matching outflow, already mapped `non_operating`
+ * via the PFC / statement LOAN_PAYMENTS hint.
+ *
+ * Anchored like OWNER_CAPITAL_RULES: PeopleFund is Party On's CDFI lender, not a
+ * customer, and the "advance" wording + loan number pin it to a disbursement —
+ * a real sale (Stripe/Square "ST-…" / Square Inc) can't be laundered as
+ * financing by this rule. If the descriptor drifts, the month re-flags as excess
+ * deposits (see the drift hint) rather than silently misclassifying.
+ */
+export const LOAN_PROCEEDS_RULES: readonly RegExp[] = [
+  /\bpeoplefund\b.*\badvance/i, // "Peoplefund Advance(s) 0006957 … Funding"
+];
+
+/**
  * The distributors' payment-processor stamp that appears on their ACH debits
  * AND their refund credits ("Southern Glazer' FINTECHEFT 051826 …"). A vendor
  * refund must carry it — a Zelle from a person whose name merely contains a
@@ -68,12 +92,17 @@ export const OWNER_CAPITAL_RULES: readonly RegExp[] = [
  */
 const VENDOR_PROCESSOR_STAMP = /fintech/i;
 
-export type BankInflowClass = 'owner_capital' | 'vendor_refund' | 'sales_or_other';
+export type BankInflowClass =
+  | 'owner_capital'
+  | 'loan_proceeds'
+  | 'vendor_refund'
+  | 'sales_or_other';
 
 /**
- * Classify a production bank INFLOW by descriptor. Owner capital and vendor
- * refunds (credits back from a COGS merchant, e.g. a distributor rebate) are
- * excluded from the income reconciliation — neither is sales revenue.
+ * Classify a production bank INFLOW by descriptor. Owner capital, loan proceeds
+ * (PeopleFund advances), and vendor refunds (credits back from a COGS merchant,
+ * e.g. a distributor rebate) are all excluded from the income reconciliation —
+ * none is sales revenue.
  */
 export function classifyBankInflow(txn: {
   name: string;
@@ -82,6 +111,9 @@ export function classifyBankInflow(txn: {
   const text = `${txn.merchantName ?? ''} ${txn.name ?? ''}`.trim();
   for (const re of OWNER_CAPITAL_RULES) {
     if (re.test(text)) return 'owner_capital';
+  }
+  for (const re of LOAN_PROCEEDS_RULES) {
+    if (re.test(text)) return 'loan_proceeds';
   }
   // Vendor refund = COGS-merchant descriptor AND the processor stamp their
   // real credits carry — never a bare name match.
@@ -119,6 +151,10 @@ export interface BankIncomeRecon {
    * disappearing into an aggregate.
    */
   ownerCapitalTxns: Array<{ name: string; cents: number }>;
+  /** Loan proceeds (PeopleFund advances) — financing, excluded from income. */
+  loanProceedsCents: number;
+  /** Per-advance audit trail of what was classified loan proceeds. */
+  loanProceedsTxns: Array<{ name: string; cents: number }>;
   /** Credits back from COGS merchants (distributor refunds) — excluded too. */
   vendorRefundCents: number;
   matchedToStripeCents: number;
@@ -191,6 +227,8 @@ export async function reconcileBankIncome(
       totalDepositsCents: 0,
       ownerCapitalCents: 0,
       ownerCapitalTxns: [],
+      loanProceedsCents: 0,
+      loanProceedsTxns: [],
       vendorRefundCents: 0,
       matchedToStripeCents: 0,
       stripeExplainedCents: 0,
@@ -220,6 +258,8 @@ export async function reconcileBankIncome(
   let totalDepositsCents = 0;
   let ownerCapitalCents = 0;
   const ownerCapitalTxns: Array<{ name: string; cents: number }> = [];
+  let loanProceedsCents = 0;
+  const loanProceedsTxns: Array<{ name: string; cents: number }> = [];
   let vendorRefundCents = 0;
   let salesDepositsCents = 0;
   let matchedToStripeCents = 0;
@@ -230,6 +270,9 @@ export async function reconcileBankIncome(
     if (cls === 'owner_capital') {
       ownerCapitalCents += cents;
       ownerCapitalTxns.push({ name: t.merchantName ?? t.name, cents });
+    } else if (cls === 'loan_proceeds') {
+      loanProceedsCents += cents;
+      loanProceedsTxns.push({ name: t.merchantName ?? t.name, cents });
     } else if (cls === 'vendor_refund') {
       vendorRefundCents += cents;
     } else {
@@ -258,8 +301,8 @@ export async function reconcileBankIncome(
     // (a classifier miss), not a new anomaly — say so, so the operator checks
     // OWNER_CAPITAL_RULES before hunting for missing orders.
     const driftHint =
-      ownerCapitalCents === 0
-        ? ' (no owner-capital transfers recognized this month — if Brian did inject capital, the bank descriptor may have drifted; check OWNER_CAPITAL_RULES)'
+      ownerCapitalCents === 0 && loanProceedsCents === 0
+        ? ' (no owner-capital or loan-proceeds transfers recognized this month — if Brian injected capital or a loan disbursed, the bank descriptor may have drifted; check OWNER_CAPITAL_RULES / LOAN_PROCEEDS_RULES)'
         : '';
     flags.push(
       `$${(otherIncomeCents / 100).toFixed(0)} of bank deposits exceed known Stripe ` +
@@ -273,6 +316,8 @@ export async function reconcileBankIncome(
     totalDepositsCents,
     ownerCapitalCents,
     ownerCapitalTxns,
+    loanProceedsCents,
+    loanProceedsTxns,
     vendorRefundCents,
     matchedToStripeCents,
     stripeExplainedCents,

@@ -265,6 +265,32 @@ describe('renderFinanceMonthlyCloseEmail', () => {
     expect(html).toContain('financing');
   });
 
+  it('itemizes loan proceeds (PeopleFund advances) and HTML-escapes the descriptor', () => {
+    const html = renderFinanceMonthlyCloseEmail(
+      shapeMonthlyClosePayload({
+        rollup: reliableRollup({
+          dataHealth: {
+            expenseSource: 'bank',
+            netIncomeReliable: true,
+            incomeReconciled: true,
+            otherIncomeCents: 0,
+            loanProceedsCents: 20_166_000,
+            loanProceedsTxns: [{ name: 'Peoplefund Advance 0006957 <Funding> & Working Capital', cents: 20_166_000 }],
+            flags: [],
+          },
+        }),
+        prior: null,
+        generatedAt: GEN,
+      })
+    );
+    expect(html).toContain('Loan proceeds');
+    expect(html).toContain('$201,660');
+    expect(html).toContain('PeopleFund');
+    // Bank descriptor rendered into HTML must be escaped (no raw < > &).
+    expect(html).toContain('&lt;Funding&gt; &amp; Working Capital');
+    expect(html).not.toContain('<Funding>');
+  });
+
   it('does not leak net income via a QB-discrepancy flag (reconstruction chain closed)', () => {
     const html = renderFinanceMonthlyCloseEmail(
       shapeMonthlyClosePayload({ rollup: qbDiscrepancyRollup(), prior: null, generatedAt: GEN })

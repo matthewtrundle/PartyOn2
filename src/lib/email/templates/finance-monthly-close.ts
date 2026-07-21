@@ -140,6 +140,17 @@ function reconciliationBlock(d: MonthlyClosePayload): string {
     );
   }
 
+  if (d.loanProceedsCents !== null && d.loanProceedsCents > 0) {
+    const txns = d.loanProceedsTxns
+      .map((t) => `${money(t.cents)} — ${esc(t.name)}`)
+      .join('<br>&nbsp;&nbsp;');
+    rows.push(
+      `Loan proceeds: <strong>${money(d.loanProceedsCents)}</strong> disbursed this month — ` +
+        `PeopleFund advance, classified as financing (debt), excluded from income.` +
+        (txns ? `<br>&nbsp;&nbsp;${txns}` : '')
+    );
+  }
+
   if (d.vendorRefundCents !== null && d.vendorRefundCents > 0) {
     rows.push(
       `Vendor refunds: ${money(d.vendorRefundCents)} in distributor credits — excluded from income.`
@@ -367,6 +378,14 @@ export function renderFinanceMonthlyCloseText(d: MonthlyClosePayload): string {
         `  Owner capital: ${money(d.ownerCapitalCents)} received — financing (equity), excluded from income.`
       );
       for (const t of d.ownerCapitalTxns) {
+        lines.push(`    ${money(t.cents)} — ${t.name}`);
+      }
+    }
+    if (d.loanProceedsCents !== null && d.loanProceedsCents > 0) {
+      lines.push(
+        `  Loan proceeds: ${money(d.loanProceedsCents)} disbursed — PeopleFund advance, financing (debt), excluded from income.`
+      );
+      for (const t of d.loanProceedsTxns) {
         lines.push(`    ${money(t.cents)} — ${t.name}`);
       }
     }

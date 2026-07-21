@@ -601,6 +601,11 @@ function buildDataHealth(h: HealthInput): Record<string, unknown> {
     // in the email instead of vanishing into an aggregate.
     ownerCapitalCents: h.bankIncome.hasProductionBank ? h.bankIncome.ownerCapitalCents : null,
     ownerCapitalTxns: h.bankIncome.hasProductionBank ? h.bankIncome.ownerCapitalTxns : [],
+    // Loan proceeds (PeopleFund advances) recognized this month — financing, not
+    // income; surfaced with a per-advance audit trail like owner capital so a
+    // misclassified disbursement is spot-checkable rather than hidden.
+    loanProceedsCents: h.bankIncome.hasProductionBank ? h.bankIncome.loanProceedsCents : null,
+    loanProceedsTxns: h.bankIncome.hasProductionBank ? h.bankIncome.loanProceedsTxns : [],
     vendorRefundCents: h.bankIncome.hasProductionBank ? h.bankIncome.vendorRefundCents : null,
     // Accrual-COGS estimate (cost of what SOLD, from per-item cost snapshots) —
     // the true product-margin view alongside the lumpy cash-basis COGS.
