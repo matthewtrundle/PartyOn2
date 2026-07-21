@@ -29,6 +29,21 @@ export interface StrProperty {
   zip: string;
 }
 
+/**
+ * Optional second tab on a partner page. Renders a tab bar above the
+ * standard partner content: the left tab is the existing POD page, the
+ * right tab embeds an external booking page (e.g. Premier Party Cruises'
+ * /quote). Config-driven so rolling it out to every partner is one field.
+ */
+export interface PartnerSecondTab {
+  /** Label for the existing POD partner page tab (left). */
+  leftLabel: string;
+  /** Label for the embedded tab (right). */
+  label: string;
+  /** External page to embed (must allow framing — verified for Premier). */
+  embedUrl: string;
+}
+
 /** A short-term-rental partner and its bookable properties. */
 export interface StrPartnerConfig {
   /** Affiliate code (normalized: uppercase, no dashes), e.g. "FIVESTAR". */
@@ -43,6 +58,8 @@ export interface StrPartnerConfig {
   allowCustomAddress: boolean;
   /** Bookable properties shown in the dropdown. May be empty (custom-only). */
   properties: StrProperty[];
+  /** Optional second tab (e.g. Premier Party Cruises boat-quote embed). */
+  secondTab?: PartnerSecondTab;
 }
 
 /**
@@ -73,6 +90,18 @@ const STR_PARTNERS: Record<string, StrPartnerConfig> = {
     deliveryContextType: 'HOUSE',
     allowCustomAddress: true,
     properties: [],
+    // Pilot for the two-tab partner page (Brian 2026-07-21): POD delivery
+    // on the left, Premier Party Cruises quote embed on the right. Once
+    // approved, duplicate to the other STR/bartending partners.
+    // Embed target is Premier's PURPOSE-BUILT embed app (their repo ships
+    // this exact URL in embed-code.html, with source tracking). The
+    // marketing page premierpartycruises.com/quote crashes when framed —
+    // verified in real Chrome — so never point the tab there.
+    secondTab: {
+      leftLabel: 'Alcohol Delivery',
+      label: 'Party Boat Rentals',
+      embedUrl: 'https://booking.premierpartycruises.com/quote-v2',
+    },
   },
 };
 

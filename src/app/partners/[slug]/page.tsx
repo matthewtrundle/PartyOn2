@@ -5,6 +5,7 @@ import path from 'path';
 import { getAffiliateBySlug } from '@/lib/affiliates/affiliate-service';
 import { getCategoryTemplate } from '@/components/partners/templates';
 import { getStrPartnerBySlug } from '@/lib/partners/str-partners';
+import PartnerPageTabs from '@/components/partners/PartnerPageTabs';
 import { vacationRentalHeroMedia } from '@/generated/vacation-rental-hero-media';
 import partnersData from '@/data/austin-partners.json';
 
@@ -121,7 +122,7 @@ export default async function DynamicPartnerPage({ params }: Props) {
     if (strShots.length > 0) heroImages = strShots;
   }
 
-  return (
+  const templateEl = (
     <CategoryTemplate
       affiliate={{
         businessName: affiliate.businessName,
@@ -138,4 +139,21 @@ export default async function DynamicPartnerPage({ params }: Props) {
       heroImages={heroImages}
     />
   );
+
+  // Two-tab partner pages (config-driven, e.g. Lynn's Lodging: POD delivery
+  // on the left, Premier Party Cruises quote embed on the right).
+  const secondTab = getStrPartnerBySlug(affiliate.partnerSlug ?? slug)?.secondTab;
+  if (secondTab) {
+    return (
+      <PartnerPageTabs
+        leftLabel={secondTab.leftLabel}
+        rightLabel={secondTab.label}
+        embedUrl={secondTab.embedUrl}
+      >
+        {templateEl}
+      </PartnerPageTabs>
+    );
+  }
+
+  return templateEl;
 }
