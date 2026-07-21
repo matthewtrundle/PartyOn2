@@ -7,6 +7,7 @@ const SEGMENTS = [
   { key: 'promotions', label: 'Promotions', href: '/admin/promotions' },
   { key: 'str-prospects', label: 'STR Prospects', href: '/admin/affiliates/prospects/str' },
   { key: 'bartending-prospects', label: 'Bartending Prospects', href: '/admin/affiliates/prospects/bartending' },
+  { key: 'playbook', label: 'Outreach Playbook', href: '/admin/affiliates/prospects/playbook' },
 ];
 
 /**
@@ -17,7 +18,7 @@ const SEGMENTS = [
 export default function PartnersHubBand({
   active,
 }: {
-  active: 'affiliates' | 'promotions' | 'str-prospects' | 'bartending-prospects';
+  active: 'affiliates' | 'promotions' | 'str-prospects' | 'bartending-prospects' | 'playbook';
 }): ReactElement {
   return (
     <NavyBand>
