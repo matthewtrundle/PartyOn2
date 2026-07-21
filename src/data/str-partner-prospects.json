@@ -2,7 +2,7 @@
   {
     "name": "Lynn's Lodging",
     "website": "https://www.lynnslodgingatx.com/",
-    "propertiesEstimate": "~34",
+    "propertiesEstimate": "~35-37",
     "contactName": "Lynn",
     "email": "hello@lynnslodging.com",
     "phone": "512-920-3590",
@@ -16,7 +16,69 @@
     },
     "logoUrl": "https://www.lynnslodgingatx.com/i/width=200,dpr=1,format=jpeg?src=https%3A%2F%2Fassets-websites.wander.com%2F637460520617640767%2Flogo-TAcHsUiqn1-vZGHBYDcI2.png",
     "description": "Designer luxury Austin STRs with pools, hot tubs, rooftop spaces; also full-service STR management (Austin + Cedar Park).",
-    "partnerSlug": "lynns-lodging"
+    "partnerSlug": "lynns-lodging",
+    "enrichment": {
+      "enrichedAt": "2026-07-21",
+      "management": {
+        "ownerName": "Lynn (surname not published anywhere public)",
+        "ownerNotes": "Hands-on owner-operator — guests name her personally in reviews ('Lynn was gracious', 'super responsive', gives restaurant recs). She runs both the guest brand and an owner-acquisition funnel (go.lynnslodging.com 'STR Bookings Maximizer Report'), so she is operator + salesperson. One relationship unlocks the whole portfolio.",
+        "team": "No named team; services (24/7 guest comms, cleaning/staging, photography, dynamic pricing) imply a small ops/cleaning crew",
+        "linkedin": null,
+        "operatingSince": "Young, fast-scaling — Facebook page created ~late 2024; Airbtics shows 38-150% YoY listing growth",
+        "entity": "LYNN'S LODGING LLC, Austin TX"
+      },
+      "portfolio": {
+        "propertyCount": "~35-37 (site lists 37; Airbtics counts 35 Airbnb listings)",
+        "propertyTypes": "Designer/luxury homes, 1-11 BR — compounds and event-capable properties with pools (incl. cowboy pools), hot tubs, fire pits, OUTDOOR BARS, game rooms, movie rooms, rooftops, pool tables",
+        "locations": "Central Austin — Rainey Street/downtown, South Congress (1007 S Congress aparthotel cluster), near 6th St and Lady Bird Lake — plus Cedar Park",
+        "maxGroupSize": "Homes sleep 12-16+; an 11-bedroom listing suggests 20+ at the top end",
+        "notableProperties": [
+          {
+            "name": "Huge 5BR Compound",
+            "blurb": "sleeps 16, one block from Rainey Street — flagship big-group party pad"
+          },
+          {
+            "name": "Luxe Rainey DTown Oasis",
+            "blurb": "sleeps 14, private pool + hot tub, walkable to Rainey nightlife"
+          },
+          {
+            "name": "2-Home Event Compound (Cedar Park)",
+            "blurb": "sleeps 16 w/ hot tub, explicitly marketed as an event space"
+          },
+          {
+            "name": "4BR w/ Cowboy Pool, Fire Pit + Pool Table",
+            "blurb": "signature Austin backyard-hangout home, sleeps 8"
+          },
+          {
+            "name": "1007 S Congress cluster",
+            "blurb": "7 designer 2-3BR units sleeping 12-14 each, shared pool/fire pit/outdoor bar, steps from SoCo"
+          }
+        ]
+      },
+      "business": {
+        "bookingModel": "Hybrid — direct-booking site (Wander platform, 'book direct, skip fees') + full OTA spread (Airbnb, Vrbo, Expedia, Klook, Trip.com, Agoda) + owner lead-magnet funnel",
+        "services": "Full-service STR management for owners; promises guests 'concierge-style service and personalized local recommendations' — but has NO beverage/amenity concierge product",
+        "positioning": "Ultra-premium: ~$510 ADR (183% above Austin's ~$180 avg), ~$70.6K revenue/listing (82% above market), 75% occupancy",
+        "guestDemographic": "Group celebrations — bachelorette parties (formal Bach Babes partnership w/ 10% code), girls' trips, SXSW crowds, large friend/family groups; marketing: homes are 'perfect for groups looking to relax and celebrate in style'"
+      },
+      "reputation": {
+        "summary": "Excellent and consistent — guests repeatedly praise Lynn personally; no recurring complaints surfaced anywhere indexed.",
+        "ratings": "Airbnb 5.0 avg (per Airbtics); 4-star aparthotel listings on OTAs",
+        "praiseThemes": "host responsiveness/warmth, local recommendations, cleanliness, no checkout chores, hot tub/game-room fun for bachelorette groups, walkability"
+      },
+      "partnershipAngles": [
+        "She sells the party occasion (outdoor bars, fire pits, cowboy pools, 'celebrate in style') — but nobody stocks the bar. POD is the missing piece of the exact experience she advertises.",
+        "Proven bachelorette referral pipeline: her Bach Babes partnership (10% off for bachelorette groups) is the same playbook POD's partner program runs — she already knows this model works.",
+        "She promises 'concierge-style service' with no in-house product — POD is white-label fulfillment: pre-arrival fridge stocking, cocktail kits, welcome bars.",
+        "Big-group inventory (12-16+ sleepers, event compound in Cedar Park) means every booking clears POD's order minimums — multi-case orders by default; Cedar Park is in the delivery zone.",
+        "$510-ADR guests are experience-hungry and price-insensitive — premium spirits and package upsells fit; commission adds a new revenue line she demonstrably cares about (she runs a revenue-maximizer funnel).",
+        "Owner-led shop with a 5.0 built on responsiveness — one call with Lynn activates all ~37 properties; her co-branded page is ALREADY LIVE at /partners/lynns-lodging."
+      ],
+      "outreachEmail": {
+        "subject": "Lynn — those outdoor bars at your Rainey + SoCo homes? Let us keep them stocked (free delivery for your guests)",
+        "body": "Hi Lynn,\n\nI'm Brian, founder of Party On Delivery — Austin's premium alcohol delivery and guest-concierge service. I've been admiring what you've built: 37 designer homes, a 5.0 rating your guests credit to you personally, and the best big-group inventory near Rainey and SoCo. Your listings promise groups a place to 'relax and celebrate in style' — cowboy pools, fire pits, outdoor bars.\n\nHere's the thing: your guests still have to stock those bars themselves, hauling cases in an Uber on day one.\n\nWe fix that, at zero cost and zero effort to you:\n\n• FREE DELIVERY FOR YOUR GUESTS — spirits, champagne, seltzers, cocktail kits, bulk ice, cups — iced and waiting at check-in, timed to your arrivals. Same-day and last-minute covered, TABC-licensed, money-back on unopened returns so groups can over-buy risk-free.\n\n• A PARTY DASHBOARD FOR EVERY GROUP — one link, and each bachelorette or birthday crew gets a private ordering page: everyone adds their own drinks, payment splits itself, no group-text math. You already saw how well the referral model works with Bach Babes — this is that, for the bar.\n\n• YOUR BRANDED PAGE IS ALREADY LIVE — we built partyondelivery.com/partners/lynns-lodging with your branding. Drop it in welcome emails or your digital guidebook and it just works.\n\n• YOU EARN ON EVERY ORDER — commission on every guest purchase, tracked in your own partner portal (you can watch each group's dashboard, engagement, and order status in real time).\n\nWith homes sleeping 12-16+, your average group is exactly who we built this for — and it makes the 'concierge-style service' your brand already promises tangible from the minute they walk in.\n\nWorth 15 minutes this week? I can walk you through the live page and have your first guest dashboard running on the call.\n\nBrian Hill\nFounder, Party On Delivery\npartyondelivery.com · (737) 371-9700"
+      }
+    }
   },
   {
     "name": "Austin Vacay",
