@@ -54,6 +54,30 @@ describe('classifyBankInflow', () => {
     );
   });
 
+  it('classifies a Shopify Capital advance as loan proceeds (financing, not income)', () => {
+    // Live WF descriptor for the 2025-12-09 merchant cash advance ($25,000).
+    // Shopify Capital is Shopify's lending arm — financing, never sales.
+    expect(
+      classifyBankInflow({
+        name: 'SHOPIFY CAPITAL SHOPIFY 251208 45834452 Premier Conc',
+        merchantName: null,
+      })
+    ).toBe('loan_proceeds');
+  });
+
+  it('does NOT sweep a Shopify sales payout into loan proceeds (anchor requires "capital")', () => {
+    // Regular Shopify settlements never carry the word "capital"; a real sale
+    // must stay IN the income check. The anchor pins the lending product only.
+    expect(
+      classifyBankInflow({ name: 'SHOPIFY PAYMENTS 251208 45834452 Premier Conc', merchantName: null })
+    ).toBe('sales_or_other');
+    // A real Shopify sales payout (the "SHOPIFY TRANSFER … BRIAN HILL" shape seen
+    // on the live feed) must also stay in the check — no "capital" token.
+    expect(
+      classifyBankInflow({ name: 'SHOPIFY TRANSFER 251110 PARTY ON DELIVE BRIAN HILL', merchantName: null })
+    ).toBe('sales_or_other');
+  });
+
   it('classifies credits from COGS merchants as vendor refunds (not sales)', () => {
     expect(
       classifyBankInflow({ name: "Southern Glazer' FINTECHEFT 051826 XXXXX6635", merchantName: null })
