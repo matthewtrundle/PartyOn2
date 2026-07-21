@@ -97,7 +97,7 @@
     },
     "logoUrl": "https://bookingenginecdn-2.hostaway.com/43003-logoUrl.jpg?width=3840&quality=70&format=webp&v=2",
     "description": "Self-described 'Austin's Largest Vacation Rental Manager' — locally hosted rentals across Austin, Lake Travis, Marfa. Booking arm of STR Management.",
-    "partnerSlug": null
+    "partnerSlug": "austin-vacay"
   },
   {
     "name": "STR Management, LLC",
@@ -116,7 +116,7 @@
     },
     "logoUrl": "https://www.strmanagement.com/wp-content/uploads/2019/06/STR-Management-logo-WEB-50.png",
     "description": "One of Austin's largest local STR managers (since 2014), Austin + Lakeway, in-house cleaning and revenue management.",
-    "partnerSlug": null
+    "partnerSlug": "str-management-llc"
   },
   {
     "name": "Vacasa (Austin)",
@@ -135,7 +135,7 @@
     },
     "logoUrl": "https://cms-assets.boise.vacasa.com/svg/vacasa_casago_lockup_extra-wide-white.b0c31f473733.svg",
     "description": "North America's largest vacation rental manager with a local Austin team (absorbed Austin-founded TurnKey).",
-    "partnerSlug": null
+    "partnerSlug": "vacasa-austin"
   },
   {
     "name": "NomadSTR",
@@ -154,7 +154,7 @@
     },
     "logoUrl": "https://static.wixstatic.com/media/bad19e_c10dc5385f5644cda9ee247750b31dca%7Emv2.jpg/v1/fill/w_180%2Ch_180%2Clg_1%2Cusm_0.66_1.00_0.01/bad19e_c10dc5385f5644cda9ee247750b31dca%7Emv2.jpg",
     "description": "Austin-based full-service STR manager for Austin + Hill Country; recently acquired KOZE Vacation Rentals.",
-    "partnerSlug": null
+    "partnerSlug": "nomadstr"
   },
   {
     "name": "Hill Country Premier Lodging",
@@ -173,7 +173,7 @@
     },
     "logoUrl": "https://www.hillcountrypremier.com/wp-content/uploads/2024/03/hcpl-logo.png",
     "description": "Regional Hill Country heavyweight (20,000 reservations in 2024) — Wimberley, Dripping Springs, Canyon Lake, greater Austin.",
-    "partnerSlug": null
+    "partnerSlug": "hill-country-premier-lodging"
   },
   {
     "name": "Renters Club",
@@ -192,7 +192,7 @@
     },
     "logoUrl": "https://www.renters-club.com/wp-content/uploads/2023/02/2.png",
     "description": "Membership-style curated luxury vacation home collection in Austin (S Lamar HQ) with concierge support.",
-    "partnerSlug": null
+    "partnerSlug": "renters-club"
   },
   {
     "name": "Vivant Stays",
@@ -211,7 +211,7 @@
     },
     "logoUrl": "https://vivantstays.com/wp-content/uploads/2022/07/vivant_logo.svg",
     "description": "Austin operator of designer STRs, corporate housing, and furnished mid-term stays with data-backed revenue management.",
-    "partnerSlug": null
+    "partnerSlug": "vivant-stays"
   },
   {
     "name": "Evolve (Austin)",
@@ -230,7 +230,7 @@
     },
     "logoUrl": null,
     "description": "National light-touch vacation rental platform (10-15% fee) with dozens of Austin properties.",
-    "partnerSlug": null
+    "partnerSlug": "evolve-austin"
   },
   {
     "name": "Vacay Hill Country",
@@ -249,7 +249,7 @@
     },
     "logoUrl": "https://vacayhillcountry.com/wp-content/uploads/2021/12/Vacayhill-country-fixed.png",
     "description": "Local Hill Country company (~50+ homes) in Wimberley, Canyon Lake, New Braunfels; 92% owner retention.",
-    "partnerSlug": null
+    "partnerSlug": "vacay-hill-country"
   },
   {
     "name": "GuestSpaces",
@@ -268,7 +268,7 @@
     },
     "logoUrl": "https://guestspaces.com/wp-content/uploads/2021/02/cropped-cropped-guestspaces_logo_-_light_background-4-250x67.jpg",
     "description": "Award-winning boutique manager of luxury STR homes and lake houses — Austin, Dripping Springs, Texas lake communities.",
-    "partnerSlug": null
+    "partnerSlug": "guestspaces"
   },
   {
     "name": "AvantStay (Austin)",
@@ -287,7 +287,7 @@
     },
     "logoUrl": "https://avantstay.com/apple-touch-icon.png",
     "description": "National luxury/group STR brand with a dedicated Austin portfolio and local ops team — big bachelorette-group inventory.",
-    "partnerSlug": null
+    "partnerSlug": "avantstay-austin"
   },
   {
     "name": "Walker Luxury Vacation Rentals",
@@ -306,7 +306,7 @@
     },
     "logoUrl": "https://www.walkervr.com/wp-content/uploads/2024/11/logo-walkervr.png",
     "description": "Austin's first boutique property manager focused exclusively on high-end luxury vacation homes incl. Lake Austin waterfront.",
-    "partnerSlug": null
+    "partnerSlug": "walker-luxury-vacation-rentals"
   },
   {
     "name": "North Shore Vacation Rentals",
@@ -325,7 +325,7 @@
     },
     "logoUrl": "https://www.theislandonlaketravis.com/wp-content/uploads/2025/09/north-shore-vacation-rentals-logo-188x50.png",
     "description": "Manages 30+ privately owned condos and homes on Lake Travis's North Shore (Island Resort, The Hollows, Point Venture).",
-    "partnerSlug": null
+    "partnerSlug": "north-shore-vacation-rentals"
   },
   {
     "name": "ABOVE Vacation Residences",
@@ -344,7 +344,7 @@
     },
     "logoUrl": "https://www.bookabove.com/sites/natx/files/styles/ngt_logo/public/natx/ngt_logo/AboveAustin-23.png",
     "description": "Austin-HQ'd (Bee Cave) luxury estate rental brand with concierge managers and house valets — Lake Austin, Lake Travis, Lake LBJ.",
-    "partnerSlug": null
+    "partnerSlug": "above-vacation-residences"
   },
   {
     "name": "Five Star Vacation Home Rentals",
@@ -363,7 +363,7 @@
     },
     "logoUrl": "https://cdn.prod.website-files.com/61ef18a9db64b07a0eae8a06/69d33e741eacef5c3179de12_61f2b39b0638949d51645a64_Five%2520Star%2520White%2520Hor.webp",
     "description": "Top-rated luxury STR manager in Central Texas (Austin, Lake Austin, Hill Country, San Antonio); 3,000+ five-star reviews.",
-    "partnerSlug": null
+    "partnerSlug": "five-star-vacation-home-rentals"
   },
   {
     "name": "SkyRun Austin",
@@ -382,7 +382,7 @@
     },
     "logoUrl": "https://cdn.skyrun.com/wp-content/uploads/2023/04/12205314/logo.svg",
     "description": "Locally owned SkyRun franchise managing vacation homes, condos, and townhomes across Austin and Lake Travis.",
-    "partnerSlug": null
+    "partnerSlug": "skyrun-austin"
   },
   {
     "name": "Grand Welcome Austin",
@@ -401,7 +401,7 @@
     },
     "logoUrl": "https://cdn.prod.website-files.com/64b95f5eb93062069a6a0f1d/64b95f5eb93062069a6a0f59_grand-welcome-256.png",
     "description": "Locally owned boutique franchise for Austin + Highland Lakes; already partners with Bach Babes on bachelorette homes.",
-    "partnerSlug": null
+    "partnerSlug": "grand-welcome-austin"
   },
   {
     "name": "512 Retreat",
@@ -420,7 +420,7 @@
     },
     "logoUrl": "https://512retreat.com/wp-content/uploads/2022/04/512Retreat_NewLogo-e1650569324429.png",
     "description": "Locally grown luxury Austin vacation rental company with concierge services (chefs, event planning, yachts) and a bachelorette collection.",
-    "partnerSlug": null
+    "partnerSlug": "512-retreat"
   },
   {
     "name": "BacheloretteStays",
@@ -439,7 +439,7 @@
     },
     "logoUrl": "https://www.bachelorettestays.com/images/instagram-logo.avif",
     "description": "Themed party rentals (flower walls, neon murals) for bachelorette/birthday/girls' trips with Austin properties — perfect ICP overlap.",
-    "partnerSlug": null
+    "partnerSlug": "bachelorettestays"
   },
   {
     "name": "SPRKhost",
@@ -458,7 +458,7 @@
     },
     "logoUrl": null,
     "description": "Husband-and-wife Austin luxury vacation rental brand with pool/lakefront homes, direct booking, concierge service.",
-    "partnerSlug": null
+    "partnerSlug": "sprkhost"
   },
   {
     "name": "Stay Local Austin",
@@ -477,7 +477,7 @@
     },
     "logoUrl": "https://austinvacationrentals.com/wp-content/uploads/2025/11/StayAustin-rgb-cropped.svg",
     "description": "Local vacation rental manager (Portoro-affiliated) covering downtown Austin to Hill Country and Lake Travis.",
-    "partnerSlug": null
+    "partnerSlug": "stay-local-austin"
   },
   {
     "name": "Guest Haus",
@@ -496,7 +496,7 @@
     },
     "logoUrl": "https://guesthausrentals.com/wp-content/uploads/2024/02/Austin-Texas-Keep-the-shadow-transparend-background-768x768.webp",
     "description": "Austin-local STR/mid-term manager with net-revenue-share pricing and STR permit/compliance handling.",
-    "partnerSlug": null
+    "partnerSlug": "guest-haus"
   },
   {
     "name": "Barclé Group",
@@ -515,7 +515,7 @@
     },
     "logoUrl": "https://barclegroup.com/wp-content/uploads/2025/05/logo-barcle-club.png",
     "description": "Premium Austin STR management firm — marketing, guest screening, dynamic pricing, luxury interior design.",
-    "partnerSlug": null
+    "partnerSlug": "barcl-group"
   },
   {
     "name": "Surge",
@@ -534,7 +534,7 @@
     },
     "logoUrl": "https://www.gowithsurge.com/surge-logo-teal.png",
     "description": "Austin-rooted full-service STR company (management, brokerage, interior design) at a 15% fee; 4.9 Superhost rating.",
-    "partnerSlug": null
+    "partnerSlug": "surge"
   },
   {
     "name": "Oberg Properties",
@@ -553,7 +553,7 @@
     },
     "logoUrl": "https://lirp.cdn-website.com/cdcd1caf/dms3rep/multi/opt/white-logo-icon-1920w.png",
     "description": "Lakeway/Lake Travis property management firm operating vacation rentals since 1984.",
-    "partnerSlug": null
+    "partnerSlug": "oberg-properties"
   },
   {
     "name": "MOD Property Management",
@@ -572,7 +572,7 @@
     },
     "logoUrl": "https://modpmco.com/wp-content/uploads/2020/09/MOD1.png",
     "description": "Austin-based Airbnb management and hosting company covering Greater Austin and the Hill Country.",
-    "partnerSlug": null
+    "partnerSlug": "mod-property-management"
   },
   {
     "name": "Hill Country Lakes Rentals",
@@ -591,7 +591,7 @@
     },
     "logoUrl": "https://www.hillcountrylakesrentals.com/wp-content/uploads/2025/09/cropped-hclc-logo-1-220x55.png",
     "description": "Local manager of privately owned vacation homes on Lake Travis's North Shore (Hollows Resort, Jonestown area).",
-    "partnerSlug": null
+    "partnerSlug": "hill-country-lakes-rentals"
   },
   {
     "name": "Management With Love",
@@ -610,7 +610,7 @@
     },
     "logoUrl": null,
     "description": "Boutique manager of ~10 lakeside vacation homes in Point Venture on Lake Travis's north shore.",
-    "partnerSlug": null
+    "partnerSlug": "management-with-love"
   },
   {
     "name": "Bach Bros Properties",
@@ -629,7 +629,7 @@
     },
     "logoUrl": "https://le-de.cdn-website.com/08ade2e0ba474aa58a76e4d7bad4d58f/dms3rep/multi/opt/Bach-Bros-Logos--286-29-320w.png",
     "description": "Family-owned Hill Country STR manager with Austin inventory; AirDNA #1 US property manager for 2025.",
-    "partnerSlug": null
+    "partnerSlug": "bach-bros-properties"
   },
   {
     "name": "Lazy H Retreats",
@@ -648,7 +648,7 @@
     },
     "logoUrl": "https://www.lazyhretreats.com/wp-content/uploads/2024/12/LHR-circle-logo-transparent-color-1-e1733850393429.png",
     "description": "Hill Country vacation rental manager whose service area includes Austin, Kyle, Canyon Lake, New Braunfels.",
-    "partnerSlug": null
+    "partnerSlug": "lazy-h-retreats"
   },
   {
     "name": "One Fine BnB",
@@ -667,7 +667,7 @@
     },
     "logoUrl": "https://onefinebnb.com/wp-content/uploads/2024/09/Join-the-One-Fine-Bnb-Family-and-Start-Growing-Your-Business-Today-.webp",
     "description": "Austin-headquartered flat 10%-fee Airbnb management company using AI-driven optimization across 50+ platforms.",
-    "partnerSlug": null
+    "partnerSlug": "one-fine-bnb"
   },
   {
     "name": "MasterHost (Austin)",
@@ -686,7 +686,7 @@
     },
     "logoUrl": null,
     "description": "International Airbnb management company (est. 2015) with a large claimed Austin portfolio; contact via web form.",
-    "partnerSlug": null
+    "partnerSlug": "masterhost-austin"
   },
   {
     "name": "Twinity Properties",
@@ -705,7 +705,7 @@
     },
     "logoUrl": "https://twinityproperties.com/wp-content/uploads/2023/05/tp-logo-primary.svg",
     "description": "Texas STR management firm handling housekeeping, pricing, permits, and tax remittance for Austin owners.",
-    "partnerSlug": null
+    "partnerSlug": "twinity-properties"
   },
   {
     "name": "Guestable",
@@ -724,7 +724,7 @@
     },
     "logoUrl": "https://www.guestable.com/wp-content/uploads/2018/07/Guestable_Logo.svg",
     "description": "Data-driven multi-city Airbnb management company with a dedicated Austin operation (HQ Toronto — verify local team).",
-    "partnerSlug": null
+    "partnerSlug": "guestable"
   },
   {
     "name": "Nest Vacation Rentals",
@@ -743,7 +743,7 @@
     },
     "logoUrl": "https://www.nestvr.com/wp-content/uploads/2016/02/logo-254x122-300x157-215x113.jpg",
     "description": "Boutique luxury Austin vacation rental company — downtown bungalows to Hill Country estates.",
-    "partnerSlug": null
+    "partnerSlug": "nest-vacation-rentals"
   },
   {
     "name": "Casago Austin",
@@ -762,7 +762,7 @@
     },
     "logoUrl": "https://casago.com/images/logos/casago-logo.svg",
     "description": "Locally owned Casago franchise offering full-service vacation rental management in Austin/Round Rock.",
-    "partnerSlug": null
+    "partnerSlug": "casago-austin"
   },
   {
     "name": "Awning",
@@ -781,7 +781,7 @@
     },
     "logoUrl": "https://cdn.prod.website-files.com/6124d988b927e9bf3788a541/6391252247a38f08f0fabb25_awning-logo-new.svg",
     "description": "Tech-enabled nationwide Airbnb/STR management company (from 10% of revenue) with Austin operators.",
-    "partnerSlug": null
+    "partnerSlug": "awning"
   },
   {
     "name": "Locale Hospitality",
@@ -800,7 +800,7 @@
     },
     "logoUrl": null,
     "description": "Austin-founded (2016) tech-forward hospitality company operating furnished apartments/extended stays across Austin.",
-    "partnerSlug": null
+    "partnerSlug": "locale-hospitality"
   },
   {
     "name": "Restoration 43",
@@ -819,7 +819,7 @@
     },
     "logoUrl": "https://static.wixstatic.com/media/7be61d_c78818483e0c45ed8edaad2ccaa48a62~mv2.png/v1/fill/w_141,h_98,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Website%20Logo.png",
     "description": "TREC-registered short/mid-term rental management team in Austin, Houston, and Dallas with 24/7 support.",
-    "partnerSlug": null
+    "partnerSlug": "restoration-43"
   },
   {
     "name": "HostStarter",
@@ -838,7 +838,7 @@
     },
     "logoUrl": "https://hoststarter.net/wp-content/uploads/2026/04/hoststarter-logo-v2.png",
     "description": "Flat-fee (12.5%) full-service STR management with a dedicated Austin market incl. licensing support.",
-    "partnerSlug": null
+    "partnerSlug": "hoststarter"
   },
   {
     "name": "Clear Stay Properties",
@@ -857,7 +857,7 @@
     },
     "logoUrl": "https://images.squarespace-cdn.com/content/v1/637f7dd1f0e600118df48095/f17acbf7-f349-45b9-baf4-22072ccf0c7c/CS_Logo_RGB_03.png?format=1500w",
     "description": "Boutique design-driven STR management serving Austin, Dripping Springs, and the Hill Country (contact via discovery-call form).",
-    "partnerSlug": null
+    "partnerSlug": "clear-stay-properties"
   },
   {
     "name": "JW Properties (Lake Travis)",
@@ -876,7 +876,7 @@
     },
     "logoUrl": "https://laketravisrental.net/website/agent_zseries_files/3939/logo.png",
     "description": "Owner-operated luxury waterfront vacation rental + real estate company on Lake Travis and Lake Austin.",
-    "partnerSlug": null
+    "partnerSlug": "jw-properties-lake-travis"
   },
   {
     "name": "iTrip Vacations Austin",
@@ -895,7 +895,7 @@
     },
     "logoUrl": "http://pittsburgh.itrip.co/wp-content/uploads/sites/149/2025/08/Vrbo-Logo.png",
     "description": "Locally owned iTrip franchise managing vacation rentals across greater Austin (Round Rock, Lago Vista, Lakeway, Dripping Springs) on 80+ channels.",
-    "partnerSlug": null
+    "partnerSlug": "itrip-vacations-austin"
   },
   {
     "name": "Via Luxury Rentals",
@@ -914,7 +914,7 @@
     },
     "logoUrl": "https://vialuxuryrentals.com/wp-content/uploads/2025/12/cropped-Via-Luxury-Rentals-Logo-512x512-1-180x180.png",
     "description": "Boutique Austin luxury STR manager founded by ex-Airbnb Superhosts (East Austin HQ).",
-    "partnerSlug": null
+    "partnerSlug": "via-luxury-rentals"
   },
   {
     "name": "Austin BNB Management",
@@ -933,7 +933,7 @@
     },
     "logoUrl": "https://4b11d1dded.clvaw-cdnwnd.com/a9bbcea42d0a88d79a3d1da2f40e472e/200000019-7c5207c523/Correct_Area_logo-01-01.PNG?ph=4b11d1dded",
     "description": "Local '100% hands-off' STR manager (W 10th St); claims $3.1M+ earned for clients, Superhost status on all properties.",
-    "partnerSlug": null
+    "partnerSlug": "austin-bnb-management"
   },
   {
     "name": "PMI ATX Properties",
@@ -952,7 +952,7 @@
     },
     "logoUrl": "https://pmi-resources.nesthub.com/images/logos/PMI-ATX-Properties.png",
     "description": "Locally owned PMI franchise managing STR vacation rentals + residential properties in Austin.",
-    "partnerSlug": null
+    "partnerSlug": "pmi-atx-properties"
   },
   {
     "name": "ATX Luxury Rentals",
@@ -971,7 +971,7 @@
     },
     "logoUrl": "https://atxluxuryrentals.com/wp-content/uploads/2025/03/045-431259-16012-Canard-Circle20221119_0066_12020489.webp",
     "description": "Austin Airbnb management specialist — furnishing, revenue optimization, STR licensing, cleaning, maintenance.",
-    "partnerSlug": null
+    "partnerSlug": "atx-luxury-rentals"
   },
   {
     "name": "Placemakr (Austin)",
@@ -990,7 +990,7 @@
     },
     "logoUrl": "https://www.placemakr.com/hubfs/logo.svg",
     "description": "Apartment-hotel operator with flexible furnished stays in downtown Austin (Placemakr Downtown + Littlefield Lofts); corporate/group housing arm.",
-    "partnerSlug": null
+    "partnerSlug": "placemakr-austin"
   },
   {
     "name": "Kasa (Austin)",
@@ -1009,7 +1009,7 @@
     },
     "logoUrl": "https://kasa.com/favicons/apple-icon-180x180.png",
     "description": "Tech-enabled flexible-stay operator running furnished apartment-hotels in Austin incl. Kasa Downtown Austin.",
-    "partnerSlug": null
+    "partnerSlug": "kasa-austin"
   },
   {
     "name": "Mint House (Austin)",
@@ -1028,7 +1028,7 @@
     },
     "logoUrl": "https://framerusercontent.com/images/FB6WD3lPzOcxWjBGCgbTjOIj0.jpg",
     "description": "Apartment-hotel brand with a 25-unit South Congress property (1007 S Congress Ave).",
-    "partnerSlug": null
+    "partnerSlug": "mint-house-austin"
   },
   {
     "name": "Log Country Cove",
@@ -1047,7 +1047,7 @@
     },
     "logoUrl": "https://logcountrycove.com/wp-content/uploads/2020/05/LCC-2020-Logo-003-e1589429010608.png",
     "description": "Waterfront cabin resort on Lake LBJ (Burnet) — 37 furnished units, popular Austin group-getaway destination.",
-    "partnerSlug": null
+    "partnerSlug": "log-country-cove"
   },
   {
     "name": "Blueground (Austin)",
@@ -1066,7 +1066,7 @@
     },
     "logoUrl": "https://cdn.theblueground.com/website/static/img/logo-icon-wordmark-blue-main.e8343518eda1a7cc3f03.svg",
     "description": "Global furnished-apartment operator with premium month-to-month stays across Austin (corporate/mid-term skew).",
-    "partnerSlug": null
+    "partnerSlug": "blueground-austin"
   },
   {
     "name": "Limestone Country Properties",
@@ -1085,6 +1085,6 @@
     },
     "logoUrl": null,
     "description": "Hill Country property manager covering vacation + residential rentals in Canyon Lake and New Braunfels.",
-    "partnerSlug": null
+    "partnerSlug": "limestone-country-properties"
   }
 ]

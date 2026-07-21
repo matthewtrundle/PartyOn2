@@ -14,6 +14,7 @@
  */
 
 import type { DeliveryContextType } from '@/lib/group-orders-v2/types';
+import { findProspectBySlug } from '@/lib/partners/prospect-datasets';
 
 /** One bookable rental property belonging to an STR partner. */
 export interface StrProperty {
@@ -104,6 +105,23 @@ const STR_PARTNERS: Record<string, StrPartnerConfig> = {
       embedUrl: '/partners-embed/premier-quote.html',
     },
   },
+  // The MODEL page — identical to the Lynn's Lodging layout but with the
+  // placeholder business name "Company Name" (backed by a DRAFT affiliate
+  // with partnerSlug 'partner-template'). Reference/demo only; never send
+  // this URL to a real partner.
+  'partner-template': {
+    code: 'PARTNERTEMPLATE',
+    slug: 'partner-template',
+    name: 'Company Name',
+    deliveryContextType: 'HOUSE',
+    allowCustomAddress: true,
+    properties: [],
+    secondTab: {
+      leftLabel: 'Alcohol Delivery',
+      label: 'Party Boat Rentals',
+      embedUrl: '/partners-embed/premier-quote.html',
+    },
+  },
 };
 
 /** Normalize an affiliate code for comparison (uppercase, strip dashes). */
@@ -111,12 +129,45 @@ function normalizeCode(code: string): string {
   return code.toUpperCase().replace(/-/g, '');
 }
 
+/**
+ * Lynn's Lodging is THE template for partner-page replication (Brian,
+ * 2026-07-21): the two-tab layout with the POD delivery page on the left
+ * and the Premier Party Cruises quote mirror on the right. Every STR
+ * partner page not explicitly configured above inherits this via
+ * defaultStrConfigFor() below.
+ */
+export const LYNNS_TEMPLATE_SECOND_TAB: PartnerSecondTab = {
+  leftLabel: 'Alcohol Delivery',
+  label: 'Party Boat Rentals',
+  embedUrl: '/partners-embed/premier-quote.html',
+};
+
+/**
+ * Build the Lynn's-template config for an STR prospect that has a live
+ * partner page (partnerSlug) but no hand-written registry entry. Keeps
+ * "add an STR partner" down to: bulk-import the affiliate + slug in the
+ * prospect JSON — no code change per partner.
+ */
+function defaultStrConfigFor(slug: string): StrPartnerConfig | null {
+  const prospect = findProspectBySlug(slug);
+  if (!prospect || prospect.vertical !== 'str') return null;
+  return {
+    code: normalizeCode(slug),
+    slug,
+    name: prospect.name,
+    deliveryContextType: 'HOUSE',
+    allowCustomAddress: true,
+    properties: [],
+    secondTab: LYNNS_TEMPLATE_SECOND_TAB,
+  };
+}
+
 /** Look up an STR partner by its route slug (e.g. "five-star"). */
 export function getStrPartnerBySlug(
   slug: string | null | undefined
 ): StrPartnerConfig | null {
   if (!slug) return null;
-  return STR_PARTNERS[slug] ?? null;
+  return STR_PARTNERS[slug] ?? defaultStrConfigFor(slug);
 }
 
 /** Look up an STR partner by affiliate code (normalized match). */

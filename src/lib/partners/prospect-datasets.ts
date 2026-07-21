@@ -50,3 +50,8 @@ export function findProspectByWebsite(website: string): ProspectWithVertical | n
   const key = websiteKey(website);
   return getAllProspects().find((p) => websiteKey(p.website) === key) ?? null;
 }
+
+/** Find one prospect by its partner-page slug (set once the page exists). */
+export function findProspectBySlug(slug: string): ProspectWithVertical | null {
+  return getAllProspects().find((p) => p.partnerSlug === slug) ?? null;
+}
