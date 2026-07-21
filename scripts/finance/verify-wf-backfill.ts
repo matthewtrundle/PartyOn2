@@ -69,12 +69,13 @@ async function main(): Promise<void> {
   console.log(`\nSeam ${seamISO} (statement latest ${stmtMax.toISOString().slice(0, 10)}): statement rows on/after seam=${stmtAfterSeam} (want 0), ` +
     `live rows within statement range=${liveInRange.length} (want 0), date+amount collisions=${collisions} (want 0)  ${seamOk ? '✓ CLEAN' : '⚠️  REVIEW'}`);
 
-  // --- Newly-covered months' rollups ---------------------------------------
+  // --- Newly-covered months' rollups (Jan 2023 → the Plaid seam month) -------
   const rollups = await prisma.financeMonthlyRollup.findMany({
-    where: { year: 2024, month: { gte: 1, lte: 7 } }, orderBy: [{ year: 'asc' }, { month: 'asc' }],
+    where: { OR: [{ year: 2023 }, { year: 2024, month: { lte: 7 } }] },
+    orderBy: [{ year: 'asc' }, { month: 'asc' }],
     select: { year: true, month: true, revenueCents: true, cogsCents: true, netIncomeCents: true, dataHealth: true },
   });
-  console.log('\n=== 2024-01 → 2024-07 rollups (the statement-enriched months) ===');
+  console.log('\n=== 2023-01 → 2024-07 rollups (the statement-enriched months) ===');
   console.log('month     revenue    COGS       net        reliable  src   ownerCap   loanProc   otherInc   reconciled');
   for (const r of rollups) {
     const h = (r.dataHealth ?? {}) as Record<string, unknown>;

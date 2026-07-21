@@ -173,6 +173,23 @@ describe('parseWfActivityCsv — dedupe key stability (PDF ↔ CSV overlap)', ()
     expect(a.dedupeKey).toBe(b.dedupeKey);
   });
 
+  it('keeps two genuinely-identical rows (duplicate ATM fees) as DISTINCT keys, not one', () => {
+    // Older statements have rows with no unique auth code — two $5 ATM fees on
+    // the same day are two real fees and must not collapse (would undercount).
+    const csv = [
+      HEADER,
+      '"09/29/2023","Non-Wells Fargo ATM Transaction Fee","-5.00","","Posted"',
+      '"09/29/2023","Non-Wells Fargo ATM Transaction Fee","-5.00","","Posted"',
+    ].join('\n');
+    const { rows } = parseWfActivityCsv(csv);
+    expect(rows).toHaveLength(2);
+    expect(rows[0].dedupeKey).not.toBe(rows[1].dedupeKey);
+    // First occurrence keeps the BARE key (prior imports stay idempotent); only
+    // the second gets a suffix.
+    expect(rows[0].dedupeKey).not.toContain('|#');
+    expect(rows[1].dedupeKey).toContain('|#1');
+  });
+
   it('distinguishes two same-day same-amount checks by check number', () => {
     const csv = [
       HEADER,

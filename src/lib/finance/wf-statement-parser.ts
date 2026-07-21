@@ -1,7 +1,7 @@
 /**
  * Pure parser for Wells Fargo "Download Account Activity" CSV rows — used to
- * extend the bank-truth P&L back before Plaid's 730-day ceiling (Jan 2024, the
- * earliest WF would release; 2023 is unreachable). See
+ * extend the bank-truth P&L back before Plaid's 730-day ceiling, from the
+ * monthly statements Allan downloads (back to at least Jan 2023). See
  * scripts/finance/import-wf-statements.ts for the operator-gated importer and
  * scripts/finance/extract-wf-pdf.py for the PDF→CSV step that feeds this the
  * same column shape.
@@ -54,10 +54,14 @@ export interface WfStatementRow {
   pfcPrimaryHint: PfcPrimaryHint | null;
   /**
    * Deterministic idempotency + cross-source dedupe key:
-   * `dateISO|signedCents|normalizedDescriptor|checkNumber`. Same real
-   * transaction from a PDF statement and from the CSV normalizes to the same
-   * key (WF descriptors carry unique auth/ref codes; checks add their number),
-   * so re-runs and PDF↔CSV overlaps never double-count.
+   * `dateISO|signedCents|normalizedDescriptor|checkNumber`, plus a `|#N` suffix
+   * for the 2nd+ occurrence of an otherwise-identical key WITHIN the file. Most
+   * WF descriptors carry unique auth/ref/check codes so the base key is already
+   * unique; but a handful of older rows don't (e.g. two "Non-Wells Fargo ATM
+   * Transaction Fee" of the same amount on the same day are two real fees), and
+   * without the suffix they would collapse and undercount. The suffix is only
+   * added from the 2nd occurrence on, so single rows keep their bare key and
+   * stay idempotent across re-runs and prior imports.
    */
   dedupeKey: string;
 }
@@ -162,6 +166,9 @@ export function parseWfActivityCsv(csvText: string): ParseWfCsvResult {
   const rows: WfStatementRow[] = [];
   const skipped: Array<{ line: number; reason: string; raw: string }> = [];
   const lines = csvText.split(/\r\n|\n|\r/);
+  // Occurrence counter per base key, so two genuinely-distinct rows that share
+  // date+amount+descriptor+check (e.g. duplicate ATM fees) get distinct keys.
+  const keyCounts = new Map<string, number>();
 
   for (let i = 0; i < lines.length; i++) {
     const raw = lines[i];
@@ -198,12 +205,17 @@ export function parseWfActivityCsv(csvText: string): ParseWfCsvResult {
     const plaidAmountCents = -wfCents;
     const isInflow = plaidAmountCents < 0;
     const pfcPrimaryHint = pfcHintFor(descriptor, isInflow);
-    const dedupeKey = [
+    const baseKey = [
       dateISO,
       plaidAmountCents,
       normalizeDescriptor(descriptor),
       checkNumber ?? '',
     ].join('|');
+    const occ = keyCounts.get(baseKey) ?? 0;
+    keyCounts.set(baseKey, occ + 1);
+    // Bare key for the first occurrence (keeps prior imports idempotent); a
+    // suffix only for genuine duplicates.
+    const dedupeKey = occ === 0 ? baseKey : `${baseKey}|#${occ}`;
 
     rows.push({
       dateISO,

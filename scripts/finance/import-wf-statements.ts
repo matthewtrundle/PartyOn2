@@ -218,6 +218,22 @@ function printSummary(staged: StagedRow[]): void {
   for (const s of hinted) {
     console.log(`  ${s.row.dateISO}  ${fmt(s.row.plaidAmountCents).padStart(12)}  [${s.row.pfcPrimaryHint}→${s.bankDerivedCategory}]  ${s.row.descriptor.slice(0, 48)}`);
   }
+
+  // Content-identical rows kept as DISTINCT (same date+amount+descriptor, no
+  // unique auth code — e.g. two ATM fees for two real withdrawals). These are
+  // the ONLY rows a file-level duplicate could sneak in through, so list every
+  // group for the operator to confirm each is genuinely N real transactions and
+  // not a doubled statement, BEFORE --apply.
+  const groups = new Map<string, StagedRow[]>();
+  for (const s of staged) {
+    const base = s.row.dedupeKey.split('|#')[0];
+    (groups.get(base) ?? groups.set(base, []).get(base)!).push(s);
+  }
+  const dups = [...groups.values()].filter((g) => g.length > 1).sort((a, b) => a[0].row.dateISO.localeCompare(b[0].row.dateISO));
+  console.log(`\n=== Content-identical rows kept as distinct (${dups.length} groups) — confirm each is N REAL transactions, not a doubled statement ===`);
+  for (const g of dups) {
+    console.log(`  x${g.length}  ${g[0].row.dateISO}  ${fmt(g[0].row.plaidAmountCents).padStart(12)}  ${g[0].row.descriptor.slice(0, 52)}`);
+  }
 }
 
 /** Prove the seam cut is clean, WITHOUT a tautology. Two independent, meaningful
