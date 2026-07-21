@@ -35,7 +35,7 @@ export default function PartnerPageTabs({
     // embed-code.html does the same) — appended client-side so the
     // referring partner page URL is captured.
     if (!embedLoaded) {
-      const u = new URL(embedUrl);
+      const u = new URL(embedUrl, window.location.origin);
       u.searchParams.set('sourceUrl', window.location.href);
       u.searchParams.set('sourceType', 'embedded_quote_builder');
       setEmbedSrc(u.toString());
@@ -47,7 +47,7 @@ export default function PartnerPageTabs({
   // Premier's embed posts its content height (quote-builder-resize) so the
   // frame can grow instead of double-scrolling.
   useEffect(() => {
-    const origin = new URL(embedUrl).origin;
+    const origin = new URL(embedUrl, window.location.origin).origin;
     const onMessage = (event: MessageEvent) => {
       if (event.origin !== origin) return;
       const data = event.data as { type?: string; height?: number };

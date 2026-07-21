@@ -93,14 +93,15 @@ const STR_PARTNERS: Record<string, StrPartnerConfig> = {
     // Pilot for the two-tab partner page (Brian 2026-07-21): POD delivery
     // on the left, Premier Party Cruises quote embed on the right. Once
     // approved, duplicate to the other STR/bartending partners.
-    // Embed target is Premier's PURPOSE-BUILT embed app (their repo ships
-    // this exact URL in embed-code.html, with source tracking). The
-    // marketing page premierpartycruises.com/quote crashes when framed —
-    // verified in real Chrome — so never point the tab there.
+    // Same-origin MIRROR of premierpartycruises.com/quote (Brian's own
+    // site) — public/partners-embed/premier-quote.html serves the exact
+    // page with a <base> tag so all assets/scripts (incl. the Xola
+    // checkout slide-out) load live from Premier. Refresh the mirror by
+    // re-running the curl+inject step in the PR that added it.
     secondTab: {
       leftLabel: 'Alcohol Delivery',
       label: 'Party Boat Rentals',
-      embedUrl: 'https://booking.premierpartycruises.com/quote-v2',
+      embedUrl: '/partners-embed/premier-quote.html',
     },
   },
 };

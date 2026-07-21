@@ -180,6 +180,26 @@ const nextConfig: NextConfig = {
   },
 
   // 301 Redirects for SEO (from SEMrush audit - January 2025)
+  async rewrites() {
+    return [
+      // Same-origin proxy for the Premier Party Cruises quote-page mirror
+      // (public/partners-embed/premier-quote.html — Brian's own site,
+      // mirrored per his direction). Premier's Vite build references
+      // /assets/* + /attached_assets/* root-relative, and their CDN sends
+      // no CORS headers, so <base>-loading the module scripts cross-origin
+      // fails. Proxying through our origin sidesteps CORS entirely.
+      // Neither path exists in POD (public/ has no assets/attached_assets).
+      {
+        source: '/assets/:path*',
+        destination: 'https://premierpartycruises.com/assets/:path*',
+      },
+      {
+        source: '/attached_assets/:path*',
+        destination: 'https://premierpartycruises.com/attached_assets/:path*',
+      },
+    ];
+  },
+
   async redirects() {
     return [
       // 2026-06-10 archived + orphaned product URL sweep — see
@@ -566,12 +586,39 @@ const nextConfig: NextConfig = {
       // rule above would cause browsers to block embedding). Modern
       // browsers honor CSP `frame-ancestors *` instead.
       {
-        source: '/:path((?!admin|ops).*)',
+        source: '/:path((?!admin|ops|partners-embed).*)',
         headers: [
           ...commonSecurityHeaders,
           {
             key: 'Content-Security-Policy',
             value: [...baseCspDirectives, 'frame-ancestors *'].join('; '),
+          },
+        ],
+      },
+      // ─── PARTNER EMBED MIRRORS — /partners-embed/* ─────────────────
+      // Same-origin mirrors of partner booking pages (e.g. Premier Party
+      // Cruises' /quote incl. its Xola checkout), shown inside the
+      // two-tab partner pages. These run the partner's own scripts via a
+      // <base> tag pointing at their origin, so they need a relaxed CSP
+      // scoped to this path only. noindex; only POD may frame them.
+      {
+        source: '/partners-embed/:path*',
+        headers: [
+          ...commonSecurityHeaders,
+          { key: 'X-Robots-Tag', value: 'noindex, nofollow' },
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self' https:",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https:",
+              "style-src 'self' 'unsafe-inline' https:",
+              "img-src 'self' data: blob: https:",
+              "font-src 'self' data: https:",
+              "connect-src 'self' https: wss:",
+              "frame-src https:",
+              "base-uri 'self' https://premierpartycruises.com",
+              "frame-ancestors 'self'",
+            ].join('; '),
           },
         ],
       },
