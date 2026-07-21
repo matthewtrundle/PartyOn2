@@ -17,6 +17,7 @@
  */
 
 import { NextResponse } from 'next/server';
+import { requireOpsAuth } from '@/lib/auth/ops-session';
 import { prisma } from '@/lib/database/client';
 import { mirrorLeadToCrm } from '@/lib/leads/crm-mirror';
 import {
@@ -39,6 +40,8 @@ function splitName(contactName: string | null): { first: string | null; last: st
 }
 
 export async function POST(): Promise<NextResponse> {
+  const auth = await requireOpsAuth();
+  if (auth instanceof NextResponse) return auth;
   try {
     const prospects = getAllProspects();
 
@@ -156,6 +159,8 @@ export async function POST(): Promise<NextResponse> {
  * { leadId, tags, campaign: 'none'|'enrolled'|'sent'|'replied' }.
  */
 export async function GET(): Promise<NextResponse> {
+  const auth = await requireOpsAuth();
+  if (auth instanceof NextResponse) return auth;
   try {
     const leads = await prisma.lead.findMany({
       where: { tags: { has: TAG_PARTNER_PROSPECT } },

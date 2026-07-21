@@ -13,6 +13,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { requireOpsAuth } from '@/lib/auth/ops-session';
 import { prisma } from '@/lib/database/client';
 import { enqueueJourney } from '@/lib/followups/enqueue';
 import { TAG_PARTNER_PROSPECT } from '@/lib/leads/partner-tags';
@@ -26,6 +27,8 @@ const bodySchema = z.object({
 });
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const auth = await requireOpsAuth();
+  if (auth instanceof NextResponse) return auth;
   let body: z.infer<typeof bodySchema>;
   try {
     body = bodySchema.parse(await request.json());

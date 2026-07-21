@@ -16,6 +16,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { requireOpsAuth } from '@/lib/auth/ops-session';
 import { sendEmailDetailed } from '@/lib/email/resend-client';
 import {
   DEFAULT_COPY,
@@ -34,6 +35,8 @@ const TEST_INBOX = 'info@partyondelivery.com';
 const bodySchema = z.object({ website: z.string().url() });
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  const auth = await requireOpsAuth();
+  if (auth instanceof NextResponse) return auth;
   let body: z.infer<typeof bodySchema>;
   try {
     body = bodySchema.parse(await request.json());
