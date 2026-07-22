@@ -28,13 +28,13 @@ cruises have Bluetooth speakers, bring your playlist. **Getting there** — we r
 Fetii group rideshare, code PARTYON gets 25% off; Fetii rides can only be scheduled
 starting 48 hours before pickup; free parking on site too. Still Premier's domain:
 boat photos, which-boat/fleet questions, captain contact, amenity specifics — be honest
-that POD is "just the drinks," point to Premier's site or their booking confirmation,
-and flag the conversation so a human can forward it if the customer strikes out. Never
-guess Premier's policies.
+that POD is "just the drinks," and point them to Premier directly: text Premier at
+512-488-5892 for photos, which-boat/fleet, and boat amenities. Never guess Premier's
+policies.
 
 ## SMS
 
-Hey {{first_name}}! Music: disco cruises have a DJ, private cruises have Bluetooth — bring your playlist! Rides: we recommend Fetii — code PARTYON = 25% off (schedulable 48 hrs out). Photos/boat questions are Premier's — check your booking confirmation, and reply here if you strike out.
+Hey {{first_name}}! Music: disco cruises have a DJ, private cruises have Bluetooth — bring your playlist! Rides: we recommend Fetii — code PARTYON = 25% off (schedulable 48 hrs out). Photos/boat questions are Premier's — text them directly at 512-488-5892.
 
 ## Email
 
@@ -49,8 +49,7 @@ Happy to help with the boat-day details we know:
   also a free parking lot at the marina.
 
 Boat photos, which boat you'll be on, and boat-specific amenities are run by Premier
-Party Cruises — your booking confirmation has their contact, and I've flagged your
-question so someone on our side can help chase it down if you don't hear back.
+Party Cruises — text them directly at 512-488-5892 and they'll get you sorted.
 
 Party On Delivery
 
@@ -59,13 +58,12 @@ Party On Delivery
 Music: disco cruises have a DJ on board; private cruises have Bluetooth speakers (bring
 your playlist). Rides: we recommend Fetii — code PARTYON gets 25% off, and rides can be
 scheduled starting 48 hours before pickup. Boat photos and which-boat questions are
-Premier's side — check your booking confirmation, and if you strike out, text
-(737) 371-9700 and a human will help chase it.
+Premier's — text Premier directly at 512-488-5892 (they run the boat side).
 
 ## Voice
 
 Answer music + Fetii directly; for photos/boat specifics say "that's handled by Premier
-Party Cruises — we do the drink deliveries" and offer to take a message.
+Party Cruises — we do the drink deliveries" and give Premier's number, 512-488-5892.
 
 ## Notes for Allan
 
@@ -74,3 +72,5 @@ Party Cruises — we do the drink deliveries" and offer to take a message.
   photos/fleet/amenities stay redirects per the same round.
 - The Fetii PARTYON code + 48-hour scheduling rule came from you directly — if the
   Fetii deal changes, update fact `fetii-discount`.
+- Photos/boat-ops now route to Premier's number 512-488-5892 (operator, 2026-07-07),
+  not the POD line — see fact `premier-phone`.

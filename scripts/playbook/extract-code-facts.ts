@@ -31,15 +31,17 @@ const facts: GeneratedFact[] = [];
 
 for (const zone of DELIVERY_ZONES) {
   const slug = zone.name.toLowerCase().replace(/\s+/g, '-');
+  // Operator decision 2026-07-07 (Wayne tuning): the customer-facing STATEMENT states
+  // only the base delivery fee + order minimum. The express rate and free-delivery
+  // threshold are intentionally omitted so the auto-reply bot doesn't proactively
+  // advertise them (express fee is not a firmly-decided customer-facing number, and
+  // Allan doesn't want free-over-threshold advertised to every visitor). The full
+  // numbers are still preserved in `data` for any other consumer / checkout logic.
   facts.push({
     id: `delivery-zone-${slug}`,
     statement:
-      `${zone.name} (${zone.description}): delivery fee ${money(zone.baseRate)} ` +
-      `(express ${money(zone.expressRate)}), order minimum ${money(zone.minimumOrder)}, ` +
-      (zone.freeDeliveryThreshold
-        ? `free standard delivery on orders over ${money(zone.freeDeliveryThreshold)}. `
-        : 'no free-delivery threshold. ') +
-      `${zone.zipCodes.length} zip codes.`,
+      `${zone.name} (${zone.description}): delivery fee ${money(zone.baseRate)}, ` +
+      `order minimum ${money(zone.minimumOrder)}. ${zone.zipCodes.length} zip codes.`,
     status: 'verified',
     source: 'src/lib/delivery/rates.ts (DELIVERY_ZONES)',
     data: {
@@ -52,13 +54,9 @@ for (const zone of DELIVERY_ZONES) {
   });
 }
 
-facts.push({
-  id: 'delivery-express-no-free-threshold',
-  statement:
-    'Free-delivery thresholds apply to standard delivery only — express delivery is always charged at the express rate.',
-  status: 'verified',
-  source: 'src/lib/delivery/rates.ts (calculateDeliveryFee)',
-});
+// NOTE: the former `delivery-express-no-free-threshold` fact was removed 2026-07-07 —
+// stating it would reintroduce both the express rate and the free-delivery threshold
+// into the bot's prompt, which is exactly what the operator asked to keep out.
 
 facts.push({
   id: 'delivery-outside-service-area',

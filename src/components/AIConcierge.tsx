@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
+import { getAttribution } from '@/lib/analytics/attribution'
 
 interface Message {
   id: string
@@ -19,8 +20,32 @@ interface AIConciergeProps {
 export default function AIConcierge({ mode = 'normal', isOpen: controlledIsOpen, onClose }: AIConciergeProps) {
   const [internalIsOpen, setInternalIsOpen] = useState(false)
   const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : internalIsOpen
+  const isControlled = controlledIsOpen !== undefined
   const router = useRouter()
-  
+  const pathname = usePathname()
+
+  // Per-page-session conversation id so the backend can thread every Wayne turn
+  // into one ChatConversation row. Held in a ref (not localStorage) and minted
+  // lazily on the first send. It deliberately does NOT persist across reloads or
+  // devices: a permanent shared localStorage id let a second person on a shared
+  // browser inherit the first person's conversation (their PII would land on the
+  // first person's lead) and let a returning visit overwrite the earlier
+  // transcript (security review 2026-07-22, MEDIUM-1 / transcript-integrity).
+  // Because this component stays mounted for the life of the page (WidgetMenu
+  // never unmounts it), the id + full message history survive open/close and
+  // back-to-menu within a visit — capture.ts's "client posts the full transcript"
+  // assumption holds; a page reload correctly starts a fresh conversation row.
+  const conversationIdRef = useRef<string | null>(null)
+  const getConversationId = (): string => {
+    if (!conversationIdRef.current) {
+      conversationIdRef.current =
+        typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+          ? crypto.randomUUID()
+          : `wayne_${Date.now()}_${Math.random().toString(36).slice(2)}`
+    }
+    return conversationIdRef.current
+  }
+
   const handleOpen = () => {
     if (controlledIsOpen === undefined) {
       setInternalIsOpen(true)
@@ -114,7 +139,11 @@ export default function AIConcierge({ mode = 'normal', isOpen: controlledIsOpen,
     setIsLoading(true)
 
     try {
-      // TODO: Replace with actual OpenRouter API call
+      // Attach capture context so /api/chat can persist the transcript, run
+      // escalation detection, and create a Lead when Wayne collects contact info.
+      // The backend only persists when conversationId is a string (legacy embeds
+      // that omit it are unaffected).
+      const attribution = getAttribution()
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
@@ -125,7 +154,12 @@ export default function AIConcierge({ mode = 'normal', isOpen: controlledIsOpen,
             role: m.role,
             content: m.content
           })),
-          mode
+          mode,
+          conversationId: getConversationId(),
+          page: pathname ?? undefined,
+          utmSource: attribution?.utmSource ?? undefined,
+          utmMedium: attribution?.utmMedium ?? undefined,
+          utmCampaign: attribution?.utmCampaign ?? undefined,
         }),
       })
 
@@ -167,7 +201,10 @@ export default function AIConcierge({ mode = 'normal', isOpen: controlledIsOpen,
 
   return (
     <>
-      {/* Chat Button - Subtle Help Box - Hidden on Mobile */}
+      {/* Chat Button — only rendered when uncontrolled. When a parent controls
+          open/close (e.g. the site-wide WidgetMenu), the parent owns the FAB and
+          positioning; suppressing this avoids a duplicate floating button. */}
+      {!isControlled && (
       <div className="fixed bottom-6 right-6 z-50 hidden md:block">
         {!isOpen ? (
           <button
@@ -195,11 +232,12 @@ export default function AIConcierge({ mode = 'normal', isOpen: controlledIsOpen,
           </button>
         )}
       </div>
+      )}
 
       {/* Chat Panel - Subtle Help Box */}
       {isOpen && (
-        <div className="fixed bottom-20 right-6 w-[480px] h-[520px] bg-white rounded-2xl shadow-xl z-50 
-                      transform scale-100 border border-gray-200">
+        <div className={`fixed bottom-20 right-6 w-[min(480px,calc(100vw-2rem))] h-[min(520px,calc(100vh-7rem))] bg-white rounded-2xl shadow-xl
+                      transform scale-100 border border-gray-200 ${isControlled ? 'z-[150]' : 'z-50'}`}>
           {/* Header - Clean ElevenLabs Style */}
           <div className="p-6 border-b border-gray-100">
             <div className="flex items-center justify-between">

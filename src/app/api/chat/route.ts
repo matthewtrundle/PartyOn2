@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import { readFile } from 'fs/promises'
 import { join } from 'path'
+import { persistChatTurn } from '@/lib/chat/capture'
 
 // Cache the prompt content to avoid reading file on every request
 let cachedBasePrompt: string | null = null
@@ -29,7 +30,16 @@ async function loadBasePrompt(): Promise<string> {
 
 export async function POST(request: NextRequest) {
   try {
-    const { messages, mode = 'normal' } = await request.json()
+    const {
+      messages,
+      mode = 'normal',
+      // Capture context (optional — legacy callers omit these and are unaffected).
+      conversationId,
+      page,
+      utmSource,
+      utmMedium,
+      utmCampaign,
+    } = await request.json()
 
     const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY
     
@@ -83,6 +93,23 @@ export async function POST(request: NextRequest) {
     
     const assistantMessage = data.choices?.[0]?.message?.content || data.error?.message || 'Sorry, I had trouble processing that. How can I help you with your Austin party?'
 
+    // Persist the transcript + run capture/escalation AFTER responding, so it
+    // never adds latency to the reply. Only when the client supplies a
+    // conversationId (the widget does; legacy embeds don't → unchanged behavior).
+    if (conversationId && typeof conversationId === 'string' && Array.isArray(messages)) {
+      const transcript = [...messages, { role: 'assistant', content: assistantMessage }]
+      after(() =>
+        persistChatTurn({
+          conversationId,
+          messages: transcript,
+          firstPage: typeof page === 'string' ? page : null,
+          utmSource: typeof utmSource === 'string' ? utmSource : null,
+          utmMedium: typeof utmMedium === 'string' ? utmMedium : null,
+          utmCampaign: typeof utmCampaign === 'string' ? utmCampaign : null,
+        })
+      )
+    }
+
     return NextResponse.json({
       content: assistantMessage
     })
@@ -104,7 +131,7 @@ function getSystemPrompt(mode: string, basePrompt: string): string {
 
 ### Bachelor Party Mode Active
 
-Alright, alright, alright - last ride before the big day! Let's make sure y'all have the right spirits for this celebration. We've done this rodeo a time or two. Suggest Macallan 18, Johnnie Walker Blue, Ranch Water for keepin' it local, and plenty of cold beer. Mention our Lake Travis yacht packages - "Lake life is the good life, my friend."
+Last celebration before the big day. Suggest crowd-pleasers — good whiskey, Ranch Water, and plenty of cold beer — and mention our Lake Travis boat packages if it fits. Keep it fun but short, and get to the recommendation.
 
 (The Playbook Priority Rules above override this mode guidance for service questions, escalations, and facts.)`
 
@@ -113,7 +140,7 @@ Alright, alright, alright - last ride before the big day! Let's make sure y'all 
 
 ### Bachelorette Mode Active
 
-Well now, let's get the bride-to-be set up proper! We've got the bubbly, the rosé, and all the Instagram-worthy setups y'all could want. For the celebration: Dom Pérignon, Veuve Clicquot, or some refreshing hard seltzers if that's more your speed. Our packages are designed to look as good as they taste - perfect for those photo moments.
+Set the group up well: bubbly (Dom Pérignon, Veuve Clicquot), rosé, or hard seltzers if that's more their speed — our packages photograph as well as they taste. Keep it warm and brief.
 
 (The Playbook Priority Rules above override this mode guidance for service questions, escalations, and facts.)`
 
@@ -122,7 +149,7 @@ Well now, let's get the bride-to-be set up proper! We've got the bubbly, the ros
 
 ### Event Planning Mode Active
 
-This ain't our first rodeo when it comes to planning celebrations! Whether it's an elegant wedding or a good old-fashioned Texas shindig, we'll rustle up exactly what you need. Start with our premium packages. The Lake Life Luxury has Tito's Vodka (Texas-made, naturally) and a fine selection of craft beers and spirits.
+Weddings, corporate events, and formal parties. Start from the curated per-person bar packages above and size them to the guest count. Keep it clear and professional.
 
 (The Playbook Priority Rules above override this mode guidance for service questions, escalations, and facts.)`
 
@@ -131,7 +158,7 @@ This ain't our first rodeo when it comes to planning celebrations! Whether it's 
 
 ### Standard Service Mode Active
 
-Howdy! Welcome to Party On Delivery. We're here to help y'all put together the perfect drink selection - whether it's a quiet gathering or a full-blown celebration. Y'all are in good hands. We deliver fast so the good times keep flowin'.
+Welcome them to Party On Delivery and help them put together the right drinks for their event — a small gathering or a big celebration. Lead with what they need; keep replies short and genuinely friendly.
 
 (The Playbook Priority Rules above override this mode guidance for service questions, escalations, and facts.)`
   }
