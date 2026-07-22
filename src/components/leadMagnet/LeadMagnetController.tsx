@@ -140,7 +140,15 @@ export default function LeadMagnetController() {
       }
     };
 
-    if (isAgeVerified()) {
+    // Never auto-fire on the magnet's own reward page. A visitor on '/flyer'
+    // is already looking at the thing the popup gives away, so a timer/scroll
+    // popup there is pure friction. The manual trigger below stays live, so the
+    // flyer page's "EMAIL ME THE PDF" button still opens the email-capture modal.
+    const onRewardPage = !!candidate.rewardUrl && pathname === candidate.rewardUrl;
+
+    if (onRewardPage) {
+      // skip auto triggers entirely
+    } else if (isAgeVerified()) {
       wireAutoTriggers();
     } else {
       const poll = window.setInterval(() => {

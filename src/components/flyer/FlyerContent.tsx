@@ -150,16 +150,6 @@ export default function FlyerContent() {
     }, 50);
   };
 
-  const handleLeadMagnet = () => {
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(
-        new CustomEvent('lead-magnet:open', {
-          detail: { id: 'pod-services-flyer-2026' },
-        }),
-      );
-    }
-  };
-
   return (
     <div className="flyer-root" style={{ background: CREAM, color: NAVY }}>
       <style jsx global>{`
@@ -240,17 +230,10 @@ export default function FlyerContent() {
           </p>
           <div className="flyer-no-print flex flex-wrap gap-3 mt-6">
             <button
-              onClick={handleLeadMagnet}
-              className="px-6 py-3.5 rounded-md font-bold text-sm tracking-widest transition-transform hover:scale-[1.02]"
-              style={{ background: GOLD, color: NAVY }}
-            >
-              EMAIL ME THE PDF →
-            </button>
-            <button
               onClick={handlePrint}
               disabled={printing}
-              className="px-6 py-3.5 rounded-md font-bold text-sm tracking-widest border-2 transition-colors hover:bg-white/10"
-              style={{ borderColor: GOLD, color: '#FFFFFF' }}
+              className="px-6 py-3.5 rounded-md font-bold text-sm tracking-widest transition-transform hover:scale-[1.02]"
+              style={{ background: GOLD, color: NAVY }}
             >
               {printing ? 'OPENING PRINT…' : '⤓ DOWNLOAD AS PDF'}
             </button>
