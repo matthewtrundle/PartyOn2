@@ -18,6 +18,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/database/client';
+import { sanitizeName } from '@/lib/leads/leadCapture';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -41,6 +42,13 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     return NextResponse.json({ ok: false, error: String(err) }, { status: 400 });
   }
+
+  // Sanitize the public-capture names before any Lead write. This route writes
+  // firstName/lastName directly (not via upsertLead), and the abandoned-cart
+  // cron drops the stored firstName straight into an outbound SMS — so an
+  // unsanitized name here is a text-injection vector (security review, #297).
+  const firstName = sanitizeName(body.firstName);
+  const lastName = sanitizeName(body.lastName);
 
   // Find or upsert the Lead row. We don't fire a lead-event here — the
   // EventInvitePage already fires CONTACT_FORM events for the RSVP. This
@@ -80,8 +88,8 @@ export async function POST(req: NextRequest) {
     await prisma.lead.update({
       where: { id: existing.id },
       data: {
-        firstName: existing.firstName ?? body.firstName,
-        lastName: existing.lastName ?? body.lastName ?? null,
+        firstName: existing.firstName ?? firstName,
+        lastName: existing.lastName ?? lastName,
         phone: existing.phone ?? body.phone ?? null,
         metadata: { ...prevMeta, abandonedCart: abandonMeta },
         resumeCart: { itemCount: body.itemCount, cartTotal: body.cartTotal },
@@ -94,8 +102,8 @@ export async function POST(req: NextRequest) {
     data: {
       email: body.email.toLowerCase(),
       phone: body.phone ?? null,
-      firstName: body.firstName,
-      lastName: body.lastName ?? null,
+      firstName,
+      lastName,
       status: 'PARTIAL',
       sourcePage: `/events/${body.eventSlug}`,
       sourceWidget: 'A_LA_CARTE',
