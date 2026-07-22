@@ -11,7 +11,16 @@
 import { sendEmail } from '@/lib/email/resend-client';
 import { formatCurrency } from '@/lib/email/resend-client';
 
-const PARTNER_NOTIFY_EMAIL = process.env.PREMIERE_PARTNER_NOTIFY_EMAIL;
+/**
+ * Partner summary recipients. Accepts a comma-separated list so more than one
+ * person at Premiere can receive the "codes issued" email — the first address
+ * is the To, any others become Cc.
+ */
+const PARTNER_NOTIFY_LIST = (process.env.PREMIERE_PARTNER_NOTIFY_EMAIL || '')
+  .split(',')
+  .map((email) => email.trim())
+  .filter(Boolean);
+const PARTNER_NOTIFY_EMAIL = PARTNER_NOTIFY_LIST[0];
 const OPS_ALERT_EMAIL = process.env.OPS_ALERT_EMAIL || 'allan@partyondelivery.com';
 const ADMIN_URL = 'https://partyondelivery.com/admin/premiere-credits';
 
@@ -58,11 +67,22 @@ export async function sendPartnerCodeSummary(delivered: DeliveredCode[]): Promis
     )
     .join('');
 
-  const cc = OPS_ALERT_EMAIL && OPS_ALERT_EMAIL !== PARTNER_NOTIFY_EMAIL ? [OPS_ALERT_EMAIL] : undefined;
+  // Cc any additional partner recipients plus the operator, deduped
+  // case-insensitively and minus the To address (so the same mailbox in
+  // different casing can't land in both To and Cc).
+  const seen = new Set<string>([PARTNER_NOTIFY_EMAIL.toLowerCase()]);
+  const cc: string[] = [];
+  for (const addr of [...PARTNER_NOTIFY_LIST.slice(1), OPS_ALERT_EMAIL]) {
+    if (!addr) continue;
+    const key = addr.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    cc.push(addr);
+  }
 
   await sendEmail({
     to: PARTNER_NOTIFY_EMAIL,
-    cc,
+    cc: cc.length > 0 ? cc : undefined,
     subject: `POD credit codes issued (${delivered.length}) — please update the sheet`,
     type: 'PREMIERE_CREDIT',
     metadata: { kind: 'partner-summary', count: delivered.length },

@@ -52,13 +52,13 @@ export const BUSINESS_DESTS: NavDest[] = [
   { href: '/admin/analytics', label: 'Analytics', icon: 'analytics', match: ['/admin/analytics'], roles: ['admin'] },
   { href: '/admin/customers', label: 'Customers', icon: 'customers', match: ['/admin/customers'], roles: ['admin'] },
   { href: '/admin/leads', label: 'Leads', icon: 'leads', match: ['/admin/leads'], roles: ['admin'], badge: 'leads' },
+  { href: '/admin/affiliates', label: 'Partners', icon: 'partners', match: ['/admin/affiliates', '/admin/promotions', '/admin/premiere-credits'], roles: ['admin'] },
   { href: 'https://crm.partyondelivery.com', label: 'CRM', icon: 'crm', match: [], roles: ['admin'], external: true },
   { href: '/admin/emails', label: 'Email', icon: 'email', match: ['/admin/emails', '/admin/email-signups'], roles: ['admin'] },
   { href: '/admin/recommendations', label: 'Recs', icon: 'recs', match: ['/admin/recommendations'], roles: ['admin'], badge: 'recs' },
   { href: '/admin/finance', label: 'Money', icon: 'money', match: ['/admin/finance'], roles: ['admin'] },
   { href: '/admin/strategy', label: 'Game Plan', icon: 'gameplan', match: ['/admin/strategy'], roles: ['admin'] },
   { href: '/admin/reports', label: 'Reports', icon: 'reports', match: ['/admin/reports'], roles: ['admin'] },
-  { href: '/admin/affiliates', label: 'Partners', icon: 'partners', match: ['/admin/affiliates', '/admin/promotions', '/admin/premiere-credits'], roles: ['admin'] },
 ];
 
 /** Second More-sheet group. */

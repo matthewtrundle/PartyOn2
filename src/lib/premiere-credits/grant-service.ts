@@ -27,7 +27,17 @@ import type { GrantStatus, ParsedCreditRow } from './types';
 /** Days until a minted credit expires. */
 export const EXPIRY_DAYS = 60;
 
-const REDEEM_URL = 'https://partyondelivery.com';
+/**
+ * Where the credit email + SMS send the customer to redeem. The order page,
+ * where the customer builds their own cart and enters their own delivery
+ * address at checkout. Deliberately NOT a per-customer group dashboard: those
+ * are matched only by an unverified email, are unauthenticated (link = access),
+ * and take the delivery address from the dashboard — so a wrong/attacker-owned
+ * dashboard would ship the customer's credited order to someone else. Security
+ * review, 2026-07. Keep this a plain store URL.
+ */
+const REDEEM_URL = 'https://partyondelivery.com/order';
+
 const MAX_CODE_ATTEMPTS = 5;
 
 /** Outcome of ingesting a single sheet row. */
@@ -281,6 +291,7 @@ export async function sendGrant(
       code: grant.code,
       amount,
       expiresAt,
+      redeemUrl: REDEEM_URL,
       grantId: grant.id,
       discountId: grant.discountId ?? undefined,
     });
