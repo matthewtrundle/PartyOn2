@@ -129,6 +129,15 @@ export async function PATCH(
       if (!existing.draftSubject || !existing.draftBody) {
         return NextResponse.json({ success: false, error: 'no-draft-to-approve' }, { status: 400 });
       }
+      // Only a DRAFTED draft can be approved — a request-redraft row (NONE)
+      // keeps its stale copy for reference, and approving it would bypass
+      // the "next drafting session picks these up first" contract.
+      if (existing.draftStatus !== 'DRAFTED') {
+        return NextResponse.json(
+          { success: false, error: `not-approvable-from-${existing.draftStatus.toLowerCase()}` },
+          { status: 400 },
+        );
+      }
       const updated = await prisma.partnerProspect.update({
         where: { id },
         data: {

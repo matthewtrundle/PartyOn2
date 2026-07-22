@@ -55,7 +55,11 @@ export async function runEnrichmentImport(
   };
   for (const record of records) {
     const row = rowById.get(record.id)!;
-    const contact = record.enrichment.contact;
+    const contact = {
+      ...record.enrichment.contact,
+      // Normalize like the PATCH email edit does — one casing everywhere.
+      email: record.enrichment.contact.email?.trim().toLowerCase() ?? null,
+    };
     let fillEmail = false;
     if (contact.email !== null && row.email === null) {
       if (await isSuppressed(contact.email)) {

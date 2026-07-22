@@ -11,12 +11,30 @@
 
 import { z } from 'zod';
 
+/**
+ * http(s)-only URL. Zod's .url() accepts javascript:/data: URIs — but these
+ * fields are rendered as <a href> in the admin panel, and enrichment text is
+ * scraped from adversarial external pages, so the import boundary is where
+ * dangerous schemes must die (stored-XSS guard, CWE-79).
+ */
+export const httpUrlSchema = z.string().refine(
+  (v) => {
+    try {
+      const u = new URL(v);
+      return u.protocol === 'http:' || u.protocol === 'https:';
+    } catch {
+      return false;
+    }
+  },
+  { message: 'must be an http(s) URL' }
+);
+
 /** One personalization hook — a short, source-cited fact about the prospect. */
 export const HookSchema = z.object({
   /** ≤25 words, a single concrete claim (word-bound enforced by draft-lint). */
   text: z.string().min(5).max(300),
   /** Where the claim was read — spot-checked against the live page. */
-  sourceUrl: z.string().url(),
+  sourceUrl: httpUrlSchema,
   /** What kind of hook this is (drives the opener formula). */
   kind: z.enum(['review', 'press', 'website', 'social', 'listing', 'other']),
 });
@@ -28,7 +46,7 @@ export const ContactSchema = z.object({
   contactName: z.string().max(120).nullable(),
   phone: z.string().max(40).nullable(),
   /** Page the contact info was found on. */
-  sourceUrl: z.string().url().nullable(),
+  sourceUrl: httpUrlSchema.nullable(),
 });
 
 /**
@@ -42,7 +60,8 @@ export const EnrichmentSchema = z.object({
     ownerName: z.string().nullable(),
     ownerNotes: z.string().nullable(),
     team: z.string().nullable(),
-    linkedin: z.string().nullable(),
+    /** Rendered as an href in the admin panel — http(s) only. */
+    linkedin: httpUrlSchema.nullable(),
     operatingSince: z.string().nullable(),
     entity: z.string().nullable(),
   }),
@@ -69,7 +88,7 @@ export const EnrichmentSchema = z.object({
   /** 3–5 source-cited hooks; the drafter uses exactly one. */
   hooks: z.array(HookSchema).min(1).max(6),
   /** Every URL consulted during research. */
-  sources: z.array(z.string().url()).min(1),
+  sources: z.array(httpUrlSchema).min(1),
   /** 'blocked' rows get a badge; ScrapingBee only if these pile up. */
   siteAccess: z.enum(['ok', 'partial', 'blocked']),
 });
@@ -105,7 +124,7 @@ export type Draft = z.infer<typeof DraftSchema>;
 /** One discovery candidate from a "discover <city> <vertical>" session. */
 export const DiscoveryCandidateSchema = z.object({
   name: z.string().min(2).max(200),
-  website: z.string().url(),
+  website: httpUrlSchema,
   /** One sentence on why this company fits the vertical. */
   whyFit: z.string().min(10).max(500),
   email: z.string().email().nullable().optional(),

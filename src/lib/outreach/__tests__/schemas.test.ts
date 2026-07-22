@@ -63,6 +63,31 @@ describe('EnrichmentSchema', () => {
     expect(parsed).not.toHaveProperty('outreachEmail');
   });
 
+  it('rejects non-http(s) URLs everywhere they would become hrefs (stored-XSS guard)', () => {
+    expect(
+      EnrichmentSchema.safeParse({
+        ...valid,
+        management: { ...valid.management, linkedin: 'javascript:alert(1)' },
+      }).success
+    ).toBe(false);
+    expect(
+      EnrichmentSchema.safeParse({
+        ...valid,
+        hooks: [{ text: 'a concrete claim here', sourceUrl: 'data:text/html;base64,PHNjcmlwdD4=', kind: 'review' }],
+      }).success
+    ).toBe(false);
+    expect(
+      EnrichmentSchema.safeParse({ ...valid, sources: ['javascript:alert(1)'] }).success
+    ).toBe(false);
+    expect(
+      DiscoveryCandidateSchema.safeParse({
+        name: 'X Co',
+        website: 'javascript:alert(1)',
+        whyFit: 'fits well enough to test',
+      }).success
+    ).toBe(false);
+  });
+
   it('rejects hook without sourceUrl and bad siteAccess', () => {
     expect(
       EnrichmentSchema.safeParse({
