@@ -5,6 +5,7 @@ import SegmentedControl from '@/components/backend/kit/SegmentedControl';
 const SEGMENTS = [
   { key: 'affiliates', label: 'Affiliates', href: '/admin/affiliates' },
   { key: 'promotions', label: 'Promotions', href: '/admin/promotions' },
+  { key: 'premiere-credits', label: 'Premiere Credits', href: '/admin/premiere-credits' },
   { key: 'str-prospects', label: 'STR Prospects', href: '/admin/affiliates/prospects/str' },
   { key: 'bartending-prospects', label: 'Bartending Prospects', href: '/admin/affiliates/prospects/bartending' },
   { key: 'playbook', label: 'Outreach Playbook', href: '/admin/affiliates/prospects/playbook' },
@@ -18,7 +19,7 @@ const SEGMENTS = [
 export default function PartnersHubBand({
   active,
 }: {
-  active: 'affiliates' | 'promotions' | 'str-prospects' | 'bartending-prospects' | 'playbook';
+  active: 'affiliates' | 'promotions' | 'premiere-credits' | 'str-prospects' | 'bartending-prospects' | 'playbook';
 }): ReactElement {
   return (
     <NavyBand>

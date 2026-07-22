@@ -1378,6 +1378,7 @@ enum EmailType {
   RECEIPT
   FOLLOW_UP
   LEAD_REPLY
+  PREMIERE_CREDIT
 }
 
 enum EmailStatus {
@@ -1502,11 +1503,59 @@ model Discount {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  usageHistory DiscountUsage[]
+  usageHistory   DiscountUsage[]
+  premiereCredit PremiereCreditGrant[]
 
   @@index([code])
   @@index([isActive])
   @@map("discounts")
+}
+
+/// Premiere Party Cruises POD-credit grant.
+///
+/// One row per credit sourced from the Premiere "POD Credits" sheet tab. Each
+/// grant mints a single-use FIXED_AMOUNT Discount and delivers the code to the
+/// customer by email + SMS. Redemption is NOT stored — derive it live from the
+/// linked Discount (usageCount / usageHistory). Expiry lives only on
+/// Discount.expiresAt. See src/lib/premiere-credits/.
+model PremiereCreditGrant {
+  id         String @id @default(uuid())
+  /// sha256(normalized client name + booking date + amount) — idempotency key.
+  sourceKey  String @unique @map("source_key")
+  /// Last-seen 1-based sheet row (informational only).
+  sheetRow   Int?   @map("sheet_row")
+  clientName String @map("client_name")
+  email      String?
+  phone      String?
+  bookingDate DateTime? @map("booking_date") @db.Date
+  cruiseDate  DateTime? @map("cruise_date") @db.Date
+  amount      Decimal   @db.Decimal(10, 2)
+
+  /// Linked minted discount (null until minted — NEEDS_CONTACT never mints).
+  discountId String? @map("discount_id")
+  code       String?
+
+  /// PENDING | NEEDS_CONTACT | READY | HELD_FOR_APPROVAL | SENDING | SENT | SEND_FAILED | CANCELED
+  status     String  @default("PENDING")
+  holdReason String? @map("hold_reason")
+  error      String?
+
+  approvedAt        DateTime? @map("approved_at")
+  approvedBy        String?   @map("approved_by")
+  emailSentAt       DateTime? @map("email_sent_at")
+  smsSentAt         DateTime? @map("sms_sent_at")
+  partnerNotifiedAt DateTime? @map("partner_notified_at")
+
+  rawRow Json? @map("raw_row")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  discount Discount? @relation(fields: [discountId], references: [id])
+
+  @@index([status])
+  @@index([discountId])
+  @@map("premiere_credit_grants")
 }
 
 model DiscountUsage {
