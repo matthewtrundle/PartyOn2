@@ -23,8 +23,9 @@ export type EmailVerifyStatus =
 /** One verification result, vendor-agnostic. */
 export interface VerifyResult {
   status: EmailVerifyStatus;
-  /** Raw vendor response for the drawer / debugging (stored as JSONB). */
-  raw: Record<string, unknown>;
+  /** Scrubbed vendor response for the drawer / debugging (stored as JSONB —
+   * scalar values only so it satisfies Prisma's InputJsonValue). */
+  raw: Record<string, string | number | boolean | null>;
 }
 
 /** Vendor interface — swap implementations without touching the route. */
@@ -106,15 +107,18 @@ export class ZeroBounceVerifier implements EmailVerifier {
     if (status === 'UNKNOWN') {
       throw new VerificationUnavailableError('zerobounce-unknown');
     }
-    // Store only the fields we need — no api_key echo, bounded size.
-    const raw: Record<string, unknown> = {
-      status: data.status ?? null,
-      sub_status: data.sub_status ?? null,
-      free_email: data.free_email ?? null,
-      mx_found: data.mx_found ?? null,
-      smtp_provider: data.smtp_provider ?? null,
-      did_you_mean: data.did_you_mean ?? null,
-      processed_at: data.processed_at ?? null,
+    // Store only the fields we need — no api_key echo, bounded size,
+    // scalar values only (Prisma InputJsonValue).
+    const scalar = (v: unknown): string | number | boolean | null =>
+      typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean' ? v : null;
+    const raw: VerifyResult['raw'] = {
+      status: scalar(data.status),
+      sub_status: scalar(data.sub_status),
+      free_email: scalar(data.free_email),
+      mx_found: scalar(data.mx_found),
+      smtp_provider: scalar(data.smtp_provider),
+      did_you_mean: scalar(data.did_you_mean),
+      processed_at: scalar(data.processed_at),
     };
     return { status, raw };
   }
