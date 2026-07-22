@@ -54,7 +54,7 @@ volume case for the Phase-5 receptionist.
 |---|---|---|---|---|
 | 1 | cruise-drink-setup | T1 | 10* | *Known #1 by full-thread volume; drip replies land here all season |
 | 2 | cruise-day-logistics | T2 | 15 | address/boarding/parking/gate → generic marina facts + Premier redirect |
-| 3 | cruise-running-late | T4 | 12 | urgent: captain/Allan ping |
+| 3 | cruise-running-late | T2 | 12 | urgent: → Premier's # (2026-07-07, captain's line) |
 | 4 | post-event-thanks | T1 | 12 | warm reply + review link |
 | 5 | delivery-access-info | T1 | 8 | customer gives gate code/unit → ack + log for driver |
 | 6 | cruise-whats-allowed | T2 | 7 | glass/BYO/cups/ice |
@@ -69,7 +69,7 @@ volume case for the Phase-5 receptionist.
 | 15 | shipping-outside-austin | T1 | 3 | verified 2026-07-07: never ship — clean no + local alternative |
 | 16 | cruise-premier-redirect | T2 | 6 | music + Fetii answered directly (2026-07-07); photos/fleet stay redirects |
 | 17 | cruise-order-deadline | T2 | 2 | 48h fact; near-cutoff → flag |
-| 18 | cruise-weather-reschedule | T4 | 2 | day-of + money implications |
+| 18 | cruise-weather-reschedule | T2 | 2 | weather/go-no-go → Premier's # (2026-07-07); rain-out refunds still escalate to Allan |
 | 19 | cruise-guest-update | T2 | 2 | manifest changes → log + Premier |
 | 20 | order-cancellation | T4 | 0‡ | ‡no clean last-message sample; real threads exist |
 | 21 | complaint-issue | T4 | 2 | |

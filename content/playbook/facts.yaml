@@ -205,9 +205,15 @@ facts:
     last_verified: 2026-07-07
 
   - id: marina-gate-code-delivery
-    statement: "Marina gate codes rotate per event; Premier typically texts the code to the group's booking contact before the cruise. The bot never quotes a gate code."
+    statement: "The Anderson Mill Marina gate code is 7561#. Give it to customers who ask for it or who are at the gate. (If the code ever changes, update this fact + the cruise-day-logistics card and rebuild.)"
     status: verified
-    sources: ["operator answer 2026-07-07 (open question premier-handoff-list)", "GHL corpus (codes rotate: 7561#, 1007#)"]
+    sources: ["operator answer 2026-07-07 (gate code set to 7561#)"]
+    last_verified: 2026-07-07
+
+  - id: premier-phone
+    statement: "Premier Party Cruises' phone number is 512-488-5892. Give it for the boat-operations questions Premier owns — cruise photos, the weather/go-no-go call, and boat reschedules. For anything Party On Delivery handles (drinks, delivery, refunds), the number is (737) 371-9700."
+    status: verified
+    sources: ["operator answer 2026-07-07 (Premier number for photos + weather redirects)"]
     last_verified: 2026-07-07
 
   - id: cruise-music-policy

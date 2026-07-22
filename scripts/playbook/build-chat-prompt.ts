@@ -126,7 +126,7 @@ export function buildBlock(): string {
     '- Messages that are clearly not from a customer (vendors selling to us, our own staff or partners coordinating, automated notifications) get NO customer-service reply — one neutral line at most.'
   );
   lines.push(
-    '- You are the Party On Delivery assistant — never claim to be Allan. (737) 371-9700 is the only phone number you may ever give out.'
+    "- You are the Party On Delivery assistant — never claim to be Allan. Give out only two numbers: Party On Delivery's line (737) 371-9700 for anything we handle, and Premier Party Cruises' line 512-488-5892 ONLY for boat-operations questions Premier owns (cruise photos, the weather/go-no-go call, boat reschedules). Never invent or give any other number."
   );
   lines.push('');
   lines.push('## Playbook: verified facts (the ONLY facts you may state)');

@@ -1,10 +1,10 @@
 # GENERATED FILE — DO NOT EDIT.
 # Regenerate with: npx tsx scripts/playbook/extract-code-facts.ts
 # Code-authoritative facts; site copy that disagrees with these values is stale.
-# generated_at: 2026-07-06T21:36:42.011Z
+# generated_at: 2026-07-21T20:44:15.302Z
 facts:
   - id: delivery-zone-central-austin
-    statement: "Central Austin (Downtown, UT Campus, East Austin, South Congress): delivery fee $25 (express $40), order minimum $100, free standard delivery on orders over $250. 9 zip codes."
+    statement: "Central Austin (Downtown, UT Campus, East Austin, South Congress): delivery fee $25, order minimum $100. 9 zip codes."
     status: verified
     source: "src/lib/delivery/rates.ts (DELIVERY_ZONES)"
     data:
@@ -14,7 +14,7 @@ facts:
       freeDeliveryThreshold: 250
       zipCodes: ["78701", "78702", "78703", "78704", "78705", "78751", "78752", "78756", "78757"]
   - id: delivery-zone-greater-austin
-    statement: "Greater Austin (North Austin, South Austin, Round Rock): delivery fee $30 (express $50), order minimum $125, free standard delivery on orders over $300. 37 zip codes."
+    statement: "Greater Austin (North Austin, South Austin, Round Rock): delivery fee $30, order minimum $125. 37 zip codes."
     status: verified
     source: "src/lib/delivery/rates.ts (DELIVERY_ZONES)"
     data:
@@ -24,7 +24,7 @@ facts:
       freeDeliveryThreshold: 300
       zipCodes: ["78617", "78652", "78653", "78660", "78664", "78681", "78717", "78719", "78721", "78722", "78723", "78724", "78725", "78727", "78728", "78729", "78731", "78732", "78733", "78734", "78735", "78736", "78737", "78738", "78739", "78741", "78744", "78745", "78746", "78747", "78748", "78749", "78750", "78753", "78754", "78758", "78759"]
   - id: delivery-zone-extended-austin
-    statement: "Extended Austin (Cedar Park, Georgetown, Dripping Springs): delivery fee $40 (express $65), order minimum $150, free standard delivery on orders over $400. 11 zip codes."
+    statement: "Extended Austin (Cedar Park, Georgetown, Dripping Springs): delivery fee $40, order minimum $150. 11 zip codes."
     status: verified
     source: "src/lib/delivery/rates.ts (DELIVERY_ZONES)"
     data:
@@ -33,10 +33,6 @@ facts:
       minimumOrder: 150
       freeDeliveryThreshold: 400
       zipCodes: ["78613", "78620", "78626", "78628", "78633", "78641", "78642", "78665", "78669", "78676", "78726"]
-  - id: delivery-express-no-free-threshold
-    statement: "Free-delivery thresholds apply to standard delivery only — express delivery is always charged at the express rate."
-    status: verified
-    source: "src/lib/delivery/rates.ts (calculateDeliveryFee)"
   - id: delivery-outside-service-area
     statement: "Zip codes not listed in a delivery zone are outside the service area and not eligible for delivery at checkout."
     status: verified
