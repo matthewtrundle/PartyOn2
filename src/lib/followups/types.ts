@@ -81,8 +81,14 @@ export interface JourneyEmailContext {
 export interface JourneyStep {
   /** Hours after the trigger (step 1) or after the previous send (step 2). */
   delayHours: number;
-  /** Render the email, or return null to cancel the send (e.g. payload too thin to say anything useful). */
-  buildEmail: (ctx: JourneyEmailContext) => RenderedEmail | null;
+  /**
+   * Render the email, or return null to cancel the send (e.g. payload too
+   * thin to say anything useful). May be async — partner-outreach reads its
+   * draft fresh from the DB at send time.
+   */
+  buildEmail: (
+    ctx: JourneyEmailContext
+  ) => RenderedEmail | null | Promise<RenderedEmail | null>;
 }
 
 /**

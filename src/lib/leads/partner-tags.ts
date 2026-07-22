@@ -17,6 +17,7 @@ export const TAG_PARTNER_ACTIVE = 'partner-active';
 export const PARTNER_VERTICAL_TAGS = {
   str: 'str',
   bartender: 'bartender',
+  venue: 'venue',
 } as const;
 
 export type PartnerVertical = keyof typeof PARTNER_VERTICAL_TAGS;

@@ -1,0 +1,159 @@
+/**
+ * DB-backed partner-prospect store (partner_prospects table) — replaces the
+ * static JSON lists in prospect-datasets.ts as the single source of truth
+ * for the Partner Outreach pipeline. Seeded once by
+ * scripts/seed-partner-prospects.ts; discovery/enrichment/drafting sessions
+ * write through the vetted import scripts.
+ *
+ * Read shapes stay compatible with the existing prospect views: enrichment
+ * is stored WITHOUT outreachEmail (drafts live in draft_* columns), and
+ * toProspectRecord() reassembles enrichment.outreachEmail from the draft
+ * columns so ProspectEnrichmentPanel and the tables render unchanged.
+ */
+
+import type { PartnerProspect } from '@prisma/client';
+import { prisma } from '@/lib/database/client';
+import type { PartnerVertical } from '@/lib/leads/partner-tags';
+import { websiteKey } from './prospect-datasets';
+
+export { websiteKey };
+
+/** Loose dossier shape — the UI owns the render contract, we pass through. */
+export type ProspectEnrichment = Record<string, unknown> & {
+  outreachEmail?: { subject: string; body: string };
+};
+
+/**
+ * Row shape handed to the prospect views/routes. Superset of the old
+ * ProspectRecord from prospect-datasets.ts, plus pipeline columns.
+ */
+export interface StoredProspect {
+  id: string;
+  vertical: PartnerVertical;
+  city: string;
+  name: string;
+  website: string;
+  websiteKey: string;
+  propertiesEstimate: string;
+  contactName: string | null;
+  email: string | null;
+  phone: string | null;
+  socials: Record<string, string | null>;
+  logoUrl: string | null;
+  description: string;
+  partnerSlug: string | null;
+  leadId: string | null;
+  source: string;
+  researchStatus: string;
+  enrichment: ProspectEnrichment | null;
+  draftStatus: string;
+  emailVerifyStatus: string;
+  emailVerifyOverride: boolean;
+}
+
+/** A prospect's outreach draft, read fresh at send time. */
+export interface SendableDraft {
+  subject: string;
+  altSubject: string | null;
+  body: string;
+  followUpBody: string | null;
+  touch3Body: string | null;
+}
+
+function toProspectRecord(row: PartnerProspect): StoredProspect {
+  const dossier =
+    typeof row.enrichment === 'object' && row.enrichment !== null && !Array.isArray(row.enrichment)
+      ? ({ ...(row.enrichment as Record<string, unknown>) } as ProspectEnrichment)
+      : null;
+  // Legacy view compatibility: the enrichment dropdown + test-send flow read
+  // enrichment.outreachEmail — rebuild it from the draft columns.
+  const enrichment =
+    dossier && row.draftSubject && row.draftBody
+      ? { ...dossier, outreachEmail: { subject: row.draftSubject, body: row.draftBody } }
+      : dossier;
+  return {
+    id: row.id,
+    vertical: row.vertical as PartnerVertical,
+    city: row.city,
+    name: row.name,
+    website: row.website,
+    websiteKey: row.websiteKey,
+    propertiesEstimate: row.propertiesEstimate ?? '',
+    contactName: row.contactName,
+    email: row.email,
+    phone: row.phone,
+    socials:
+      typeof row.socials === 'object' && row.socials !== null && !Array.isArray(row.socials)
+        ? (row.socials as Record<string, string | null>)
+        : {},
+    logoUrl: row.logoUrl,
+    description: row.description,
+    partnerSlug: row.partnerSlug,
+    leadId: row.leadId,
+    source: row.source,
+    researchStatus: row.researchStatus,
+    enrichment,
+    draftStatus: row.draftStatus,
+    emailVerifyStatus: row.emailVerifyStatus,
+    emailVerifyOverride: row.emailVerifyOverride,
+  };
+}
+
+/** List prospects, optionally filtered by vertical and/or city. */
+export async function listProspects(filter?: {
+  vertical?: string;
+  city?: string;
+}): Promise<StoredProspect[]> {
+  const rows = await prisma.partnerProspect.findMany({
+    where: {
+      ...(filter?.vertical ? { vertical: filter.vertical } : {}),
+      ...(filter?.city ? { city: filter.city } : {}),
+    },
+    orderBy: [{ name: 'asc' }],
+  });
+  return rows.map(toProspectRecord);
+}
+
+/** Find one prospect by website (websiteKey match, same key as sync/enroll). */
+export async function getProspectByWebsite(website: string): Promise<StoredProspect | null> {
+  const row = await prisma.partnerProspect.findUnique({
+    where: { websiteKey: websiteKey(website) },
+  });
+  return row ? toProspectRecord(row) : null;
+}
+
+/** Find one prospect by row id. */
+export async function getProspectById(id: string): Promise<StoredProspect | null> {
+  const row = await prisma.partnerProspect.findUnique({ where: { id } });
+  return row ? toProspectRecord(row) : null;
+}
+
+/**
+ * The outreach draft for a website, or null when there is nothing sendable.
+ * PR1 parity: DRAFTED or APPROVED both send (matching the old JSON behavior
+ * where any enrichment.outreachEmail sent). PR6 tightens this to APPROVED
+ * only, alongside the enroll gates.
+ */
+export async function getSendableDraft(website: string): Promise<SendableDraft | null> {
+  const row = await prisma.partnerProspect.findUnique({
+    where: { websiteKey: websiteKey(website) },
+    select: {
+      draftStatus: true,
+      draftSubject: true,
+      draftAltSubject: true,
+      draftBody: true,
+      draftFollowUpBody: true,
+      draftTouch3Body: true,
+    },
+  });
+  if (!row) return null;
+  if (row.draftStatus !== 'DRAFTED' && row.draftStatus !== 'APPROVED') return null;
+  if (!row.draftSubject || !row.draftBody) return null;
+  return {
+    subject: row.draftSubject,
+    altSubject: row.draftAltSubject,
+    body: row.draftBody,
+    followUpBody: row.draftFollowUpBody,
+    touch3Body: row.draftTouch3Body,
+  };
+}

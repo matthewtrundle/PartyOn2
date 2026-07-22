@@ -15,8 +15,8 @@ import type { FollowUpJob } from '@prisma/client';
 import { prisma } from '@/lib/database/client';
 import { FEATURE_FLAGS } from '@/lib/features/feature-flags';
 import { entityIdFromDedupeKey, type JourneyDef, type JourneyKey } from './types';
-import { buildStepEmail, renderFollowUpEmail } from './copy';
-import { findProspectByWebsite } from '@/lib/partners/prospect-datasets';
+import { BRIAN_SIGNATURE, buildStepEmail, renderFollowUpEmail } from './copy';
+import { getSendableDraft } from '@/lib/partners/prospect-store';
 
 /**
  * Step renderer: default copy lives in copy.ts (DEFAULT_COPY); admin
@@ -261,16 +261,17 @@ export const JOURNEYS: JourneyDef[] = [
     steps: [
       {
         delayHours: 0,
-        // Step 1 = the PERSONALIZED email from the prospect database,
-        // looked up fresh at send time so copy edits in the JSON ship
-        // without re-enrolling. Falls back to the generic template when
-        // the prospect row disappeared.
-        buildEmail: (ctx) => {
+        // Step 1 = the PERSONALIZED draft from the partner_prospects table,
+        // read fresh at send time so draft edits in the admin UI ship
+        // without re-enrolling (job payloads are clamped to 200 chars —
+        // copy can never ride in the payload). Falls back to the generic
+        // template when the prospect row or draft disappeared. Drafts are
+        // stored signature-free; the renderer signs as Brian.
+        buildEmail: async (ctx) => {
           const website = typeof ctx.payload.website === 'string' ? ctx.payload.website : null;
-          const prospect = website ? findProspectByWebsite(website) : null;
-          const outreach = prospect?.enrichment?.outreachEmail;
-          if (outreach?.subject && outreach?.body) {
-            return renderFollowUpEmail(outreach.subject, outreach.body, ctx.unsubscribeUrl);
+          const draft = website ? await getSendableDraft(website) : null;
+          if (draft) {
+            return renderFollowUpEmail(draft.subject, draft.body, ctx.unsubscribeUrl, BRIAN_SIGNATURE);
           }
           return buildStepEmail('partner-outreach', 1, ctx);
         },

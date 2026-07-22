@@ -17,7 +17,7 @@ import { requireOpsAuth } from '@/lib/auth/ops-session';
 import { prisma } from '@/lib/database/client';
 import { enqueueJourney } from '@/lib/followups/enqueue';
 import { TAG_PARTNER_PROSPECT } from '@/lib/leads/partner-tags';
-import { findProspectByWebsite, websiteKey } from '@/lib/partners/prospect-datasets';
+import { getProspectByWebsite } from '@/lib/partners/prospect-store';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const results: { website: string; ok: boolean; reason?: string; jobId?: string }[] = [];
 
   for (const website of body.websites) {
-    const prospect = findProspectByWebsite(website);
+    const prospect = await getProspectByWebsite(website);
     if (!prospect) {
       results.push({ website, ok: false, reason: 'not-in-database' });
       continue;
@@ -56,7 +56,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const lead = await prisma.lead.findFirst({
       where: {
         tags: { has: TAG_PARTNER_PROSPECT },
-        metadata: { path: ['websiteKey'], equals: websiteKey(website) },
+        metadata: { path: ['websiteKey'], equals: prospect.websiteKey },
       },
       orderBy: { createdAt: 'desc' },
       select: { id: true, firstName: true },

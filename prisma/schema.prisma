@@ -3455,6 +3455,7 @@ model Lead {
   sessions        VisitorSession[]
   inboundEmails   InboundEmail[]
   chatConversations ChatConversation[]
+  partnerProspects PartnerProspect[]
 
   createdAt       DateTime        @default(now()) @map("created_at")
   updatedAt       DateTime        @updatedAt      @map("updated_at")
@@ -3572,4 +3573,87 @@ model LeadEvent {
   @@index([type])
   @@index([occurredAt])
   @@map("lead_events")
+}
+
+/// Partner Outreach 2.0 — one row per prospect company, deduped globally by
+/// websiteKey (host+path). Replaces the static JSON prospect lists. The
+/// dossier lives in `enrichment` (same shape ProspectEnrichmentPanel renders);
+/// the 3-touch drafts are read fresh at send time by the partner-outreach
+/// journey (see prisma/migrations/manual/2026-07-22-partner-prospects-table.sql).
+model PartnerProspect {
+  id                       String    @id @default(uuid())
+  /// Vertical key from src/lib/outreach/verticals.ts ('str' | 'bartender' | 'venue' | ...).
+  vertical                 String
+  city                     String    @default("Austin")
+  name                     String
+  /// Verbatim website string — Lead.metadata.websiteKey in prod was computed
+  /// from these exact strings; never normalize in place.
+  website                  String
+  websiteKey               String    @unique @map("website_key")
+  propertiesEstimate       String?   @map("properties_estimate")
+  contactName              String?   @map("contact_name")
+  email                    String?
+  phone                    String?
+  /// { instagram?, facebook?, linkedin?, twitter?, youtube?, tiktok? }
+  socials                  Json      @default("{}")
+  logoUrl                  String?   @map("logo_url")
+  description              String    @default("")
+  partnerSlug              String?   @map("partner_slug")
+  leadId                   String?   @map("lead_id")
+
+  /// 'seed-str' | 'seed-bartending' | 'seed-byob' | 'discovery' | 'manual'
+  source                   String    @default("manual")
+  discoveredAt             DateTime? @map("discovered_at")
+  discoveryQuery           String?   @map("discovery_query")
+
+  /// PENDING | RUNNING | ENRICHED | FAILED
+  researchStatus           String    @default("PENDING") @map("research_status")
+  researchStartedAt        DateTime? @map("research_started_at")
+  /// Dossier JSONB — management/portfolio/business/reputation/partnershipAngles
+  /// + contact/hooks/sources/siteAccess. Never contains outreachEmail.
+  enrichment               Json?
+  enrichedAt               DateTime? @map("enriched_at")
+  researchError            String?   @map("research_error")
+  researchModel            String?   @map("research_model")
+  researchUsage            Json?     @map("research_usage")
+
+  /// NONE | DRAFTING | DRAFTED | APPROVED | FAILED
+  draftStatus              String    @default("NONE") @map("draft_status")
+  draftSubject             String?   @map("draft_subject")
+  /// Alternate subject for the touch-2 "no open recorded" resend branch.
+  draftAltSubject          String?   @map("draft_alt_subject")
+  draftBody                String?   @map("draft_body")
+  /// Touch-2 substantive bump (sent when touch 1 was opened but unanswered).
+  draftFollowUpBody        String?   @map("draft_follow_up_body")
+  /// Touch-3 standalone close (+12 days).
+  draftTouch3Body          String?   @map("draft_touch3_body")
+  /// { text, sourceUrl, kind } — the single personalization hook used.
+  draftHook                Json?     @map("draft_hook")
+  draftModel               String?   @map("draft_model")
+  draftGeneratedAt         DateTime? @map("draft_generated_at")
+  draftApprovedAt          DateTime? @map("draft_approved_at")
+  draftApprovedBy          String?   @map("draft_approved_by")
+  draftError               String?   @map("draft_error")
+  /// Operator note consumed by the next drafting session (request re-draft).
+  draftRedoGuidance        String?   @map("draft_redo_guidance")
+
+  /// UNVERIFIED | VALID | INVALID | CATCH_ALL | UNKNOWN | ROLE
+  emailVerifyStatus        String    @default("UNVERIFIED") @map("email_verify_status")
+  emailVerifiedAt          DateTime? @map("email_verified_at")
+  emailVerifyRaw           Json?     @map("email_verify_raw")
+  /// Operator override for CATCH_ALL addresses only.
+  emailVerifyOverride      Boolean   @default(false) @map("email_verify_override")
+  emailVerifyOverriddenBy  String?   @map("email_verify_overridden_by")
+
+  createdAt                DateTime  @default(now()) @map("created_at")
+  updatedAt                DateTime  @updatedAt      @map("updated_at")
+
+  lead                     Lead?     @relation(fields: [leadId], references: [id], onDelete: SetNull)
+
+  @@index([vertical, city])
+  @@index([researchStatus])
+  @@index([draftStatus])
+  @@index([leadId])
+  @@index([email])
+  @@map("partner_prospects")
 }

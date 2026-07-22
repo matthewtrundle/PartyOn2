@@ -25,7 +25,14 @@ import {
   TAG_PARTNER_ACTIVE,
   PARTNER_VERTICAL_TAGS,
 } from '@/lib/leads/partner-tags';
-import { getAllProspects, websiteKey } from '@/lib/partners/prospect-datasets';
+import { listProspects } from '@/lib/partners/prospect-store';
+
+/** Admin hub path each vertical's prospects live under (Lead.sourcePage). */
+const VERTICAL_SOURCE_PAGES: Record<string, string> = {
+  str: '/admin/affiliates/prospects/str',
+  bartender: '/admin/affiliates/prospects/bartending',
+  venue: '/admin/affiliates/prospects/venues',
+};
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -43,7 +50,7 @@ export async function POST(): Promise<NextResponse> {
   const auth = await requireOpsAuth();
   if (auth instanceof NextResponse) return auth;
   try {
-    const prospects = getAllProspects();
+    const prospects = await listProspects();
 
     // ACTIVE affiliates by slug + email for partner-active tagging
     const activeAffiliates = await prisma.affiliate.findMany({
@@ -60,7 +67,7 @@ export async function POST(): Promise<NextResponse> {
 
     for (const p of prospects) {
       const email = p.email?.toLowerCase().trim() || null;
-      const wKey = websiteKey(p.website);
+      const wKey = p.websiteKey;
 
       const isActive =
         (p.partnerSlug && activeSlugs.has(p.partnerSlug)) ||
@@ -127,7 +134,7 @@ export async function POST(): Promise<NextResponse> {
             lastName: last,
             status: 'SUBMITTED',
             sourceWidget: 'PARTNER_OUTREACH',
-            sourcePage: `/admin/affiliates/prospects/${p.vertical === 'str' ? 'str' : 'bartending'}`,
+            sourcePage: VERTICAL_SOURCE_PAGES[p.vertical] ?? '/admin/affiliates/prospects',
             pipelineStage: 'NEW',
             stageChangedAt: new Date(),
             tags,
@@ -136,6 +143,11 @@ export async function POST(): Promise<NextResponse> {
         });
         leadId = lead.id;
         created++;
+      }
+
+      // Back-link the prospect row to its Lead (idempotent).
+      if (p.leadId !== leadId) {
+        await prisma.partnerProspect.update({ where: { id: p.id }, data: { leadId } });
       }
 
       // CRM mirror (never throws; inert until CORELINQ_INGEST_URL set)
