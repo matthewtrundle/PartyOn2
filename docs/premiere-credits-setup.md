@@ -78,7 +78,10 @@ into a text. In GoHighLevel:
 
 Available payload fields: `credit_code`, `credit_amount` (e.g. `336.21`),
 `expires_on` (e.g. `September 20, 2026`), `redeem_url`, plus the contact fields
-above. Until this exists, leave `GHL_PREMIERE_CREDIT_WEBHOOK_URL` unset and
+above. `redeem_url` is resolved by the app: the customer's own group-order
+dashboard (`/dashboard/<shareCode>`, matched by their email) when they have one,
+otherwise `https://partyondelivery.com/order` — so it's always a valid link.
+Until the workflow exists, leave `GHL_PREMIERE_CREDIT_WEBHOOK_URL` unset and
 customers still get the full email — only the text is skipped.
 
 ### 4. Turn it on — feature flags (`/admin/features`)

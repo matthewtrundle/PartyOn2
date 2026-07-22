@@ -13,14 +13,14 @@ import {
   premiereCreditSubject,
 } from '@/lib/email/templates/premiere-credit';
 
-const REDEEM_URL = 'https://partyondelivery.com';
-
 export interface SendPremiereCreditEmailInput {
   to: string;
   customerName: string;
   code: string;
   amount: number;
   expiresAt: Date;
+  /** Where the customer redeems — their dashboard, or the order-page fallback. */
+  redeemUrl: string;
   grantId: string;
   discountId?: string;
 }
@@ -34,7 +34,7 @@ export async function sendPremiereCreditEmail(
     code: input.code,
     amount: input.amount,
     expiresAt: input.expiresAt,
-    redeemUrl: REDEEM_URL,
+    redeemUrl: input.redeemUrl,
   };
 
   const result = await sendEmailDetailed({

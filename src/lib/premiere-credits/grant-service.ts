@@ -21,13 +21,13 @@ import {
 } from './planner';
 import type { HoldReason } from './types';
 import { sendPremiereCreditEmail } from './send-email';
+import { resolveRedeemUrl } from './redeem-url';
 import { notifyPremiereCreditIssued } from '@/lib/webhooks/ghl-premiere-credit';
 import type { GrantStatus, ParsedCreditRow } from './types';
 
 /** Days until a minted credit expires. */
 export const EXPIRY_DAYS = 60;
 
-const REDEEM_URL = 'https://partyondelivery.com';
 const MAX_CODE_ATTEMPTS = 5;
 
 /** Outcome of ingesting a single sheet row. */
@@ -273,6 +273,9 @@ export async function sendGrant(
 
   const amount = Number(grant.discount.value);
   const expiresAt = grant.discount.expiresAt ?? addDays(new Date(), EXPIRY_DAYS);
+  // Prefer the customer's own dashboard; falls back to the order page. Shared
+  // by the email + SMS so both point at the same place.
+  const redeemUrl = await resolveRedeemUrl(grant.email);
 
   try {
     const result = await sendPremiereCreditEmail({
@@ -281,6 +284,7 @@ export async function sendGrant(
       code: grant.code,
       amount,
       expiresAt,
+      redeemUrl,
       grantId: grant.id,
       discountId: grant.discountId ?? undefined,
     });
@@ -302,7 +306,7 @@ export async function sendGrant(
           credit_code: grant.code,
           credit_amount: amount.toFixed(2),
           expires_on: formatExpiryForSms(expiresAt),
-          redeem_url: REDEEM_URL,
+          redeem_url: redeemUrl,
           tags: ['premiere-credit'],
         });
         smsSent = true;
