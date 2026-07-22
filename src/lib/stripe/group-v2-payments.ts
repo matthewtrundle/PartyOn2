@@ -11,7 +11,7 @@ import { DEFAULT_TAX_RATE } from '@/lib/tax';
 import { moveDraftToPurchased, moveAllDraftsToPurchased } from '@/lib/group-orders-v2/service';
 import { notifyNewOrder, buildGhlPayload } from '@/lib/webhooks/ghl';
 import { sendOrderConfirmationEmail } from '@/lib/email';
-import { recordDiscountUsage } from '@/lib/discounts/discount-engine';
+import { recordDiscountUsage, validateDiscountCode } from '@/lib/discounts/discount-engine';
 import { linkOrderToAffiliate } from '@/lib/affiliates/commission-engine';
 import { getAffiliateByCode } from '@/lib/affiliates/affiliate-service';
 import { createOrderCalendarEvent } from '@/lib/calendar/google-calendar';
@@ -82,6 +82,20 @@ interface CreateDeliveryInvoiceInput {
   cancelUrl: string;
 }
 
+/**
+ * A discount code was supplied but fails validation on the participant checkout
+ * charge path (invalid / inactive / expired / not-yet-started / usage limit
+ * reached / minimum not met). The checkout routes surface this as a 400 instead
+ * of silently charging full price or — worse — redeeming an exhausted single-use
+ * code. The message is intentionally generic (see the throw site).
+ */
+export class DiscountNotApplicableError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'DiscountNotApplicableError';
+  }
+}
+
 // ==========================================
 // Participant Checkout
 // ==========================================
@@ -117,27 +131,39 @@ export async function createGroupV2CheckoutSession(input: CreateCheckoutInput) {
   let discountWaivesDelivery = false;
 
   if (discountCode) {
-    const discount = await prisma.discount.findUnique({
-      where: { code: discountCode, isActive: true },
+    // Enforce the discount's own limits on the CHARGE path — not just in the
+    // advisory /validate-discount endpoint. Without this, an expired or
+    // usage-exhausted single-use code (e.g. a Premiere POD credit) could be
+    // redeemed here more than once. validateDiscountCode checks active/window/
+    // maxUsageCount/minOrder and returns the capped amount + freeShipping flag.
+    // (Security review 2026-07.)
+    const validation = await validateDiscountCode(discountCode, {
+      items: draftItems.map((item) => ({
+        productId: item.productId,
+        variantId: item.variantId,
+        quantity: item.quantity,
+        price: Number(item.price),
+      })),
+      subtotal,
     });
-    if (discount) {
-      if (discount.type === 'PERCENTAGE') {
-        discountAmount = Math.round(subtotal * (Number(discount.value) / 100) * 100) / 100;
-      } else if (discount.type === 'FIXED_AMOUNT') {
-        discountAmount = Math.min(Number(discount.value), subtotal);
-      }
-      // Free shipping discounts (e.g. affiliate codes like BACHPLAN) waive the delivery fee.
-      // Schema has both fields for legacy reasons -- match the discount engine OR logic.
-      if (discount.freeShipping || discount.type === 'FREE_SHIPPING') {
-        discountWaivesDelivery = true;
-      }
+    if (!validation.success) {
+      // Generic message on purpose: these checkout routes are unauthenticated,
+      // so leaking whether a code is expired vs. exhausted vs. unknown would be a
+      // code-enumeration oracle. The advisory /validate-discount endpoint gives
+      // the customer the specific reason before they reach checkout.
+      throw new DiscountNotApplicableError('This discount code cannot be applied.');
+    }
+    discountAmount = validation.discountAmount;
+    // Free shipping discounts (e.g. affiliate codes like BACHPLAN) waive the delivery fee.
+    if (validation.freeShipping) {
+      discountWaivesDelivery = true;
     }
     if (discountAmount > 0) {
       const coupon = await stripe.coupons.create({
         amount_off: Math.round(discountAmount * 100),
         currency: 'usd',
         duration: 'once',
-        name: discountCode,
+        name: validation.discountCode || discountCode,
       });
       stripeCouponId = coupon.id;
     }
@@ -307,7 +333,13 @@ export async function createDeliveryInvoiceSession(input: CreateDeliveryInvoiceI
   let discountAmount = 0;
   let feeWaived = false;
 
-  // Check for FREE_SHIPPING discount
+  // Check for FREE_SHIPPING discount.
+  // NOTE: usage-limit / expiry enforcement is intentionally NOT added here.
+  // This path re-applies a code already consumed on the participant checkout
+  // (the "claim free delivery" flow auto-detects it), so a maxUsageCount guard
+  // would double-count and wrongly block a host's already-earned free delivery.
+  // Enforcing it correctly needs usage-recording on this leg without
+  // double-counting the re-claim — tracked as a follow-up, not this PR.
   if (discountCode) {
     const discount = await prisma.discount.findUnique({
       where: { code: discountCode, isActive: true },
