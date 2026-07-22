@@ -14,7 +14,7 @@
  */
 
 import type { DeliveryContextType } from '@/lib/group-orders-v2/types';
-import { findProspectBySlug } from '@/lib/partners/prospect-datasets';
+import { STR_PROSPECT_SLUGS } from '@/lib/partners/str-prospect-slugs';
 
 /** One bookable rental property belonging to an STR partner. */
 export interface StrProperty {
@@ -149,12 +149,12 @@ export const LYNNS_TEMPLATE_SECOND_TAB: PartnerSecondTab = {
  * prospect JSON — no code change per partner.
  */
 function defaultStrConfigFor(slug: string): StrPartnerConfig | null {
-  const prospect = findProspectBySlug(slug);
-  if (!prospect || prospect.vertical !== 'str') return null;
+  const name = STR_PROSPECT_SLUGS[slug];
+  if (!name) return null;
   return {
     code: normalizeCode(slug),
     slug,
-    name: prospect.name,
+    name,
     deliveryContextType: 'HOUSE',
     allowCustomAddress: true,
     properties: [],

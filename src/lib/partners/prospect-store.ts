@@ -14,9 +14,20 @@
 import type { PartnerProspect } from '@prisma/client';
 import { prisma } from '@/lib/database/client';
 import type { PartnerVertical } from '@/lib/leads/partner-tags';
-import { websiteKey } from './prospect-datasets';
 
-export { websiteKey };
+/**
+ * Normalize a website URL to the stable dedupe key (host + path, no www).
+ * Lead.metadata.websiteKey in prod was computed with exactly this function —
+ * never change its behavior without a backfill plan.
+ */
+export function websiteKey(website: string): string {
+  try {
+    const u = new URL(website);
+    return `${u.hostname.replace(/^www\./, '')}${u.pathname.replace(/\/$/, '')}`.toLowerCase();
+  } catch {
+    return website.toLowerCase();
+  }
+}
 
 /** Loose dossier shape — the UI owns the render contract, we pass through. */
 export type ProspectEnrichment = Record<string, unknown> & {
@@ -45,10 +56,20 @@ export interface StoredProspect {
   leadId: string | null;
   source: string;
   researchStatus: string;
+  researchError: string | null;
   enrichment: ProspectEnrichment | null;
   draftStatus: string;
+  draftSubject: string | null;
+  draftAltSubject: string | null;
+  draftBody: string | null;
+  draftFollowUpBody: string | null;
+  draftTouch3Body: string | null;
+  draftHook: Record<string, unknown> | null;
+  draftError: string | null;
+  draftRedoGuidance: string | null;
   emailVerifyStatus: string;
   emailVerifyOverride: boolean;
+  emailVerifiedAt: string | null;
 }
 
 /** A prospect's outreach draft, read fresh at send time. */
@@ -92,10 +113,23 @@ function toProspectRecord(row: PartnerProspect): StoredProspect {
     leadId: row.leadId,
     source: row.source,
     researchStatus: row.researchStatus,
+    researchError: row.researchError,
     enrichment,
     draftStatus: row.draftStatus,
+    draftSubject: row.draftSubject,
+    draftAltSubject: row.draftAltSubject,
+    draftBody: row.draftBody,
+    draftFollowUpBody: row.draftFollowUpBody,
+    draftTouch3Body: row.draftTouch3Body,
+    draftHook:
+      typeof row.draftHook === 'object' && row.draftHook !== null && !Array.isArray(row.draftHook)
+        ? (row.draftHook as Record<string, unknown>)
+        : null,
+    draftError: row.draftError,
+    draftRedoGuidance: row.draftRedoGuidance,
     emailVerifyStatus: row.emailVerifyStatus,
     emailVerifyOverride: row.emailVerifyOverride,
+    emailVerifiedAt: row.emailVerifiedAt ? row.emailVerifiedAt.toISOString() : null,
   };
 }
 

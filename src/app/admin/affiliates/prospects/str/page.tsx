@@ -2,10 +2,8 @@ import type { Metadata } from 'next';
 import type { ReactElement } from 'react';
 import Link from 'next/link';
 import PartnersHubBand from '@/components/admin/partners/PartnersHubBand';
-import StrPartnersView from '@/components/admin/StrPartnersView';
-import type { Prospect } from '@/components/admin/PartnerProspectsView';
+import ProspectsWorkbench from '@/components/admin/prospects/ProspectsWorkbench';
 import { getOpsSession } from '@/lib/auth/ops-session';
-import { listProspects } from '@/lib/partners/prospect-store';
 
 export const metadata: Metadata = {
   title: 'STR Prospects — Partners',
@@ -15,11 +13,9 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic';
 
 /**
- * Partners hub → STR prospect database (partner_prospects table).
- *
- * Server component: a defensive server-side admin check keeps the prospect
- * contact PII from being fetched/serialized for non-admins — the /admin
- * layout gate is client-side only (same pattern as admin/email-signups).
+ * Partners hub → STR prospect workbench. Data loads client-side from the
+ * ops-authed /api/v1/admin/partner-prospects routes; the server-side admin
+ * check below is defense in depth (the /admin layout gate is client-only).
  */
 export default async function StrProspectsPage(): Promise<ReactElement> {
   const session = await getOpsSession();
@@ -33,12 +29,11 @@ export default async function StrProspectsPage(): Promise<ReactElement> {
       </div>
     );
   }
-  const prospects = await listProspects({ vertical: 'str' });
   return (
     <div className="bg-gray-50 min-h-screen">
       <PartnersHubBand active="str-prospects" />
       <div className="px-4 md:px-8 py-8">
-        <StrPartnersView prospects={prospects as unknown as Prospect[]} />
+        <ProspectsWorkbench vertical="str" />
       </div>
     </div>
   );

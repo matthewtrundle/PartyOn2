@@ -6,18 +6,18 @@ import ProspectsWorkbench from '@/components/admin/prospects/ProspectsWorkbench'
 import { getOpsSession } from '@/lib/auth/ops-session';
 
 export const metadata: Metadata = {
-  title: 'Bartending Prospects — Partners',
+  title: 'BYOB Venue Prospects — Partners',
   robots: { index: false, follow: false },
 };
 
 export const dynamic = 'force-dynamic';
 
 /**
- * Partners hub → Bartending prospect workbench. Data loads client-side from the
+ * Partners hub → BYOB venue prospect workbench. Data loads client-side from the
  * ops-authed /api/v1/admin/partner-prospects routes; the server-side admin
  * check below is defense in depth (the /admin layout gate is client-only).
  */
-export default async function BartendingProspectsPage(): Promise<ReactElement> {
+export default async function VenueProspectsPage(): Promise<ReactElement> {
   const session = await getOpsSession();
   if (!session || session.role !== 'admin') {
     return (
@@ -31,9 +31,9 @@ export default async function BartendingProspectsPage(): Promise<ReactElement> {
   }
   return (
     <div className="bg-gray-50 min-h-screen">
-      <PartnersHubBand active="bartending-prospects" />
+      <PartnersHubBand active="venue-prospects" />
       <div className="px-4 md:px-8 py-8">
-        <ProspectsWorkbench vertical="bartender" />
+        <ProspectsWorkbench vertical="venue" />
       </div>
     </div>
   );
