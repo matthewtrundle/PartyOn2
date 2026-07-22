@@ -58,7 +58,7 @@ export const BUSINESS_DESTS: NavDest[] = [
   { href: '/admin/finance', label: 'Money', icon: 'money', match: ['/admin/finance'], roles: ['admin'] },
   { href: '/admin/strategy', label: 'Game Plan', icon: 'gameplan', match: ['/admin/strategy'], roles: ['admin'] },
   { href: '/admin/reports', label: 'Reports', icon: 'reports', match: ['/admin/reports'], roles: ['admin'] },
-  { href: '/admin/affiliates', label: 'Partners', icon: 'partners', match: ['/admin/affiliates', '/admin/promotions'], roles: ['admin'] },
+  { href: '/admin/affiliates', label: 'Partners', icon: 'partners', match: ['/admin/affiliates', '/admin/promotions', '/admin/premiere-credits'], roles: ['admin'] },
 ];
 
 /** Second More-sheet group. */
@@ -99,6 +99,7 @@ const SCREEN_TITLES: Array<[string, string]> = [
   ['/admin/reports', 'Reports'],
   ['/admin/affiliates', 'Partners'],
   ['/admin/promotions', 'Partners'],
+  ['/admin/premiere-credits', 'Partners'],
   ['/admin/brians-stuff', "Brian's Stuff"],
   ['/admin/settings', 'Settings'],
   ['/admin/operations', 'Operations'],

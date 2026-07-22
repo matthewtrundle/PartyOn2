@@ -52,6 +52,13 @@ export const FEATURE_FLAGS = {
   // resume selling. See src/lib/full-moon/event-state.ts.
   FULL_MOON_POSTPONED: 'full_moon_postponed',
 
+  // Premiere credit automation (src/lib/premiere-credits) — master kill switch
+  // + a separate send gate. MASTER off → the cron is a no-op. With MASTER on
+  // and SEND off, the cron mints codes + writes grants but sends nothing (the
+  // safe dry-run mode used to eyeball the first real batch). Both default off.
+  PREMIERE_CREDITS_MASTER: 'premiere_credits_master',
+  PREMIERE_CREDITS_SEND: 'premiere_credits_send',
+
   // Not a rollout flag — a debounce stamp. The row's updatedAt records when
   // the operator was last emailed about CoreLinq ingest failures, so a CRM
   // outage alerts once per window instead of once per form submit. See
