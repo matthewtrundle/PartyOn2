@@ -86,6 +86,12 @@ describe('EnrichmentSchema', () => {
         whyFit: 'fits well enough to test',
       }).success
     ).toBe(false);
+    expect(
+      EnrichmentSchema.safeParse({
+        ...valid,
+        contact: { ...valid.contact, sourceUrl: 'javascript:alert(1)' },
+      }).success
+    ).toBe(false);
   });
 
   it('rejects hook without sourceUrl and bad siteAccess', () => {

@@ -27,7 +27,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { prisma } from '../src/lib/database/client';
-import { websiteKey } from '../src/lib/partners/prospect-datasets';
+import { websiteKey } from '../src/lib/partners/prospect-store';
 
 const APPLY = process.argv.includes('--apply');
 const ROOT = join(__dirname, '..');

@@ -182,11 +182,22 @@ export async function GET(): Promise<NextResponse> {
       where: { tags: { has: TAG_PARTNER_PROSPECT } },
       select: {
         id: true,
+        email: true,
         tags: true,
         metadata: true,
         inboundEmails: { select: { id: true }, take: 1 },
       },
     });
+    // Suppressed addresses (unsubscribe/bounce/complaint) — the workbench
+    // shows these as SUPPRESSED and blocks enrollment client-side too.
+    const leadEmails = leads.map((l) => l.email).filter((e): e is string => e !== null);
+    const suppressions = leadEmails.length
+      ? await prisma.emailSuppression.findMany({
+          where: { email: { in: leadEmails.map((e) => e.toLowerCase()) } },
+          select: { email: true },
+        })
+      : [];
+    const suppressedEmails = new Set(suppressions.map((s) => s.email));
     const jobs = await prisma.followUpJob.findMany({
       where: { journeyKey: 'partner-outreach', leadId: { in: leads.map((l) => l.id) } },
       select: { leadId: true, status: true },
@@ -197,7 +208,10 @@ export async function GET(): Promise<NextResponse> {
       jobsByLead.set(j.leadId, [...(jobsByLead.get(j.leadId) ?? []), j.status]);
     }
 
-    const map: Record<string, { leadId: string; tags: string[]; campaign: string }> = {};
+    const map: Record<
+      string,
+      { leadId: string; tags: string[]; campaign: string; suppressed: boolean }
+    > = {};
     for (const l of leads) {
       const wKey =
         typeof l.metadata === 'object' && l.metadata !== null
@@ -212,7 +226,12 @@ export async function GET(): Promise<NextResponse> {
           : statuses.length
             ? 'enrolled'
             : 'none';
-      map[wKey] = { leadId: l.id, tags: l.tags, campaign };
+      map[wKey] = {
+        leadId: l.id,
+        tags: l.tags,
+        campaign,
+        suppressed: l.email !== null && suppressedEmails.has(l.email.toLowerCase()),
+      };
     }
     return NextResponse.json({ success: true, data: { leads: map } });
   } catch (error) {
