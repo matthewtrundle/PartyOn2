@@ -67,16 +67,22 @@ export async function sendPartnerCodeSummary(delivered: DeliveredCode[]): Promis
     )
     .join('');
 
-  // Cc any additional partner recipients plus the operator, deduped and minus
-  // the To address.
-  const ccSet = new Set<string>(PARTNER_NOTIFY_LIST.slice(1));
-  if (OPS_ALERT_EMAIL) ccSet.add(OPS_ALERT_EMAIL);
-  ccSet.delete(PARTNER_NOTIFY_EMAIL);
-  const cc = ccSet.size > 0 ? [...ccSet] : undefined;
+  // Cc any additional partner recipients plus the operator, deduped
+  // case-insensitively and minus the To address (so the same mailbox in
+  // different casing can't land in both To and Cc).
+  const seen = new Set<string>([PARTNER_NOTIFY_EMAIL.toLowerCase()]);
+  const cc: string[] = [];
+  for (const addr of [...PARTNER_NOTIFY_LIST.slice(1), OPS_ALERT_EMAIL]) {
+    if (!addr) continue;
+    const key = addr.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    cc.push(addr);
+  }
 
   await sendEmail({
     to: PARTNER_NOTIFY_EMAIL,
-    cc,
+    cc: cc.length > 0 ? cc : undefined,
     subject: `POD credit codes issued (${delivered.length}) — please update the sheet`,
     type: 'PREMIERE_CREDIT',
     metadata: { kind: 'partner-summary', count: delivered.length },

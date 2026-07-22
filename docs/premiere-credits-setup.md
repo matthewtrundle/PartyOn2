@@ -78,9 +78,12 @@ into a text. In GoHighLevel:
 
 Available payload fields: `credit_code`, `credit_amount` (e.g. `336.21`),
 `expires_on` (e.g. `September 20, 2026`), `redeem_url`, plus the contact fields
-above. `redeem_url` is resolved by the app: the customer's own group-order
-dashboard (`/dashboard/<shareCode>`, matched by their email) when they have one,
-otherwise `https://partyondelivery.com/order` — so it's always a valid link.
+above. `redeem_url` is always `https://partyondelivery.com/order` — the store
+order page, where the customer builds their own cart and enters their own
+delivery address at checkout. (It deliberately does NOT link to a per-customer
+group dashboard: those match only on an unverified email, are unauthenticated,
+and take the delivery address from the dashboard — so a wrong dashboard could
+ship a credited order to the wrong address. Security review, 2026-07.)
 Until the workflow exists, leave `GHL_PREMIERE_CREDIT_WEBHOOK_URL` unset and
 customers still get the full email — only the text is skipped.
 
