@@ -64,6 +64,14 @@ export const FEATURE_FLAGS = {
   // outage alerts once per window instead of once per form submit. See
   // src/lib/webhooks/corelinq-alert.ts.
   CORELINQ_INGEST_ALERTED: 'corelinq_ingest_alerted',
+
+  // Lead Flow hot-lead alert (src/lib/leads/hot-alert.ts). LEAD_HOT_ALERTS is
+  // the kill switch (defaults OFF — the cron no-ops until the operator flips it
+  // on). LEAD_HOT_ALERT_WATERMARK is not a rollout flag: the row's updatedAt
+  // records the last alert run, so each 15-min cron only reports leads that
+  // gained a fresh signal since then. See src/app/api/cron/lead-hot-alert.
+  LEAD_HOT_ALERTS: 'lead_hot_alerts',
+  LEAD_HOT_ALERT_WATERMARK: 'lead_hot_alert_watermark',
 } as const;
 
 export type FeatureFlagKey = (typeof FEATURE_FLAGS)[keyof typeof FEATURE_FLAGS];

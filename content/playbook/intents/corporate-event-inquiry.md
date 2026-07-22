@@ -44,6 +44,21 @@ over a proposal.
 
 Party On Delivery
 
+## Board Email
+
+<!-- First-person variant for the /admin/leads reply composer (a human sends this
+     personally). The ## Email above stays third-person for the CRM auto-drafter. -->
+
+Hi {{first_name}},
+
+We handle corporate events end-to-end: premium spirits and curated wine, full bar setups
+and TABC-certified bartenders if you want them, and an itemized quote/invoice your
+finance team can approve before anything's locked. Invoices can be paid by corporate
+card, ACH, or wire.
+
+Reply with your date, headcount, venue, and rough budget per person, and I'll put
+together a proposal for you.
+
 ## Chat
 
 We do corporate events end-to-end — itemized quote/invoice for your finance team,

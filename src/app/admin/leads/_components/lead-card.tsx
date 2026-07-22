@@ -4,7 +4,6 @@ import { ReactElement } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import HqBadge from '@/components/backend/kit/Badge';
 import type { BoardLead } from '@/lib/leads/board-types';
-import { SOURCE_LABELS } from '@/lib/leads/board-types';
 import { daysUntilCT } from '@/lib/leads/scoring';
 
 // Countdown uses the shared CT-safe date math (scoring.ts) — the business
@@ -51,19 +50,23 @@ export default function LeadCard({
       style={style}
       {...listeners}
       {...attributes}
-      className={`relative w-full text-left bg-white rounded-xl border border-gray-200 p-3 shadow-sm hover:shadow-md transition-shadow touch-manipulation ${
+      className={`relative w-full text-left bg-white rounded-xl border border-gray-200 p-3 shadow-sm hover:shadow-md transition-shadow touch-manipulation overflow-hidden ${
         isDragging ? 'opacity-90 shadow-lg ring-2 ring-brand-blue' : ''
       } ${snoozed ? 'opacity-55' : ''}`}
     >
+      {lead.needsResponse && (
+        // Full-bleed alert bar: negative margins cancel the card's p-3 so it
+        // spans edge-to-edge; the card's overflow-hidden clips it to the radius.
+        <div className="-mx-3 -mt-3 mb-2.5 flex items-center gap-1.5 bg-red-500 px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-white">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5 shrink-0">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
+          Reply needed
+        </div>
+      )}
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
-            {lead.needsResponse && (
-              <span
-                className="w-2 h-2 rounded-full bg-red-500 shrink-0"
-                title="Waiting on a reply"
-              />
-            )}
             <span className="font-semibold text-sm text-gray-900 truncate">{lead.name}</span>
           </div>
           <div className="text-sm text-gray-500 truncate">
@@ -91,7 +94,7 @@ export default function LeadCard({
 
       <div className="mt-2 flex items-center justify-between text-xs">
         <span className="text-gray-400 uppercase tracking-[0.05em] font-semibold">
-          {SOURCE_LABELS[lead.sourceWidget ?? ''] ?? 'Site'}
+          {lead.sourceLabel}
         </span>
         <span className="flex items-center gap-1.5">
           {lead.tags.includes('partner-active') ? (

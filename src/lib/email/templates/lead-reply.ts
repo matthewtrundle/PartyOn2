@@ -38,7 +38,7 @@ export function buildLeadReplyEmail(opts: {
   senderName: string;
 }): LeadReplyEmail {
   const subject = sanitizeSubject(opts.subject);
-  const signature = `${opts.senderName}\nParty On Delivery\n(512) 660-6025 · partyondelivery.com`;
+  const signature = `${opts.senderName}\nParty On Delivery\n(737) 371-9700 · partyondelivery.com`;
   const text = `${opts.body}\n\n${signature}\n\nParty On Delivery · ${LEAD_REPLY_POSTAL_ADDRESS}`;
 
   const paragraphs = `${opts.body}\n\n${signature}`

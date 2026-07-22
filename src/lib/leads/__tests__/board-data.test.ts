@@ -100,7 +100,7 @@ vi.mock('../pipeline', async (importOriginal) => {
   return { ...actual, sweepEnrollSubmitted: vi.fn(async () => 0) };
 });
 
-import { getBoardData, toBoardLead } from '../board-data';
+import { getBoardData, refineSource, toBoardLead } from '../board-data';
 
 const DAY_MS = 86_400_000;
 function daysAgo(n: number): Date {
@@ -248,6 +248,46 @@ describe('getBoardData — KPI math', () => {
     makeLead();
     const { kpis } = await getBoardData();
     expect(kpis.conversionPct).toBeNull();
+  });
+});
+
+describe('refineSource — CONTACT_FORM split', () => {
+  it('splits by metadata surface, with intent precedence', () => {
+    expect(refineSource('CONTACT_FORM', { unifiedQuote: {} })).toEqual({
+      key: 'CONTACT_FORM:quote',
+      label: 'Quote Request',
+    });
+    expect(refineSource('CONTACT_FORM', { chatQuiz: {} }).label).toBe('Chat');
+    expect(refineSource('CONTACT_FORM', { eventQuiz: {} }).label).toBe('Event Quiz');
+    expect(refineSource('CONTACT_FORM', { contactForm: {} }).label).toBe('Contact Form');
+    // A real quote outranks a bare contact-form submit when both surfaces exist.
+    expect(refineSource('CONTACT_FORM', { contactForm: {}, unifiedQuote: {} }).key).toBe(
+      'CONTACT_FORM:quote',
+    );
+  });
+
+  it('falls back to the generic label for a surface-less CONTACT_FORM', () => {
+    expect(refineSource('CONTACT_FORM', null)).toEqual({
+      key: 'CONTACT_FORM',
+      label: 'Contact / Quote',
+    });
+    expect(refineSource('CONTACT_FORM', { unrelated: 1 }).label).toBe('Contact / Quote');
+  });
+
+  it('passes non-CONTACT_FORM widgets through to their own label', () => {
+    expect(refineSource('INBOUND_EMAIL', null)).toEqual({
+      key: 'INBOUND_EMAIL',
+      label: 'Inbound Email',
+    });
+    // The surface split only applies to CONTACT_FORM, never to other widgets.
+    expect(refineSource('QUICK_BUY', { contactForm: {} }).label).toBe('Quick Buy');
+    expect(refineSource(null, null)).toEqual({ key: 'OTHER', label: 'Site' });
+  });
+
+  it('carries the split label + key onto the board card', () => {
+    const card = toBoardLead(asLead(makeLead({ metadata: { unifiedQuote: {} } })), ctx());
+    expect(card.sourceLabel).toBe('Quote Request');
+    expect(card.sourceKey).toBe('CONTACT_FORM:quote');
   });
 });
 

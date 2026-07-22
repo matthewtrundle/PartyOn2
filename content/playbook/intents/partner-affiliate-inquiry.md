@@ -41,6 +41,16 @@ flagged this straight to him and he'll follow up shortly. Appreciate you thinkin
 
 Party On Delivery
 
+## Board Email
+
+<!-- First-person variant for the /admin/leads reply composer (a human sends this
+     personally). The ## Email above stays third-person for the CRM auto-drafter. -->
+
+Hi {{first_name}},
+
+Great to hear from you — I handle partnerships personally and I'd love to explore how we
+can work together. I'll follow up shortly with next steps. Appreciate you thinking of us!
+
 ## Chat
 
 Partner stuff goes straight to Allan personally — drop your name, business, and number

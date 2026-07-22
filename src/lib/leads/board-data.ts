@@ -13,6 +13,7 @@ import { prisma } from '@/lib/database/client';
 import { dateStrCT, extractLeadFacts, temperatureFor, SCORE_THRESHOLDS } from './scoring';
 import { isNewsletterOnly, sweepEnrollSubmitted } from './pipeline';
 import { ACTIVE_STAGES, PIPELINE_STAGES, type PipelineStage } from './pipeline-types';
+import { SOURCE_LABELS } from './board-types';
 import type { BoardData, BoardFilters, BoardKpis, BoardLead } from './board-types';
 import { SOURCE_FILTER_CONSUMER, SOURCE_FILTER_PARTNER } from './board-types';
 import { isPartnerLead } from './partner-tags';
@@ -34,6 +35,39 @@ function displayName(lead: Lead): string {
 }
 
 /**
+ * CONTACT_FORM is one widget covering four distinct capture flows — split it by
+ * the metadata surface so the card shows the real intent (a quote request reads
+ * very differently from a quiz). Precedence follows scoring's intent order.
+ * Every other widget passes through to its SOURCE_LABELS name. `key` is what the
+ * board filter matches on; `label` is what the card shows.
+ */
+const CONTACT_FORM_SURFACES: ReadonlyArray<{ meta: string; key: string; label: string }> = [
+  { meta: 'unifiedQuote', key: 'CONTACT_FORM:quote', label: 'Quote Request' },
+  { meta: 'chatQuiz', key: 'CONTACT_FORM:chat', label: 'Chat' },
+  { meta: 'eventQuiz', key: 'CONTACT_FORM:quiz', label: 'Event Quiz' },
+  { meta: 'contactForm', key: 'CONTACT_FORM:contact', label: 'Contact Form' },
+];
+
+export function refineSource(
+  sourceWidget: string | null,
+  metadata: unknown,
+): { key: string; label: string } {
+  const widget = sourceWidget ?? 'OTHER';
+  if (
+    widget === 'CONTACT_FORM' &&
+    metadata &&
+    typeof metadata === 'object' &&
+    !Array.isArray(metadata)
+  ) {
+    const m = metadata as Record<string, unknown>;
+    for (const s of CONTACT_FORM_SURFACES) {
+      if (m[s.meta] != null) return { key: s.key, label: s.label };
+    }
+  }
+  return { key: widget, label: SOURCE_LABELS[widget] ?? 'Site' };
+}
+
+/**
  * Project a Lead row onto its board card. Pure given the flags in `ctx`
  * (exported for tests — needs-response and suggest-lost derivations live
  * here).
@@ -47,6 +81,7 @@ export function toBoardLead(
   },
 ): BoardLead {
   const facts = extractLeadFacts(lead.metadata);
+  const source = refineSource(lead.sourceWidget, lead.metadata);
   // Same signal as getHotLeadsNeedingReply so the nav badge and the board's
   // "Needs response" KPI can never disagree (review #9).
   const lastSignal = lead.lastActivityAt ?? lead.createdAt;
@@ -73,6 +108,8 @@ export function toBoardLead(
     headcount: facts.headcount,
     budgetPerPerson: facts.budgetPerPerson,
     sourceWidget: lead.sourceWidget,
+    sourceKey: source.key,
+    sourceLabel: source.label,
     sourcePage: lead.sourcePage,
     tags: lead.tags ?? [],
     owner: lead.owner,
@@ -97,7 +134,7 @@ function applyFilters(cards: BoardLead[], f: BoardFilters, now: Date): BoardLead
       if (!isPartnerLead(c.tags) && c.sourceWidget !== 'PARTNER_OUTREACH') return false;
     } else if (f.source === SOURCE_FILTER_CONSUMER) {
       if (isPartnerLead(c.tags) || c.sourceWidget === 'PARTNER_OUTREACH') return false;
-    } else if (f.source && c.sourceWidget !== f.source) return false;
+    } else if (f.source && c.sourceKey !== f.source) return false;
     if (!f.showSnoozed && c.snoozedUntil && new Date(c.snoozedUntil) > now) return false;
     if (f.q) {
       const hay = `${c.name} ${c.email ?? ''} ${c.phone ?? ''}`.toLowerCase();
