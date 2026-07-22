@@ -11,7 +11,16 @@
 import { sendEmail } from '@/lib/email/resend-client';
 import { formatCurrency } from '@/lib/email/resend-client';
 
-const PARTNER_NOTIFY_EMAIL = process.env.PREMIERE_PARTNER_NOTIFY_EMAIL;
+/**
+ * Partner summary recipients. Accepts a comma-separated list so more than one
+ * person at Premiere can receive the "codes issued" email — the first address
+ * is the To, any others become Cc.
+ */
+const PARTNER_NOTIFY_LIST = (process.env.PREMIERE_PARTNER_NOTIFY_EMAIL || '')
+  .split(',')
+  .map((email) => email.trim())
+  .filter(Boolean);
+const PARTNER_NOTIFY_EMAIL = PARTNER_NOTIFY_LIST[0];
 const OPS_ALERT_EMAIL = process.env.OPS_ALERT_EMAIL || 'allan@partyondelivery.com';
 const ADMIN_URL = 'https://partyondelivery.com/admin/premiere-credits';
 
@@ -58,7 +67,12 @@ export async function sendPartnerCodeSummary(delivered: DeliveredCode[]): Promis
     )
     .join('');
 
-  const cc = OPS_ALERT_EMAIL && OPS_ALERT_EMAIL !== PARTNER_NOTIFY_EMAIL ? [OPS_ALERT_EMAIL] : undefined;
+  // Cc any additional partner recipients plus the operator, deduped and minus
+  // the To address.
+  const ccSet = new Set<string>(PARTNER_NOTIFY_LIST.slice(1));
+  if (OPS_ALERT_EMAIL) ccSet.add(OPS_ALERT_EMAIL);
+  ccSet.delete(PARTNER_NOTIFY_EMAIL);
+  const cc = ccSet.size > 0 ? [...ccSet] : undefined;
 
   await sendEmail({
     to: PARTNER_NOTIFY_EMAIL,
