@@ -10,10 +10,10 @@ export const metadata: Metadata = {
 /**
  * Partners hub → Outreach Playbook.
  *
- * The full partner-prospect outreach system reference (the approved build
- * plan, kept current as the system evolves): how prospects become tagged
- * CRM contacts, how the 2-touch campaign works, the partner-page
- * replication template, and the send rules Brian set.
+ * The Partner Outreach 2.0 reference: city/vertical prospecting → session
+ * research → Hormozi 3-touch drafts → ZeroBounce verification → operator
+ * approval → capped sends → replies on the Leads board. Kept current as
+ * the system evolves.
  */
 
 function H2({ children }: { children: React.ReactNode }): ReactElement {
@@ -36,174 +36,164 @@ export default function OutreachPlaybookPage(): ReactElement {
       <div className="max-w-4xl mx-auto px-4 md:px-8 py-8">
         <h1 className="text-2xl font-bold text-gray-900">Partner Outreach Playbook</h1>
         <p className="text-sm text-gray-600 mt-2">
-          How the partner-prospect system works end to end: prospect databases → tagged CRM
-          contacts → partner pages → 2-touch email campaign → replies on the Leads board.
-          This is the reference for the system that is now LIVE — kept current as it evolves.
+          Pick city + vertical → discover prospects → deep research per prospect → personalized
+          3-touch draft → verify the email won&apos;t bounce → review/approve in the workbench →
+          ~10 sends/day from info@ → replies land on the Leads board. Quality over quantity:
+          the daily cap is deliberate.
         </p>
 
-        <H2>The pipeline at a glance</H2>
-        <Card title="1 · Prospect databases (STR + Bartending tabs)">
+        <H2>The pipeline</H2>
+        <Card title="1 · Prospects live in the database (not JSON, not a deploy)">
           <p>
-            Researched Austin companies with contact info, socials, scraped logos, and a full
-            enrichment per row (management, offering, reputation, partnership angles, and a
-            personalized outreach email). Every row is searchable; the enrichment opens as a
-            dropdown under the company.
+            One <code>partner_prospects</code> row per company, deduped by website. Verticals:
+            STR, Bartending, BYOB Venues — each has its own tab. New prospects arrive from
+            discovery sessions or manual adds; nothing requires a code change. The status chip
+            (Sourced → Enriched → Drafted → Verified → Approved → Enrolled → Sent → Replied)
+            is derived live from the row — there is no status to maintain by hand.
           </p>
         </Card>
-        <Card title="2 · Sync to CRM — tagged contacts, separated from consumers">
+        <Card title="2 · Research runs in Claude Code sessions (never in the app)">
           <p>
-            The <strong>Sync to CRM</strong> button upserts every company as a Lead:{' '}
-            <code>partner-prospect</code> + vertical tag (<code>str</code> /{' '}
-            <code>bartender</code>), source <code>PARTNER_OUTREACH</code>. Companies whose
-            affiliate is ACTIVE also get <code>partner-active</code> — re-running sync keeps
-            that current, which is how a prospect flips to Active Partner after signing.
-            Every upsert is mirrored to the external CRM (CoreLinq) with its tags.
-          </p>
-          <p>
-            On the Leads board, the source filter has <strong>Partner Prospects</strong> and{' '}
-            <strong>Consumers only</strong> options, and partner leads wear a 🤝 badge —
-            partner outreach never mixes into the consumer pipeline.
+            The amber banner shows the queue (awaiting enrichment / awaiting drafts / re-draft
+            requests) and the exact command to run. A session web-researches each prospect
+            into a dossier — management, portfolio, reputation, partnership angles, direct
+            contact info, and 3–5 <strong>source-cited hooks</strong> — then imports it with a
+            vetted script (dry-run first; the whole batch is rejected if anything looks
+            wrong). Hooks must cite the page they were read on; the session spot-checks them
+            against the live pages before importing.
           </p>
         </Card>
-        <Card title="3 · Partner page + affiliate (commission-ready)">
-          <p>
-            Each partner is a normal POD affiliate: referral code, matching free-delivery
-            discount, commission through the standard engine, portal login, and a live page
-            at <code>/partners/&lt;slug&gt;</code>. Client dashboards created from their page
-            attribute to them automatically and appear in their portal + our admin rosters.
-          </p>
-          <p>
-            <strong>Page template:</strong> the Lynn&apos;s Lodging layout is THE replication
-            template — two tabs: <em>Alcohol Delivery</em> (the standard POD partner page)
-            and <em>Party Boat Rentals</em> (the exact Premier Party Cruises quote page with
-            the working Xola Book Now slide-out, served same-origin). STR partner pages
-            inherit this automatically once their slug is in the prospect database. Model
-            page with placeholder name: <code>/partners/partner-template</code>.
-          </p>
-        </Card>
-        <Card title="4 · The 2-touch campaign (partner-outreach journey)">
+        <Card title="3 · Drafts follow the Hormozi rules (linted, never auto-approved)">
           <ul className="list-disc pl-5 space-y-1">
+            <li>Brian&apos;s voice, 60–110-word body, plain text.</li>
+            <li>Exactly ONE hook from the dossier, woven naturally — never embellished.</li>
+            <li>One offer sentence per vertical (guest perk / supply chain / BYOB selling point).</li>
             <li>
-              <strong>Touch 1 (immediately on enroll):</strong> the prospect&apos;s
-              personalized enrichment email, looked up fresh at send time — copy edits in
-              the database ship without re-enrolling.
+              Binary CTA — &ldquo;want me to send it over?&rdquo; — <strong>never</strong> a
+              meeting ask. Exactly one question mark.
+            </li>
+            <li>Lowercase 1–3-word subject + a distinct alternate subject (see cadence below).</li>
+            <li>No signature in the body — the sender appends Brian&apos;s signature + footer.</li>
+          </ul>
+          <p>
+            The draft editor shows live word counts and lint badges. Imported drafts land as
+            DRAFTED; a human approves every email before it can send. Editing an approved
+            draft un-approves it, and &ldquo;Request re-draft&rdquo; queues it (with your
+            guidance note) for the next drafting session.
+          </p>
+        </Card>
+        <Card title="4 · Verification gates the send (ZeroBounce)">
+          <ul className="list-disc pl-5 space-y-1">
+            <li><strong>Verified</strong> — sendable.</li>
+            <li>
+              <strong>Catch-all</strong> — needs the per-prospect &ldquo;accept for
+              sending&rdquo; override in the drawer.
+            </li>
+            <li><strong>Role addr</strong> (info@/office@) — blocked until edited to a direct person.</li>
+            <li><strong>Invalid</strong> — never sends.</li>
+          </ul>
+          <p>
+            Editing an email resets its verification. A vendor outage never flips an address
+            to sendable (fail-closed).
+          </p>
+        </Card>
+        <Card title="5 · The 3-touch cadence (day 0 / +5 / +12) with open-branching">
+          <ul className="list-disc pl-5 space-y-1">
+            <li><strong>Touch 1</strong> (day 0): the approved personalized email.</li>
+            <li>
+              <strong>Touch 2</strong> (+5 days): if touch 1 shows <em>no open</em>, the SAME
+              email resends under the alternate subject as a fresh thread; if it was opened
+              but unanswered, the substantive bump goes out instead.
             </li>
             <li>
-              <strong>Touch 2 (+48h):</strong> abridged follow-up (tokens{' '}
-              <code>{'{firstName}'}</code>, <code>{'{company}'}</code>,{' '}
-              <code>{'{partnerUrl}'}</code>) — short recap + one CTA. Editable in the
-              follow-ups copy panel without a deploy.
-            </li>
-            <li>
-              <strong>Auto-cancel:</strong> the follow-up dies the moment they reply
-              (inbound email captured), the lead is marked Won/Lost, they become an active
-              partner, or they unsubscribe.
-            </li>
-            <li>
-              <strong>Sender:</strong> info@partyondelivery.com (&quot;Brian at Party On
-              Delivery&quot;) — replies flow through the Gmail poller onto the Leads board.
-            </li>
-            <li>
-              Business-hours send window (9am–7pm CT), jittered sends, suppression list +
-              CAN-SPAM footer on every touch — all inherited from the follow-up engine.
+              <strong>Touch 3</strong> (+12 days): a standalone ≤90-word soft close that makes
+              &ldquo;no&rdquo; easy.
             </li>
           </ul>
-        </Card>
-        <Card title="5 · Tracking">
           <p>
-            Campaign chips on each prospect row (Enrolled / Sent / Replied), queue + sent
-            log in <code>/admin/emails/followups</code>, replies and pipeline stage on{' '}
-            <code>/admin/leads</code>, and per-partner dashboards/engagement in the Partners
-            section.
+            Opens are directional (Apple Mail privacy inflates them, image-blocking hides
+            them) — both branches are safe to receive. A reply, bounce, or unsubscribe
+            cancels everything instantly; so does closing the lead as Won/Lost on the board,
+            the partner signing (partner-active), or un-approving the draft.
+          </p>
+        </Card>
+        <Card title="6 · The daily cap">
+          <p>
+            At most <code>OUTREACH_DAILY_CAP</code> (default 10) partner-outreach emails per
+            Central-time day, counting ALL touches. Over-cap jobs simply wait for the next
+            day — nothing is lost, nothing retries harder. Sends go out inside the 9am–7pm CT
+            window with jitter.
+          </p>
+        </Card>
+        <Card title="7 · Replies land on the Leads board">
+          <p>
+            Replies to info@ are ingested to <code>/admin/leads</code> with hot-lead alerts.
+            A replied prospect&apos;s remaining touches cancel automatically — a human owns
+            the thread from there. Partner pages + affiliate commissions work exactly as
+            before: sign the partner, tag flips to Active Partner on the next sync.
           </p>
         </Card>
 
-        <H2>Send rules (Brian&apos;s constraints — enforced in code)</H2>
-        <Card title="Nothing sends until explicitly approved">
+        <H2>Enroll gates (why a checkbox is disabled)</H2>
+        <Card title="Every enrollment requires ALL of:">
           <ul className="list-disc pl-5 space-y-1">
-            <li>
-              The <code>partner-outreach</code> feature flag is <strong>OFF by default</strong>.
-              Enrolling queues jobs, but the engine will not send until the flag is flipped
-              in <code>/admin/emails/followups</code>.
-            </li>
-            <li>
-              <strong>Test first:</strong> every email gets a test send to
-              info@partyondelivery.com (the <em>Test → info@</em> button renders both touches
-              in one message with a [TEST] subject prefix) before its batch goes out.
-            </li>
-            <li>
-              <strong>Batches of 5–10:</strong> the Enroll button is capped at 10 per batch,
-              server-side.
-            </li>
-            <li>
-              Partner pages are built before their outreach email goes out — the email
-              references the live page.
-            </li>
+            <li>An email on the row (enrich or edit to add one).</li>
+            <li>A synced Lead (run Sync to CRM).</li>
+            <li>An APPROVED draft.</li>
+            <li>A verified email (or the catch-all override).</li>
+            <li>Not suppressed, not already in a campaign.</li>
           </ul>
         </Card>
 
-        <H2>How to run a batch (operator checklist)</H2>
-        <Card title="Step by step">
+        <H2>Going live / staying safe</H2>
+        <Card title="Flag-flip procedure (unchanged: Brian flips the switch)">
           <ol className="list-decimal pl-5 space-y-1">
-            <li>Open STR or Bartending Prospects and click <strong>Sync to CRM</strong>.</li>
+            <li>Test-send 3 prospects to info@ and eyeball all 3 touches + signature.</li>
             <li>
-              Confirm the batch&apos;s partner pages exist (Partner page column shows{' '}
-              <strong>✓ /partners/…</strong>). If not, use Copy CSV → Bulk Import.
+              Run <code>npx tsx scripts/audit-outreach-jobs.ts</code> — every scheduled job
+              must map to an APPROVED, verified prospect.
+            </li>
+            <li>Enroll a small batch — jobs schedule but hold while flags are off.</li>
+            <li>
+              Brian flips <code>followups_master</code> + <code>followups_partner_outreach</code>{' '}
+              in the flags admin.
             </li>
             <li>
-              For each prospect in the batch: open the enrichment dropdown, review the
-              email, click <strong>Test → info@</strong>, and check the inbox copy.
-            </li>
-            <li>Tick 5–10 checkboxes and click <strong>Enroll selected</strong>.</li>
-            <li>
-              When ready to go live: flip <code>followups_partner_outreach</code> ON in the
-              follow-ups panel. The engine sends touch 1 on the next tick (in window), and
-              touch 2 at +48h unless they reply.
-            </li>
-            <li>
-              Watch replies on <code>/admin/leads</code> (Partner Prospects filter) — reply
-              handling is manual from there, exactly like consumer leads.
+              Watch day 1: ≤10 sends in-window, delivery statuses in the metrics strip, one
+              reply cancels its remaining touches, one bounce suppresses the address.
             </li>
           </ol>
         </Card>
-
-        <H2>System internals (for whoever works on this next)</H2>
-        <Card title="What it reuses">
-          <ul className="list-disc pl-5 space-y-1">
-            <li>
-              Follow-up engine (<code>src/lib/followups/</code>): 2-touch journey registry,
-              send window, atomic claim, dedupe keys, suppression — journey key{' '}
-              <code>partner-outreach</code>.
-            </li>
-            <li>
-              <code>sendEmailDetailed()</code> — logged sends with Resend tags, EmailLog
-              open/bounce tracking, webhook status updates.
-            </li>
-            <li>
-              Lead tags (<code>leads.tags</code>, GIN-indexed) + source{' '}
-              <code>PARTNER_OUTREACH</code>; constants in{' '}
-              <code>src/lib/leads/partner-tags.ts</code>.
-            </li>
-            <li>
-              Prospect data: <code>src/data/str-partner-prospects.json</code> +{' '}
-              <code>bartending-partner-prospects.json</code> — enrichment, emails, slugs.
-            </li>
-            <li>
-              APIs (ops-gated): <code>/api/v1/admin/partner-prospects/</code>
-              <code>{'{sync, enroll, test-send}'}</code>.
-            </li>
-            <li>
-              Page template: <code>PartnerPageTabs</code> + the Premier quote mirror at{' '}
-              <code>/partners-embed/premier-quote.html</code> (same-origin, assets proxied —
-              see <code>rewrites()</code> in next.config).
-            </li>
-          </ul>
+        <Card title="Week-1 stop gates">
+          <p>
+            Bounce rate &lt; 2% and complaint rate &lt; 0.1%. If either trips: STOP (flip the
+            journey flag off) and audit list quality before resuming. Deliverability on the
+            main domain is the asset being protected.
+          </p>
         </Card>
-        <Card title="Deliberately deferred">
+
+        <H2>Where things live</H2>
+        <Card title="Key files">
           <ul className="list-disc pl-5 space-y-1">
-            <li>Automated reply sequences beyond 2 touches (2-touch max is a locked decision).</li>
             <li>
-              Auto-enrollment — every batch is human-selected and human-approved by design.
+              Data: <code>partner_prospects</code> via{' '}
+              <code>src/lib/partners/prospect-store.ts</code> (seeded by{' '}
+              <code>scripts/seed-partner-prospects.ts</code>).
+            </li>
+            <li>
+              Research contracts: <code>src/lib/outreach/</code> (schemas, verticals,
+              draft-prompt, draft-lint) + <code>scripts/import-prospect-*.ts</code> +{' '}
+              <code>scripts/import-discovered-prospects.ts</code>.
+            </li>
+            <li>
+              Session procedures: <code>.claude/skills/partner-prospecting/SKILL.md</code>.
+            </li>
+            <li>
+              Send engine + cap: <code>src/lib/followups/</code> (journeys, engine,
+              outreach-cap).
+            </li>
+            <li>
+              APIs (ops-gated): <code>/api/v1/admin/partner-prospects/*</code>.
             </li>
           </ul>
         </Card>

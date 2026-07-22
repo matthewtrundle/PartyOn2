@@ -24,6 +24,7 @@ import { FEATURE_FLAGS, isFeatureEnabled } from '@/lib/features/feature-flags';
 import { enqueueJourney, enqueueNextStep } from './enqueue';
 import { JOURNEYS } from './journeys';
 import { getFollowUpCopyOverrides } from './copy-overrides';
+import { CAPPED_JOURNEY_KEY, outreachRemainingToday } from './outreach-cap';
 import {
   buildOneClickUnsubscribeUrl,
   buildPreferencesUrl,
@@ -197,26 +198,63 @@ async function reapStuckJobs(now: Date): Promise<number> {
  * Atomically claim due jobs for the enabled journeys. FOR UPDATE SKIP LOCKED
  * makes concurrent ticks (cron overlap, manual runs) claim disjoint sets.
  * Claiming counts as an attempt.
+ *
+ * capLimits (journeyKey → remaining sends allowed today) gates CAPPED
+ * journeys at claim time: a capped key claims at most its remaining count
+ * this tick, and with 0 remaining its jobs are simply NOT claimed —
+ * attempts untouched, a free deferral to the next tick/tomorrow. Uncapped
+ * journeys claim exactly as before. Exported for tests.
  */
-async function claimDueJobs(enabledKeys: string[]): Promise<FollowUpJob[]> {
+export async function claimDueJobs(
+  enabledKeys: string[],
+  capLimits: Record<string, number> = {}
+): Promise<FollowUpJob[]> {
   if (enabledKeys.length === 0) return [];
-  const claimed = await prisma.$queryRaw<Array<{ id: string }>>`
-    UPDATE follow_up_jobs
-    SET status = 'processing', claimed_at = now(), attempts = attempts + 1, updated_at = now()
-    WHERE id IN (
-      SELECT id FROM follow_up_jobs
-      WHERE status = 'scheduled'
-        AND scheduled_for <= now()
-        AND journey_key IN (${Prisma.join(enabledKeys)})
-      ORDER BY scheduled_for ASC
-      LIMIT ${CLAIM_BATCH_SIZE}
-      FOR UPDATE SKIP LOCKED
-    )
-    RETURNING id
-  `;
-  if (claimed.length === 0) return [];
+  const uncappedKeys = enabledKeys.filter((key) => !(key in capLimits));
+  const claimedIds: string[] = [];
+
+  if (uncappedKeys.length > 0) {
+    const claimed = await prisma.$queryRaw<Array<{ id: string }>>`
+      UPDATE follow_up_jobs
+      SET status = 'processing', claimed_at = now(), attempts = attempts + 1, updated_at = now()
+      WHERE id IN (
+        SELECT id FROM follow_up_jobs
+        WHERE status = 'scheduled'
+          AND scheduled_for <= now()
+          AND journey_key IN (${Prisma.join(uncappedKeys)})
+        ORDER BY scheduled_for ASC
+        LIMIT ${CLAIM_BATCH_SIZE}
+        FOR UPDATE SKIP LOCKED
+      )
+      RETURNING id
+    `;
+    claimedIds.push(...claimed.map((row) => row.id));
+  }
+
+  for (const key of enabledKeys) {
+    if (!(key in capLimits)) continue;
+    const limit = Math.min(Math.max(0, Math.floor(capLimits[key])), CLAIM_BATCH_SIZE);
+    if (limit === 0) continue;
+    const claimed = await prisma.$queryRaw<Array<{ id: string }>>`
+      UPDATE follow_up_jobs
+      SET status = 'processing', claimed_at = now(), attempts = attempts + 1, updated_at = now()
+      WHERE id IN (
+        SELECT id FROM follow_up_jobs
+        WHERE status = 'scheduled'
+          AND scheduled_for <= now()
+          AND journey_key = ${key}
+        ORDER BY scheduled_for ASC
+        LIMIT ${limit}
+        FOR UPDATE SKIP LOCKED
+      )
+      RETURNING id
+    `;
+    claimedIds.push(...claimed.map((row) => row.id));
+  }
+
+  if (claimedIds.length === 0) return [];
   return prisma.followUpJob.findMany({
-    where: { id: { in: claimed.map((row) => row.id) } },
+    where: { id: { in: claimedIds } },
     orderBy: { scheduledFor: 'asc' },
   });
 }
@@ -446,7 +484,14 @@ export async function runFollowUpEngine(opts: { now?: Date } = {}): Promise<Engi
   }
   result.inWindow = true;
 
-  const jobs = await claimDueJobs(enabled.map((j) => j.key));
+  // Daily cap: partner-outreach claims at most its remaining sends today
+  // (counted in America/Chicago, all touches, including in-flight jobs).
+  const enabledKeys = enabled.map((j) => j.key);
+  const capLimits: Record<string, number> = {};
+  if (enabledKeys.includes(CAPPED_JOURNEY_KEY)) {
+    capLimits[CAPPED_JOURNEY_KEY] = await outreachRemainingToday(now);
+  }
+  const jobs = await claimDueJobs(enabledKeys, capLimits);
   result.claimed = jobs.length;
 
   // Admin copy overrides — one read per tick, so a save in the dashboard

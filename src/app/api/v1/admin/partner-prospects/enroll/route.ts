@@ -16,7 +16,9 @@ import { z } from 'zod';
 import { requireOpsAuth } from '@/lib/auth/ops-session';
 import { prisma } from '@/lib/database/client';
 import { enqueueJourney } from '@/lib/followups/enqueue';
+import { isSuppressed } from '@/lib/followups/suppression';
 import { TAG_PARTNER_PROSPECT } from '@/lib/leads/partner-tags';
+import { enrollGateReason } from '@/lib/partners/enroll-gate';
 import { getProspectByWebsite } from '@/lib/partners/prospect-store';
 
 export const runtime = 'nodejs';
@@ -47,8 +49,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       results.push({ website, ok: false, reason: 'not-in-database' });
       continue;
     }
-    if (!prospect.email) {
+    const email = prospect.email;
+    if (!email) {
       results.push({ website, ok: false, reason: 'no-email' });
+      continue;
+    }
+    // Full enrollment gates: not suppressed + APPROVED draft + verified
+    // email (or catch-all override). Reasons surface in the UI.
+    const gateReason = enrollGateReason(prospect, await isSuppressed(email));
+    if (gateReason) {
+      results.push({ website, ok: false, reason: gateReason });
       continue;
     }
 
@@ -67,7 +77,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     const enq = await enqueueJourney('partner-outreach', {
-      email: prospect.email,
+      email,
       entityId: lead.id,
       leadId: lead.id,
       payload: {

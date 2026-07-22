@@ -3,9 +3,10 @@
  *
  * Single source of truth for every follow-up journey (registry pattern like
  * src/lib/analytics/landing-pages.ts). Each journey: a feature flag, up to
- * two steps (Allan's locked 2-touch max), and a shouldCancel check the engine
- * runs with FRESH database reads just before sending — the enqueue-time state
- * of the world is never trusted at send time.
+ * two steps for consumer journeys (Allan's locked 2-touch max; B2B
+ * partner-outreach runs 3), and a shouldCancel check the engine runs with
+ * FRESH database reads just before sending — the enqueue-time state of the
+ * world is never trusted at send time.
  *
  * Cancel reasons are short kebab-case strings stored on the job for the admin
  * dashboard (Phase 4).
@@ -248,7 +249,7 @@ export const JOURNEYS: JourneyDef[] = [
     key: 'partner-outreach',
     label: 'Partner outreach',
     description:
-      'B2B campaign to the STR/bartending prospect databases: the personalized enrichment email immediately on enroll, abridged follow-up at +48h. Enroll from Partners → Prospects (batches of ≤10). Flag OFF until Brian approves sends.',
+      'B2B campaign to the partner-prospect database: approved personalized email on enroll, open-branched touch 2 at +5d (no open → resend under the alternate subject; opened → substantive bump), standalone close at +12d. ≤10 sends/day (all touches). Flag OFF until Brian approves sends.',
     featureFlag: FEATURE_FLAGS.FOLLOWUPS_PARTNER_OUTREACH,
     phase: 3,
     // Prospects may also be past customers — a paid order says nothing
@@ -261,12 +262,12 @@ export const JOURNEYS: JourneyDef[] = [
     steps: [
       {
         delayHours: 0,
-        // Step 1 = the PERSONALIZED draft from the partner_prospects table,
-        // read fresh at send time so draft edits in the admin UI ship
-        // without re-enrolling (job payloads are clamped to 200 chars —
-        // copy can never ride in the payload). Falls back to the generic
-        // template when the prospect row or draft disappeared. Drafts are
-        // stored signature-free; the renderer signs as Brian.
+        // Step 1 = the APPROVED draft from partner_prospects, read fresh at
+        // send time so edits ship without re-enrolling (payloads are clamped
+        // to 200 chars — copy can never ride in the payload). Drafts are
+        // stored signature-free; the renderer signs as Brian. The generic
+        // template only ever fires for legacy jobs with no website payload —
+        // shouldCancel kills anything whose draft is no longer approved.
         buildEmail: async (ctx) => {
           const website = typeof ctx.payload.website === 'string' ? ctx.payload.website : null;
           const draft = website ? await getSendableDraft(website) : null;
@@ -276,7 +277,68 @@ export const JOURNEYS: JourneyDef[] = [
           return buildStepEmail('partner-outreach', 1, ctx);
         },
       },
-      { delayHours: 48, buildEmail: step('partner-outreach', 2) },
+      {
+        // +5 days, open-branched: no open recorded on touch 1 → resend the
+        // SAME body under the alternate subject (fresh thread); opened but
+        // unanswered → the substantive bump as a reply. Opens are directional
+        // (MPP inflates, image-blocking hides) — both branches are safe.
+        delayHours: 120,
+        buildEmail: async (ctx) => {
+          const website = typeof ctx.payload.website === 'string' ? ctx.payload.website : null;
+          const draft = website ? await getSendableDraft(website) : null;
+          if (!draft) return buildStepEmail('partner-outreach', 2, ctx);
+
+          const step1 = ctx.job.leadId
+            ? await prisma.followUpJob.findFirst({
+                where: {
+                  journeyKey: 'partner-outreach',
+                  step: 1,
+                  leadId: ctx.job.leadId,
+                  status: 'sent',
+                },
+                select: { emailLogId: true },
+              })
+            : null;
+          const log = step1?.emailLogId
+            ? await prisma.emailLog.findUnique({
+                where: { id: step1.emailLogId },
+                select: { openedAt: true },
+              })
+            : null;
+
+          if (!log?.openedAt) {
+            // No open recorded (or no log at all) — fresh-thread resend.
+            return renderFollowUpEmail(
+              draft.altSubject ?? draft.subject,
+              draft.body,
+              ctx.unsubscribeUrl,
+              BRIAN_SIGNATURE
+            );
+          }
+          if (!draft.followUpBody) return null;
+          return renderFollowUpEmail(
+            `Re: ${draft.subject}`,
+            draft.followUpBody,
+            ctx.unsubscribeUrl,
+            BRIAN_SIGNATURE
+          );
+        },
+      },
+      {
+        // +7 more days (= day 12): standalone ≤90-word soft close.
+        delayHours: 168,
+        buildEmail: async (ctx) => {
+          const website = typeof ctx.payload.website === 'string' ? ctx.payload.website : null;
+          const draft = website ? await getSendableDraft(website) : null;
+          if (!draft?.touch3Body) return null;
+          return renderFollowUpEmail(
+            draft.subject,
+            draft.touch3Body,
+            ctx.unsubscribeUrl,
+            BRIAN_SIGNATURE
+          );
+        },
+      },
     ],
     shouldCancel: async (job: FollowUpJob) => {
       if (!job.leadId) return 'missing-lead-ref';
@@ -294,6 +356,11 @@ export const JOURNEYS: JourneyDef[] = [
         select: { id: true },
       });
       if (reply) return 'replied';
+      // Un-approved between enroll and send (edit, request-redraft, …) —
+      // every remaining touch dies until it is re-approved.
+      const payload = (job.payload ?? {}) as Record<string, unknown>;
+      const website = typeof payload.website === 'string' ? payload.website : null;
+      if (website && !(await getSendableDraft(website))) return 'draft-not-approved';
       return null;
     },
   },

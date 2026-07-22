@@ -1,5 +1,5 @@
 /**
- * prospect-store: sendable-draft gating (DRAFTED|APPROVED only, subject+body
+ * prospect-store: sendable-draft gating (APPROVED only, subject+body
  * required), websiteKey lookup normalization, and legacy-view enrichment
  * reassembly (outreachEmail rebuilt from draft columns).
  */
@@ -80,8 +80,8 @@ describe('getSendableDraft', () => {
     findUnique.mockClear();
   });
 
-  it('returns the full draft for DRAFTED and APPROVED rows', async () => {
-    mockRows.unique = draftRow();
+  it('returns the full draft for APPROVED rows only', async () => {
+    mockRows.unique = draftRow({ draftStatus: 'APPROVED' });
     expect(await getSendableDraft('https://x.com')).toEqual({
       subject: 'subj',
       altSubject: 'alt subj',
@@ -89,26 +89,26 @@ describe('getSendableDraft', () => {
       followUpBody: 'bump',
       touch3Body: 'close',
     });
-    mockRows.unique = draftRow({ draftStatus: 'APPROVED' });
-    expect(await getSendableDraft('https://x.com')).not.toBeNull();
   });
 
-  it('returns null for missing rows, non-sendable statuses, or incomplete drafts', async () => {
+  it('returns null for missing rows, non-APPROVED statuses, or incomplete drafts', async () => {
     expect(await getSendableDraft('https://x.com')).toBeNull();
 
-    for (const draftStatus of ['NONE', 'DRAFTING', 'FAILED']) {
+    // DRAFTED is reviewable, not sendable — approval is an explicit action.
+    for (const draftStatus of ['NONE', 'DRAFTING', 'DRAFTED', 'FAILED']) {
       mockRows.unique = draftRow({ draftStatus });
       expect(await getSendableDraft('https://x.com')).toBeNull();
     }
 
-    mockRows.unique = draftRow({ draftSubject: null });
+    mockRows.unique = draftRow({ draftStatus: 'APPROVED', draftSubject: null });
     expect(await getSendableDraft('https://x.com')).toBeNull();
-    mockRows.unique = draftRow({ draftBody: null });
+    mockRows.unique = draftRow({ draftStatus: 'APPROVED', draftBody: null });
     expect(await getSendableDraft('https://x.com')).toBeNull();
   });
 
   it('sanitizes subjects to a single bounded line (defense-in-depth)', async () => {
     mockRows.unique = draftRow({
+      draftStatus: 'APPROVED',
       draftSubject: '  multi\nline\n subject  ',
       draftAltSubject: `x${'y'.repeat(300)}`,
     });
@@ -118,7 +118,7 @@ describe('getSendableDraft', () => {
   });
 
   it('looks up by normalized websiteKey', async () => {
-    mockRows.unique = draftRow();
+    mockRows.unique = draftRow({ draftStatus: 'APPROVED' });
     await getSendableDraft('https://www.Example.com/');
     expect(findUnique).toHaveBeenCalledWith(
       expect.objectContaining({ where: { websiteKey: 'example.com' } })

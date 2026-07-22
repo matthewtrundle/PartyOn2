@@ -1,8 +1,9 @@
 /**
- * partner-outreach journey: registry shape, personalized step-1 rendering
- * from the partner_prospects store (async DB read at send time), step-2
- * token rendering, Brian signature, and shouldCancel
- * (reply / won / lost / already-active-partner).
+ * partner-outreach journey: 3-touch registry shape (0h / +120h / +168h),
+ * APPROVED-draft rendering signed as Brian, the touch-2 open-branch
+ * (no open → alt-subject resend; opened → "Re:" bump; no EmailLog →
+ * resend), the touch-3 standalone close, and shouldCancel — including the
+ * draft-not-approved kill switch.
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -11,7 +12,9 @@ import type { FollowUpJob } from '@prisma/client';
 const mockDb: {
   lead: { pipelineStage: string | null; tags: string[] } | null;
   inbound: { id: string } | null;
-} = { lead: null, inbound: null };
+  step1Job: { emailLogId: string | null } | null;
+  emailLog: { openedAt: Date | null } | null;
+} = { lead: null, inbound: null, step1Job: null, emailLog: null };
 
 vi.mock('@/lib/database/client', () => ({
   prisma: {
@@ -21,24 +24,32 @@ vi.mock('@/lib/database/client', () => ({
     inboundEmail: {
       findFirst: vi.fn(async () => mockDb.inbound),
     },
+    followUpJob: {
+      findFirst: vi.fn(async () => mockDb.step1Job),
+    },
+    emailLog: {
+      findUnique: vi.fn(async () => mockDb.emailLog),
+    },
   },
 }));
 
+const mockDraft: { value: Record<string, unknown> | null } = { value: null };
+
 vi.mock('@/lib/partners/prospect-store', () => ({
   getSendableDraft: vi.fn(async (website: string) =>
-    website === 'https://www.lynnslodgingatx.com/'
-      ? {
-          subject: 'personalized subject',
-          altSubject: null,
-          body: 'personalized body for Lynn',
-          followUpBody: null,
-          touch3Body: null,
-        }
-      : null
+    website === 'https://www.lynnslodgingatx.com/' ? mockDraft.value : null
   ),
 }));
 
 import { getJourney } from '../journeys';
+
+const APPROVED_DRAFT = {
+  subject: 'guest perk',
+  altSubject: 'stocked fridges',
+  body: 'personalized body for Lynn',
+  followUpBody: 'the substantive bump with the page link',
+  touch3Body: 'the standalone close',
+};
 
 function fakeJob(overrides: Partial<FollowUpJob> = {}): FollowUpJob {
   return {
@@ -47,7 +58,7 @@ function fakeJob(overrides: Partial<FollowUpJob> = {}): FollowUpJob {
     step: 1,
     email: 'hello@lynnslodging.com',
     leadId: 'lead-1',
-    payload: {},
+    payload: { website: 'https://www.lynnslodgingatx.com/' },
     dedupeKey: 'partner-outreach:1:lead-1',
     createdAt: new Date(),
     ...overrides,
@@ -63,63 +74,100 @@ function ctxFor(payload: Record<string, unknown>) {
   };
 }
 
+const LYNN = { website: 'https://www.lynnslodgingatx.com/', company: "Lynn's Lodging" };
+
 describe('partner-outreach journey', () => {
   beforeEach(() => {
     mockDb.lead = { pipelineStage: 'NEW', tags: ['partner-prospect', 'str'] };
     mockDb.inbound = null;
+    mockDb.step1Job = { emailLogId: 'log-1' };
+    mockDb.emailLog = { openedAt: null };
+    mockDraft.value = { ...APPROVED_DRAFT };
   });
 
-  it('is registered with two steps, immediate + 48h, info@ sender, and no paid guard', () => {
+  it('is registered with three steps at 0h / +120h / +168h, info@ sender, no paid guard', () => {
     const journey = getJourney('partner-outreach');
     expect(journey).toBeDefined();
-    expect(journey!.steps).toHaveLength(2);
-    expect(journey!.steps[0].delayHours).toBe(0);
-    expect(journey!.steps[1].delayHours).toBe(48);
+    expect(journey!.steps).toHaveLength(3);
+    expect(journey!.steps.map((s) => s.delayHours)).toEqual([0, 120, 168]);
     expect(journey!.skipGlobalPaidGuard).toBe(true);
     expect(journey!.from?.email).toBe('info@partyondelivery.com');
   });
 
-  it('step 1 renders the draft from the prospect store, signed as Brian', async () => {
+  it('step 1 renders the approved draft, signed as Brian', async () => {
     const journey = getJourney('partner-outreach')!;
-    const email = await journey.steps[0].buildEmail(
-      ctxFor({ website: 'https://www.lynnslodgingatx.com/', company: "Lynn's Lodging" })
-    );
-    expect(email).not.toBeNull();
-    expect(email!.subject).toBe('personalized subject');
+    const email = await journey.steps[0].buildEmail(ctxFor(LYNN));
+    expect(email!.subject).toBe('guest perk');
     expect(email!.text).toContain('personalized body for Lynn');
-    // Drafts are stored signature-free — the renderer signs as Brian.
     expect(email!.text).toContain('Brian Hill\nFounder, Party On Delivery');
     expect(email!.text).not.toContain('Allan\nParty On Delivery');
-    // CAN-SPAM footer comes from the shared renderer
     expect(email!.text).toContain('Unsubscribe');
   });
 
-  it('step 1 falls back to the generic template when no sendable draft exists', async () => {
+  it('step 1 falls back to the generic template only without a website payload', async () => {
     const journey = getJourney('partner-outreach')!;
     const email = await journey.steps[0].buildEmail(
-      ctxFor({ website: 'https://gone.example.com/', company: 'Gone Co', firstName: 'Sam' })
+      ctxFor({ company: 'Gone Co', firstName: 'Sam' })
     );
     expect(email).not.toBeNull();
     expect(email!.subject).toContain('Gone Co');
-    expect(email!.text).toContain('Brian Hill\nFounder, Party On Delivery');
   });
 
-  it('step 2 renders the abridged follow-up with company + partner URL tokens', async () => {
+  it('step 2 with NO open recorded resends the body under the alternate subject', async () => {
+    mockDb.emailLog = { openedAt: null };
     const journey = getJourney('partner-outreach')!;
-    const email = await journey.steps[1].buildEmail(
-      ctxFor({ firstName: 'Lynn', company: "Lynn's Lodging", partnerSlug: 'lynns-lodging' })
-    );
-    expect(email).not.toBeNull();
-    expect(email!.subject).toContain("Lynn's Lodging");
-    expect(email!.text).toContain('/partners/lynns-lodging');
-    expect(email!.text).toContain('Brian Hill\nFounder, Party On Delivery');
-    // The inline template signature is gone — exactly one signature block.
-    expect(email!.text.match(/Brian Hill/g)).toHaveLength(1);
+    const email = await journey.steps[1].buildEmail(ctxFor(LYNN));
+    expect(email!.subject).toBe('stocked fridges');
+    expect(email!.text).toContain('personalized body for Lynn');
   });
 
-  it('shouldCancel: proceeds for an open, un-replied prospect', async () => {
+  it('step 2 with no EmailLog at all also takes the resend branch', async () => {
+    mockDb.step1Job = null;
+    const journey = getJourney('partner-outreach')!;
+    const email = await journey.steps[1].buildEmail(ctxFor(LYNN));
+    expect(email!.subject).toBe('stocked fridges');
+  });
+
+  it('step 2 with an open recorded sends the substantive bump as a reply', async () => {
+    mockDb.emailLog = { openedAt: new Date() };
+    const journey = getJourney('partner-outreach')!;
+    const email = await journey.steps[1].buildEmail(ctxFor(LYNN));
+    expect(email!.subject).toBe('Re: guest perk');
+    expect(email!.text).toContain('the substantive bump');
+  });
+
+  it('step 2 resend falls back to the subject when altSubject is missing; opened without a bump sends nothing', async () => {
+    const journey = getJourney('partner-outreach')!;
+    mockDraft.value = { ...APPROVED_DRAFT, altSubject: null };
+    let email = await journey.steps[1].buildEmail(ctxFor(LYNN));
+    expect(email!.subject).toBe('guest perk');
+
+    mockDb.emailLog = { openedAt: new Date() };
+    mockDraft.value = { ...APPROVED_DRAFT, followUpBody: null };
+    email = await journey.steps[1].buildEmail(ctxFor(LYNN));
+    expect(email).toBeNull();
+  });
+
+  it('step 3 sends the standalone close, or nothing without touch3Body', async () => {
+    const journey = getJourney('partner-outreach')!;
+    let email = await journey.steps[2].buildEmail(ctxFor(LYNN));
+    expect(email!.subject).toBe('guest perk');
+    expect(email!.text).toContain('the standalone close');
+
+    mockDraft.value = { ...APPROVED_DRAFT, touch3Body: null };
+    email = await journey.steps[2].buildEmail(ctxFor(LYNN));
+    expect(email).toBeNull();
+  });
+
+  it('shouldCancel: proceeds for an open, un-replied, approved prospect', async () => {
     const journey = getJourney('partner-outreach')!;
     expect(await journey.shouldCancel(fakeJob())).toBeNull();
+  });
+
+  it('shouldCancel: kills every touch when the draft is no longer approved', async () => {
+    mockDraft.value = null;
+    const journey = getJourney('partner-outreach')!;
+    expect(await journey.shouldCancel(fakeJob())).toBe('draft-not-approved');
   });
 
   it('shouldCancel: cancels on reply, won, lost, active-partner, missing lead', async () => {

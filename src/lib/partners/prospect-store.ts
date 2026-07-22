@@ -164,9 +164,9 @@ export async function getProspectById(id: string): Promise<StoredProspect | null
 
 /**
  * The outreach draft for a website, or null when there is nothing sendable.
- * PR1 parity: DRAFTED or APPROVED both send (matching the old JSON behavior
- * where any enrichment.outreachEmail sent). PR6 tightens this to APPROVED
- * only, alongside the enroll gates.
+ * APPROVED only — a human explicitly approves every email that can leave
+ * the building (DRAFTED sent during the pre-2.0 parity window only; zero
+ * real sends ever fired under that rule).
  */
 export async function getSendableDraft(website: string): Promise<SendableDraft | null> {
   const row = await prisma.partnerProspect.findUnique({
@@ -181,7 +181,7 @@ export async function getSendableDraft(website: string): Promise<SendableDraft |
     },
   });
   if (!row) return null;
-  if (row.draftStatus !== 'DRAFTED' && row.draftStatus !== 'APPROVED') return null;
+  if (row.draftStatus !== 'APPROVED') return null;
   if (!row.draftSubject || !row.draftBody) return null;
   return {
     subject: sanitizeSubject(row.draftSubject),

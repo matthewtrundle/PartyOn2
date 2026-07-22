@@ -77,7 +77,11 @@ export interface JourneyEmailContext {
   copyOverrides?: FollowUpCopyOverrides;
 }
 
-/** One touch in a journey (2-touch max per Allan's locked decision). */
+/**
+ * One touch in a journey. Consumer journeys cap at 2 touches (Allan's
+ * locked decision); partner-outreach (B2B) runs 3 per the Partner
+ * Outreach 2.0 plan.
+ */
 export interface JourneyStep {
   /** Hours after the trigger (step 1) or after the previous send (step 2). */
   delayHours: number;
@@ -103,7 +107,7 @@ export interface JourneyDef {
   featureFlag: FeatureFlagKey;
   /** Rollout phase from the build plan (1 = revenue, 2 = acks, 3 = post-purchase). */
   phase: 1 | 2 | 3;
-  /** Max length 2. */
+  /** Max length 2 for consumer journeys; partner-outreach runs 3. */
   steps: JourneyStep[];
   /**
    * Fresh-DB-read cancellation check, run by the engine just before sending.
