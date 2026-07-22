@@ -10,7 +10,7 @@ import {
   getParticipantDraftItems,
   getParticipantById,
 } from '@/lib/group-orders-v2/service';
-import { createGroupV2CheckoutSession } from '@/lib/stripe/group-v2-payments';
+import { createGroupV2CheckoutSession, DiscountNotApplicableError } from '@/lib/stripe/group-v2-payments';
 import { ProductNotPurchasableError } from '@/lib/products/availability';
 
 interface RouteParams {
@@ -176,6 +176,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     console.error('[Group V2] Checkout error:', error);
     if (error instanceof ProductNotPurchasableError) {
       return NextResponse.json({ success: false, error: error.message }, { status: 409 });
+    }
+    if (error instanceof DiscountNotApplicableError) {
+      return NextResponse.json({ success: false, error: error.message }, { status: 400 });
     }
     const msg = error instanceof Error ? error.message : 'Failed to create checkout';
     return NextResponse.json({ success: false, error: msg }, { status: 500 });

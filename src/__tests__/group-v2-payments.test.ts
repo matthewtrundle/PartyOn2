@@ -23,6 +23,7 @@ const mockPrismaProductVariantFindMany = vi.fn();
 const mockPrismaGroupOrderV2FindUnique = vi.fn();
 const mockPrismaParticipantPaymentCreate = vi.fn();
 const mockStripeCheckoutSessionsCreate = vi.fn();
+const mockValidateDiscountCode = vi.fn();
 
 vi.mock('@/lib/database/client', () => ({
   prisma: {
@@ -75,6 +76,7 @@ vi.mock('@/lib/email', () => ({
 }));
 vi.mock('@/lib/discounts/discount-engine', () => ({
   recordDiscountUsage: vi.fn().mockResolvedValue(undefined),
+  validateDiscountCode: (...args: unknown[]) => mockValidateDiscountCode(...args),
 }));
 vi.mock('@/lib/affiliates/commission-engine', () => ({
   linkOrderToAffiliate: vi.fn().mockResolvedValue(undefined),
@@ -101,7 +103,11 @@ vi.mock('@/lib/tax', () => ({
 }));
 
 // Import after mocks are set up
-import { handleGroupV2PaymentCompleted, createGroupV2CheckoutSession } from '@/lib/stripe/group-v2-payments';
+import {
+  handleGroupV2PaymentCompleted,
+  createGroupV2CheckoutSession,
+  DiscountNotApplicableError,
+} from '@/lib/stripe/group-v2-payments';
 import { ProductNotPurchasableError } from '@/lib/products/availability';
 
 // --- Test helpers ---
@@ -573,5 +579,75 @@ describe('createGroupV2CheckoutSession — SMS consent metadata (A2P 10DLC)', ()
     expect(params.metadata?.smsConsent).toBe('true');
     // The raw phone must never appear in metadata, custom_text, or anywhere in the params.
     expect(JSON.stringify(params)).not.toContain('5559998888');
+  });
+});
+
+describe('createGroupV2CheckoutSession — discount validation (usage/expiry limits)', () => {
+  const purchasableInput = {
+    groupOrderId: 'group-order-id-1',
+    subOrderId: 'sub-order-id-1',
+    participantId: 'participant-id-1',
+    participantName: 'Guest',
+    draftItems: [
+      {
+        id: 'draft-1',
+        productId: 'product-id-1',
+        variantId: 'variant-id-1',
+        title: 'Test Beer Pack',
+        variantTitle: '12 Pack',
+        price: 22.99,
+        imageUrl: null,
+        quantity: 1,
+      },
+    ],
+    successUrl: 'https://example.com/success',
+    cancelUrl: 'https://example.com/cancel',
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    // Product purchasable → availability guard passes → we reach the discount check.
+    mockPrismaProductVariantFindMany.mockResolvedValue([
+      {
+        id: 'variant-id-1',
+        availableForSale: true,
+        product: { id: 'product-id-1', status: 'ACTIVE', title: 'Test Beer Pack' },
+      },
+    ]);
+    mockStripeCheckoutSessionsCreate.mockResolvedValue({ id: 'cs_test_x', url: 'https://stripe.test/x' });
+    mockPrismaParticipantPaymentCreate.mockResolvedValue({ id: 'payment-x' });
+  });
+
+  it('rejects a code that fails validation (e.g. a single-use code already redeemed) and never charges', async () => {
+    // Simulates a maxUsageCount:1 code whose usageCount is already 1.
+    mockValidateDiscountCode.mockResolvedValue({
+      success: false,
+      discountAmount: 0,
+      error: 'This discount code has reached its usage limit',
+    });
+
+    await expect(
+      createGroupV2CheckoutSession({ ...purchasableInput, discountCode: 'PREMIER-USED' }),
+    ).rejects.toBeInstanceOf(DiscountNotApplicableError);
+
+    // The exhausted code must never reach a Stripe charge.
+    expect(mockStripeCheckoutSessionsCreate).not.toHaveBeenCalled();
+  });
+
+  it('proceeds to checkout when the code validates', async () => {
+    mockValidateDiscountCode.mockResolvedValue({
+      success: true,
+      discountAmount: 15,
+      discountCode: 'PREMIER-OK',
+      freeShipping: false,
+    });
+
+    await createGroupV2CheckoutSession({ ...purchasableInput, discountCode: 'PREMIER-OK' });
+
+    expect(mockValidateDiscountCode).toHaveBeenCalledWith(
+      'PREMIER-OK',
+      expect.objectContaining({ subtotal: 22.99 }),
+    );
+    expect(mockStripeCheckoutSessionsCreate).toHaveBeenCalled();
   });
 });
