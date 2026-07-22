@@ -35,6 +35,17 @@ delivery hours (10 AM – 9 PM Mon–Sat).
 
 Party On Delivery
 
+## Board Email
+
+<!-- First-person variant for the /admin/leads reply composer (a human sends this
+     personally). The ## Email above stays third-person for the CRM auto-drafter. -->
+
+Hi {{first_name}},
+
+Absolutely — got your message and I'll give you a call. If it's about an event happening
+today, reply "TODAY" and I'll bump you to the top. Otherwise I'll reach out during
+delivery hours (10 AM – 9 PM Mon–Sat).
+
 ## Chat
 
 Sure thing — drop your number here and I'll flag it for a callback. If it's about

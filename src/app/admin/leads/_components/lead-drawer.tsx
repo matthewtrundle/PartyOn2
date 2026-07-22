@@ -2,6 +2,7 @@
 
 import { ReactElement, useCallback, useEffect, useRef, useState } from 'react';
 import BottomSheet from '@/components/backend/kit/BottomSheet';
+import { extractLeadFacts } from '@/lib/leads/scoring';
 import { type PipelineStage } from '@/lib/leads/pipeline-types';
 import type { LeadMutations } from './use-lead-mutations';
 import type { LeadDetail } from './drawer-types';
@@ -124,9 +125,13 @@ export default function LeadDrawer({
               </h3>
               <div className="mt-2">
                 <ReplyComposer
+                  key={lead.id}
                   leadId={lead.id}
                   leadEmail={lead.email}
-                  defaultSubject="Your Party On Delivery inquiry"
+                  firstName={lead.firstName}
+                  sourceWidget={lead.sourceWidget}
+                  occasion={extractLeadFacts(lead.metadata).occasion}
+                  inbound={detail.inboundEmails[0] ?? null}
                   onSent={() => void load()}
                 />
               </div>

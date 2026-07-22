@@ -10,6 +10,7 @@ a human, and a hard rule that the bot never states a fact this playbook can't ba
 | Consumer | How | Status |
 |---|---|---|
 | PartyChat (site chat) | `scripts/playbook/build-chat-prompt.ts` regenerates the `<!-- PLAYBOOK:BEGIN -->` block in `src/prompts/reginald.md` | live |
+| Lead board reply composer (`/admin/leads`) | `scripts/playbook/build-reply-templates.ts` → `src/lib/leads/reply-templates.generated.ts` — the lead-relevant intents' `## Email` blocks as one-click, operator-edited quick-fills | live |
 | CRM email AI-inbox (info@) | `partyon-crm/scripts/ingest-playbook.ts` → `ai_inboxes.system_prompt` + `knowledge_base` | after Supabase deploy; starts in `auto_reply_mode='draft'` |
 | CRM chat widget | same ingest → `knowledge_base_docs` rows | after Supabase deploy |
 | SMS auto-reply | same ingest → `sms_templates` (from each card's `## SMS` block) | blocked on A2P approval |
@@ -38,8 +39,9 @@ info@partyondelivery.com. Swaps to the CRM `escalations` queue when deployed.
    template — ≤320 chars, `{{var}}` interpolation, no separate template library.
 4. Every card must be registered in `playbook.yaml` `intents:`; every T4 card must name a
    valid `escalation_reason`.
-5. After editing anything here: re-run the lint, re-run
-   `npx tsx scripts/playbook/build-chat-prompt.ts`, and re-ingest the CRM (when live).
+5. After editing anything here: re-run the lint, re-run both
+   `npx tsx scripts/playbook/build-chat-prompt.ts` and
+   `npx tsx scripts/playbook/build-reply-templates.ts`, and re-ingest the CRM (when live).
 6. Keep Allan's voice (`voice-guide.md`) — warm, short, first-name, "-Allan".
 
 ## Intent inventory (31 cards)

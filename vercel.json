@@ -1,6 +1,10 @@
 {
   "crons": [
     {
+      "path": "/api/cron/lead-hot-alert",
+      "schedule": "*/15 * * * *"
+    },
+    {
       "path": "/api/cron/generate-blog",
       "schedule": "0 14 * * *"
     },

@@ -43,6 +43,21 @@ Allan will put pricing together for you personally.
 
 Party On Delivery
 
+## Board Email
+
+<!-- First-person variant for the /admin/leads reply composer (a human sends this
+     personally). The ## Email above stays third-person for the CRM auto-drafter. -->
+
+Hi {{first_name}},
+
+Yes! We provide TABC-certified, insured bartenders for weddings, corporate events, and
+private parties — plus custom cocktail menus and complete bar setups (glassware, ice,
+garnishes, mixers, tools). Packages start at $600, and the exact quote depends on your
+event.
+
+Reply with your date, headcount, venue, and how many hours of service you need, and I'll
+put pricing together for you personally.
+
 ## Chat
 
 Yes — TABC-certified, insured bartenders plus full bar setups and custom cocktail menus.

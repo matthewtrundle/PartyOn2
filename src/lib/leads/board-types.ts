@@ -20,6 +20,10 @@ export interface BoardLead {
   headcount: number | null;
   budgetPerPerson: number | null;
   sourceWidget: string | null;
+  /** Filter key: the widget, or `CONTACT_FORM:<surface>` for the split intents. */
+  sourceKey: string;
+  /** Display label — splits CONTACT_FORM into Quote Request / Chat / Event Quiz / Contact Form. */
+  sourceLabel: string;
   sourcePage: string | null;
   /** Segmentation tags — partner-prospect / partner-active / vertical. */
   tags: string[];
