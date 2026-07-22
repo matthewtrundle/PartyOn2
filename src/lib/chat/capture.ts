@@ -13,6 +13,7 @@
 import { LeadEventType } from '@prisma/client';
 import { prisma } from '@/lib/database/client';
 import { upsertLead, recordEvent } from '@/lib/leads/leadCapture';
+import { enrollLeadIfEligible } from '@/lib/leads/pipeline';
 import { mirrorLeadToCrm, leadBoardUrl } from '@/lib/leads/crm-mirror';
 import { detectEscalation } from './escalation-keywords';
 import { parseContact, hasContact } from './parse-contact';
@@ -91,6 +92,13 @@ export async function persistChatTurn(input: ChatTurnInput): Promise<void> {
           trustedSubmit: false,
           metadata: { conversationId, via: 'wayne-chat' },
         });
+        // Put the lead on the Lead Flow board as NEW so an operator sees it and
+        // follows up. `enrollLeadIfEligible` only enrolls null-stage leads, so —
+        // unlike the trusted `handleSubmitSignal` — it can NEVER reopen a WON/LOST
+        // card from unauthenticated chat text (that's the HIGH we're avoiding).
+        // allowPartial: a chat contact is a PARTIAL lead, but a genuine inquiry
+        // (Wayne asked for + got their number) an operator should work.
+        await enrollLeadIfEligible(lead.id, { allowPartial: true });
         await prisma.chatConversation.update({
           where: { id: convo.id },
           data: { leadId: lead.id, contactCapturedAt: new Date() },
