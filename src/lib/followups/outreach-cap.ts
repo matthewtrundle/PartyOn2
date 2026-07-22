@@ -12,7 +12,11 @@
  * CT-day-start (in-flight jobs must count or a crashy tick could overshoot).
  */
 
+import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/database/client';
+
+/** Prisma client or interactive-transaction client. */
+type Db = Prisma.TransactionClient | typeof prisma;
 
 const DEFAULT_CAP = 10;
 const MIN_CAP = 1;
@@ -64,15 +68,19 @@ export function chicagoDayStart(now: Date = new Date()): Date {
 
 /**
  * Partner-outreach sends counted against today's cap (all touches):
- * sent today + currently in flight.
+ * sent today + currently in flight. Pass the engine's transaction client
+ * when counting under the claim's advisory lock (TOCTOU-safe).
  */
-export async function countOutreachSendsToday(now: Date = new Date()): Promise<number> {
+export async function countOutreachSendsToday(
+  now: Date = new Date(),
+  db: Db = prisma
+): Promise<number> {
   const dayStart = chicagoDayStart(now);
   const [sent, processing] = await Promise.all([
-    prisma.followUpJob.count({
+    db.followUpJob.count({
       where: { journeyKey: CAPPED_JOURNEY_KEY, status: 'sent', sentAt: { gte: dayStart } },
     }),
-    prisma.followUpJob.count({
+    db.followUpJob.count({
       where: { journeyKey: CAPPED_JOURNEY_KEY, status: 'processing', claimedAt: { gte: dayStart } },
     }),
   ]);
