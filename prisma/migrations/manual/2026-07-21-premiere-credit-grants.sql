@@ -6,12 +6,15 @@
 -- from the linked Discount (usageCount / DiscountUsage). Expiry lives only on
 -- Discount.expiresAt. See src/lib/premiere-credits/.
 --
--- Additive + idempotent per the manual-migration rules (README.md).
+-- Column types match the Prisma model + repo convention: id / *_id are TEXT
+-- (Prisma String @id, uuid supplied app-side via @default(uuid())). The FK
+-- MUST be TEXT because discounts.id is a Prisma String @id (a TEXT column) —
+-- a UUID column cannot reference it. Additive + idempotent (README.md).
 
 BEGIN;
 
 CREATE TABLE IF NOT EXISTS premiere_credit_grants (
-  id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id                  TEXT PRIMARY KEY,
   -- Idempotency: sha256 of normalized client name + booking date + amount.
   -- Row numbers are never identity (humans insert/reorder rows), so this hash
   -- is the dedupe key. UNIQUE so concurrent cron ticks cannot double-mint.
@@ -25,10 +28,11 @@ CREATE TABLE IF NOT EXISTS premiere_credit_grants (
   cruise_date         DATE,
   amount              NUMERIC(10,2) NOT NULL,
   -- Linked minted discount (NULL until minted — NEEDS_CONTACT never mints).
-  discount_id         UUID REFERENCES discounts(id),
+  -- TEXT to match discounts.id (Prisma String @id).
+  discount_id         TEXT REFERENCES discounts(id),
   code                TEXT,
-  -- Lifecycle: PENDING | NEEDS_CONTACT | READY | HELD_FOR_APPROVAL | SENT |
-  -- SEND_FAILED | CANCELED. Stored as TEXT (not a PG enum) so lifecycle
+  -- Lifecycle: PENDING | NEEDS_CONTACT | READY | HELD_FOR_APPROVAL | SENDING |
+  -- SENT | SEND_FAILED | CANCELED. Stored as TEXT (not a PG enum) so lifecycle
   -- tweaks never need a migration.
   status              TEXT NOT NULL DEFAULT 'PENDING',
   hold_reason         TEXT,
