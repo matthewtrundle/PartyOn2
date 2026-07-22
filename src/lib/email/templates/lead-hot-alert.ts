@@ -37,7 +37,22 @@ export interface HotAlertEmail {
 }
 
 function escapeHtml(v: string): string {
-  return v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return v
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/**
+ * Collapse CR/LF (and surrounding whitespace) to a single space so a
+ * lead-supplied value — first/last name, free-text occasion — can't inject extra
+ * lines into the plain-text digest or break the layout. Lead intake is
+ * deliberately tolerant (no length/char cap), so sanitize at this output edge.
+ */
+function oneLine(v: string): string {
+  return v.replace(/\s*[\r\n]+\s*/g, ' ').trim();
 }
 
 function displayName(r: HotAlertRow): string {
@@ -73,9 +88,9 @@ export function toAlertItems(rows: HotAlertRow[], now: Date, baseUrl: string): A
     }
     if (facts.headcount != null) parts.push(`${facts.headcount} ppl`);
     return {
-      name: displayName(r),
-      contact: r.email ?? r.phone ?? '—',
-      meta: parts.join(' · '),
+      name: oneLine(displayName(r)),
+      contact: oneLine(r.email ?? r.phone ?? '—'),
+      meta: oneLine(parts.join(' · ')),
       url: `${baseUrl}/admin/leads?lead=${r.id}`,
     };
   });
@@ -93,7 +108,7 @@ export function buildHotLeadAlertEmail(items: AlertItem[], baseUrl: string): Hot
         it.meta ? ` <span style="color:#b91c1c;">${escapeHtml(it.meta)}</span>` : ''
       }<br/>
       <span style="color:#6b7280;">${escapeHtml(it.contact)}</span><br/>
-      <a href="${it.url}" style="color:#0B74B8;">Open card →</a>
+      <a href="${escapeHtml(it.url)}" style="color:#0B74B8;">Open card →</a>
     </li>`,
     )
     .join('\n');

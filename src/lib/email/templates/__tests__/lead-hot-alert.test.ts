@@ -53,6 +53,23 @@ describe('toAlertItems', () => {
     expect(item.contact).toBe('5125551234');
     expect(item.meta).toBe('emailed you');
   });
+
+  it('collapses newlines in lead-supplied fields (no plain-text line injection)', () => {
+    const [item] = toAlertItems(
+      [
+        row({
+          first_name: 'Evil\nInjected: call (555) 000-0000',
+          last_name: null,
+          metadata: { contactForm: { eventType: 'party\nsecond line' } },
+        }),
+      ],
+      NOW,
+      'https://x.test',
+    );
+    expect(item.name).not.toContain('\n');
+    expect(item.name).toBe('Evil Injected: call (555) 000-0000');
+    expect(item.meta).not.toContain('\n');
+  });
 });
 
 describe('buildHotLeadAlertEmail', () => {
@@ -75,12 +92,13 @@ describe('buildHotLeadAlertEmail', () => {
     expect(email.text).toContain('https://x.test/admin/leads');
   });
 
-  it('HTML-escapes lead-derived text', () => {
+  it('HTML-escapes lead-derived text, including quotes', () => {
     const email = buildHotLeadAlertEmail(
-      toAlertItems([row({ first_name: 'A<script>', last_name: null })], NOW, 'https://x.test'),
+      toAlertItems([row({ first_name: `A<script>"x'y`, last_name: null })], NOW, 'https://x.test'),
       'https://x.test',
     );
-    expect(email.html).toContain('A&lt;script&gt;');
+    expect(email.html).toContain('A&lt;script&gt;&quot;x&#39;y');
     expect(email.html).not.toContain('A<script>');
+    expect(email.html).not.toContain('"x\'y'); // raw quotes never reach the markup
   });
 });
