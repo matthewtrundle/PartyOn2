@@ -71,7 +71,8 @@ export async function GET(
     return NextResponse.json({ success: false, error: 'not_found' }, { status: 404 });
   }
 
-  const [events, followUps, emailLogs, orders, drafts, inboundEmails] = await Promise.all([
+  const [events, followUps, emailLogs, orders, drafts, inboundEmails, chatConversations] =
+    await Promise.all([
     prisma.leadEvent.findMany({
       where: { leadId: id },
       orderBy: { occurredAt: 'desc' },
@@ -122,11 +123,36 @@ export async function GET(
         receivedAt: true,
       },
     }),
+    // Wayne chat transcripts captured for this lead (contact given mid-chat).
+    prisma.chatConversation.findMany({
+      where: { leadId: id },
+      orderBy: { createdAt: 'desc' },
+      take: 10,
+      select: {
+        id: true,
+        conversationId: true,
+        messages: true,
+        firstPage: true,
+        escalated: true,
+        escalationReason: true,
+        contactCapturedAt: true,
+        createdAt: true,
+      },
+    }),
   ]);
 
   return NextResponse.json({
     success: true,
-    data: { lead, events, followUps, emailLogs, orders, drafts, inboundEmails },
+    data: {
+      lead,
+      events,
+      followUps,
+      emailLogs,
+      orders,
+      drafts,
+      inboundEmails,
+      chatConversations,
+    },
   });
 }
 

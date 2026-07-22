@@ -161,6 +161,7 @@ function makeDetail(over: Partial<LeadDetail>): LeadDetail {
     orders: [],
     drafts: [],
     inboundEmails: [],
+    chatConversations: [],
     ...over,
   };
 }

@@ -10,6 +10,7 @@ import DrawerSummary from './drawer-summary';
 import DrawerStageActions from './drawer-stage-actions';
 import DrawerFacts from './drawer-facts';
 import DrawerInbound from './drawer-inbound';
+import DrawerConversation from './drawer-conversation';
 import DrawerTimeline from './drawer-timeline';
 import ReplyComposer from './reply-composer';
 
@@ -115,6 +116,7 @@ export default function LeadDrawer({
             />
             <DrawerFacts detail={detail} />
             <DrawerInbound inboundEmails={detail.inboundEmails} />
+            <DrawerConversation chatConversations={detail.chatConversations} />
 
             <section className="mt-4">
               <h3 className="font-heading font-bold text-sm tracking-[0.1em] uppercase text-gray-500">

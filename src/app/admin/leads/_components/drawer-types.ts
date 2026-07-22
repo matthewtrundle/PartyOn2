@@ -74,4 +74,16 @@ export interface LeadDetail {
     bodyText: string | null;
     receivedAt: string;
   }>;
+  /** Wayne chat transcripts captured for this lead, newest first. */
+  chatConversations: Array<{
+    id: string;
+    conversationId: string;
+    /** OpenRouter-format history: [{ role, content }, ...]. */
+    messages: Array<{ role: string; content: string }>;
+    firstPage: string | null;
+    escalated: boolean;
+    escalationReason: string | null;
+    contactCapturedAt: string | null;
+    createdAt: string;
+  }>;
 }

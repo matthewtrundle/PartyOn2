@@ -67,8 +67,27 @@ const PARTY_OPTIONS: PartyType[] = [
 const NAVY = '#0A1F33';
 const GOLD = '#F2D34F';
 
-export default function PartyChat() {
-  const [open, setOpen] = useState(false);
+interface PartyChatProps {
+  /**
+   * When provided, the parent owns open/close (e.g. the site-wide WidgetMenu
+   * opening the quiz behind its "Get a party recommendation" door). When
+   * omitted, PartyChat renders its own floating bubble and manages its own
+   * open state — the original standalone behavior.
+   */
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export default function PartyChat({ isOpen: controlledIsOpen, onClose }: PartyChatProps = {}) {
+  const isControlled = controlledIsOpen !== undefined;
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = isControlled ? Boolean(controlledIsOpen) : internalOpen;
+  // Closing routes to the parent when controlled (WidgetMenu treats this as
+  // "back to the three-door menu"); otherwise it collapses back to the FAB.
+  const closePanel = () => {
+    if (onClose) onClose();
+    else setInternalOpen(false);
+  };
   const [step, setStep] = useState<Step>('party');
   const [partyType, setPartyType] = useState<PartyType | null>(null);
   // Default delivery date depends on the entrance-gate choice:
@@ -221,11 +240,13 @@ export default function PartyChat() {
     }
   };
 
-  // FAB (closed state)
+  // FAB (closed state) — suppressed when a parent controls the panel (the
+  // parent renders its own launcher and simply toggles isOpen).
   if (!open) {
+    if (isControlled) return null;
     return (
       <button
-        onClick={() => setOpen(true)}
+        onClick={() => setInternalOpen(true)}
         aria-label="Chat with Party On Delivery"
         className="fixed z-[150] rounded-full shadow-2xl transition-transform hover:scale-[1.05]"
         style={{
@@ -280,12 +301,12 @@ export default function PartyChat() {
           </div>
         </div>
         <button
-          onClick={() => setOpen(false)}
-          aria-label="Close"
+          onClick={closePanel}
+          aria-label={isControlled ? 'Back to menu' : 'Close'}
           className="w-8 h-8 rounded-full flex items-center justify-center text-lg"
           style={{ background: 'rgba(255,255,255,0.15)', color: '#FFFFFF' }}
         >
-          ×
+          {isControlled ? '‹' : '×'}
         </button>
       </div>
 

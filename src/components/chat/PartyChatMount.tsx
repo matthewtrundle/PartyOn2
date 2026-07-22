@@ -1,12 +1,16 @@
 'use client';
 
 /**
- * PartyChat mount controller.
+ * WidgetMenu mount controller.
  *
- * Decides on which pages the chat bubble should appear. Mounted once
- * in the root layout (via PixelMount). The bubble is a floating action
+ * Decides on which pages the floating chat bubble should appear. Mounted
+ * once in the root layout (via PixelMount). The bubble is a floating action
  * button so it doesn't interact with page layout — we just hide it
  * entirely on routes where it would be redundant or in the way.
+ *
+ * Renders <WidgetMenu/> — the three-door entry menu (Order drinks now /
+ * Get a party recommendation / Chat with Wayne). (Previously rendered the
+ * quiz-only <PartyChat/> directly; the quiz now lives behind door 2.)
  *
  * Hidden on:
  *   - /admin/* and /ops/*  (internal tools)
@@ -18,7 +22,7 @@
  *   - /dads-gone-wild         (private friends-only invite — no marketing widgets)
  */
 import { usePathname } from 'next/navigation';
-import PartyChat from './PartyChat';
+import WidgetMenu from './WidgetMenu';
 
 const HIDE_PATTERNS: RegExp[] = [
   /^\/admin(\/|$)/,
@@ -47,5 +51,5 @@ const HIDE_PATTERNS: RegExp[] = [
 export default function PartyChatMount() {
   const pathname = usePathname() ?? '/';
   if (HIDE_PATTERNS.some((re) => re.test(pathname))) return null;
-  return <PartyChat />;
+  return <WidgetMenu />;
 }
