@@ -24,32 +24,26 @@ export default function AIConcierge({ mode = 'normal', isOpen: controlledIsOpen,
   const router = useRouter()
   const pathname = usePathname()
 
-  // Stable per-browser conversation id so the backend can thread every Wayne
-  // turn into one ChatConversation row (persist/escalation/lead capture keys off
-  // it). Generated lazily on first send, persisted in localStorage so it survives
-  // reopens and is shared across every Wayne mount (site-wide menu, /products, cart).
+  // Per-page-session conversation id so the backend can thread every Wayne turn
+  // into one ChatConversation row. Held in a ref (not localStorage) and minted
+  // lazily on the first send. It deliberately does NOT persist across reloads or
+  // devices: a permanent shared localStorage id let a second person on a shared
+  // browser inherit the first person's conversation (their PII would land on the
+  // first person's lead) and let a returning visit overwrite the earlier
+  // transcript (security review 2026-07-22, MEDIUM-1 / transcript-integrity).
+  // Because this component stays mounted for the life of the page (WidgetMenu
+  // never unmounts it), the id + full message history survive open/close and
+  // back-to-menu within a visit — capture.ts's "client posts the full transcript"
+  // assumption holds; a page reload correctly starts a fresh conversation row.
   const conversationIdRef = useRef<string | null>(null)
   const getConversationId = (): string => {
-    if (conversationIdRef.current) return conversationIdRef.current
-    let id: string | null = null
-    try {
-      id = localStorage.getItem('wayne_conversation_id')
-    } catch {
-      /* localStorage unavailable (private mode / quota) */
-    }
-    if (!id) {
-      id =
+    if (!conversationIdRef.current) {
+      conversationIdRef.current =
         typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
           ? crypto.randomUUID()
           : `wayne_${Date.now()}_${Math.random().toString(36).slice(2)}`
-      try {
-        localStorage.setItem('wayne_conversation_id', id)
-      } catch {
-        /* ignore */
-      }
     }
-    conversationIdRef.current = id
-    return id
+    return conversationIdRef.current
   }
 
   const handleOpen = () => {

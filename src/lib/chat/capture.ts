@@ -82,7 +82,13 @@ export async function persistChatTurn(input: ChatTurnInput): Promise<void> {
           leadId: lead.id,
           page: input.firstPage ?? '/chat',
           widget: 'WAYNE_CHAT',
-          trustedSubmit: true,
+          // NOT trustedSubmit: unlike the concierge/quote/contact forms, a chat
+          // "contact" is regex-parsed from unauthenticated freeform text on the
+          // public /api/chat endpoint. Marking it trusted would let an anonymous
+          // caller reopen a victim's WON/LOST board card just by typing their
+          // email into the chat (security review 2026-07-22, HIGH-1). The lead is
+          // still captured + mirrored; it just can't force a stage reopen.
+          trustedSubmit: false,
           metadata: { conversationId, via: 'wayne-chat' },
         });
         await prisma.chatConversation.update({
