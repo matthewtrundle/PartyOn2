@@ -60,6 +60,17 @@ describe('parseContact', () => {
     expect(parseContact('this is Jessica, thanks!').firstName).toBe('Jessica');
   });
 
+  it('does NOT read a verb after "I\'m" as a name', () => {
+    // Regression: "I'm doing a wedding" used to capture the name "doing".
+    expect(parseContact("I'm doing a wedding").firstName).toBeUndefined();
+    expect(parseContact('I am planning a bachelorette').firstName).toBeUndefined();
+    expect(parseContact("i'm looking for a keg").firstName).toBeUndefined();
+    // A real capitalized name still parses, and phone is still captured alongside.
+    const c = parseContact("I'm doing a wedding, my number is 512-555-1000");
+    expect(c.firstName).toBeUndefined();
+    expect(c.phone).toBe('5125551000');
+  });
+
   it('returns nothing identifiable for a plain message', () => {
     const c = parseContact('do you deliver to 78704?');
     expect(c.email).toBeUndefined();
