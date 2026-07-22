@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import { readFile } from 'fs/promises'
 import { join } from 'path'
+import { persistChatTurn } from '@/lib/chat/capture'
 
 // Cache the prompt content to avoid reading file on every request
 let cachedBasePrompt: string | null = null
@@ -29,7 +30,16 @@ async function loadBasePrompt(): Promise<string> {
 
 export async function POST(request: NextRequest) {
   try {
-    const { messages, mode = 'normal' } = await request.json()
+    const {
+      messages,
+      mode = 'normal',
+      // Capture context (optional — legacy callers omit these and are unaffected).
+      conversationId,
+      page,
+      utmSource,
+      utmMedium,
+      utmCampaign,
+    } = await request.json()
 
     const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY
     
@@ -82,6 +92,23 @@ export async function POST(request: NextRequest) {
     console.log('OpenRouter response:', JSON.stringify(data).substring(0, 200))
     
     const assistantMessage = data.choices?.[0]?.message?.content || data.error?.message || 'Sorry, I had trouble processing that. How can I help you with your Austin party?'
+
+    // Persist the transcript + run capture/escalation AFTER responding, so it
+    // never adds latency to the reply. Only when the client supplies a
+    // conversationId (the widget does; legacy embeds don't → unchanged behavior).
+    if (conversationId && typeof conversationId === 'string' && Array.isArray(messages)) {
+      const transcript = [...messages, { role: 'assistant', content: assistantMessage }]
+      after(() =>
+        persistChatTurn({
+          conversationId,
+          messages: transcript,
+          firstPage: typeof page === 'string' ? page : null,
+          utmSource: typeof utmSource === 'string' ? utmSource : null,
+          utmMedium: typeof utmMedium === 'string' ? utmMedium : null,
+          utmCampaign: typeof utmCampaign === 'string' ? utmCampaign : null,
+        })
+      )
+    }
 
     return NextResponse.json({
       content: assistantMessage

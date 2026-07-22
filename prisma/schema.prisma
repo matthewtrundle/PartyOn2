@@ -3383,6 +3383,9 @@ enum LeadSourceWidget {
   /// databases, 2026-07-21-lead-source-partner-outreach.sql). Server-stamped,
   /// not pixel-claimable.
   PARTNER_OUTREACH
+  /// Contact captured inside a free-form Wayne (AIConcierge) chat — server-stamped
+  /// by /api/chat, not pixel-claimable (2026-07-22-lead-source-wayne-chat.sql).
+  WAYNE_CHAT
   OTHER
 }
 
@@ -3451,6 +3454,7 @@ model Lead {
   events          LeadEvent[]
   sessions        VisitorSession[]
   inboundEmails   InboundEmail[]
+  chatConversations ChatConversation[]
 
   createdAt       DateTime        @default(now()) @map("created_at")
   updatedAt       DateTime        @updatedAt      @map("updated_at")
@@ -3491,6 +3495,36 @@ model InboundEmail {
   @@index([leadId])
   @@index([receivedAt])
   @@map("inbound_emails")
+}
+
+/// Free-form Wayne (AIConcierge) chat transcript. One row per conversation,
+/// keyed by a client-generated conversationId; the /api/chat route upserts the
+/// full message history each turn. Linked to its Lead when contact is captured
+/// so the Lead Flow board drawer can show the conversation. See
+/// 2026-07-22-wayne-chat-conversations-table.sql.
+model ChatConversation {
+  id                   String    @id @default(uuid())
+  conversationId       String    @unique @map("conversation_id")
+  /// Full OpenRouter-format message history: [{ role, content }, ...].
+  messages             Json      @default("[]")
+  leadId               String?   @map("lead_id")
+  /// The page the conversation started on (first-touch), for attribution.
+  firstPage            String?   @map("first_page")
+  utmSource            String?   @map("utm_source")
+  utmMedium            String?   @map("utm_medium")
+  utmCampaign          String?   @map("utm_campaign")
+  escalated            Boolean   @default(false)
+  escalationReason     String?   @map("escalation_reason")
+  escalationNotifiedAt DateTime? @map("escalation_notified_at")
+  contactCapturedAt    DateTime? @map("contact_captured_at")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt      @map("updated_at")
+
+  lead                 Lead?     @relation(fields: [leadId], references: [id], onDelete: SetNull)
+
+  @@index([leadId])
+  @@index([createdAt])
+  @@map("chat_conversations")
 }
 
 enum LeadEventType {
