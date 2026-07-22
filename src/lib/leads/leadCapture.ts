@@ -104,6 +104,27 @@ function truncate(v: string, n = MAX_FIELD_VALUE_LEN) {
   return v.length > n ? v.slice(0, n) : v;
 }
 
+/** Names longer than this are almost certainly junk/abuse — clamp for every
+    downstream consumer that renders them (board, CRM mirror, GHL, alert emails). */
+const MAX_NAME_LEN = 100;
+
+/**
+ * Sanitize a public-capture name field: strip control characters, collapse runs
+ * of whitespace (including newlines), and cap the length. Intake stays tolerant
+ * — this normalizes, it never rejects — but a Lead's first/last name is written
+ * from unauthenticated forms and rendered verbatim by many consumers, so it must
+ * not carry control chars or unbounded input. Returns null when nothing usable
+ * remains (same contract as nonEmpty). Exported for unit tests.
+ */
+export function sanitizeName(v?: string | null): string | null {
+  if (v == null) return null;
+  const cleaned = String(v)
+    .replace(/\p{Cc}/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return cleaned.length === 0 ? null : cleaned.slice(0, MAX_NAME_LEN);
+}
+
 /**
  * Find or create the visitor session row for this cookie id.
  * Bumps lastSeenAt + eventCount on every call.
@@ -181,8 +202,8 @@ export async function upsertLead(
 ): Promise<Lead | null> {
   const email = normalizeEmail(identify.email);
   const phone = normPhone(identify.phone);
-  const firstName = nonEmpty(identify.firstName);
-  const lastName = nonEmpty(identify.lastName);
+  const firstName = sanitizeName(identify.firstName);
+  const lastName = sanitizeName(identify.lastName);
   if (!email && !phone && !firstName && !lastName) return null;
 
   // If we have email or phone, try to find an existing lead first.
