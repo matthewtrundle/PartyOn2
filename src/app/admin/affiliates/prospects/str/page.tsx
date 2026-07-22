@@ -1,20 +1,44 @@
 import type { Metadata } from 'next';
 import type { ReactElement } from 'react';
+import Link from 'next/link';
 import PartnersHubBand from '@/components/admin/partners/PartnersHubBand';
 import StrPartnersView from '@/components/admin/StrPartnersView';
+import type { Prospect } from '@/components/admin/PartnerProspectsView';
+import { getOpsSession } from '@/lib/auth/ops-session';
+import { listProspects } from '@/lib/partners/prospect-store';
 
 export const metadata: Metadata = {
   title: 'STR Prospects — Partners',
   robots: { index: false, follow: false },
 };
 
-/** Partners hub → STR prospect database (moved from Brian's Stuff). */
-export default function StrProspectsPage(): ReactElement {
+export const dynamic = 'force-dynamic';
+
+/**
+ * Partners hub → STR prospect database (partner_prospects table).
+ *
+ * Server component: a defensive server-side admin check keeps the prospect
+ * contact PII from being fetched/serialized for non-admins — the /admin
+ * layout gate is client-side only (same pattern as admin/email-signups).
+ */
+export default async function StrProspectsPage(): Promise<ReactElement> {
+  const session = await getOpsSession();
+  if (!session || session.role !== 'admin') {
+    return (
+      <div className="p-8">
+        <p className="text-gray-700">
+          Admin sign-in required.{' '}
+          <Link href="/admin" className="text-brand-blue underline">Go to /admin</Link>.
+        </p>
+      </div>
+    );
+  }
+  const prospects = await listProspects({ vertical: 'str' });
   return (
     <div className="bg-gray-50 min-h-screen">
       <PartnersHubBand active="str-prospects" />
       <div className="px-4 md:px-8 py-8">
-        <StrPartnersView />
+        <StrPartnersView prospects={prospects as unknown as Prospect[]} />
       </div>
     </div>
   );

@@ -3,9 +3,9 @@
 /**
  * Brian's Stuff → Bartending Partners tab.
  *
- * Thin wrapper around the generic PartnerProspectsView — data lives in
- * src/data/bartending-partner-prospects.json (research-compiled, logos
- * resolved via src/lib/partners/logo-scraper.ts, enrichment per lead).
+ * Thin wrapper around the generic PartnerProspectsView — data comes from
+ * the partner_prospects table (src/lib/partners/prospect-store.ts), fetched
+ * by the server page and passed in as a prop.
  *
  * The bartender pitch differs from STR: we're not a guest perk, we're
  * their supply chain + referral loop — POD delivers the alcohol/ice/
@@ -18,7 +18,6 @@ import PartnerProspectsView, {
   type Prospect,
   type ProspectViewConfig,
 } from '@/components/admin/PartnerProspectsView';
-import prospectsData from '@/data/bartending-partner-prospects.json';
 
 const CONFIG: ProspectViewConfig = {
   title: 'Bartending Partners — Austin prospect list',
@@ -59,6 +58,10 @@ partyondelivery.com · (737) 371-9700`,
   },
 };
 
-export default function BartendingPartnersView(): ReactElement {
-  return <PartnerProspectsView config={CONFIG} prospects={prospectsData as Prospect[]} />;
+export default function BartendingPartnersView({
+  prospects,
+}: {
+  prospects: Prospect[];
+}): ReactElement {
+  return <PartnerProspectsView config={CONFIG} prospects={prospects} />;
 }

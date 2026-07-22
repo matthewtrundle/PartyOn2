@@ -19,13 +19,14 @@ import { z } from 'zod';
 import { requireOpsAuth } from '@/lib/auth/ops-session';
 import { sendEmailDetailed } from '@/lib/email/resend-client';
 import {
+  BRIAN_SIGNATURE,
   DEFAULT_COPY,
   renderFollowUpEmail,
   renderSubject,
   renderTemplate,
 } from '@/lib/followups/copy';
 import { SITE_BASE_URL } from '@/lib/followups/types';
-import { findProspectByWebsite } from '@/lib/partners/prospect-datasets';
+import { getProspectByWebsite, getSendableDraft } from '@/lib/partners/prospect-store';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -44,12 +45,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ success: false, error: 'invalid_body' }, { status: 400 });
   }
 
-  const prospect = findProspectByWebsite(body.website);
+  const prospect = await getProspectByWebsite(body.website);
   if (!prospect) {
     return NextResponse.json({ success: false, error: 'not-in-database' }, { status: 404 });
   }
-  const outreach = prospect.enrichment?.outreachEmail;
-  if (!outreach?.subject || !outreach?.body) {
+  const outreach = await getSendableDraft(body.website);
+  if (!outreach) {
     return NextResponse.json({ success: false, error: 'not-enriched' }, { status: 400 });
   }
 
@@ -77,6 +78,7 @@ ${step2Body}`;
     `[TEST — ${prospect.name}] ${outreach.subject}`,
     combinedBody,
     `${SITE_BASE_URL}/email/preferences`,
+    BRIAN_SIGNATURE,
   );
 
   const result = await sendEmailDetailed({

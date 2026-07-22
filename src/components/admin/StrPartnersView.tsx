@@ -3,9 +3,9 @@
 /**
  * Brian's Stuff → STR Partners tab.
  *
- * Thin wrapper around the generic PartnerProspectsView — data lives in
- * src/data/str-partner-prospects.json (research-compiled, logos resolved
- * via src/lib/partners/logo-scraper.ts, enrichment added per lead).
+ * Thin wrapper around the generic PartnerProspectsView — data comes from
+ * the partner_prospects table (src/lib/partners/prospect-store.ts), fetched
+ * by the server page and passed in as a prop.
  */
 
 import type { ReactElement } from 'react';
@@ -13,7 +13,6 @@ import PartnerProspectsView, {
   type Prospect,
   type ProspectViewConfig,
 } from '@/components/admin/PartnerProspectsView';
-import prospectsData from '@/data/str-partner-prospects.json';
 
 const CONFIG: ProspectViewConfig = {
   title: 'STR Partners — Austin prospect list',
@@ -55,6 +54,6 @@ partyondelivery.com · (737) 371-9700`,
   },
 };
 
-export default function StrPartnersView(): ReactElement {
-  return <PartnerProspectsView config={CONFIG} prospects={prospectsData as Prospect[]} />;
+export default function StrPartnersView({ prospects }: { prospects: Prospect[] }): ReactElement {
+  return <PartnerProspectsView config={CONFIG} prospects={prospects} />;
 }

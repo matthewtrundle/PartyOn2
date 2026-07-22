@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
       payload: SAMPLE_PAYLOAD,
     } as unknown as FollowUpJob;
 
-    const rendered = stepDef.buildEmail({
+    const rendered = await stepDef.buildEmail({
       job: fakeJob,
       payload: SAMPLE_PAYLOAD,
       link: (path: string) => {

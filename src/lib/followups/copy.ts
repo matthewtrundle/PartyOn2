@@ -32,6 +32,18 @@ export const GOOGLE_REVIEW_URL = 'https://123.partyondelivery.com/reviews';
 
 const SIGNATURE = 'Allan\nParty On Delivery\n(737) 371-9700';
 
+/**
+ * Partner-outreach sends from info@ in Brian's voice — bodies are stored
+ * signature-free (drafts + templates) and the renderer appends this.
+ */
+export const BRIAN_SIGNATURE =
+  'Brian Hill\nFounder, Party On Delivery\npartyondelivery.com · (737) 371-9700';
+
+/** Journeys that sign as someone other than Allan. */
+const JOURNEY_SIGNATURES: Partial<Record<JourneyKey, string>> = {
+  'partner-outreach': BRIAN_SIGNATURE,
+};
+
 /** One journey step's copy: a subject and a plain-text body template. */
 export interface StepCopy {
   subject: string;
@@ -185,11 +197,7 @@ I'm Brian, founder of Party On Delivery — Austin's premium alcohol delivery an
 
 Your page is ready to go: {partnerUrl}
 
-Worth a 15-minute call this week?
-
-Brian Hill
-Founder, Party On Delivery
-partyondelivery.com · (737) 371-9700`,
+Worth a 15-minute call this week?`,
     },
     {
       subject: 'quick follow-up — free perk for {company} clients',
@@ -201,11 +209,7 @@ We stock the bar for your clients (free delivery, iced and on time, TABC-license
 
 Your co-branded page: {partnerUrl}
 
-If it's a fit, reply here and I'll walk you through it in 15 minutes. If not, no worries — tell me and I won't follow up again.
-
-Brian Hill
-Founder, Party On Delivery
-partyondelivery.com · (737) 371-9700`,
+If it's a fit, reply here and I'll walk you through it in 15 minutes. If not, no worries — tell me and I won't follow up again.`,
     },
   ],
 };
@@ -306,11 +310,12 @@ export function renderSubject(
 export function renderFollowUpEmail(
   subject: string,
   body: string,
-  unsubscribeUrl: string
+  unsubscribeUrl: string,
+  signature: string = SIGNATURE
 ): RenderedEmail {
-  const fullText = `${body}\n\n${SIGNATURE}\n\n—\nParty On Delivery · ${POSTAL_ADDRESS}\nUnsubscribe: ${unsubscribeUrl}`;
+  const fullText = `${body}\n\n${signature}\n\n—\nParty On Delivery · ${POSTAL_ADDRESS}\nUnsubscribe: ${unsubscribeUrl}`;
 
-  const paragraphs = `${body}\n\n${SIGNATURE}`
+  const paragraphs = `${body}\n\n${signature}`
     .split(/\n{2,}/)
     .map((p) => `<p style="margin:0 0 16px;">${linkify(escapeHtml(p)).replace(/\n/g, '<br/>')}</p>`)
     .join('\n');
@@ -392,5 +397,5 @@ export function buildStepEmail(
   const body = renderTemplate(bodyTpl, tokens);
   const subject = renderSubject(subjectTpl, tokens);
   if (!body || !subject) return null;
-  return renderFollowUpEmail(subject, body, ctx.unsubscribeUrl);
+  return renderFollowUpEmail(subject, body, ctx.unsubscribeUrl, JOURNEY_SIGNATURES[journeyKey]);
 }

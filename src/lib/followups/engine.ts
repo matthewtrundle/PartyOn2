@@ -302,7 +302,7 @@ export async function processJob(
     });
     return 'failed';
   }
-  const rendered = stepDef.buildEmail({
+  const rendered = await stepDef.buildEmail({
     job,
     payload: (job.payload as Record<string, unknown> | null) ?? {},
     link: (path: string) => {
