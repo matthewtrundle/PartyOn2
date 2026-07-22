@@ -80,20 +80,24 @@ export async function POST(): Promise<NextResponse> {
       ];
       if (isActive) taggedActive++;
 
-      // Match an existing synced lead: by email first, else by websiteKey
+      // Match an existing synced lead by websiteKey FIRST — a bare-email
+      // match across companies (e.g. a manager contact shared by two
+      // prospects) must never re-point another company's lead. Email is
+      // only a fallback for pre-websiteKey legacy rows.
       const existing =
-        (email &&
-          (await prisma.lead.findFirst({
-            where: { email, tags: { has: TAG_PARTNER_PROSPECT } },
-            orderBy: { createdAt: 'desc' },
-          }))) ||
         (await prisma.lead.findFirst({
           where: {
             tags: { has: TAG_PARTNER_PROSPECT },
             metadata: { path: ['websiteKey'], equals: wKey },
           },
           orderBy: { createdAt: 'desc' },
-        }));
+        })) ||
+        (email
+          ? await prisma.lead.findFirst({
+              where: { email, tags: { has: TAG_PARTNER_PROSPECT } },
+              orderBy: { createdAt: 'desc' },
+            })
+          : null);
 
       const { first, last } = splitName(p.contactName);
       const metadata = {

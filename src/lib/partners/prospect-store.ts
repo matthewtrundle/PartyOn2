@@ -150,10 +150,20 @@ export async function getSendableDraft(website: string): Promise<SendableDraft |
   if (row.draftStatus !== 'DRAFTED' && row.draftStatus !== 'APPROVED') return null;
   if (!row.draftSubject || !row.draftBody) return null;
   return {
-    subject: row.draftSubject,
-    altSubject: row.draftAltSubject,
+    subject: sanitizeSubject(row.draftSubject),
+    altSubject: row.draftAltSubject ? sanitizeSubject(row.draftAltSubject) : null,
     body: row.draftBody,
     followUpBody: row.draftFollowUpBody,
     touch3Body: row.draftTouch3Body,
   };
+}
+
+/**
+ * Defense-in-depth at the send-path read boundary: subjects are single-line
+ * and bounded no matter what a future draft writer stores (stray newlines
+ * render oddly in some clients; Resend takes JSON so this is hygiene, not
+ * header-injection protection).
+ */
+function sanitizeSubject(subject: string): string {
+  return subject.replace(/\s+/g, ' ').trim().slice(0, 200);
 }

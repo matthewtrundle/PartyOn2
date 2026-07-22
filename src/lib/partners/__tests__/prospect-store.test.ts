@@ -107,6 +107,16 @@ describe('getSendableDraft', () => {
     expect(await getSendableDraft('https://x.com')).toBeNull();
   });
 
+  it('sanitizes subjects to a single bounded line (defense-in-depth)', async () => {
+    mockRows.unique = draftRow({
+      draftSubject: '  multi\nline\n subject  ',
+      draftAltSubject: `x${'y'.repeat(300)}`,
+    });
+    const draft = await getSendableDraft('https://x.com');
+    expect(draft!.subject).toBe('multi line subject');
+    expect(draft!.altSubject).toHaveLength(200);
+  });
+
   it('looks up by normalized websiteKey', async () => {
     mockRows.unique = draftRow();
     await getSendableDraft('https://www.Example.com/');
