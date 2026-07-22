@@ -104,25 +104,31 @@ function truncate(v: string, n = MAX_FIELD_VALUE_LEN) {
   return v.length > n ? v.slice(0, n) : v;
 }
 
-/** Names longer than this are almost certainly junk/abuse — clamp for every
-    downstream consumer that renders them (board, CRM mirror, GHL, alert emails). */
+/** Names longer than this are almost certainly junk/abuse — clamp before storing. */
 const MAX_NAME_LEN = 100;
 
 /**
- * Sanitize a public-capture name field: strip control characters, collapse runs
- * of whitespace (including newlines), and cap the length. Intake stays tolerant
- * — this normalizes, it never rejects — but a Lead's first/last name is written
- * from unauthenticated forms and rendered verbatim by many consumers, so it must
- * not carry control chars or unbounded input. Returns null when nothing usable
- * remains (same contract as nonEmpty). Exported for unit tests.
+ * Sanitize a public-capture name field before it is persisted: strip control AND
+ * format characters (`\p{Cc}` + `\p{Cf}` — the latter covers bidi overrides like
+ * U+202E and zero-width chars used for display spoofing on the admin board),
+ * collapse runs of whitespace/newlines, and cap the length (code-point-safe so an
+ * astral char is never cut mid-surrogate-pair). Intake stays tolerant — this
+ * normalizes, never rejects — returning null when nothing usable remains (same
+ * contract as nonEmpty). Exported for unit tests.
+ *
+ * Scope: this guards the STORED `Lead.firstName`/`lastName`, and therefore the
+ * admin board + anything that reads the lead back from the DB (e.g. the CRM
+ * mirror re-fetches, so it is covered). Capture routes that forward the RAW
+ * request body straight to GHL / Google Sheets / email templates must sanitize
+ * at those call sites too — tracked as a separate centralization follow-up.
  */
 export function sanitizeName(v?: string | null): string | null {
   if (v == null) return null;
   const cleaned = String(v)
-    .replace(/\p{Cc}/gu, ' ')
+    .replace(/[\p{Cc}\p{Cf}]/gu, ' ')
     .replace(/\s+/g, ' ')
     .trim();
-  return cleaned.length === 0 ? null : cleaned.slice(0, MAX_NAME_LEN);
+  return cleaned.length === 0 ? null : [...cleaned].slice(0, MAX_NAME_LEN).join('');
 }
 
 /**
