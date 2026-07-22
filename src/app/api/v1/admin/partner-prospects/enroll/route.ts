@@ -1,11 +1,13 @@
 /**
  * POST /api/v1/admin/partner-prospects/enroll
  *
- * Enroll prospects in the 'partner-outreach' 2-touch campaign (personalized
- * initial email now, abridged follow-up at +48h). Batches are capped at 10
- * per Brian's 5-10-at-a-time rule. Enqueueing is idempotent (dedupeKey), and
- * NOTHING SENDS while the followups_partner_outreach feature flag is off —
- * the engine skips flagged-off journeys.
+ * Enroll prospects in the 'partner-outreach' 3-touch campaign (approved
+ * personalized email on enroll, open-branched touch 2 at +5d, standalone
+ * close at +12d; ≤10 sends/day across all touches). Batches are capped at
+ * 10 per request. Gates: APPROVED draft + verified email (or catch-all
+ * override) + not suppressed — see enrollGateReason. Enqueueing is
+ * idempotent (dedupeKey), and NOTHING SENDS while the
+ * followups_partner_outreach feature flag is off.
  *
  * Body: { websites: string[] }  (prospect website URLs, max 10)
  * Auth: middleware requires a valid ops session for /api/v1/admin/*.

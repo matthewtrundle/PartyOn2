@@ -24,7 +24,7 @@ import { FEATURE_FLAGS, isFeatureEnabled } from '@/lib/features/feature-flags';
 import { enqueueJourney, enqueueNextStep } from './enqueue';
 import { JOURNEYS } from './journeys';
 import { getFollowUpCopyOverrides } from './copy-overrides';
-import { CAPPED_JOURNEY_KEY, outreachRemainingToday } from './outreach-cap';
+import { CAPPED_JOURNEY_KEY, countOutreachSendsToday, outreachDailyCap } from './outreach-cap';
 import {
   buildOneClickUnsubscribeUrl,
   buildPreferencesUrl,
@@ -199,11 +199,14 @@ async function reapStuckJobs(now: Date): Promise<number> {
  * makes concurrent ticks (cron overlap, manual runs) claim disjoint sets.
  * Claiming counts as an attempt.
  *
- * capLimits (journeyKey → remaining sends allowed today) gates CAPPED
- * journeys at claim time: a capped key claims at most its remaining count
- * this tick, and with 0 remaining its jobs are simply NOT claimed —
- * attempts untouched, a free deferral to the next tick/tomorrow. Uncapped
- * journeys claim exactly as before. Exported for tests.
+ * capLimits (journeyKey → DAILY CAP for that journey) gates CAPPED journeys
+ * at claim time. TOCTOU-safe (CWE-367): the used-today count and the claim
+ * run inside ONE transaction serialized by a per-journey advisory lock, so
+ * overlapping ticks (cron overlap, hung-function retry, future manual runs)
+ * can never both read a stale count and overshoot the cap. With 0 remaining
+ * the jobs are simply NOT claimed — attempts untouched, a free deferral to
+ * the next tick/tomorrow. Uncapped journeys claim exactly as before.
+ * Exported for tests.
  */
 export async function claimDueJobs(
   enabledKeys: string[],
@@ -233,22 +236,30 @@ export async function claimDueJobs(
 
   for (const key of enabledKeys) {
     if (!(key in capLimits)) continue;
-    const limit = Math.min(Math.max(0, Math.floor(capLimits[key])), CLAIM_BATCH_SIZE);
-    if (limit === 0) continue;
-    const claimed = await prisma.$queryRaw<Array<{ id: string }>>`
-      UPDATE follow_up_jobs
-      SET status = 'processing', claimed_at = now(), attempts = attempts + 1, updated_at = now()
-      WHERE id IN (
-        SELECT id FROM follow_up_jobs
-        WHERE status = 'scheduled'
-          AND scheduled_for <= now()
-          AND journey_key = ${key}
-        ORDER BY scheduled_for ASC
-        LIMIT ${limit}
-        FOR UPDATE SKIP LOCKED
-      )
-      RETURNING id
-    `;
+    const cap = Math.max(0, Math.floor(capLimits[key]));
+    if (cap === 0) continue;
+    const claimed = await prisma.$transaction(async (tx) => {
+      // Serialize concurrent capped claims: a second tick blocks here until
+      // the first commits, then counts the first's in-flight claims.
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`followups-claim:${key}`}))`;
+      const used = await countOutreachSendsToday(new Date(), tx);
+      const limit = Math.min(Math.max(0, cap - used), CLAIM_BATCH_SIZE);
+      if (limit === 0) return [] as Array<{ id: string }>;
+      return tx.$queryRaw<Array<{ id: string }>>`
+        UPDATE follow_up_jobs
+        SET status = 'processing', claimed_at = now(), attempts = attempts + 1, updated_at = now()
+        WHERE id IN (
+          SELECT id FROM follow_up_jobs
+          WHERE status = 'scheduled'
+            AND scheduled_for <= now()
+            AND journey_key = ${key}
+          ORDER BY scheduled_for ASC
+          LIMIT ${limit}
+          FOR UPDATE SKIP LOCKED
+        )
+        RETURNING id
+      `;
+    });
     claimedIds.push(...claimed.map((row) => row.id));
   }
 
@@ -486,10 +497,11 @@ export async function runFollowUpEngine(opts: { now?: Date } = {}): Promise<Engi
 
   // Daily cap: partner-outreach claims at most its remaining sends today
   // (counted in America/Chicago, all touches, including in-flight jobs).
+  // The used-count is computed INSIDE claimDueJobs' locked transaction.
   const enabledKeys = enabled.map((j) => j.key);
   const capLimits: Record<string, number> = {};
   if (enabledKeys.includes(CAPPED_JOURNEY_KEY)) {
-    capLimits[CAPPED_JOURNEY_KEY] = await outreachRemainingToday(now);
+    capLimits[CAPPED_JOURNEY_KEY] = outreachDailyCap();
   }
   const jobs = await claimDueJobs(enabledKeys, capLimits);
   result.claimed = jobs.length;
