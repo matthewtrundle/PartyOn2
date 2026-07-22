@@ -62,41 +62,41 @@ _(not captured)_
 
 ```json
 {
-  "orders": 63,
-  "revenue": 12582.78,
+  "orders": 65,
+  "revenue": 12390.56,
   "segments": [
     {
       "margin": 463.53,
-      "orders": 42,
-      "revenue": 8589.93,
+      "orders": 48,
+      "revenue": 8998.05,
       "segment": "general",
-      "averageMarginPct": 5.4,
-      "averageOrderValue": 204.52,
-      "marginCoveragePct": 18
+      "averageMarginPct": 5.2,
+      "averageOrderValue": 187.46,
+      "marginCoveragePct": 17.2
     },
     {
-      "margin": 468.66,
-      "orders": 21,
-      "revenue": 3992.85,
+      "margin": 417.78,
+      "orders": 17,
+      "revenue": 3392.51,
       "segment": "unknown",
-      "averageMarginPct": 11.7,
-      "averageOrderValue": 190.14,
-      "marginCoveragePct": 39.9
+      "averageMarginPct": 12.3,
+      "averageOrderValue": 199.56,
+      "marginCoveragePct": 41.1
     }
   ],
-  "capturedAt": "2026-07-21T08:00:44.168Z",
+  "capturedAt": "2026-07-22T08:00:38.287Z",
   "affiliateRoi": [
     {
       "code": "PREMIER",
-      "margin": 649.55,
-      "orders": 47,
-      "roiPct": 1426.6,
-      "revenue": 7332.54,
-      "netMargin": 607,
+      "margin": 610.99,
+      "orders": 49,
+      "roiPct": 988.3,
+      "revenue": 7079.86,
+      "netMargin": 554.85,
       "affiliateId": "d21bac1a-3f99-489c-89fd-e1980c264a8d",
       "businessName": "Premier Party Cruises",
-      "commissionPaid": 42.55,
-      "marginCoveragePct": 30.4
+      "commissionPaid": 56.14,
+      "marginCoveragePct": 29.5
     },
     {
       "code": "DTRbartending",
@@ -109,17 +109,29 @@ _(not captured)_
       "businessName": "DTR Bartending",
       "commissionPaid": 94.85,
       "marginCoveragePct": 0
+    },
+    {
+      "code": "LTYACHTRENTALS",
+      "margin": null,
+      "orders": 1,
+      "roiPct": null,
+      "revenue": 216.66,
+      "netMargin": null,
+      "affiliateId": "e09b3a40-26cb-4c70-9b2a-6ea311c7a62e",
+      "businessName": "Lake Travis Yacht Rentals",
+      "commissionPaid": 8.45,
+      "marginCoveragePct": 0
     }
   ],
-  "snapshotDate": "2026-07-21",
-  "averageOrderValue": 199.7266666666667,
+  "snapshotDate": "2026-07-22",
+  "averageOrderValue": 190.624,
   "marginCoveragePct": null
 }
 ```
 ## Updates
 
 - 2026-05-05 — Created with status `executed` from source `director`.
-- 2026-07-21 — Status shipped → shipped (cron:measure-recommendations). Notes: Auto-captured 14-day measurement
+- 2026-07-22 — Status shipped → shipped (cron:measure-recommendations). Notes: Auto-captured 14-day measurement
 
 ---
 _Mirror file. Edited automatically by the triage queue when status changes. Source of truth is the database (id: `4fe8e34e-83cb-4ee7-9576-4a60386400dc`). Slug: `premier-86-of-group-dashboards-never-convert-diagnose-the-ac`._
