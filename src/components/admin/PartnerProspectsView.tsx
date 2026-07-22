@@ -65,6 +65,8 @@ export interface Enrichment {
 }
 
 export interface Prospect {
+  /** partner_prospects row id (present when served from the DB store). */
+  id?: string;
   name: string;
   website: string;
   propertiesEstimate: string;
@@ -78,6 +80,8 @@ export interface Prospect {
   partnerSlug?: string | null;
   /** Deep-researched profile + personalized outreach draft (dropdown). */
   enrichment?: Enrichment | null;
+  /** UNVERIFIED | VALID | INVALID | CATCH_ALL | UNKNOWN | ROLE (DB store). */
+  emailVerifyStatus?: string;
 }
 
 export interface ProspectViewConfig {
@@ -133,6 +137,15 @@ const CAMPAIGN_CHIP: Record<string, { label: string; cls: string }> = {
   enrolled: { label: '⏳ Enrolled', cls: 'bg-blue-100 text-blue-800' },
 };
 
+/** Deliverability badge per email_verify_status (ZeroBounce). */
+const VERIFY_BADGE: Record<string, { label: string; cls: string }> = {
+  VALID: { label: 'Verified', cls: 'bg-green-100 text-green-800' },
+  INVALID: { label: 'Invalid', cls: 'bg-red-100 text-red-800' },
+  CATCH_ALL: { label: 'Catch-all', cls: 'bg-amber-100 text-amber-800' },
+  ROLE: { label: 'Role addr', cls: 'bg-purple-100 text-purple-800' },
+  UNVERIFIED: { label: 'Unverified', cls: 'bg-gray-100 text-gray-600' },
+};
+
 export default function PartnerProspectsView({
   config,
   prospects,
@@ -148,6 +161,8 @@ export default function PartnerProspectsView({
   const [leadMap, setLeadMap] = useState<Record<string, LeadState>>({});
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  /** Fresh verify verdicts from this session, overriding the server-rendered status. */
+  const [verifyResults, setVerifyResults] = useState<Record<string, string>>({});
 
   const refreshLeadMap = useCallback(async () => {
     try {
@@ -222,6 +237,31 @@ export default function PartnerProspectsView({
       await refreshLeadMap();
     } catch (err) {
       setNotice(`Sync failed: ${err instanceof Error ? err.message : 'error'}`);
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const verifyEmail = async (p: Prospect) => {
+    if (!p.id) return;
+    setBusy(`verify:${p.website}`);
+    setNotice(null);
+    try {
+      const res = await fetch('/api/v1/admin/partner-prospects/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: p.id }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setVerifyResults((prev) => ({ ...prev, [p.website]: json.data.status }));
+      } else if (res.status === 501) {
+        setNotice('Verification unavailable — ZEROBOUNCE_API_KEY is not configured.');
+      } else {
+        setNotice(`Verify failed: ${json.error ?? 'error'} (status unchanged)`);
+      }
+    } catch {
+      setNotice('Verify failed: network error');
     } finally {
       setBusy(null);
     }
@@ -465,6 +505,25 @@ export default function PartnerProspectsView({
                   ) : (
                     <span className="text-gray-400">no email</span>
                   )}
+                  {p.email && p.id && (() => {
+                    const status = verifyResults[p.website] ?? p.emailVerifyStatus ?? 'UNVERIFIED';
+                    const badge = VERIFY_BADGE[status] ?? VERIFY_BADGE.UNVERIFIED;
+                    return (
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${badge.cls}`}>
+                          {badge.label}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => verifyEmail(p)}
+                          disabled={busy !== null}
+                          className="text-xs text-gray-600 underline disabled:opacity-50"
+                        >
+                          {busy === `verify:${p.website}` ? 'Verifying…' : 'Verify'}
+                        </button>
+                      </div>
+                    );
+                  })()}
                   <div>
                     {p.phone ? (
                       <a href={`tel:${p.phone}`} className="text-gray-700 hover:underline">
