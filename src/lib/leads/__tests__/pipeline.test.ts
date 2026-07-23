@@ -260,6 +260,8 @@ describe('board eligibility', () => {
     expect(signup({ partnerInquiry: { inquiryId: 'p1' } })).toBe(false);
     expect(signup({ affiliateApplication: { applicationId: 'a1' } })).toBe(false);
     expect(signup({ opsInvoice: { draftOrderId: 'd1' } })).toBe(false);
+    // A QuickBuy submitter has a real DraftOrder — always a party inquiry.
+    expect(signup({ quickBuy: { occasion: 'wedding', draftOrderId: 'd2' } })).toBe(false);
     // Email-only lead-magnet capture stays newsletter-only (no phone = no intent).
     expect(signup({ leadMagnet: { magnetId: 'checklist' } })).toBe(true);
   });

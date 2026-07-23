@@ -50,6 +50,9 @@ const INQUIRY_META_KEYS = [
   // A customer who emails info@ IS a party inquiry — a newsletter-only
   // (EMAIL_SIGNUP) contact who writes in must board, not stay hidden.
   'inboundEmail',
+  // A QuickBuy submitter gave full contact + a dated delivery + a real cart
+  // (landing/quote wrote a DraftOrder) — a genuine inquiry, boards normally.
+  'quickBuy',
 ] as const;
 
 const SWEEP_BATCH = 200;
