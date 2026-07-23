@@ -2,6 +2,8 @@
  * Order Cancellation Email Template
  */
 
+import { escapeHtml } from '../escape-html';
+
 export interface OrderCancellationData {
   customerName: string;
   orderNumber: number;
@@ -38,7 +40,7 @@ export function generateOrderCancellationEmail(data: OrderCancellationData): str
 
   const itemRows = items.map(item => `
                     <tr>
-                      <td style="padding: 8px 0; font-size: 14px; color: #1a1a1a; border-bottom: 1px solid #f3f4f6;">${item.title}</td>
+                      <td style="padding: 8px 0; font-size: 14px; color: #1a1a1a; border-bottom: 1px solid #f3f4f6;">${escapeHtml(item.title)}</td>
                       <td style="padding: 8px 0; font-size: 14px; color: #666; text-align: center; border-bottom: 1px solid #f3f4f6;">${item.quantity}</td>
                       <td style="padding: 8px 0; font-size: 14px; color: #1a1a1a; text-align: right; border-bottom: 1px solid #f3f4f6;">${formatCurrency(item.price * item.quantity)}</td>
                     </tr>`).join('');
@@ -77,7 +79,7 @@ export function generateOrderCancellationEmail(data: OrderCancellationData): str
           <tr>
             <td style="padding: 24px;">
               <p style="margin: 0 0 16px; font-size: 16px; color: #1a1a1a;">
-                Hi ${customerName},
+                Hi ${escapeHtml(customerName)},
               </p>
               <p style="margin: 0 0 16px; font-size: 16px; color: #666;">
                 Your order <strong>#${orderNumber}</strong>${deliveryDate ? ` scheduled for ${deliveryDate}` : ''} has been cancelled.

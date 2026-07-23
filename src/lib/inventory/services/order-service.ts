@@ -10,6 +10,7 @@ import { CartWithItems } from './cart-service';
 import type { DraftOrderWithTotal, DraftOrderItem } from '@/lib/draft-orders/types';
 import { snapshotItemCost, finalizeOrderMargin } from '@/lib/analytics/margin-service';
 import { classifySegment } from '@/lib/analytics/segment-classifier';
+import { sanitizeName } from '@/lib/leads/leadCapture';
 import { unitsOffShelf } from './pick-inventory-service';
 import {
   parseChargedLineItems,
@@ -416,7 +417,12 @@ export async function createOrderFromCheckout(
   // Extract customer info from session
   const customerEmail = session.customer_details?.email || '';
   const customerPhone = session.customer_details?.phone || null;
-  const customerName = session.customer_details?.name || 'Guest';
+  // Neutralize control/format characters (bidi/zero-width/newline spoofing) in
+  // the Stripe-supplied name at the source, so the stored Order.customerName, the
+  // Customer row split below, and the GHL/CoreLinq emitters carry a clean value.
+  // NOTE: this is NOT HTML-escaping — HTML sinks (the email templates) must escape
+  // separately. Falls back to 'Guest' when the name is absent or sanitizes to empty.
+  const customerName = sanitizeName(session.customer_details?.name) || 'Guest';
 
   // Get shipping details from session or cart
   let deliveryAddress = cart.deliveryAddress;
@@ -603,6 +609,12 @@ export async function createFreeOrder(
   overrideDeliveryFee?: number,
   overrideTotal?: number
 ): Promise<OrderWithItems> {
+  // This name arrives straight from the client-supplied request body ($0
+  // checkout) — the easiest-to-reach injection vector of the order paths — so
+  // neutralize it before it reaches the Order, the Customer row, and the GHL
+  // 'free' emitter. 'Guest' guards the absent/empty case.
+  customerName = sanitizeName(customerName) || 'Guest';
+
   // Get or create customer
   let customerId = cart.customerId;
 
@@ -960,7 +972,14 @@ export async function createOrderFromDraftOrder(
   // Extract customer info from session (or fallback to draft order)
   const customerEmail = session.customer_details?.email || draftOrder.customerEmail;
   const customerPhone = session.customer_details?.phone || draftOrder.customerPhone || null;
-  const customerName = session.customer_details?.name || draftOrder.customerName;
+  // Prefer the Stripe-supplied name, fall back to the (admin-entered) draft
+  // name — sanitizing whichever wins so the stored Order + Customer row + GHL
+  // emitters carry a control/format-char-free value (NOT HTML-escaped — the email
+  // templates must escape separately). 'Guest' guards the empty case.
+  const customerName =
+    sanitizeName(session.customer_details?.name) ||
+    sanitizeName(draftOrder.customerName) ||
+    'Guest';
 
   // Build delivery address object
   const deliveryAddress = {

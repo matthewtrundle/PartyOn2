@@ -361,6 +361,75 @@ describe('handleGroupV2PaymentCompleted', () => {
     });
   });
 
+  describe('customer name sanitization (egress hardening, PR #306 follow-up)', () => {
+    it('sanitizes a malicious Stripe checkout name before it reaches Order + Customer', async () => {
+      // guestName is the 'Party Host' placeholder, so name resolution falls
+      // through to the raw Stripe checkout name — which must be neutralized
+      // before it is stored and forwarded to GHL/CoreLinq.
+      mockPrismaGroupParticipantV2FindUnique.mockResolvedValue({
+        id: 'participant-id-1',
+        groupOrderId: 'group-order-id-1',
+        customerId: null,
+        guestName: 'Party Host',
+        guestEmail: null,
+        guestPhone: null,
+      });
+      mockPrismaCustomerFindFirst.mockResolvedValue(null);
+      mockPrismaCustomerCreate.mockResolvedValue({ id: 'new-customer-id' });
+      mockPrismaGroupParticipantV2Update.mockResolvedValue({});
+
+      const evilSession = makeSession({
+        customer_details: {
+          email: 'stripe-customer@example.com',
+          name: '  Injected\nName\u202e  ', // newline (Cc) + bidi override (Cf) + padding
+          phone: '+15551234567',
+          address: null,
+          tax_exempt: 'none',
+          tax_ids: [],
+          business_name: null,
+          individual_name: null,
+        },
+      } as Partial<Stripe.Checkout.Session>);
+
+      await handleGroupV2PaymentCompleted(evilSession);
+
+      // Control/format chars replaced with spaces, whitespace collapsed + trimmed.
+      // The exact expected value proves the newline and bidi override are gone.
+      expect(mockPrismaOrderCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ customerName: 'Injected Name' }),
+        }),
+      );
+      expect(mockPrismaCustomerCreate).toHaveBeenCalledWith({
+        data: expect.objectContaining({ firstName: 'Injected', lastName: 'Name' }),
+      });
+    });
+
+    it('sanitizes a malicious participant guestName (guestName branch, not Stripe)', async () => {
+      // A non-placeholder guestName wins over the Stripe name — but it is also
+      // customer-supplied and must be sanitized.
+      mockPrismaGroupParticipantV2FindUnique.mockResolvedValue({
+        id: 'participant-id-1',
+        groupOrderId: 'group-order-id-1',
+        customerId: null,
+        guestName: 'Evil\u202eGuest',
+        guestEmail: 'guest@example.com',
+        guestPhone: null,
+      });
+      mockPrismaCustomerFindFirst.mockResolvedValue(null);
+      mockPrismaCustomerCreate.mockResolvedValue({ id: 'new-customer-id' });
+      mockPrismaGroupParticipantV2Update.mockResolvedValue({});
+
+      await handleGroupV2PaymentCompleted(makeSession());
+
+      expect(mockPrismaOrderCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ customerName: 'Evil Guest' }),
+        }),
+      );
+    });
+  });
+
   describe('idempotency', () => {
     it('should skip processing if payment already has orderId', async () => {
       mockPrismaParticipantPaymentFindFirst.mockResolvedValue({

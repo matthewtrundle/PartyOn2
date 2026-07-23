@@ -10,6 +10,7 @@ import {
   removeParticipant,
   isParticipantHost,
 } from '@/lib/group-orders-v2/service';
+import { sanitizeName } from '@/lib/leads/leadCapture';
 
 interface RouteParams {
   params: Promise<{ code: string; pid: string }>;
@@ -59,6 +60,17 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       );
     }
 
+    // AUTHORIZATION GAP (tracked follow-up): this route has NO real caller-identity
+    // check. The group-order-v2 model has no server-established participant identity
+    // — participant ids are public in the dashboard payload (ParticipantSummary.id)
+    // and every id in a mutation is client-supplied, so any body-field "acting id"
+    // check is trivially bypassable (set it equal to the target pid). DELETE and
+    // transfer-host share the same weakness. The real fix is a per-participant
+    // SECRET token issued at join and verified on every mutation (see the spawned
+    // follow-up) — deliberately NOT a fake gate here. What we CAN do at this layer
+    // is neutralize the name content below so a rename can't inject a spoofing
+    // payload into the dashboard/emails.
+
     // Check if another participant already has this email in this group
     if (email) {
       const existingWithEmail = await prisma.groupParticipantV2.findUnique({
@@ -77,9 +89,24 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       }
     }
 
+    // Neutralize control/format-char spoofing (bidi, zero-width, newline) in the
+    // display name before it is stored + rendered on the dashboard — JSX escapes
+    // HTML but not these chars, and this guestName is read back verbatim.
+    let cleanName: string | undefined;
+    if (name) {
+      const s = sanitizeName(name);
+      if (!s) {
+        return NextResponse.json(
+          { success: false, error: 'Name must contain at least one visible character' },
+          { status: 400 }
+        );
+      }
+      cleanName = s;
+    }
+
     const updateData: Record<string, string> = {};
     if (email) updateData.guestEmail = email;
-    if (name) updateData.guestName = name.trim();
+    if (cleanName) updateData.guestName = cleanName;
 
     await prisma.groupParticipantV2.update({
       where: { id: pid },
@@ -87,10 +114,10 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     });
 
     // If this participant is the host, also update hostName on the group order
-    if (name && participant.isHost) {
+    if (cleanName && participant.isHost) {
       await prisma.groupOrderV2.update({
         where: { id: group.id },
-        data: { hostName: name.trim() },
+        data: { hostName: cleanName },
       });
     }
 

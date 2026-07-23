@@ -8,6 +8,7 @@ import { z } from 'zod';
 import { getAffiliateSession } from '@/lib/affiliates/affiliate-session';
 import { createMultiTabDashboardOrder } from '@/lib/group-orders-v2/service';
 import { prisma } from '@/lib/database/client';
+import { sanitizeName } from '@/lib/leads/leadCapture';
 
 const TabSchema = z.object({
   name: z.string().min(1).max(200),
@@ -49,12 +50,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    const { clientName, orderTitle, partyType, deliveryDate, deliveryTime, tabs, saveAsTemplate } = parsed.data;
+    const { clientName: rawClientName, orderTitle, partyType, deliveryDate, deliveryTime, tabs, saveAsTemplate } = parsed.data;
+    // Neutralize the affiliate-supplied client name before it is stored as the
+    // dashboard hostName and rendered into the dashboard title/tab — mirrors the
+    // affiliate create-dashboard webhook. Session-authed, so the vector is an
+    // abusive/compromised partner and the sink is display-spoofing on /dashboard.
+    const clientName = sanitizeName(rawClientName) || 'Guest';
 
-    // Build dashboard title: use explicit orderTitle, or fall back to party-type format
+    // Build dashboard title: use explicit orderTitle, or fall back to party-type
+    // format. orderTitle is affiliate-supplied and rendered on /dashboard, so it is
+    // sanitized too (not just the clientName-derived fallbacks).
     let dashboardTitle: string;
     if (orderTitle) {
-      dashboardTitle = orderTitle;
+      dashboardTitle = sanitizeName(orderTitle) || 'Order';
     } else if (partyType === 'BACH') {
       dashboardTitle = `${clientName} Bach Drink Delivery!`;
     } else if (partyType === 'BOAT') {
@@ -72,7 +80,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       affiliateId: session.affiliateId,
       source: 'PARTNER_PAGE',
       tabs: tabs.map((tab) => ({
-        name: tab.name,
+        name: sanitizeName(tab.name) || 'Tab',
         deliveryAddress: tab.deliveryAddress,
         deliveryContextType: tab.deliveryContextType,
         deliveryTime: tab.deliveryTime,
