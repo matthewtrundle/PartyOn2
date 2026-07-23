@@ -8,6 +8,7 @@ import { isHoneypotTripped } from '@/lib/forms/honeypot'
 import { enqueueJourney } from '@/lib/followups/enqueue'
 import { markLeadStatus, upsertLead } from '@/lib/leads/leadCapture'
 import { enrollLeadIfEligible } from '@/lib/leads/pipeline'
+import { attributionSchema, compactAttribution } from '@/lib/leads/attribution-schema'
 
 // Sources that trigger an automated outbound email with the partner one-pager
 // PDF + Calendly CTA (in addition to the existing ops notification).
@@ -278,6 +279,10 @@ export async function POST(request: NextRequest) {
     if (dbResult?.id) {
       try {
         const [pFirst, ...pRest] = inquiry.contactName.split(/\s+/)
+        // This route is not zod-validated end-to-end — parse just the
+        // optional attribution blob defensively (bad shape → dropped).
+        const attrParsed = attributionSchema.safeParse(body.attribution)
+        const attribution = attrParsed.success ? attrParsed.data : null
         const lead = await upsertLead(
           {
             email: inquiry.email,
@@ -285,10 +290,30 @@ export async function POST(request: NextRequest) {
             firstName: pFirst || null,
             lastName: pRest.join(' ') || null,
           },
-          { sourcePage: '/partners', sourceWidget: 'PARTNER_INQUIRY' }
+          {
+            sourcePage: '/partners',
+            sourceWidget: 'PARTNER_INQUIRY',
+            // UTM columns blank-fill + click ids merge into metadata.attribution.
+            utmSource: attribution?.utmSource,
+            utmMedium: attribution?.utmMedium,
+            utmCampaign: attribution?.utmCampaign,
+            utmContent: attribution?.utmContent,
+            utmTerm: attribution?.utmTerm,
+            gclid: attribution?.gclid,
+            gbraid: attribution?.gbraid,
+            wbraid: attribution?.wbraid,
+            fbclid: attribution?.fbclid,
+            msclkid: attribution?.msclkid,
+          }
         )
         if (lead) {
           const prevMeta = (lead.metadata as Record<string, unknown> | null) ?? {}
+          const prevAttribution: Record<string, string> =
+            prevMeta.attribution &&
+            typeof prevMeta.attribution === 'object' &&
+            !Array.isArray(prevMeta.attribution)
+              ? (prevMeta.attribution as Record<string, string>)
+              : {}
           await prisma.lead.update({
             where: { id: lead.id },
             data: {
@@ -297,6 +322,14 @@ export async function POST(request: NextRequest) {
               sourceWidget: 'PARTNER_INQUIRY',
               metadata: {
                 ...prevMeta,
+                ...(attribution
+                  ? {
+                      attribution: {
+                        ...prevAttribution,
+                        ...compactAttribution(attribution),
+                      },
+                    }
+                  : {}),
                 partnerInquiry: {
                   inquiryId: dbResult.id,
                   businessName: inquiry.businessName || null,

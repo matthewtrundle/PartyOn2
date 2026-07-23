@@ -140,3 +140,32 @@ describe('mirrorDashboardHostLead — affiliate forwarding', () => {
     );
   });
 });
+
+describe('mirrorDashboardHostLead — attribution split (utm/clicks → ctx, landing/referrer → metadata)', () => {
+  it('routes click ids into the upsert ctx and landing/referrer into metadata.attribution', async () => {
+    await mirrorDashboardHostLead({
+      ...baseRef,
+      attribution: {
+        utmSource: 'google',
+        gclid: 'g-xyz',
+        landingPage: '/austin-boat-party',
+        referrer: 'https://google.com',
+      },
+    });
+    // utm + click ids reach upsertLead ctx (columns + metadata merge there).
+    expect(upsertLead).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ utmSource: 'google', gclid: 'g-xyz' }),
+    );
+    // landingPage/referrer are NOT LeadContext fields — they must not leak in.
+    const ctx = upsertLead.mock.calls[0][1];
+    expect(ctx).not.toHaveProperty('landingPage');
+    expect(ctx).not.toHaveProperty('referrer');
+    // ...they fill-blank into metadata.attribution on the follow-up update.
+    const meta = leadUpdate.mock.calls[0][0].data.metadata;
+    expect(meta.attribution).toMatchObject({
+      landingPage: '/austin-boat-party',
+      referrer: 'https://google.com',
+    });
+  });
+})

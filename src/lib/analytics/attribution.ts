@@ -125,6 +125,11 @@ export function getAttributionForDashboard():
       utmTerm: string | null;
       utmContent: string | null;
       referrer: string | null;
+      gclid: string | null;
+      gbraid: string | null;
+      wbraid: string | null;
+      fbclid: string | null;
+      msclkid: string | null;
     }
   | undefined {
   const a = getAttribution();
@@ -142,6 +147,12 @@ export function getAttributionForDashboard():
     utmTerm: cap(a.utmTerm),
     utmContent: cap(a.utmContent),
     referrer: cap(a.referrer),
+    // Click ids reach the host's Lead mirror (no GroupOrderV2 columns).
+    gclid: cap(a.gclid ?? null),
+    gbraid: cap(a.gbraid ?? null),
+    wbraid: cap(a.wbraid ?? null),
+    fbclid: cap(a.fbclid ?? null),
+    msclkid: cap(a.msclkid ?? null),
   };
 }
 

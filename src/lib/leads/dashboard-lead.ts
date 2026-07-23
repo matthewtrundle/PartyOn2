@@ -43,11 +43,25 @@ export interface DashboardHostRef {
   affiliateId?: string | null;
   /** Which flow landed the contact info (create / settings / send-link...). */
   createdVia: string;
-  /** Host first-touch attribution when the create flow captured it. */
-  attribution?: Pick<
-    LeadContext,
-    'utmSource' | 'utmMedium' | 'utmCampaign' | 'utmContent' | 'utmTerm'
-  > | null;
+  /** Host first-touch attribution when the create flow captured it. UTM +
+      click ids flow into upsertLead's ctx (columns + metadata.attribution);
+      landingPage/referrer fill-blank into metadata.attribution (Lead has no
+      columns for them). */
+  attribution?:
+    | (Pick<
+        LeadContext,
+        | 'utmSource'
+        | 'utmMedium'
+        | 'utmCampaign'
+        | 'utmContent'
+        | 'utmTerm'
+        | 'gclid'
+        | 'gbraid'
+        | 'wbraid'
+        | 'fbclid'
+        | 'msclkid'
+      > & { landingPage?: string | null; referrer?: string | null })
+    | null;
 }
 
 function splitName(hostName?: string | null): { firstName: string | null; lastName: string | null } {
@@ -73,13 +87,16 @@ export async function mirrorDashboardHostLead(ref: DashboardHostRef): Promise<vo
     if (!ref.hostEmail && !ref.hostPhone) return;
 
     const { firstName, lastName } = splitName(ref.hostName);
+    // landingPage/referrer aren't LeadContext fields — split them off for the
+    // metadata merge below; everything else flows into upsertLead's ctx.
+    const { landingPage, referrer, ...utmAndClickIds } = ref.attribution ?? {};
     const lead = await upsertLead(
       { email: ref.hostEmail, phone: ref.hostPhone, firstName, lastName },
       {
         sourcePage: `/dashboard/${ref.shareCode}`,
         sourceWidget: 'GROUP_DASHBOARD',
         affiliateId: ref.affiliateId ?? null,
-        ...(ref.attribution ?? {}),
+        ...utmAndClickIds,
       },
     );
     if (!lead) return;
@@ -100,6 +117,17 @@ export async function mirrorDashboardHostLead(ref: DashboardHostRef): Promise<vo
       createdVia: ref.createdVia,
       linkedAt: new Date().toISOString(),
     };
+    // First-touch landing page + referrer — fill-blank into the attribution
+    // bag (upsertLead already merged any click ids into it just above).
+    if (landingPage || referrer) {
+      const attr =
+        meta.attribution && typeof meta.attribution === 'object' && !Array.isArray(meta.attribution)
+          ? { ...(meta.attribution as Record<string, unknown>) }
+          : {};
+      if (landingPage && attr.landingPage == null) attr.landingPage = landingPage.slice(0, 500);
+      if (referrer && attr.referrer == null) attr.referrer = referrer.slice(0, 500);
+      meta.attribution = attr;
+    }
     const upgradeWidget = lead.sourceWidget === null || lead.sourceWidget === 'OTHER';
     await prisma.lead.update({
       where: { id: lead.id },

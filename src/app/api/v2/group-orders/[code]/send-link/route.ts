@@ -55,7 +55,19 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     // Fetch group order for name and to update contact info
     const groupOrder = await prisma.groupOrderV2.findUnique({
       where: { shareCode: code },
-      select: { id: true, name: true, hostName: true, affiliateId: true },
+      select: {
+        id: true,
+        name: true,
+        hostName: true,
+        affiliateId: true,
+        utmSource: true,
+        utmMedium: true,
+        utmCampaign: true,
+        utmTerm: true,
+        utmContent: true,
+        landingPage: true,
+        referrer: true,
+      },
     });
     if (!groupOrder) {
       return NextResponse.json(
@@ -85,6 +97,15 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         hostPhone: hostPhone || null,
         affiliateId: groupOrder.affiliateId,
         createdVia: 'send-link',
+        attribution: {
+          utmSource: groupOrder.utmSource,
+          utmMedium: groupOrder.utmMedium,
+          utmCampaign: groupOrder.utmCampaign,
+          utmTerm: groupOrder.utmTerm,
+          utmContent: groupOrder.utmContent,
+          landingPage: groupOrder.landingPage,
+          referrer: groupOrder.referrer,
+        },
       });
     }
 

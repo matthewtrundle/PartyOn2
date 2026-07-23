@@ -160,6 +160,9 @@ export default function AIConcierge({ mode = 'normal', isOpen: controlledIsOpen,
           utmSource: attribution?.utmSource ?? undefined,
           utmMedium: attribution?.utmMedium ?? undefined,
           utmCampaign: attribution?.utmCampaign ?? undefined,
+          // Full snapshot (utm ×5 + click ids + landing/referrer) — the 3
+          // fields above stay for old server bundles during deploy overlap.
+          attribution: attribution ?? undefined,
         }),
       })
 
