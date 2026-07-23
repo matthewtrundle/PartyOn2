@@ -116,11 +116,13 @@ const MAX_NAME_LEN = 100;
  * normalizes, never rejects — returning null when nothing usable remains (same
  * contract as nonEmpty). Exported for unit tests.
  *
- * Scope: this guards the STORED `Lead.firstName`/`lastName`, and therefore the
- * admin board + anything that reads the lead back from the DB (e.g. the CRM
- * mirror re-fetches, so it is covered). Capture routes that forward the RAW
- * request body straight to GHL / Google Sheets / email templates must sanitize
- * at those call sites too — tracked as a separate centralization follow-up.
+ * Scope: this guards the STORED `Lead.firstName`/`lastName` (and therefore the
+ * admin board + anything that reads the lead back from the DB — the CRM mirror
+ * re-fetches, so it is covered). The send boundaries that forward names to
+ * external systems neutralize too: `src/lib/webhooks/ghl.ts` (GHL/CoreLinq
+ * payloads call sanitizeName), `src/lib/premier/pod-leads-sheet.ts` (Sheets, via
+ * a formula-injection guard), and the partner-inquiry email (HTML-escaped). Add
+ * the matching guard to any NEW send point that renders a lead-supplied name.
  */
 export function sanitizeName(v?: string | null): string | null {
   if (v == null) return null;

@@ -6,6 +6,7 @@
  */
 
 import { alertCoreLinqIngestFailure } from './corelinq-alert';
+import { sanitizeName } from '@/lib/leads/leadCapture';
 
 const GHL_WEBHOOK_URL = process.env.GHL_ORDER_WEBHOOK_URL;
 const GHL_REVIEW_WEBHOOK_URL = process.env.GHL_REVIEW_WEBHOOK_URL;
@@ -111,6 +112,20 @@ function buildItemsSummary(
       return `${item.quantity}x ${name} ($${Number(item.price).toFixed(2)})`;
     })
     .join(', ');
+}
+
+/**
+ * Neutralize lead-supplied names before they leave for GHL / CoreLinq. The
+ * capture routes pass raw request-body names into these payloads, and the
+ * downstream systems render them (SMS, contact cards) where an unsanitized name
+ * is an injection/spoofing vector — so sanitize at this send boundary.
+ */
+function withSanitizedNames<T extends { first_name: string; last_name: string }>(payload: T): T {
+  return {
+    ...payload,
+    first_name: sanitizeName(payload.first_name) ?? '',
+    last_name: sanitizeName(payload.last_name) ?? '',
+  };
 }
 
 // ──────────────────────────────────────────────
@@ -398,6 +413,7 @@ export interface GhlConciergeLeadPayload {
  * env var. In the meantime the CoreLinq mirror still fires.
  */
 export async function notifyConciergeLead(payload: GhlConciergeLeadPayload): Promise<void> {
+  payload = withSanitizedNames(payload);
   await postToCoreLinq(payload);
   if (!GHL_CONCIERGE_LEAD_WEBHOOK_URL) return;
 
@@ -466,5 +482,5 @@ export interface CoreLinqLeadCapturedPayload {
  * field-blur pixel route (that fires on every keystroke).
  */
 export async function notifyLeadCaptured(payload: CoreLinqLeadCapturedPayload): Promise<void> {
-  await postToCoreLinq(payload);
+  await postToCoreLinq(withSanitizedNames(payload));
 }

@@ -259,6 +259,21 @@ export interface PartnerInquiryData {
 /**
  * Send partner inquiry notification to business owner
  */
+/**
+ * Escape untrusted text before interpolating it into an HTML email body. The
+ * partner-inquiry fields below come from a public, unauthenticated form and are
+ * rendered in an email ops staff open and trust — so every lead-supplied value
+ * must be neutralized (CWE-79).
+ */
+function escapeHtml(v: string): string {
+  return v
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 export async function sendPartnerInquiryNotification(
   data: PartnerInquiryData
 ): Promise<string | null> {
@@ -292,7 +307,7 @@ export async function sendPartnerInquiryNotification(
   const tableRows = rows.map(r =>
     `<tr>
       <td style="padding: 10px 16px; font-weight: 600; color: #1a1a1a; border-bottom: 1px solid #e5e5e5; white-space: nowrap; vertical-align: top;">${r.label}</td>
-      <td style="padding: 10px 16px; color: #374151; border-bottom: 1px solid #e5e5e5;">${r.value}</td>
+      <td style="padding: 10px 16px; color: #374151; border-bottom: 1px solid #e5e5e5;">${escapeHtml(r.value)}</td>
     </tr>`
   ).join('\n');
 
@@ -319,7 +334,7 @@ export async function sendPartnerInquiryNotification(
           <tr>
             <td style="background-color: #fef3c7; padding: 20px; text-align: center; border-bottom: 1px solid #e5e5e5;">
               <h2 style="margin: 0; color: #92400e; font-size: 22px;">New Partnership Inquiry</h2>
-              <p style="margin: 6px 0 0; color: #a16207; font-size: 14px;">${data.partnerType || 'General'} &middot; ${new Date(data.submittedAt || Date.now()).toLocaleString('en-US', { timeZone: 'America/Chicago' })}</p>
+              <p style="margin: 6px 0 0; color: #a16207; font-size: 14px;">${escapeHtml(data.partnerType || 'General')} &middot; ${new Date(data.submittedAt || Date.now()).toLocaleString('en-US', { timeZone: 'America/Chicago' })}</p>
             </td>
           </tr>
           <tr>
@@ -331,8 +346,8 @@ export async function sendPartnerInquiryNotification(
           </tr>
           <tr>
             <td style="padding: 0 24px 24px; text-align: center;">
-              <a href="mailto:${data.email}" style="display: inline-block; background-color: #D4AF37; color: #1a1a1a; text-decoration: none; padding: 12px 32px; border-radius: 6px; font-weight: 600; font-size: 16px;">
-                Reply to ${data.contactName.split(' ')[0]}
+              <a href="mailto:${escapeHtml(data.email)}" style="display: inline-block; background-color: #D4AF37; color: #1a1a1a; text-decoration: none; padding: 12px 32px; border-radius: 6px; font-weight: 600; font-size: 16px;">
+                Reply to ${escapeHtml(data.contactName.split(' ')[0])}
               </a>
             </td>
           </tr>
