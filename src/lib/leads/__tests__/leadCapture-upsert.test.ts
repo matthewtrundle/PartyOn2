@@ -150,3 +150,28 @@ describe('upsertLead — name sanitization at intake', () => {
     expect(data.lastName).toHaveLength(100);
   });
 });
+
+describe('upsertLead — affiliate stamp is fill-blank only', () => {
+  it('stamps affiliateId on create', async () => {
+    prismaMock.lead.findFirst.mockResolvedValue(null);
+    prismaMock.lead.create.mockImplementation(async ({ data }) => ({ ...existingLead(), ...data }));
+    await upsertLead(
+      { email: 'new@example.com' },
+      { sourceWidget: 'PARTNER_LANDING_PAGE', affiliateId: 'aff-premier' },
+    );
+    expect(prismaMock.lead.create.mock.calls[0][0].data.affiliateId).toBe('aff-premier');
+  });
+
+  it('fills a blank affiliateId on update, never overwrites an existing one', async () => {
+    prismaMock.lead.findFirst.mockResolvedValue(existingLead({ affiliateId: null }));
+    await upsertLead({ email: 'guest@example.com' }, { affiliateId: 'aff-new' });
+    expect(prismaMock.lead.update.mock.calls[0][0].data.affiliateId).toBe('aff-new');
+
+    vi.clearAllMocks();
+    prismaMock.lead.findMany.mockResolvedValue([]);
+    prismaMock.lead.findFirst.mockResolvedValue(existingLead({ affiliateId: 'aff-original' }));
+    prismaMock.lead.update.mockImplementation(async ({ data }) => ({ ...existingLead(), ...data }));
+    await upsertLead({ email: 'guest@example.com' }, { affiliateId: 'aff-hijack' });
+    expect(prismaMock.lead.update.mock.calls[0][0].data.affiliateId).toBe('aff-original');
+  });
+});

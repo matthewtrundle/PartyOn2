@@ -32,6 +32,8 @@ export interface QuickBuyLeadRef {
   draftOrderId: string;
   total: number;
   attribution?: AttributionInput | null;
+  /** Affiliate stamp (ref_code cookie resolved by the route) — fill-blank. */
+  affiliateId?: string | null;
 }
 
 /** Mirror a QuickBuy submitter onto the Lead Flow board. Safe to repeat. */
@@ -58,6 +60,7 @@ export async function mirrorQuickBuyLead(ref: QuickBuyLeadRef): Promise<void> {
         wbraid: ref.attribution?.wbraid,
         fbclid: ref.attribution?.fbclid,
         msclkid: ref.attribution?.msclkid,
+        affiliateId: ref.affiliateId ?? null,
       },
     );
     if (!lead) return;

@@ -46,6 +46,10 @@ export type LeadContext = {
   wbraid?: string | null;
   fbclid?: string | null;
   msclkid?: string | null;
+  /** Affiliate attribution (Lead.affiliateId) — fill-blank only, resolved by
+      the caller (dashboard's affiliate, partner slug, or ref_code cookie via
+      resolveAffiliateId). Never overwrites an existing stamp. */
+  affiliateId?: string | null;
 };
 
 const CLICK_ID_FIELDS = ['gclid', 'gbraid', 'wbraid', 'fbclid', 'msclkid'] as const;
@@ -282,6 +286,7 @@ export async function upsertLead(
         utmCampaign: nonEmpty(ctx.utmCampaign),
         utmContent: nonEmpty(ctx.utmContent),
         utmTerm: nonEmpty(ctx.utmTerm),
+        affiliateId: nonEmpty(ctx.affiliateId),
         ...(clickIds
           ? { metadata: { attribution: clickIds } as never }
           : {}),
@@ -318,6 +323,7 @@ export async function upsertLead(
         utmCampaign: lead.utmCampaign ?? nonEmpty(ctx.utmCampaign),
         utmContent: lead.utmContent ?? nonEmpty(ctx.utmContent),
         utmTerm: lead.utmTerm ?? nonEmpty(ctx.utmTerm),
+        affiliateId: lead.affiliateId ?? nonEmpty(ctx.affiliateId),
         ...(clickIds
           ? {
               metadata: mergeAttributionMetadata(

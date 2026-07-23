@@ -122,3 +122,21 @@ describe('mirrorDashboardHostLead', () => {
     await expect(mirrorDashboardHostLead(baseRef)).resolves.toBeUndefined();
   });
 });
+
+describe('mirrorDashboardHostLead — affiliate forwarding', () => {
+  it("passes the group's affiliateId into the upsert ctx (fill-blank stamp)", async () => {
+    await mirrorDashboardHostLead({ ...baseRef, affiliateId: 'aff-premier' });
+    expect(upsertLead).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ affiliateId: 'aff-premier' }),
+    );
+  });
+
+  it('defaults to null when the dashboard has no affiliate', async () => {
+    await mirrorDashboardHostLead(baseRef);
+    expect(upsertLead).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ affiliateId: null }),
+    );
+  });
+});

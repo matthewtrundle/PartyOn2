@@ -303,6 +303,7 @@ export async function createGroupOrder(
         ? new Date(Math.min(...tabDeliveryDates.map((d) => d.getTime())))
         : null,
     source: group.source,
+    affiliateId: group.affiliateId ?? null,
     createdVia: 'group-create',
   });
 
@@ -1063,6 +1064,7 @@ export async function createDashboardOrder(
     partyType: input.partyType || null,
     deliveryDate,
     source: input.source || 'DIRECT',
+    affiliateId: group.affiliateId ?? null,
     createdVia: input.isLastMinute ? 'last-minute-order' : 'dashboard-order',
     attribution: input.attribution
       ? {
@@ -1154,6 +1156,7 @@ export async function createMultiTabDashboardOrder(
     partyType: input.partyType || null,
     deliveryDate,
     source: input.source || 'PARTNER_PAGE',
+    affiliateId: group.affiliateId ?? null,
     createdVia: 'affiliate-dashboard',
   });
 
@@ -1269,6 +1272,7 @@ export async function updateGroupOrderFields(
         hostPhone: true,
         partyType: true,
         source: true,
+        affiliateId: true,
       },
     });
     if (fresh) {
@@ -1280,6 +1284,7 @@ export async function updateGroupOrderFields(
         hostPhone: fresh.hostPhone,
         partyType: fresh.partyType,
         source: fresh.source,
+        affiliateId: fresh.affiliateId,
         createdVia: 'dashboard-settings',
       });
     }

@@ -38,6 +38,9 @@ export interface DashboardHostRef {
   deliveryDate?: Date | string | null;
   /** GroupOrderV2.source (DIRECT / PARTNER_PAGE / WEBHOOK / ...). */
   source?: string | null;
+  /** GroupOrderV2.affiliateId — stamps Lead.affiliateId (fill-blank), so a
+      Premier-webhook host is affiliate-attributed the moment they board. */
+  affiliateId?: string | null;
   /** Which flow landed the contact info (create / settings / send-link...). */
   createdVia: string;
   /** Host first-touch attribution when the create flow captured it. */
@@ -75,6 +78,7 @@ export async function mirrorDashboardHostLead(ref: DashboardHostRef): Promise<vo
       {
         sourcePage: `/dashboard/${ref.shareCode}`,
         sourceWidget: 'GROUP_DASHBOARD',
+        affiliateId: ref.affiliateId ?? null,
         ...(ref.attribution ?? {}),
       },
     );

@@ -15,6 +15,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/database/client';
 import { recordEvent, upsertLead } from '@/lib/leads/leadCapture';
+import { resolveAffiliateId } from '@/lib/leads/affiliate-resolve';
 import { enqueueJourney } from '@/lib/followups/enqueue';
 import { checkRateLimit } from '@/lib/security/rate-limit';
 import { mirrorLeadToSheet } from '@/lib/premier/pod-leads-sheet';
@@ -66,7 +67,12 @@ export async function POST(request: NextRequest) {
           firstName: firstName || null,
           lastName: restName.join(' ') || null,
         },
-        { sourcePage: '/contact', sourceWidget: 'CONTACT_FORM' }
+        {
+          sourcePage: '/contact',
+          sourceWidget: 'CONTACT_FORM',
+          // 30-day affiliate attribution cookie (middleware) — fill-blank.
+          affiliateId: await resolveAffiliateId(request.cookies.get('ref_code')?.value),
+        }
       );
       if (lead) {
         leadId = lead.id;

@@ -55,7 +55,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     // Fetch group order for name and to update contact info
     const groupOrder = await prisma.groupOrderV2.findUnique({
       where: { shareCode: code },
-      select: { id: true, name: true, hostName: true },
+      select: { id: true, name: true, hostName: true, affiliateId: true },
     });
     if (!groupOrder) {
       return NextResponse.json(
@@ -83,6 +83,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         hostName: groupOrder.hostName,
         hostEmail: hostEmail || null,
         hostPhone: hostPhone || null,
+        affiliateId: groupOrder.affiliateId,
         createdVia: 'send-link',
       });
     }

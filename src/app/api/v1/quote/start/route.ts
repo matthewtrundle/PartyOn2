@@ -31,6 +31,7 @@ import { sendEmail } from '@/lib/email/resend-client';
 import { eventQuizWelcomeEmail } from '@/lib/email/templates/event-quiz-welcome';
 import { upsertLead, recordEvent } from '@/lib/leads/leadCapture';
 import { attributionSchema, compactAttribution } from '@/lib/leads/attribution-schema';
+import { resolveAffiliateId } from '@/lib/leads/affiliate-resolve';
 import { targetUrlFor } from '@/lib/eventQuiz/routing';
 import { createDashboardOrder, addDraftItem } from '@/lib/group-orders-v2/service';
 import { isLastMinuteDate } from '@/lib/lastMinute/dates';
@@ -139,6 +140,8 @@ export async function POST(req: NextRequest) {
         wbraid: body.attribution?.wbraid,
         fbclid: body.attribution?.fbclid,
         msclkid: body.attribution?.msclkid,
+        // 30-day affiliate attribution cookie (middleware) — fill-blank.
+        affiliateId: await resolveAffiliateId(req.cookies.get('ref_code')?.value),
       },
     );
     if (lead) {
