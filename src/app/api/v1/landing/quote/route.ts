@@ -29,6 +29,7 @@ import { cancelJobsForEmail, enqueueJourney } from '@/lib/followups/enqueue';
 import { mirrorLeadToSheet } from '@/lib/premier/pod-leads-sheet';
 import { mirrorLeadToCrm } from '@/lib/leads/crm-mirror';
 import { mirrorQuickBuyLead } from '@/lib/leads/quickbuy-lead';
+import { checkRateLimit } from '@/lib/security/rate-limit';
 import { EmailType, DraftOrderStatus } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
@@ -42,8 +43,12 @@ const ItemSchema = z.object({
 
 const BodySchema = z.object({
   mode: z.enum(['quote', 'pay-now']),
-  occasion: z.string().min(1), // bachelor | bachelorette | corporate | wedding (informational only)
-  customerName: z.string().min(1),
+  // Bounded: occasion now flows into Lead.sourcePage + metadata.quickBuy +
+  // the board's sourceLabel (via mirrorQuickBuyLead), so an unbounded value
+  // is a board-payload DoS vector (security review 2026-07-23, HIGH). Cap
+  // matches the admin board filter's own occasion cap.
+  occasion: z.string().min(1).max(60), // bachelor | bachelorette | corporate | wedding (informational only)
+  customerName: z.string().min(1).max(200),
   customerEmail: z.string().email(),
   customerPhone: z.string().optional().default(''),
   groupSize: z.number().int().positive(),
@@ -63,6 +68,18 @@ const BodySchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    // Public + unauthenticated: this route writes a DraftOrder AND (since the
+    // 2026-07-23 board overhaul) a Lead that auto-enrolls onto /admin/leads.
+    // Without a cap it's a board-spam / email primitive — same guard pattern
+    // as the sibling /api/v1/landing/lead-event route.
+    const ip =
+      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      request.headers.get('x-real-ip') ||
+      'unknown';
+    if (!(await checkRateLimit('landing-quote', ip, 10, 60))) {
+      return NextResponse.json({ success: false, error: 'rate_limited' }, { status: 429 });
+    }
+
     const raw = await request.json();
     const parsed = BodySchema.safeParse(raw);
     if (!parsed.success) {
