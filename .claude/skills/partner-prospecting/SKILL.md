@@ -69,6 +69,23 @@ Contracts live in `src/lib/outreach/`:
    Allan/Brian approve in the UI.
 5. Report: drafted N, lint-clean M, redo-requests handled K.
 
+### A/B first-touch test (short vs detailed)
+When running an A/B test, assign each prospect ONE arm and draft only that arm's
+style — there is no second copy per prospect. The DB carries the arm on
+`draft_variant` and the test name on `experiment_key`; results group by them
+(reply rate is the win metric — GET `/api/v1/admin/partner-prospects/ab`).
+- Assign 50/50 deterministically: `arm = A if a stable hash of websiteKey is even
+  else B` (matches `assignAbVariant` in `src/lib/partners/prospect-store.ts`).
+- **Arm A = short & sweet** first touch (≤70 words). **Arm B = detailed** first
+  touch (full 60–110). Only the FIRST touch differs — write `followUpBody` and
+  `touch3Body` the SAME standard way for both arms so the opener is the only
+  variable.
+- Set `arm` ('A'|'B') and `experimentKey` on every `DraftSchema` record
+  (`buildDraftPrompt(prospect, redo, { arm, experimentKey })` injects the style).
+  The import writes both (to the `draft_variant`/`experiment_key` columns); lint
+  is identical for both arms. Note: `arm` here is the TEST bucket, distinct from
+  the draftB* "variant B" (the preserved original email).
+
 ## Procedure: discover <city> <vertical>
 
 1. Get query seeds from `verticals.ts` (`discoveryQueryHints` × city) and

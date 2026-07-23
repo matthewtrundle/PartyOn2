@@ -3636,6 +3636,15 @@ model PartnerProspect {
   draftError               String?   @map("draft_error")
   /// Operator note consumed by the next drafting session (request re-draft).
   draftRedoGuidance        String?   @map("draft_redo_guidance")
+  /// A/B first-touch TEST arm: 'A' (short) | 'B' (detailed). Each prospect is
+  /// randomized to one arm and drafted in that one style, so the single draft_*
+  /// copy set above already holds the arm's copy — this only labels the arm.
+  /// Distinct from the draftB* "variant B" columns (the preserved original
+  /// email). Column stays draft_variant for continuity. Null when not in a test.
+  abArm                    String?   @map("draft_variant")
+  /// Names the A/B test this prospect's arm belongs to, so results from
+  /// separate tests over time stay separable. Null when not in a test.
+  experimentKey            String?   @map("experiment_key")
 
   /// Variant B: the original enrichment-based personalized email (Brian's
   /// legacy-manual drafts from the prospect JSONs), kept alongside the
@@ -3663,5 +3672,6 @@ model PartnerProspect {
   @@index([draftStatus])
   @@index([leadId])
   @@index([email])
+  @@index([experimentKey, abArm])
   @@map("partner_prospects")
 }

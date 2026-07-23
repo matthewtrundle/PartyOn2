@@ -34,8 +34,13 @@ FOLLOW-UP BODY (touch 2 when touch 1 WAS opened, sent as a reply ~5 days later):
 
 TOUCH 3 (standalone, ~12 days after touch 1): ≤90 words, poke-the-bear or soft close — one sentence naming the problem they still have without us, one sentence re-stating the offer, and a CTA that makes "no" easy ("If this isn't a fit, tell me and I won't write again."). Same bans apply.
 
-OUTPUT per prospect — a single JSON object, nothing else:
-{"id":"<prospect id>","subject":"…","altSubject":"…","body":"…","followUpBody":"…","touch3Body":"…","hook":{"text":"…","sourceUrl":"…","kind":"…"}}`;
+A/B FIRST-TOUCH TEST: each prospect is randomized to ONE arm and drafted only in that arm's style — there is no second copy per prospect. The arm is given per prospect; write the touch-1 body/subject accordingly and echo it back as "arm":
+- Arm A = SHORT & SWEET: touch 1 ≤70 words, one crisp hook line + the offer + the binary CTA. Trim hard.
+- Arm B = DETAILED / feature-heavy: touch 1 the full 60–110-word structure below.
+Only the FIRST touch differs by arm — write followUpBody and touch3Body the SAME standard way for both arms, so the test isolates the opener. All lint rules apply to both arms.
+
+OUTPUT per prospect — a single JSON object, nothing else ("arm"/"experimentKey" echo the arm you were given):
+{"id":"<prospect id>","subject":"…","altSubject":"…","body":"…","followUpBody":"…","touch3Body":"…","hook":{"text":"…","sourceUrl":"…","kind":"…"},"arm":"A"|"B","experimentKey":"…"}`;
 
 /**
  * Build the per-prospect user prompt for a drafting session. The enrichment
@@ -46,7 +51,9 @@ export function buildDraftPrompt(
     StoredProspect,
     'id' | 'vertical' | 'name' | 'website' | 'contactName' | 'partnerSlug' | 'enrichment'
   >,
-  redoGuidance?: string | null
+  redoGuidance?: string | null,
+  /** A/B arm this prospect is assigned to (short vs detailed first touch). */
+  ab?: { arm: 'A' | 'B'; experimentKey: string } | null
 ): string {
   const vertical = getVertical(prospect.vertical);
   const firstName = (prospect.contactName ?? '')
@@ -74,6 +81,14 @@ export function buildDraftPrompt(
     ``,
     `ENRICHMENT (the only permitted source of facts; pick ONE hook from enrichment.hooks):`,
     prospect.enrichment ? JSON.stringify(prospect.enrichment, null, 2) : 'null',
+    ...(ab
+      ? [
+          ``,
+          `A/B ARM: ${ab.arm} — write the first touch ${
+            ab.arm === 'A' ? 'SHORT & SWEET (≤70 words)' : 'DETAILED / feature-heavy (full 60–110 words)'
+          }. Keep touches 2–3 in the standard style. Echo "arm":"${ab.arm}" and "experimentKey":"${ab.experimentKey}".`,
+        ]
+      : []),
     ...(redoGuidance ? [``, `OPERATOR RE-DRAFT GUIDANCE (apply it): ${redoGuidance}`] : []),
   ].join('\n');
 }

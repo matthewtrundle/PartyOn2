@@ -31,6 +31,17 @@ export type PipelineStatus =
   | 'ENRICHED'
   | 'SOURCED';
 
+/**
+ * A/B test-arm chip (first-touch copy test): A = short, B = detailed. Named
+ * "arm" (not "variant") to stay clear of the draftB* "variant B" preserved
+ * original. Fuchsia for A is deliberately off the teal used by the VERIFIED
+ * status chip so the two don't blur when a verified row also carries an arm.
+ */
+export const ARM_CHIP: Record<string, { label: string; cls: string }> = {
+  A: { label: 'A · short', cls: 'bg-fuchsia-100 text-fuchsia-800' },
+  B: { label: 'B · detailed', cls: 'bg-indigo-100 text-indigo-800' },
+};
+
 /** True when the email counts as sendable-verified (PR6 gate mirror). */
 export function isEmailVerified(p: ProspectRow): boolean {
   return (

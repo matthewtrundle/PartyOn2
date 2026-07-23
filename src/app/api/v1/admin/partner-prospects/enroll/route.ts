@@ -21,7 +21,7 @@ import { enqueueJourney } from '@/lib/followups/enqueue';
 import { isSuppressed } from '@/lib/followups/suppression';
 import { TAG_PARTNER_PROSPECT } from '@/lib/leads/partner-tags';
 import { enrollGateReason } from '@/lib/partners/enroll-gate';
-import { getProspectByWebsite } from '@/lib/partners/prospect-store';
+import { assignAbArm, getProspectByWebsite } from '@/lib/partners/prospect-store';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -76,6 +76,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     if (!lead) {
       results.push({ website, ok: false, reason: 'not-synced' });
       continue;
+    }
+
+    // Safety net: if the drafting session didn't label an arm, bucket this
+    // prospect deterministically so it's never unattributed in A/B results.
+    // (No-op when abArm is already set — the normal path.)
+    if (!prospect.abArm) {
+      await prisma.partnerProspect.update({
+        where: { id: prospect.id },
+        data: { abArm: assignAbArm(prospect.websiteKey) },
+      });
     }
 
     const enq = await enqueueJourney('partner-outreach', {

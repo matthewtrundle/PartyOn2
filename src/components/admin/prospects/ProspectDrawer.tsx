@@ -11,7 +11,13 @@ import ProspectEnrichmentPanel from '@/components/admin/ProspectEnrichmentPanel'
 import ProspectStatusChip from './ProspectStatusChip';
 import ProspectDraftEditor from './ProspectDraftEditor';
 import type { ProspectActionApi } from './useProspectActions';
-import { isEmailVerified, type LeadState, type ProspectRow, type VerticalUiConfig } from './types';
+import {
+  isEmailVerified,
+  ARM_CHIP,
+  type LeadState,
+  type ProspectRow,
+  type VerticalUiConfig,
+} from './types';
 
 export default function ProspectDrawer({
   prospect,
@@ -153,7 +159,17 @@ export default function ProspectDrawer({
         {/* Draft */}
         <div className="card space-y-3">
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <h3 className="text-lg font-bold text-gray-900">Outreach draft (3 touches)</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="text-lg font-bold text-gray-900">Outreach draft (3 touches)</h3>
+              {prospect.abArm && ARM_CHIP[prospect.abArm] && (
+                <span
+                  className={`text-xs font-bold px-1.5 py-0.5 rounded ${ARM_CHIP[prospect.abArm].cls}`}
+                  title="A/B first-touch test arm — this prospect only ever sends this arm's copy"
+                >
+                  {ARM_CHIP[prospect.abArm].label}
+                </span>
+              )}
+            </div>
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-600">Status: {prospect.draftStatus}</span>
               <button

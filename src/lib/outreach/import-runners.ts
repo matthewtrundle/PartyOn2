@@ -165,6 +165,10 @@ export async function runDraftImport(
         draftGeneratedAt: new Date(),
         draftError: null,
         draftRedoGuidance: null,
+        // A/B test-arm label (the single draft above is already style-matched
+        // to this arm; null clears any prior label on re-import).
+        abArm: record.arm ?? null,
+        experimentKey: record.experimentKey ?? null,
       },
     });
     result.imported++;

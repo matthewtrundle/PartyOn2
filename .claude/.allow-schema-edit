@@ -1,0 +1,1 @@
+one-shot bypass: rename draftVariant Prisma field to abArm (keeps @map draft_variant)

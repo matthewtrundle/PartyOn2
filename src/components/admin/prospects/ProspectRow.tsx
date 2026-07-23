@@ -7,7 +7,7 @@
 
 import type { ReactElement } from 'react';
 import ProspectStatusChip from './ProspectStatusChip';
-import { enrollDisableReason, type LeadState, type ProspectRow as Row } from './types';
+import { enrollDisableReason, ARM_CHIP, type LeadState, type ProspectRow as Row } from './types';
 
 const CAMPAIGN_CHIP: Record<string, { label: string; cls: string }> = {
   replied: { label: 'Replied', cls: 'bg-purple-100 text-purple-800' },
@@ -68,7 +68,17 @@ export default function ProspectRow({
         </button>
       </td>
       <td className="p-3 whitespace-nowrap">
-        <ProspectStatusChip prospect={prospect} state={state} />
+        <div className="flex flex-col items-start gap-1">
+          <ProspectStatusChip prospect={prospect} state={state} />
+          {prospect.abArm && ARM_CHIP[prospect.abArm] && (
+            <span
+              className={`text-xs font-bold px-1.5 py-0.5 rounded ${ARM_CHIP[prospect.abArm].cls}`}
+              title="A/B first-touch test arm"
+            >
+              {ARM_CHIP[prospect.abArm].label}
+            </span>
+          )}
+        </div>
       </td>
       <td className="p-3 text-gray-700 whitespace-nowrap">{sizeLabelValue || '—'}</td>
       <td className="p-3 text-gray-700 min-w-[110px]">{prospect.contactName ?? '—'}</td>
