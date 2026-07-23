@@ -18,6 +18,7 @@ import type { BoardData, BoardFilters, BoardKpis, BoardLead } from './board-type
 import { SOURCE_FILTER_CONSUMER, SOURCE_FILTER_PARTNER } from './board-types';
 import { isPartnerLead } from './partner-tags';
 import { loadBoardJoins } from './board-joins';
+import { nextActionFor } from './next-action';
 
 export type { BoardData, BoardFilters, BoardKpis, BoardLead } from './board-types';
 
@@ -146,6 +147,9 @@ export function isAdsLead(lead: {
 /** Reply-flag freshness window: signals older than this stop flagging red. */
 export const REPLY_WINDOW_DAYS = 7;
 
+/** Open card sitting this long in a stage gets the stalled tint. */
+export const STALLED_STAGE_DAYS = 7;
+
 /**
  * Red "Reply needed" gate: a customer signal (form submit, inbound email,
  * site activity — anything that bumps lastActivityAt) that is BOTH fresh
@@ -177,6 +181,7 @@ export function toBoardLead(
     now: Date;
     cart?: BoardLead['cart'];
     affiliate?: BoardLead['affiliate'];
+    touchCount?: number;
   },
 ): BoardLead {
   const facts = extractLeadFacts(lead.metadata);
@@ -189,15 +194,22 @@ export function toBoardLead(
   const quietMs = ctx.now.getTime() - (lead.lastActivityAt ?? lead.createdAt).getTime();
   const isOpenStage =
     lead.pipelineStage !== 'WON' && lead.pipelineStage !== 'LOST' && lead.pipelineStage !== null;
+  const stage = (lead.pipelineStage as PipelineStage | null) ?? null;
+  const temperature = temperatureFor(lead.leadScore);
+  // Days the card has sat in its current stage — the "stalled deal" signal.
+  const daysInStage =
+    isOpenStage && lead.stageChangedAt
+      ? Math.floor((ctx.now.getTime() - lead.stageChangedAt.getTime()) / 86_400_000)
+      : null;
   return {
     id: lead.id,
     name: displayName(lead),
     email: lead.email,
     phone: lead.phone,
-    stage: (lead.pipelineStage as PipelineStage | null) ?? null,
+    stage,
     sortOrder: lead.boardSortOrder,
     score: lead.leadScore,
-    temperature: temperatureFor(lead.leadScore),
+    temperature,
     occasion: facts.occasion,
     eventDate: facts.eventDate,
     headcount: facts.headcount,
@@ -221,6 +233,19 @@ export function toBoardLead(
     cart: ctx.cart ?? null,
     affiliate: ctx.affiliate ?? null,
     adsClick: isAdsLead(lead),
+    nextAction: nextActionFor({
+      needsResponse: isOpenStage ? needsResponse : false,
+      hasPhone: Boolean(lead.phone),
+      hasEmail: Boolean(lead.email),
+      temperature,
+      eventDate: facts.eventDate,
+      stage,
+      snoozedUntil: lead.snoozedUntil?.toISOString() ?? null,
+      now: ctx.now,
+    }),
+    touchCount: ctx.touchCount ?? 0,
+    daysInStage,
+    stalled: daysInStage != null && daysInStage >= STALLED_STAGE_DAYS,
   };
 }
 
@@ -330,12 +355,28 @@ async function fetchBoardRows(
 async function loadCardFlags(all: Lead[]): Promise<{
   followUpLeads: Set<string>;
   emailCounts: Map<string, number>;
+  touchCounts: Map<string, number>;
 }> {
-  const followUps = await prisma.followUpJob.groupBy({
-    by: ['leadId'],
-    where: { leadId: { in: all.map((l) => l.id) }, status: { in: ['scheduled', 'sent'] } },
-    _count: { _all: true },
-  });
+  const ids = all.map((l) => l.id);
+  const [followUps, touchRows] = await Promise.all([
+    prisma.followUpJob.groupBy({
+      by: ['leadId'],
+      where: { leadId: { in: ids }, status: { in: ['scheduled', 'sent'] } },
+      _count: { _all: true },
+    }),
+    // Outreach touches = board replies + logged calls/texts. One grouped raw
+    // query over the CUSTOM events (Prisma can't group by a JSON path).
+    ids.length
+      ? prisma.$queryRaw<Array<{ lead_id: string; n: number }>>`
+          SELECT lead_id, COUNT(*)::int AS n
+          FROM lead_events
+          WHERE lead_id IN (${Prisma.join(ids)})
+            AND type = 'CUSTOM'
+            AND metadata->>'kind' IN ('email.reply', 'outreach.logged')
+          GROUP BY lead_id
+        `
+      : Promise.resolve([]),
+  ]);
   const emailCounts = new Map<string, number>();
   for (const l of all) {
     const key = l.email?.toLowerCase();
@@ -344,6 +385,7 @@ async function loadCardFlags(all: Lead[]): Promise<{
   return {
     followUpLeads: new Set(followUps.flatMap((r) => (r.leadId ? [r.leadId] : []))),
     emailCounts,
+    touchCounts: new Map(touchRows.map((r) => [r.lead_id, r.n])),
   };
 }
 
@@ -421,7 +463,7 @@ export async function getBoardData(filters: BoardFilters = {}): Promise<BoardDat
     closedFloor,
   );
   const all = [...boarded, ...tray];
-  const [{ followUpLeads, emailCounts }, { cartByLeadId, affiliateByLeadId }] =
+  const [{ followUpLeads, emailCounts, touchCounts }, { cartByLeadId, affiliateByLeadId }] =
     await Promise.all([loadCardFlags(all), loadBoardJoins(all)]);
 
   const toCard = (lead: Lead): BoardLead =>
@@ -431,6 +473,7 @@ export async function getBoardData(filters: BoardFilters = {}): Promise<BoardDat
       now,
       cart: cartByLeadId.get(lead.id) ?? null,
       affiliate: affiliateByLeadId.get(lead.id) ?? null,
+      touchCount: touchCounts.get(lead.id) ?? 0,
     });
 
   const columns = buildColumns(boarded, toCard, filters, now);

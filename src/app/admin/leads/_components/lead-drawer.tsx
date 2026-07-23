@@ -94,6 +94,12 @@ export default function LeadDrawer({
     if (ok) void load();
   };
 
+  const logTouch = async (channel: 'call' | 'text'): Promise<void> => {
+    if (!leadId) return;
+    const ok = await mutations.logTouch(leadId, channel);
+    if (ok) void load();
+  };
+
   if (!leadId) return null;
   const lead = detail?.lead;
   const name = lead ? [lead.firstName, lead.lastName].filter(Boolean).join(' ') || lead.email || 'Lead' : 'Lead';
@@ -115,6 +121,7 @@ export default function LeadDrawer({
               onMove={(stage) => void moveTo(stage)}
               onSetOwner={(owner) => void setOwner(owner)}
               onSnooze={(days) => void snooze(days)}
+              onLogTouch={(channel) => void logTouch(channel)}
             />
             <DrawerFacts detail={detail} />
             <DrawerCart cart={detail.cart} />

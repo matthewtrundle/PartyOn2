@@ -5,6 +5,7 @@
 
 import type { Temperature } from './scoring';
 import type { PipelineStage } from './pipeline-types';
+import type { NextAction } from './next-action';
 
 export interface BoardLead {
   id: string;
@@ -46,6 +47,14 @@ export interface BoardLead {
   affiliate: { name: string; code: string } | null;
   /** Paid-traffic marker: Google/Meta/Bing click id or a cpc/paid medium. */
   adsClick: boolean;
+  /** Suggested next move (CALL/TEXT/EMAIL/REPLY + why); null on closed/snoozed. */
+  nextAction: NextAction | null;
+  /** Outreach touches logged (board replies + logged calls/texts). */
+  touchCount: number;
+  /** Whole days the card has sat in its current stage (open stages only). */
+  daysInStage: number | null;
+  /** True once an open card has aged past the stalled threshold. */
+  stalled: boolean;
 }
 
 export interface BoardKpis {
