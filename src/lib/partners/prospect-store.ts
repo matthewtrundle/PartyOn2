@@ -67,6 +67,10 @@ export interface StoredProspect {
   draftHook: Record<string, unknown> | null;
   draftError: string | null;
   draftRedoGuidance: string | null;
+  /** Variant B: the original enrichment-based personalized email (read-only). */
+  draftBSubject: string | null;
+  draftBBody: string | null;
+  draftBSource: string | null;
   emailVerifyStatus: string;
   emailVerifyOverride: boolean;
   emailVerifiedAt: string | null;
@@ -127,6 +131,9 @@ function toProspectRecord(row: PartnerProspect): StoredProspect {
         : null,
     draftError: row.draftError,
     draftRedoGuidance: row.draftRedoGuidance,
+    draftBSubject: row.draftBSubject,
+    draftBBody: row.draftBBody,
+    draftBSource: row.draftBSource,
     emailVerifyStatus: row.emailVerifyStatus,
     emailVerifyOverride: row.emailVerifyOverride,
     emailVerifiedAt: row.emailVerifiedAt ? row.emailVerifiedAt.toISOString() : null,

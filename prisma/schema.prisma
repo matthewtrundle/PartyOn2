@@ -3637,6 +3637,14 @@ model PartnerProspect {
   /// Operator note consumed by the next drafting session (request re-draft).
   draftRedoGuidance        String?   @map("draft_redo_guidance")
 
+  /// Variant B: the original enrichment-based personalized email (Brian's
+  /// legacy-manual drafts from the prospect JSONs), kept alongside the
+  /// Hormozi draft so re-drafting variant A never loses the originals.
+  draftBSubject            String?   @map("draft_b_subject")
+  draftBBody               String?   @map("draft_b_body")
+  /// Provenance of variant B, e.g. 'legacy-manual-json'.
+  draftBSource             String?   @map("draft_b_source")
+
   /// UNVERIFIED | VALID | INVALID | CATCH_ALL | UNKNOWN | ROLE
   emailVerifyStatus        String    @default("UNVERIFIED") @map("email_verify_status")
   emailVerifiedAt          DateTime? @map("email_verified_at")
