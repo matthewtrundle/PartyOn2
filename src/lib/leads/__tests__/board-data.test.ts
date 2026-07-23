@@ -47,7 +47,8 @@ const db: {
     tabs: Array<{ draftItems: Array<{ price: number; quantity: number }> }>;
   }>;
   affiliates: Array<{ id: string; businessName: string; code: string }>;
-} = { leads: [], followUps: [], groups: [], affiliates: [] };
+  touchEvents: Array<{ leadId: string }>;
+} = { leads: [], followUps: [], groups: [], affiliates: [], touchEvents: [] };
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 function matchesWhere(lead: MockLead, where: Record<string, any>): boolean {
@@ -107,6 +108,13 @@ vi.mock('@/lib/database/client', () => ({
         db.affiliates.filter((a) => where.id.in.includes(a.id)),
       ),
     },
+    // Touch-count raw query — groups db.touchEvents by lead (the real SQL's
+    // JSON-path filter is exercised in prod; here we mock the shape).
+    $queryRaw: vi.fn(async () => {
+      const byLead = new Map<string, number>();
+      for (const e of db.touchEvents) byLead.set(e.leadId, (byLead.get(e.leadId) ?? 0) + 1);
+      return [...byLead.entries()].map(([lead_id, n]) => ({ lead_id, n }));
+    }),
   },
 }));
 /* eslint-enable @typescript-eslint/no-explicit-any */
@@ -181,6 +189,7 @@ beforeEach(() => {
   db.followUps = [];
   db.groups = [];
   db.affiliates = [];
+  db.touchEvents = [];
   seq = 0;
 });
 
@@ -471,6 +480,59 @@ describe('isAdsLead — paid-traffic detector', () => {
     expect(isAdsLead(lead('organic'))).toBe(false);
     expect(isAdsLead(lead(null, { gclid: '' }))).toBe(false);
     expect(isAdsLead({ utmMedium: null, metadata: null })).toBe(false);
+  });
+});
+
+describe('toBoardLead — next action, aging, touches', () => {
+  it('computes days-in-stage and the stalled flag on open cards', () => {
+    const fresh = toBoardLead(asLead(makeLead({ stageChangedAt: daysAgo(2) })), ctx());
+    expect(fresh.daysInStage).toBe(2);
+    expect(fresh.stalled).toBe(false);
+    const old = toBoardLead(asLead(makeLead({ stageChangedAt: daysAgo(10) })), ctx());
+    expect(old.daysInStage).toBe(10);
+    expect(old.stalled).toBe(true);
+  });
+
+  it('never ages closed cards', () => {
+    const won = toBoardLead(asLead(makeLead({ pipelineStage: 'WON', stageChangedAt: daysAgo(40) })), ctx());
+    expect(won.daysInStage).toBeNull();
+    expect(won.stalled).toBe(false);
+  });
+
+  it('suggests the channel: hot phone lead with a near event → CALL', () => {
+    const soon = new Date(Date.now() + 5 * DAY_MS).toISOString().slice(0, 10);
+    const card = toBoardLead(
+      asLead(
+        makeLead({
+          leadScore: 85,
+          phone: '5125551234',
+          lastContactedAt: daysAgo(1), // silence the reply flag so it isn't REPLY
+          lastActivityAt: daysAgo(2),
+          metadata: { contactForm: { eventType: 'boat', eventDate: soon } },
+        }),
+      ),
+      ctx(),
+    );
+    expect(card.nextAction?.kind).toBe('CALL');
+  });
+
+  it('passes the touch count from ctx through to the card', () => {
+    const card = toBoardLead(asLead(makeLead()), { ...ctx(), touchCount: 3 });
+    expect(card.touchCount).toBe(3);
+  });
+});
+
+describe('getBoardData — touch counts from lead_events', () => {
+  it('attaches each lead its reply + logged-outreach count', async () => {
+    const a = makeLead();
+    makeLead(); // no touches
+    db.touchEvents.push({ leadId: a.id }, { leadId: a.id });
+
+    const data = await getBoardData();
+    const cardA = data.columns.NEW.find((c) => c.id === a.id);
+    const other = data.columns.NEW.find((c) => c.id !== a.id);
+    expect(cardA?.touchCount).toBe(2);
+    expect(other?.touchCount).toBe(0);
   });
 });
 

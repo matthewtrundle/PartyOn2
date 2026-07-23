@@ -27,6 +27,7 @@ export type StageChangeVia =
   | 'drag' // staff moved the card on the board
   | 'auto' // sweep (draft detected → QUOTE_SENT)
   | 'reply' // email reply sent from the board (NEW → CONTACTED)
+  | 'touch' // operator logged a call/text from the board (NEW → CONTACTED)
   | 'order' // paid order / deposit matched (→ WON)
   | 'reopen' // WON/LOST lead submitted a fresh inquiry (→ NEW)
   | 'enroll'; // lead entered the board (→ NEW)

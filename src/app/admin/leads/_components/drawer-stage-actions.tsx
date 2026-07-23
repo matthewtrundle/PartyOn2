@@ -18,12 +18,14 @@ export default function DrawerStageActions({
   onMove,
   onSetOwner,
   onSnooze,
+  onLogTouch,
 }: {
   lead: LeadDetail['lead'];
   mutating: boolean;
   onMove: (stage: PipelineStage) => void;
   onSetOwner: (owner: string) => void;
   onSnooze: (days: number | null) => void;
+  onLogTouch: (channel: 'call' | 'text') => void;
 }): ReactElement {
   const snoozed = lead.snoozedUntil && new Date(lead.snoozedUntil) > new Date();
   return (
@@ -73,6 +75,29 @@ export default function DrawerStageActions({
             Un-snooze
           </button>
         )}
+      </section>
+
+      {/* Log an off-board outreach attempt — records the touch, clears the
+          reply flag, and moves NEW→CONTACTED (the actual call/text happens in
+          the phone / GHL; this is the bookkeeping). */}
+      <section className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+        <span className="text-gray-500 font-semibold">Log outreach</span>
+        <button
+          type="button"
+          onClick={() => onLogTouch('call')}
+          disabled={mutating}
+          className="min-h-[36px] rounded-lg border border-gray-300 bg-white px-3 font-semibold text-gray-700 hover:border-brand-blue"
+        >
+          Logged call
+        </button>
+        <button
+          type="button"
+          onClick={() => onLogTouch('text')}
+          disabled={mutating}
+          className="min-h-[36px] rounded-lg border border-gray-300 bg-white px-3 font-semibold text-gray-700 hover:border-brand-blue"
+        >
+          Logged text
+        </button>
       </section>
     </>
   );

@@ -22,6 +22,7 @@ export interface LeadMutations {
     id: string,
     input: { notes?: string | null; owner?: string | null; snoozedUntil?: string | null },
   ) => Promise<boolean>;
+  logTouch: (id: string, channel: 'call' | 'text' | 'email') => Promise<boolean>;
 }
 
 export function useLeadMutations(onChanged: () => Promise<void>): LeadMutations {
@@ -77,5 +78,18 @@ export function useLeadMutations(onChanged: () => Promise<void>): LeadMutations 
     [run],
   );
 
-  return { mutating: pending > 0, moveStage, patchLead };
+  const logTouch = useCallback(
+    (id: string, channel: 'call' | 'text' | 'email') =>
+      // Refetches: logging a touch clears the reply flag + may move NEW→CONTACTED.
+      run(() =>
+        fetch(`/api/v1/admin/leads/${id}/touch`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ channel }),
+        }),
+      ),
+    [run],
+  );
+
+  return { mutating: pending > 0, moveStage, patchLead, logTouch };
 }
