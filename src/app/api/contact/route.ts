@@ -15,6 +15,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/database/client';
 import { recordEvent, upsertLead } from '@/lib/leads/leadCapture';
+import { resolveAffiliateId } from '@/lib/leads/affiliate-resolve';
+import { attributionSchema, compactAttribution } from '@/lib/leads/attribution-schema';
 import { enqueueJourney } from '@/lib/followups/enqueue';
 import { checkRateLimit } from '@/lib/security/rate-limit';
 import { mirrorLeadToSheet } from '@/lib/premier/pod-leads-sheet';
@@ -28,6 +30,8 @@ const bodySchema = z.object({
   eventDate: z.string().trim().max(60).optional().default(''),
   guestCount: z.union([z.string(), z.number()]).optional().default(''),
   message: z.string().trim().max(5000).optional().default(''),
+  /** First-touch UTM + ad click ids captured client-side (optional). */
+  attribution: attributionSchema,
 });
 
 export async function POST(request: NextRequest) {
@@ -66,11 +70,33 @@ export async function POST(request: NextRequest) {
           firstName: firstName || null,
           lastName: restName.join(' ') || null,
         },
-        { sourcePage: '/contact', sourceWidget: 'CONTACT_FORM' }
+        {
+          sourcePage: '/contact',
+          sourceWidget: 'CONTACT_FORM',
+          // UTM columns blank-fill + click ids merge into metadata.attribution.
+          utmSource: body.attribution?.utmSource,
+          utmMedium: body.attribution?.utmMedium,
+          utmCampaign: body.attribution?.utmCampaign,
+          utmContent: body.attribution?.utmContent,
+          utmTerm: body.attribution?.utmTerm,
+          gclid: body.attribution?.gclid,
+          gbraid: body.attribution?.gbraid,
+          wbraid: body.attribution?.wbraid,
+          fbclid: body.attribution?.fbclid,
+          msclkid: body.attribution?.msclkid,
+          // 30-day affiliate attribution cookie (middleware) — fill-blank.
+          affiliateId: await resolveAffiliateId(request.cookies.get('ref_code')?.value),
+        }
       );
       if (lead) {
         leadId = lead.id;
         const existingMeta = (lead.metadata as Record<string, unknown> | null) ?? {};
+        const prevAttribution: Record<string, string> =
+          existingMeta.attribution &&
+          typeof existingMeta.attribution === 'object' &&
+          !Array.isArray(existingMeta.attribution)
+            ? (existingMeta.attribution as Record<string, string>)
+            : {};
         await prisma.lead.update({
           where: { id: lead.id },
           data: {
@@ -83,6 +109,14 @@ export async function POST(request: NextRequest) {
             sourceWidget: 'CONTACT_FORM',
             metadata: {
               ...existingMeta,
+              ...(body.attribution
+                ? {
+                    attribution: {
+                      ...prevAttribution,
+                      ...compactAttribution(body.attribution),
+                    },
+                  }
+                : {}),
               contactForm: {
                 eventType: body.eventType,
                 eventDate: body.eventDate,

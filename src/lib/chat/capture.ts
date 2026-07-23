@@ -15,6 +15,7 @@ import { prisma } from '@/lib/database/client';
 import { upsertLead, recordEvent } from '@/lib/leads/leadCapture';
 import { enrollLeadIfEligible } from '@/lib/leads/pipeline';
 import { mirrorLeadToCrm, leadBoardUrl } from '@/lib/leads/crm-mirror';
+import type { AttributionInput } from '@/lib/leads/attribution-schema';
 import { detectEscalation } from './escalation-keywords';
 import { parseContact, hasContact } from './parse-contact';
 import { sendChatEscalationEmail } from './escalation-alert';
@@ -32,6 +33,10 @@ export interface ChatTurnInput {
   utmSource?: string | null;
   utmMedium?: string | null;
   utmCampaign?: string | null;
+  /** Full first-touch snapshot (utm ×5 + click ids + landing/referrer) —
+      newer widgets send it; the 3 legacy utm fields above stay for old
+      cached bundles. */
+  attribution?: AttributionInput | null;
 }
 
 export async function persistChatTurn(input: ChatTurnInput): Promise<void> {
@@ -71,9 +76,16 @@ export async function persistChatTurn(input: ChatTurnInput): Promise<void> {
         {
           sourcePage: input.firstPage ?? '/chat',
           sourceWidget: 'WAYNE_CHAT',
-          utmSource: input.utmSource ?? null,
-          utmMedium: input.utmMedium ?? null,
-          utmCampaign: input.utmCampaign ?? null,
+          utmSource: input.attribution?.utmSource ?? input.utmSource ?? null,
+          utmMedium: input.attribution?.utmMedium ?? input.utmMedium ?? null,
+          utmCampaign: input.attribution?.utmCampaign ?? input.utmCampaign ?? null,
+          utmContent: input.attribution?.utmContent ?? null,
+          utmTerm: input.attribution?.utmTerm ?? null,
+          gclid: input.attribution?.gclid ?? null,
+          gbraid: input.attribution?.gbraid ?? null,
+          wbraid: input.attribution?.wbraid ?? null,
+          fbclid: input.attribution?.fbclid ?? null,
+          msclkid: input.attribution?.msclkid ?? null,
         }
       );
       if (lead) {

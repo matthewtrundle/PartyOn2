@@ -303,7 +303,19 @@ export async function createGroupOrder(
         ? new Date(Math.min(...tabDeliveryDates.map((d) => d.getTime())))
         : null,
     source: group.source,
+    affiliateId: group.affiliateId ?? null,
     createdVia: 'group-create',
+    // Whatever first-touch the group row stored (utm columns + landing page +
+    // referrer) — the mirror fill-blanks it onto the host's Lead.
+    attribution: {
+      utmSource: group.utmSource,
+      utmMedium: group.utmMedium,
+      utmCampaign: group.utmCampaign,
+      utmTerm: group.utmTerm,
+      utmContent: group.utmContent,
+      landingPage: group.landingPage,
+      referrer: group.referrer,
+    },
   });
 
   return serializeGroup(group);
@@ -1063,6 +1075,7 @@ export async function createDashboardOrder(
     partyType: input.partyType || null,
     deliveryDate,
     source: input.source || 'DIRECT',
+    affiliateId: group.affiliateId ?? null,
     createdVia: input.isLastMinute ? 'last-minute-order' : 'dashboard-order',
     attribution: input.attribution
       ? {
@@ -1071,6 +1084,15 @@ export async function createDashboardOrder(
           utmCampaign: input.attribution.utmCampaign ?? null,
           utmTerm: input.attribution.utmTerm ?? null,
           utmContent: input.attribution.utmContent ?? null,
+          // Click ids + landing/referrer reach only the Lead mirror
+          // (metadata.attribution) — GroupOrderV2 columns stay utm-only.
+          gclid: input.attribution.gclid ?? null,
+          gbraid: input.attribution.gbraid ?? null,
+          wbraid: input.attribution.wbraid ?? null,
+          fbclid: input.attribution.fbclid ?? null,
+          msclkid: input.attribution.msclkid ?? null,
+          landingPage: input.attribution.landingPage ?? null,
+          referrer: input.attribution.referrer ?? null,
         }
       : null,
   });
@@ -1154,7 +1176,17 @@ export async function createMultiTabDashboardOrder(
     partyType: input.partyType || null,
     deliveryDate,
     source: input.source || 'PARTNER_PAGE',
+    affiliateId: group.affiliateId ?? null,
     createdVia: 'affiliate-dashboard',
+    attribution: {
+      utmSource: group.utmSource,
+      utmMedium: group.utmMedium,
+      utmCampaign: group.utmCampaign,
+      utmTerm: group.utmTerm,
+      utmContent: group.utmContent,
+      landingPage: group.landingPage,
+      referrer: group.referrer,
+    },
   });
 
   return { ...serializeGroup(group), hostClaimToken };
@@ -1269,6 +1301,14 @@ export async function updateGroupOrderFields(
         hostPhone: true,
         partyType: true,
         source: true,
+        affiliateId: true,
+        utmSource: true,
+        utmMedium: true,
+        utmCampaign: true,
+        utmTerm: true,
+        utmContent: true,
+        landingPage: true,
+        referrer: true,
       },
     });
     if (fresh) {
@@ -1280,7 +1320,17 @@ export async function updateGroupOrderFields(
         hostPhone: fresh.hostPhone,
         partyType: fresh.partyType,
         source: fresh.source,
+        affiliateId: fresh.affiliateId,
         createdVia: 'dashboard-settings',
+        attribution: {
+          utmSource: fresh.utmSource,
+          utmMedium: fresh.utmMedium,
+          utmCampaign: fresh.utmCampaign,
+          utmTerm: fresh.utmTerm,
+          utmContent: fresh.utmContent,
+          landingPage: fresh.landingPage,
+          referrer: fresh.referrer,
+        },
       });
     }
   }

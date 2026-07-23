@@ -38,13 +38,30 @@ export interface DashboardHostRef {
   deliveryDate?: Date | string | null;
   /** GroupOrderV2.source (DIRECT / PARTNER_PAGE / WEBHOOK / ...). */
   source?: string | null;
+  /** GroupOrderV2.affiliateId — stamps Lead.affiliateId (fill-blank), so a
+      Premier-webhook host is affiliate-attributed the moment they board. */
+  affiliateId?: string | null;
   /** Which flow landed the contact info (create / settings / send-link...). */
   createdVia: string;
-  /** Host first-touch attribution when the create flow captured it. */
-  attribution?: Pick<
-    LeadContext,
-    'utmSource' | 'utmMedium' | 'utmCampaign' | 'utmContent' | 'utmTerm'
-  > | null;
+  /** Host first-touch attribution when the create flow captured it. UTM +
+      click ids flow into upsertLead's ctx (columns + metadata.attribution);
+      landingPage/referrer fill-blank into metadata.attribution (Lead has no
+      columns for them). */
+  attribution?:
+    | (Pick<
+        LeadContext,
+        | 'utmSource'
+        | 'utmMedium'
+        | 'utmCampaign'
+        | 'utmContent'
+        | 'utmTerm'
+        | 'gclid'
+        | 'gbraid'
+        | 'wbraid'
+        | 'fbclid'
+        | 'msclkid'
+      > & { landingPage?: string | null; referrer?: string | null })
+    | null;
 }
 
 function splitName(hostName?: string | null): { firstName: string | null; lastName: string | null } {
@@ -60,6 +77,16 @@ function isoDateOnly(value?: Date | string | null): string | null {
   return Number.isNaN(d.getTime()) ? null : d.toISOString().slice(0, 10);
 }
 
+/** Existence-check an affiliate id (lightweight select); null if unknown. */
+async function verifyAffiliateId(id?: string | null): Promise<string | null> {
+  if (!id) return null;
+  const affiliate = await prisma.affiliate.findUnique({
+    where: { id },
+    select: { id: true },
+  });
+  return affiliate?.id ?? null;
+}
+
 /**
  * Mirror a dashboard host onto the Lead Flow board. Safe to call repeatedly
  * (upsert by email/phone; metadata.groupDashboard is last-write-wins so the
@@ -70,12 +97,24 @@ export async function mirrorDashboardHostLead(ref: DashboardHostRef): Promise<vo
     if (!ref.hostEmail && !ref.hostPhone) return;
 
     const { firstName, lastName } = splitName(ref.hostName);
+    // landingPage/referrer aren't LeadContext fields — split them off for the
+    // metadata merge below; everything else flows into upsertLead's ctx.
+    const { landingPage, referrer, ...utmAndClickIds } = ref.attribution ?? {};
+    // Verify the affiliate actually exists before stamping it onto the Lead.
+    // GroupOrderV2.affiliateId can be set with an UNVALIDATED client value via
+    // the unauthenticated POST /api/v2/group-orders/dashboard route (a
+    // pre-existing hole — security review 2026-07-23, HIGH), so a junk/spoofed
+    // id must never poison the fill-blank Lead.affiliateId. This makes the
+    // dashboard-mirror path consistent with the resolveAffiliateId capture
+    // routes, which already only ever forward a real affiliate id.
+    const verifiedAffiliateId = await verifyAffiliateId(ref.affiliateId);
     const lead = await upsertLead(
       { email: ref.hostEmail, phone: ref.hostPhone, firstName, lastName },
       {
         sourcePage: `/dashboard/${ref.shareCode}`,
         sourceWidget: 'GROUP_DASHBOARD',
-        ...(ref.attribution ?? {}),
+        affiliateId: verifiedAffiliateId,
+        ...utmAndClickIds,
       },
     );
     if (!lead) return;
@@ -96,6 +135,17 @@ export async function mirrorDashboardHostLead(ref: DashboardHostRef): Promise<vo
       createdVia: ref.createdVia,
       linkedAt: new Date().toISOString(),
     };
+    // First-touch landing page + referrer — fill-blank into the attribution
+    // bag (upsertLead already merged any click ids into it just above).
+    if (landingPage || referrer) {
+      const attr =
+        meta.attribution && typeof meta.attribution === 'object' && !Array.isArray(meta.attribution)
+          ? { ...(meta.attribution as Record<string, unknown>) }
+          : {};
+      if (landingPage && attr.landingPage == null) attr.landingPage = landingPage.slice(0, 500);
+      if (referrer && attr.referrer == null) attr.referrer = referrer.slice(0, 500);
+      meta.attribution = attr;
+    }
     const upgradeWidget = lead.sourceWidget === null || lead.sourceWidget === 'OTHER';
     await prisma.lead.update({
       where: { id: lead.id },

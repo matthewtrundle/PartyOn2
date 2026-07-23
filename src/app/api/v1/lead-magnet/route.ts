@@ -22,6 +22,7 @@ import { sendEmail } from '@/lib/email/resend-client';
 import { leadMagnetEmail } from '@/lib/email/templates/lead-magnet';
 import { markLeadStatus, upsertLead } from '@/lib/leads/leadCapture';
 import { enrollLeadIfEligible } from '@/lib/leads/pipeline';
+import { attributionSchema, compactAttribution } from '@/lib/leads/attribution-schema';
 import { prisma } from '@/lib/database/client';
 import { checkRateLimit } from '@/lib/security/rate-limit';
 import { EmailType } from '@prisma/client';
@@ -37,6 +38,8 @@ const schema = z.object({
   magnetTitle: z.string().max(200),
   rewardUrl: z.string().max(500),
   rewardCta: z.string().max(80).optional().nullable(),
+  /** First-touch UTM + ad click ids captured client-side (optional). */
+  attribution: attributionSchema,
 });
 
 export async function POST(req: NextRequest) {
@@ -67,10 +70,30 @@ export async function POST(req: NextRequest) {
     const hasPhone = Boolean(body.phone && body.phone.trim());
     const lead = await upsertLead(
       { email: body.email, phone: body.phone ?? null, firstName: body.firstName },
-      { sourcePage: '/lead-magnet', sourceWidget: hasPhone ? 'LEAD_MAGNET' : 'EMAIL_SIGNUP' },
+      {
+        sourcePage: '/lead-magnet',
+        sourceWidget: hasPhone ? 'LEAD_MAGNET' : 'EMAIL_SIGNUP',
+        // UTM columns blank-fill + click ids merge into metadata.attribution.
+        utmSource: body.attribution?.utmSource,
+        utmMedium: body.attribution?.utmMedium,
+        utmCampaign: body.attribution?.utmCampaign,
+        utmContent: body.attribution?.utmContent,
+        utmTerm: body.attribution?.utmTerm,
+        gclid: body.attribution?.gclid,
+        gbraid: body.attribution?.gbraid,
+        wbraid: body.attribution?.wbraid,
+        fbclid: body.attribution?.fbclid,
+        msclkid: body.attribution?.msclkid,
+      },
     );
     if (lead) {
       const prevMeta = (lead.metadata as Record<string, unknown> | null) ?? {};
+      const prevAttribution: Record<string, string> =
+        prevMeta.attribution &&
+        typeof prevMeta.attribution === 'object' &&
+        !Array.isArray(prevMeta.attribution)
+          ? (prevMeta.attribution as Record<string, string>)
+          : {};
       // Phone present ⇒ claim provenance even over EMAIL_SIGNUP (the client
       // pixel stamps that on this very lead while they type) — but never
       // over a real inquiry widget.
@@ -85,6 +108,14 @@ export async function POST(req: NextRequest) {
           ...(upgradeWidget ? { sourceWidget: 'LEAD_MAGNET' } : {}),
           metadata: {
             ...prevMeta,
+            ...(body.attribution
+              ? {
+                  attribution: {
+                    ...prevAttribution,
+                    ...compactAttribution(body.attribution),
+                  },
+                }
+              : {}),
             leadMagnet: {
               magnetId: body.magnetId,
               magnetTitle: body.magnetTitle,

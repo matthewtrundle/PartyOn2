@@ -229,6 +229,13 @@ export interface DashboardAttributionInput {
   utmTerm?: string | null;
   utmContent?: string | null;
   referrer?: string | null;
+  /** Ad-platform click ids — no GroupOrderV2 columns; these flow only to the
+      host's Lead mirror (metadata.attribution). */
+  gclid?: string | null;
+  gbraid?: string | null;
+  wbraid?: string | null;
+  fbclid?: string | null;
+  msclkid?: string | null;
 }
 
 export interface CreateDashboardInput {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse, after } from 'next/server'
 import { readFile } from 'fs/promises'
 import { join } from 'path'
 import { persistChatTurn } from '@/lib/chat/capture'
+import { attributionSchema } from '@/lib/leads/attribution-schema'
 
 // Cache the prompt content to avoid reading file on every request
 let cachedBasePrompt: string | null = null
@@ -39,7 +40,12 @@ export async function POST(request: NextRequest) {
       utmSource,
       utmMedium,
       utmCampaign,
+      attribution: rawAttribution,
     } = await request.json()
+    // Full first-touch snapshot (utm ×5 + click ids) — validated defensively;
+    // a bad shape drops attribution, never the chat.
+    const attrParsed = attributionSchema.safeParse(rawAttribution)
+    const attribution = attrParsed.success ? attrParsed.data : null
 
     const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY
     
@@ -106,6 +112,7 @@ export async function POST(request: NextRequest) {
           utmSource: typeof utmSource === 'string' ? utmSource : null,
           utmMedium: typeof utmMedium === 'string' ? utmMedium : null,
           utmCampaign: typeof utmCampaign === 'string' ? utmCampaign : null,
+          attribution,
         })
       )
     }

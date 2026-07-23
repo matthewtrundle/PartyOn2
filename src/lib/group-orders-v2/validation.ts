@@ -145,6 +145,14 @@ const DashboardAttributionSchema = z
     utmTerm: attributionField,
     utmContent: attributionField,
     referrer: attributionField,
+    // Ad-platform click ids — no GroupOrderV2 columns; forwarded only to the
+    // host's Lead mirror (metadata.attribution), so gclid survives dashboard
+    // creation the way it already survives quote/chat submits.
+    gclid: attributionField,
+    gbraid: attributionField,
+    wbraid: attributionField,
+    fbclid: attributionField,
+    msclkid: attributionField,
   })
   .optional()
   .catch(undefined);

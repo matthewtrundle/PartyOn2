@@ -25,6 +25,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/database/client';
 import { upsertLead, recordEvent } from '@/lib/leads/leadCapture';
 import { attributionSchema, compactAttribution } from '@/lib/leads/attribution-schema';
+import { resolveAffiliateId } from '@/lib/leads/affiliate-resolve';
 import { isHoneypotTripped } from '@/lib/forms/honeypot';
 import { checkRateLimit } from '@/lib/security/rate-limit';
 import {
@@ -146,6 +147,9 @@ export async function POST(req: NextRequest) {
         wbraid: body.attribution?.wbraid,
         fbclid: body.attribution?.fbclid,
         msclkid: body.attribution?.msclkid,
+        // Partner slug → Affiliate stamp (fill-blank; premier-party-cruises
+        // etc. resolve via Affiliate.partnerSlug).
+        affiliateId: await resolveAffiliateId(body.partner),
       },
     );
     if (lead) {

@@ -20,8 +20,12 @@ vi.mock('../leadCapture', () => ({
 vi.mock('../pipeline', () => ({
   enrollLeadIfEligible: (...args: unknown[]) => enrollLeadIfEligible(...args),
 }));
+const affiliateFindUnique = vi.fn();
 vi.mock('@/lib/database/client', () => ({
-  prisma: { lead: { update: (...args: unknown[]) => leadUpdate(...args) } },
+  prisma: {
+    lead: { update: (...args: unknown[]) => leadUpdate(...args) },
+    affiliate: { findUnique: (...args: unknown[]) => affiliateFindUnique(...args) },
+  },
 }));
 
 import { mirrorDashboardHostLead } from '../dashboard-lead';
@@ -52,6 +56,10 @@ beforeEach(() => {
   recordEvent.mockResolvedValue(undefined);
   enrollLeadIfEligible.mockResolvedValue(true);
   leadUpdate.mockResolvedValue(undefined);
+  // Default: the affiliate id exists (echo the queried id back).
+  affiliateFindUnique.mockImplementation(async ({ where }: { where: { id: string } }) => ({
+    id: where.id,
+  }));
 });
 
 describe('mirrorDashboardHostLead', () => {
@@ -122,3 +130,64 @@ describe('mirrorDashboardHostLead', () => {
     await expect(mirrorDashboardHostLead(baseRef)).resolves.toBeUndefined();
   });
 });
+
+describe('mirrorDashboardHostLead — affiliate forwarding', () => {
+  it("passes the group's affiliateId into the upsert ctx (fill-blank stamp)", async () => {
+    await mirrorDashboardHostLead({ ...baseRef, affiliateId: 'aff-premier' });
+    expect(upsertLead).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ affiliateId: 'aff-premier' }),
+    );
+  });
+
+  it('defaults to null when the dashboard has no affiliate', async () => {
+    await mirrorDashboardHostLead(baseRef);
+    expect(upsertLead).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ affiliateId: null }),
+    );
+  });
+
+  it('does NOT stamp a non-existent (tainted) affiliate id onto the lead', async () => {
+    // GroupOrderV2.affiliateId can hold an unvalidated client value; verify it
+    // exists before stamping (security review 2026-07-23, HIGH).
+    affiliateFindUnique.mockResolvedValue(null);
+    await mirrorDashboardHostLead({ ...baseRef, affiliateId: 'spoofed-id' });
+    expect(affiliateFindUnique).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 'spoofed-id' } }),
+    );
+    expect(upsertLead).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ affiliateId: null }),
+    );
+  });
+});
+
+describe('mirrorDashboardHostLead — attribution split (utm/clicks → ctx, landing/referrer → metadata)', () => {
+  it('routes click ids into the upsert ctx and landing/referrer into metadata.attribution', async () => {
+    await mirrorDashboardHostLead({
+      ...baseRef,
+      attribution: {
+        utmSource: 'google',
+        gclid: 'g-xyz',
+        landingPage: '/austin-boat-party',
+        referrer: 'https://google.com',
+      },
+    });
+    // utm + click ids reach upsertLead ctx (columns + metadata merge there).
+    expect(upsertLead).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ utmSource: 'google', gclid: 'g-xyz' }),
+    );
+    // landingPage/referrer are NOT LeadContext fields — they must not leak in.
+    const ctx = upsertLead.mock.calls[0][1];
+    expect(ctx).not.toHaveProperty('landingPage');
+    expect(ctx).not.toHaveProperty('referrer');
+    // ...they fill-blank into metadata.attribution on the follow-up update.
+    const meta = leadUpdate.mock.calls[0][0].data.metadata;
+    expect(meta.attribution).toMatchObject({
+      landingPage: '/austin-boat-party',
+      referrer: 'https://google.com',
+    });
+  });
+})

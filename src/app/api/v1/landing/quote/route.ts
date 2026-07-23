@@ -30,6 +30,7 @@ import { mirrorLeadToSheet } from '@/lib/premier/pod-leads-sheet';
 import { mirrorLeadToCrm } from '@/lib/leads/crm-mirror';
 import { mirrorQuickBuyLead } from '@/lib/leads/quickbuy-lead';
 import { checkRateLimit } from '@/lib/security/rate-limit';
+import { resolveAffiliateId } from '@/lib/leads/affiliate-resolve';
 import { EmailType, DraftOrderStatus } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
@@ -283,6 +284,8 @@ export async function POST(request: NextRequest) {
       draftOrderId: draftOrder.id,
       total: Number(draftOrder.total),
       attribution: body.attribution,
+      // 30-day affiliate attribution cookie (middleware) — fill-blank.
+      affiliateId: await resolveAffiliateId(request.cookies.get('ref_code')?.value),
     });
 
     // Mirror to the POD Leads Google Sheet + CoreLinq CRM. AWAITED — Vercel

@@ -29,6 +29,7 @@ import { z } from 'zod';
 import { prisma } from '@/lib/database/client';
 import { upsertLead, recordEvent } from '@/lib/leads/leadCapture';
 import { attributionSchema, compactAttribution } from '@/lib/leads/attribution-schema';
+import { resolveAffiliateId } from '@/lib/leads/affiliate-resolve';
 import { notifyConciergeLead } from '@/lib/webhooks/ghl';
 import { mirrorLeadToCrm } from '@/lib/leads/crm-mirror';
 import {
@@ -125,6 +126,9 @@ export async function POST(req: NextRequest) {
         wbraid: body.attribution?.wbraid,
         fbclid: body.attribution?.fbclid,
         msclkid: body.attribution?.msclkid,
+        // The concierge questionnaire is Premier's funnel — alias map
+        // resolves 'premier-concierge' → the PREMIER affiliate (fill-blank).
+        affiliateId: await resolveAffiliateId('premier-concierge'),
       },
     );
 
