@@ -20,58 +20,6 @@ function possessive(name: string): string {
   return /s$/i.test(name.trim()) ? `${name.trim()}'` : `${name.trim()}'s`;
 }
 
-/**
- * Hero slideshow for the boat tab — Premier's own party-wall photos
- * (self-hosted copies; Brian's shots, incl. the two he picked for the
- * hero). Auto-advances with a crossfade; dots are tappable.
- */
-const BOAT_HERO_SLIDES = [
-  '/images/partners/premier-boat-slideshow/unicorn-float-crew.jpg',
-  '/images/partners/premier-boat-slideshow/bride-squad-captain.jpg',
-  '/images/partners/premier-boat-slideshow/group-pic.jpg',
-  '/images/partners/premier-boat-slideshow/pontoon-full-crew.jpg',
-  '/images/partners/premier-boat-slideshow/disco-fun-1.jpg',
-  '/images/partners/premier-boat-slideshow/disco-fun-2.jpg',
-];
-
-function BoatHeroSlideshow({ label }: { label: string }): ReactElement {
-  const [slide, setSlide] = useState(0);
-  useEffect(() => {
-    const t = setInterval(() => setSlide((s) => (s + 1) % BOAT_HERO_SLIDES.length), 4000);
-    return () => clearInterval(t);
-  }, []);
-  return (
-    <div className="relative w-full h-[38vh] md:h-[48vh] overflow-hidden bg-gray-900">
-      {BOAT_HERO_SLIDES.map((src, i) => (
-        // eslint-disable-next-line @next/next/no-img-element -- crossfade stack; plain img keeps all slides cached
-        <img
-          key={src}
-          src={src}
-          alt={`${label} — Lake Travis party boat`}
-          loading={i === 0 ? 'eager' : 'lazy'}
-          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${
-            i === slide ? 'opacity-100' : 'opacity-0'
-          }`}
-        />
-      ))}
-      <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-gray-900/70 to-transparent" />
-      <div className="absolute bottom-3 inset-x-0 flex justify-center gap-2">
-        {BOAT_HERO_SLIDES.map((src, i) => (
-          <button
-            key={src}
-            type="button"
-            aria-label={`Photo ${i + 1}`}
-            onClick={() => setSlide(i)}
-            className={`h-2.5 rounded-full transition-all touch-manipulation ${
-              i === slide ? 'w-6 bg-brand-yellow' : 'w-2.5 bg-white/60 hover:bg-white'
-            }`}
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export default function PartnerPageTabs({
   businessName,
   leftLabel,
@@ -151,9 +99,9 @@ export default function PartnerPageTabs({
       {/* Left: the standard POD partner page */}
       <div hidden={tab !== 'left'}>{children}</div>
 
-      {/* Right: hero slideshow + embedded booking page */}
+      {/* Right: embedded booking page (its hero carries the photo slideshow —
+          injected inside public/partners-embed/premier-quote.html) */}
       <div hidden={tab !== 'right'} className="bg-white">
-        {embedLoaded && <BoatHeroSlideshow label={rightLabel} />}
         {embedLoaded && (
           <iframe
             ref={iframeRef}
