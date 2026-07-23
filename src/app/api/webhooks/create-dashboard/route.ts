@@ -20,6 +20,7 @@ import {
 } from '@/lib/webhooks/affiliate-dashboard';
 import type { DashboardCallbackPayload } from '@/lib/webhooks/affiliate-dashboard';
 import { notifyDashboardCreated } from '@/lib/webhooks/ghl';
+import { sanitizeName } from '@/lib/leads/leadCapture';
 
 export const maxDuration = 60;
 
@@ -57,16 +58,23 @@ export async function POST(request: NextRequest) {
 
   const payload = parsed.data;
 
+  // Neutralize the affiliate-supplied name at the source of this route so it is
+  // safe everywhere it flows: the dashboard title/tab, the stored hostName, and
+  // the GHL dashboard webhook. This webhook is authenticated per-affiliate, so a
+  // compromised affiliate integration is the injection vector this guards.
+  // (The raw payload is still logged verbatim to affiliateWebhookLog for audit.)
+  const customerName = sanitizeName(payload.customer_name) || 'Guest';
+
   // ── Build dashboard input ────────────────────
   const cruiseType = normalizeCruiseType(payload.items_name);
-  const cruiseTabName = buildCruiseTabName(cruiseType, payload.customer_name);
-  const dashboardTitle = buildDashboardTitle(payload.customer_name);
+  const cruiseTabName = buildCruiseTabName(cruiseType, customerName);
+  const dashboardTitle = buildDashboardTitle(customerName);
   const deliveryTime = formatDeliveryWindow(payload.cruise_start_time);
   const marinaAddress = `${PREMIER_MARINA_ADDRESS.address1}, ${PREMIER_MARINA_ADDRESS.city}, ${PREMIER_MARINA_ADDRESS.province} ${PREMIER_MARINA_ADDRESS.zip}`;
 
   try {
     const result = await createMultiTabDashboardOrder({
-      hostName: payload.customer_name,
+      hostName: customerName,
       hostEmail: payload.customer_email || undefined,
       hostPhone: payload.customer_phone || undefined,
       dashboardTitle,
@@ -133,7 +141,7 @@ export async function POST(request: NextRequest) {
 
     // Notify GHL with customer info + dashboard links
     const hostClaimUrl = `${dashboardUrl}?claim=${result.hostClaimToken}`;
-    const nameParts = payload.customer_name.trim().split(/\s+/);
+    const nameParts = customerName.split(/\s+/);
     try {
       await notifyDashboardCreated({
         event: 'dashboard.created',

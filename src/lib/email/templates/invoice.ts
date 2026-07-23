@@ -4,6 +4,7 @@
  */
 
 import { formatCurrency, formatDate } from '../resend-client';
+import { escapeHtml } from '../escape-html';
 
 interface InvoiceItem {
   title: string;
@@ -58,7 +59,9 @@ export function generateInvoiceEmail(data: InvoiceEmailData, textOverrides?: Inv
 
   // Merge defaults with overrides and replace placeholders
   const text = { ...INVOICE_TEXT_DEFAULTS, ...textOverrides };
-  const firstName = data.customerName.trim().split(/\s+/)[0];
+  // HTML-escape the customer name before it enters the greeting (rendered into
+  // the HTML body). sanitizeName upstream strips control chars but not `<`/`>`/`&`.
+  const firstName = escapeHtml(data.customerName.trim().split(/\s+/)[0]);
   const greeting = text.greeting.replace('{customerName}', firstName);
   const bodyText = text.bodyText;
   const buttonText = text.buttonText;
@@ -70,7 +73,7 @@ export function generateInvoiceEmail(data: InvoiceEmailData, textOverrides?: Inv
     ? `
               <div style="background-color: #fef9e7; border-left: 4px solid #D4AF37; border-radius: 4px; padding: 16px 20px; margin-bottom: 24px;">
                 <p style="margin: 0; color: #4b5563; font-size: 15px; line-height: 1.6; font-style: italic;">
-                  ${data.personalNote.replace(/\n/g, '<br>')}
+                  ${escapeHtml(data.personalNote).replace(/\n/g, '<br>')}
                 </p>
               </div>`
     : '';
@@ -85,8 +88,8 @@ export function generateInvoiceEmail(data: InvoiceEmailData, textOverrides?: Inv
             : `<div style="width: 40px; height: 40px; background-color: #f3f4f6; border-radius: 6px;"></div>`}
         </td>
         <td style="padding: 12px; border-bottom: 1px solid #e5e5e5;">
-          <strong>${item.title}</strong>
-          ${item.variantTitle ? `<br><span style="color: #666; font-size: 14px;">${item.variantTitle}</span>` : ''}
+          <strong>${escapeHtml(item.title)}</strong>
+          ${item.variantTitle ? `<br><span style="color: #666; font-size: 14px;">${escapeHtml(item.variantTitle)}</span>` : ''}
         </td>
         <td style="padding: 12px; border-bottom: 1px solid #e5e5e5; text-align: center;">
           ${item.quantity}
@@ -154,7 +157,7 @@ export function generateInvoiceEmail(data: InvoiceEmailData, textOverrides?: Inv
                   <strong>Time:</strong> ${data.deliveryTime}
                 </p>
                 <p style="margin: 0; color: #4b5563; font-size: 14px;">
-                  <strong>Address:</strong> ${data.deliveryAddress}, ${data.deliveryCity}, ${data.deliveryState} ${data.deliveryZip}
+                  <strong>Address:</strong> ${escapeHtml(data.deliveryAddress)}, ${escapeHtml(data.deliveryCity)}, ${escapeHtml(data.deliveryState)} ${escapeHtml(data.deliveryZip)}
                 </p>
               </div>
 

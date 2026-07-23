@@ -4,6 +4,7 @@
  */
 
 import { formatCurrency } from '../resend-client';
+import { escapeHtml } from '../escape-html';
 
 interface DeliveryAddress {
   address1: string;
@@ -88,6 +89,7 @@ function formatAddress(address: DeliveryAddress): string {
     `${address.city}, ${address.province} ${address.zip}`,
   ]
     .filter(Boolean)
+    .map(escapeHtml)
     .join('<br>');
 }
 
@@ -103,7 +105,7 @@ export function generateDeliveryEnRouteEmail(data: DeliveryUpdateData): string {
     estimatedArrival,
   } = data;
 
-  const firstName = customerName.trim().split(/\s+/)[0];
+  const firstName = escapeHtml(customerName.trim().split(/\s+/)[0]);
 
   const content = `
     <!-- Main Content -->
@@ -121,7 +123,7 @@ export function generateDeliveryEnRouteEmail(data: DeliveryUpdateData): string {
             ? `
           <div style="background-color: #f0f9ff; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
             <p style="margin: 0; color: #0369a1; font-size: 14px;">Your Driver</p>
-            <p style="margin: 4px 0 0; font-size: 18px; font-weight: 600; color: #1a1a1a;">${driverName}</p>
+            <p style="margin: 4px 0 0; font-size: 18px; font-weight: 600; color: #1a1a1a;">${escapeHtml(driverName)}</p>
           </div>
         `
             : ''
@@ -171,7 +173,7 @@ export function generateDeliveryCompletedEmail(data: DeliveryUpdateData): string
     total,
   } = data;
 
-  const firstName = customerName.trim().split(/\s+/)[0];
+  const firstName = escapeHtml(customerName.trim().split(/\s+/)[0]);
 
   const content = `
     <!-- Main Content -->
@@ -231,7 +233,7 @@ export function generateDeliveryCompletedEmail(data: DeliveryUpdateData): string
  */
 export function generateDeliveryEnRouteText(data: DeliveryUpdateData): string {
   const { orderNumber, customerName, deliveryAddress, driverName, estimatedArrival } = data;
-  const firstName = customerName.trim().split(/\s+/)[0];
+  const firstName = customerName.trim().split(/\s+/)[0]; // plain-text email — no HTML escaping
 
   const addressLines = [
     deliveryAddress.address1,
@@ -269,7 +271,7 @@ Premium Alcohol Delivery
  */
 export function generateDeliveryCompletedText(data: DeliveryUpdateData): string {
   const { orderNumber, customerName, total } = data;
-  const firstName = customerName.trim().split(/\s+/)[0];
+  const firstName = customerName.trim().split(/\s+/)[0]; // plain-text email — no HTML escaping
 
   return `
 PARTY ON DELIVERY

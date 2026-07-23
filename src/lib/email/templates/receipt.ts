@@ -4,6 +4,7 @@
  */
 
 import { formatCurrency, formatDate } from '../resend-client';
+import { escapeHtml } from '../escape-html';
 
 interface ReceiptItem {
   title: string;
@@ -40,8 +41,8 @@ export function generateReceiptEmail(data: ReceiptEmailData): string {
       return `
       <tr>
         <td style="padding: 12px 16px; border-bottom: 1px solid #e5e5e5; color: #1a1a1a;">
-          <strong>${item.title}</strong>
-          ${item.variantTitle ? `<br><span style="color: #6b7280; font-size: 13px;">${item.variantTitle}</span>` : ''}
+          <strong>${escapeHtml(item.title)}</strong>
+          ${item.variantTitle ? `<br><span style="color: #6b7280; font-size: 13px;">${escapeHtml(item.variantTitle)}</span>` : ''}
         </td>
         <td style="padding: 12px 16px; border-bottom: 1px solid #e5e5e5; text-align: center; color: #4b5563;">${item.quantity}</td>
         <td style="padding: 12px 16px; border-bottom: 1px solid #e5e5e5; text-align: right; color: #1a1a1a;">
@@ -117,8 +118,8 @@ export function generateReceiptEmail(data: ReceiptEmailData): string {
                     <div style="background-color: #f9fafb; border-radius: 8px; padding: 16px;">
                       <h4 style="margin: 0 0 8px; color: #1a1a1a; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em;">Billed To</h4>
                       <p style="margin: 0; color: #4b5563; font-size: 14px; line-height: 1.5;">
-                        ${data.customerName}<br>
-                        ${data.customerEmail}
+                        ${escapeHtml(data.customerName)}<br>
+                        ${escapeHtml(data.customerEmail)}
                       </p>
                     </div>
                   </td>
@@ -126,7 +127,7 @@ export function generateReceiptEmail(data: ReceiptEmailData): string {
                     <div style="background-color: #f9fafb; border-radius: 8px; padding: 16px;">
                       <h4 style="margin: 0 0 8px; color: #1a1a1a; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em;">Delivered To</h4>
                       <p style="margin: 0; color: #4b5563; font-size: 14px; line-height: 1.5;">
-                        ${data.deliveryAddress}<br>
+                        ${escapeHtml(data.deliveryAddress)}<br>
                         ${deliveryDate}<br>
                         ${data.deliveryTime}
                       </p>

@@ -4,6 +4,7 @@
  */
 
 import { formatCurrency, formatDate, formatTime } from '../resend-client';
+import { escapeHtml } from '../escape-html';
 
 interface OrderItem {
   title: string;
@@ -58,15 +59,18 @@ export function generateOrderConfirmationEmail(data: OrderConfirmationData): str
     deliveryInstructions,
   } = data;
 
-  const firstName = customerName.trim().split(/\s+/)[0];
+  // HTML-escape every customer/external-supplied field before it enters the HTML
+  // body — sanitizeName strips control chars but leaves `<`/`>`/`&` intact, so a
+  // name like `<a href=…>` would otherwise render live in this trusted email.
+  const firstName = escapeHtml(customerName.trim().split(/\s+/)[0]);
 
   const itemsHtml = items
     .map(
       (item) => `
       <tr>
         <td style="padding: 12px; border-bottom: 1px solid #e5e5e5;">
-          <strong>${item.title}</strong>
-          ${item.variantTitle ? `<br><span style="color: #666; font-size: 14px;">${item.variantTitle}</span>` : ''}
+          <strong>${escapeHtml(item.title)}</strong>
+          ${item.variantTitle ? `<br><span style="color: #666; font-size: 14px;">${escapeHtml(item.variantTitle)}</span>` : ''}
         </td>
         <td style="padding: 12px; border-bottom: 1px solid #e5e5e5; text-align: center;">${item.quantity}</td>
         <td style="padding: 12px; border-bottom: 1px solid #e5e5e5; text-align: right;">${formatCurrency(item.totalPrice)}</td>
@@ -81,6 +85,7 @@ export function generateOrderConfirmationEmail(data: OrderConfirmationData): str
     `${deliveryAddress.city}, ${deliveryAddress.province} ${deliveryAddress.zip}`,
   ]
     .filter(Boolean)
+    .map(escapeHtml)
     .join('<br>');
 
   const discountHtml =
@@ -164,7 +169,7 @@ export function generateOrderConfirmationEmail(data: OrderConfirmationData): str
                   ? `
                 <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #fde047;">
                   <p style="margin: 0; color: #666; font-size: 14px;">Delivery Instructions</p>
-                  <p style="margin: 4px 0 0; font-size: 14px; color: #1a1a1a;">${deliveryInstructions}</p>
+                  <p style="margin: 4px 0 0; font-size: 14px; color: #1a1a1a;">${escapeHtml(deliveryInstructions)}</p>
                 </div>
               `
                   : ''

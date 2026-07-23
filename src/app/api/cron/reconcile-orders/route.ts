@@ -21,6 +21,7 @@ import {
 } from '@/lib/inventory/services/order-service';
 import { getCartById } from '@/lib/inventory/services/cart-service';
 import { notifyNewOrder, buildGhlPayload } from '@/lib/webhooks/ghl';
+import { sanitizeName } from '@/lib/leads/leadCapture';
 import {
   sendOrderConfirmationEmail,
 } from '@/lib/email';
@@ -213,6 +214,11 @@ export async function GET(request: NextRequest) {
           continue;
         }
 
+        // Group participant names are customer-supplied — neutralize before the
+        // recovered Customer + Order store them and the GHL emitter forwards them
+        // (this path mirrors handleGroupV2PaymentCompleted, which sanitizes too).
+        const safeGuestName = sanitizeName(participant.guestName) || 'Guest';
+
         // Resolve or create Customer
         let customerId = participant.customerId;
         if (!customerId && participant.guestEmail) {
@@ -225,7 +231,7 @@ export async function GET(request: NextRequest) {
             const newCustomer = await prisma.customer.create({
               data: {
                 email: participant.guestEmail,
-                firstName: participant.guestName || 'Guest',
+                firstName: safeGuestName,
                 lastName: '',
               },
             });
@@ -305,7 +311,7 @@ export async function GET(request: NextRequest) {
             deliveryAddress: subOrder.deliveryAddress || {},
             deliveryPhone: subOrder.deliveryPhone || '',
             customerEmail: participant.guestEmail || '',
-            customerName: participant.guestName || 'Guest',
+            customerName: safeGuestName,
             groupOrderId: null,
             groupOrderV2Id: payment.subOrder.groupOrderId,
             landingPage: group?.landingPage ?? null,

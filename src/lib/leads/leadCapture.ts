@@ -116,15 +116,27 @@ const MAX_NAME_LEN = 100;
  * normalizes, never rejects — returning null when nothing usable remains (same
  * contract as nonEmpty). Exported for unit tests.
  *
+ * This neutralizes control/format-char spoofing (bidi, zero-width, newline) and
+ * clamps length; it does NOT HTML-escape (`<`, `>`, `&`, quotes pass through) or
+ * strip formula-injection prefixes. It is the right guard for plaintext/JSON/JSX
+ * sinks (GHL SMS + contact cards, the admin board, React-rendered dashboards) —
+ * HTML sinks (the transactional email templates) MUST additionally HTML-escape.
+ *
  * Scope: this guards the STORED `Lead.firstName`/`lastName` (and therefore the
  * admin board + anything reading the lead back from the DB — the CRM mirror
  * re-fetches, so it is covered). Lead-name send boundaries neutralize too:
  * `ghl.ts` sanitizes the concierge + lead-captured payloads (via
  * withSanitizedNames), `pod-leads-sheet.ts` formula-guards every cell, and the
- * partner-inquiry email HTML-escapes. NOT yet covered: the order / review /
- * dashboard GHL emitters forward `Order.customerName` (Stripe-supplied) raw — the
- * fix belongs at order creation and is a tracked follow-up. Add the matching
- * guard to any NEW send point that renders an untrusted name.
+ * partner-inquiry email HTML-escapes. Customer-order names are sanitized at their
+ * source: every order-creation path — order-service (`createOrderFromCheckout`,
+ * `createOrderFromDraftOrder`, `createFreeOrder`), `group-v2-payments`, and the
+ * `reconcile-orders` cron's inline GroupV2 recovery — sanitizes the (Stripe- or
+ * client-supplied) name before it is stored, which covers the new-order GHL
+ * emitter and the Customer row; both affiliate dashboard-creation entry points
+ * (the `create-dashboard` webhook and the `v1/affiliate/create-dashboard` session
+ * route) and the `send-review-requests` route sanitize their own name inputs (an
+ * affiliate-body name and a stored-Order name the emitter reads days later). Add
+ * the matching guard to any NEW send point that renders an untrusted name.
  */
 export function sanitizeName(v?: string | null): string | null {
   if (v == null) return null;

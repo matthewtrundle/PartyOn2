@@ -9,6 +9,7 @@ import { requireOpsAuth } from '@/lib/auth/ops-session';
 import { prisma } from '@/lib/database/client';
 import { FulfillmentStatus } from '@prisma/client';
 import { sendReviewRequest, GhlReviewPayload } from '@/lib/webhooks/ghl';
+import { sanitizeName } from '@/lib/leads/leadCapture';
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const auth = await requireOpsAuth();
@@ -62,7 +63,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         continue;
       }
 
-      const nameParts = order.customerName.trim().split(/\s+/);
+      // Defense-in-depth: this emitter fires days after delivery on the STORED
+      // Order.customerName. New orders are sanitized at creation, but historical
+      // rows may still hold a raw Stripe name — neutralize before it leaves for GHL.
+      // `?? ''` (not `|| 'Guest'`) on purpose: a garbage-only historical name
+      // yields empty first/last rather than fabricating a "Guest" GHL contact.
+      const nameParts = (sanitizeName(order.customerName) ?? '').split(/\s+/);
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
 

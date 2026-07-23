@@ -10,6 +10,7 @@ import { prisma } from '@/lib/database/client';
 import { DEFAULT_TAX_RATE } from '@/lib/tax';
 import { moveDraftToPurchased, moveAllDraftsToPurchased } from '@/lib/group-orders-v2/service';
 import { notifyNewOrder, buildGhlPayload } from '@/lib/webhooks/ghl';
+import { sanitizeName } from '@/lib/leads/leadCapture';
 import { sendOrderConfirmationEmail } from '@/lib/email';
 import { recordDiscountUsage, validateDiscountCode } from '@/lib/discounts/discount-engine';
 import { linkOrderToAffiliate } from '@/lib/affiliates/commission-engine';
@@ -537,9 +538,13 @@ export async function handleGroupV2PaymentCompleted(
   // Prefer the participant's own name (matches the email line above), UNLESS it's the
   // 'Party Host' placeholder — the host default when they skipped entering a name — in
   // which case fall back to the Stripe checkout name.
-  const customerName = (participant.guestName && participant.guestName !== 'Party Host')
+  const rawCustomerName = (participant.guestName && participant.guestName !== 'Party Host')
     ? participant.guestName
     : (session.customer_details?.name || participant.guestName || 'Guest');
+  // Both branches resolve to an untrusted name (participant self-entry or the
+  // raw Stripe checkout name), so sanitize the winner before it reaches the
+  // Order, the Customer row, and the GHL emitter.
+  const customerName = sanitizeName(rawCustomerName) || 'Guest';
   const customerPhone = participant.guestPhone || session.customer_details?.phone || '';
 
   let customerId = participant.customerId;
