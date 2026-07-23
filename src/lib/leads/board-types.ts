@@ -12,6 +12,7 @@ export interface BoardLead {
   email: string | null;
   phone: string | null;
   stage: PipelineStage | null;
+  /** @deprecated Ordering is score-first since 2026-07 (compareBoardCards); drag never persisted a sort. */
   sortOrder: number;
   score: number | null;
   temperature: Temperature | null;
@@ -95,6 +96,7 @@ export const SOURCE_LABELS: Record<string, string> = {
   LEAD_MAGNET: 'Lead Magnet',
   INBOUND_EMAIL: 'Inbound Email',
   PARTNER_OUTREACH: 'Partner Prospect',
+  WAYNE_CHAT: 'Wayne Chat',
   OTHER: 'Site',
 };
 

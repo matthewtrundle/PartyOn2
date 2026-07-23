@@ -100,7 +100,13 @@ vi.mock('../pipeline', async (importOriginal) => {
   return { ...actual, sweepEnrollSubmitted: vi.fn(async () => 0) };
 });
 
-import { getBoardData, refineSource, toBoardLead } from '../board-data';
+import {
+  compareBoardCards,
+  getBoardData,
+  needsReply,
+  refineSource,
+  toBoardLead,
+} from '../board-data';
 
 const DAY_MS = 86_400_000;
 function daysAgo(n: number): Date {
@@ -182,6 +188,82 @@ describe('toBoardLead — needs-response derivation', () => {
     const trayed = makeLead({ pipelineStage: null });
     expect(toBoardLead(asLead(won), ctx()).needsResponse).toBe(false);
     expect(toBoardLead(asLead(trayed), ctx()).needsResponse).toBe(false);
+  });
+
+  // Freshness window (operator decision 2026-07-23): stale signals stop
+  // flagging so red always means "act now", not "never contacted, ever".
+  it('stops flagging an uncontacted lead once its signal is older than 7 days', () => {
+    const stale = makeLead({ createdAt: daysAgo(10) });
+    expect(toBoardLead(asLead(stale), ctx()).needsResponse).toBe(false);
+  });
+
+  it('stops flagging when the unanswered activity itself is older than 7 days', () => {
+    const lead = makeLead({
+      createdAt: daysAgo(30),
+      lastActivityAt: daysAgo(8),
+      lastContactedAt: daysAgo(20),
+    });
+    expect(toBoardLead(asLead(lead), ctx()).needsResponse).toBe(false);
+  });
+
+  it('keeps flagging fresh unanswered activity on an old lead', () => {
+    const lead = makeLead({
+      createdAt: daysAgo(60),
+      lastActivityAt: daysAgo(2),
+      lastContactedAt: daysAgo(20),
+    });
+    expect(toBoardLead(asLead(lead), ctx()).needsResponse).toBe(true);
+  });
+});
+
+describe('needsReply — window boundary', () => {
+  const now = new Date('2026-07-23T12:00:00Z');
+  const hoursAgo = (h: number) => new Date(now.getTime() - h * 3_600_000);
+
+  it('flags just inside the 7-day window, not just outside', () => {
+    const base = { lastContactedAt: null, lastActivityAt: null };
+    expect(needsReply({ ...base, createdAt: hoursAgo(7 * 24 - 1) }, now)).toBe(true);
+    expect(needsReply({ ...base, createdAt: hoursAgo(7 * 24 + 1) }, now)).toBe(false);
+  });
+
+  it('never flags a lead contacted after its latest signal, regardless of freshness', () => {
+    expect(
+      needsReply(
+        { createdAt: hoursAgo(48), lastActivityAt: hoursAgo(24), lastContactedAt: hoursAgo(1) },
+        now,
+      ),
+    ).toBe(false);
+  });
+});
+
+describe('compareBoardCards — hot→cold ordering', () => {
+  const card = (score: number | null, createdAt: string) =>
+    ({ score, createdAt }) as Parameters<typeof compareBoardCards>[0];
+
+  it('orders by score desc, unscored last, newest first on ties', () => {
+    const cards = [
+      card(null, '2026-07-22T00:00:00Z'),
+      card(40, '2026-07-01T00:00:00Z'),
+      card(85, '2026-07-10T00:00:00Z'),
+      card(40, '2026-07-20T00:00:00Z'),
+    ];
+    const sorted = [...cards].sort(compareBoardCards);
+    expect(sorted.map((c) => [c.score, c.createdAt.slice(0, 10)])).toEqual([
+      [85, '2026-07-10'],
+      [40, '2026-07-20'], // tie broken newest-first
+      [40, '2026-07-01'],
+      [null, '2026-07-22'], // unscored sinks even when newest
+    ]);
+  });
+
+  it('sorts each board column hot→cold end-to-end', async () => {
+    makeLead({ leadScore: 20 });
+    makeLead({ leadScore: 90 });
+    makeLead({ leadScore: null });
+    makeLead({ leadScore: 55 });
+
+    const data = await getBoardData();
+    expect(data.columns.NEW.map((c) => c.score)).toEqual([90, 55, 20, null]);
   });
 });
 
@@ -288,6 +370,63 @@ describe('refineSource — CONTACT_FORM split', () => {
     const card = toBoardLead(asLead(makeLead({ metadata: { unifiedQuote: {} } })), ctx());
     expect(card.sourceLabel).toBe('Quote Request');
     expect(card.sourceKey).toBe('CONTACT_FORM:quote');
+  });
+});
+
+describe('refineSource — sheet-level detail (keys frozen, labels enriched)', () => {
+  it('names the quote sub-flow when unifiedQuote.source is present', () => {
+    expect(refineSource('CONTACT_FORM', { unifiedQuote: { source: 'package-builder' } })).toEqual({
+      key: 'CONTACT_FORM:quote',
+      label: 'Quote · Builder',
+    });
+    expect(refineSource('CONTACT_FORM', { unifiedQuote: { source: 'chat' } }).label).toBe(
+      'Quote · Chat',
+    );
+    // Unknown/missing sub-flow keeps the generic label.
+    expect(refineSource('CONTACT_FORM', { unifiedQuote: { source: 'mystery' } }).label).toBe(
+      'Quote Request',
+    );
+  });
+
+  it('names the QuickBuy occasion when the quickBuy surface exists', () => {
+    expect(refineSource('QUICK_BUY', { quickBuy: { occasion: 'wedding' } })).toEqual({
+      key: 'QUICK_BUY',
+      label: 'Quick Buy · Wedding',
+    });
+    expect(refineSource('QUICK_BUY', {}).label).toBe('Quick Buy');
+  });
+
+  it('splits concierge party type from partner-slug leads', () => {
+    expect(
+      refineSource('PARTNER_LANDING_PAGE', {
+        partner: 'premier-concierge',
+        conciergeQuiz: { partyType: 'bachelorette' },
+      }),
+    ).toEqual({ key: 'PARTNER_LANDING_PAGE', label: 'Concierge · Bachelorette' });
+    expect(
+      refineSource('PARTNER_LANDING_PAGE', { partner: 'premier-party-cruises' }).label,
+    ).toBe('Partner · Premier Party Cruises');
+    // premier-concierge without a quiz surface falls back to the base label.
+    expect(refineSource('PARTNER_LANDING_PAGE', { partner: 'premier-concierge' }).label).toBe(
+      'Concierge',
+    );
+  });
+
+  it('names dashboard provenance from groupDashboard.source', () => {
+    expect(
+      refineSource('GROUP_DASHBOARD', { groupDashboard: { source: 'WEBHOOK' } }).label,
+    ).toBe('Dashboard · Boat Webhook');
+    expect(
+      refineSource('GROUP_DASHBOARD', { groupDashboard: { source: 'PARTNER_PAGE' } }).label,
+    ).toBe('Dashboard · Partner');
+    // DIRECT/INTERNAL keep the familiar base label.
+    expect(
+      refineSource('GROUP_DASHBOARD', { groupDashboard: { source: 'DIRECT' } }).label,
+    ).toBe('Party Dashboard');
+  });
+
+  it('labels Wayne chat leads instead of "Site"', () => {
+    expect(refineSource('WAYNE_CHAT', null)).toEqual({ key: 'WAYNE_CHAT', label: 'Wayne Chat' });
   });
 });
 

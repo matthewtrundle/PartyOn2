@@ -48,23 +48,102 @@ const CONTACT_FORM_SURFACES: ReadonlyArray<{ meta: string; key: string; label: s
   { meta: 'contactForm', key: 'CONTACT_FORM:contact', label: 'Contact Form' },
 ];
 
+/** unifiedQuote.source (quote/start zod enum) → sub-flow display label. */
+const QUOTE_FLOW_LABELS: Record<string, string> = {
+  chat: 'Quote · Chat',
+  'package-builder': 'Quote · Builder',
+  'event-quiz': 'Quote · Quiz',
+  'landing-quote': 'Quote · Landing',
+};
+
+/** groupDashboard.source (DashboardSource enum) → provenance display label. */
+const DASHBOARD_SOURCE_LABELS: Record<string, string> = {
+  WEBHOOK: 'Dashboard · Boat Webhook',
+  PARTNER_PAGE: 'Dashboard · Partner',
+};
+
+function asRecord(v: unknown): Record<string, unknown> | null {
+  return v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : null;
+}
+
+/** 'premier-party-cruises' → 'Premier Party Cruises' (badge/label casing). */
+function titleCaseSlug(slug: string): string {
+  return slug
+    .split(/[-_\s]+/)
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+}
+
+/**
+ * Card source label with sheet-level precision. Filter KEYS are frozen (saved
+ * filters/URLs keep working); only LABELS gain detail from the metadata the
+ * capture routes already store (operator ask 2026-07-23: the board must show
+ * exactly where a lead came from, like the ops sheet does).
+ */
 export function refineSource(
   sourceWidget: string | null,
   metadata: unknown,
 ): { key: string; label: string } {
   const widget = sourceWidget ?? 'OTHER';
-  if (
-    widget === 'CONTACT_FORM' &&
-    metadata &&
-    typeof metadata === 'object' &&
-    !Array.isArray(metadata)
-  ) {
-    const m = metadata as Record<string, unknown>;
-    for (const s of CONTACT_FORM_SURFACES) {
-      if (m[s.meta] != null) return { key: s.key, label: s.label };
+  const m = asRecord(metadata);
+  if (m) {
+    if (widget === 'CONTACT_FORM') {
+      for (const s of CONTACT_FORM_SURFACES) {
+        if (m[s.meta] == null) continue;
+        if (s.meta === 'unifiedQuote') {
+          const flow = asRecord(m.unifiedQuote)?.source;
+          const flowLabel = typeof flow === 'string' ? QUOTE_FLOW_LABELS[flow] : undefined;
+          return { key: s.key, label: flowLabel ?? s.label };
+        }
+        return { key: s.key, label: s.label };
+      }
+    }
+    if (widget === 'QUICK_BUY') {
+      const occasion = asRecord(m.quickBuy)?.occasion;
+      if (typeof occasion === 'string' && occasion) {
+        return { key: widget, label: `Quick Buy · ${titleCaseSlug(occasion)}` };
+      }
+    }
+    if (widget === 'PARTNER_LANDING_PAGE') {
+      // Premier concierge quiz beats the partner-slug fallback: those leads
+      // carry BOTH partner='premier-concierge' and the quiz surface.
+      const quizParty = asRecord(m.conciergeQuiz)?.partyType;
+      if (typeof quizParty === 'string' && quizParty) {
+        return { key: widget, label: `Concierge · ${titleCaseSlug(quizParty)}` };
+      }
+      if (typeof m.partner === 'string' && m.partner && m.partner !== 'premier-concierge') {
+        return { key: widget, label: `Partner · ${titleCaseSlug(m.partner)}` };
+      }
+    }
+    if (widget === 'GROUP_DASHBOARD') {
+      const src = asRecord(m.groupDashboard)?.source;
+      const label = typeof src === 'string' ? DASHBOARD_SOURCE_LABELS[src] : undefined;
+      if (label) return { key: widget, label };
     }
   }
   return { key: widget, label: SOURCE_LABELS[widget] ?? 'Site' };
+}
+
+/** Reply-flag freshness window: signals older than this stop flagging red. */
+export const REPLY_WINDOW_DAYS = 7;
+
+/**
+ * Red "Reply needed" gate: a customer signal (form submit, inbound email,
+ * site activity — anything that bumps lastActivityAt) that is BOTH fresh
+ * (≤ REPLY_WINDOW_DAYS) and unanswered (no outbound contact since). Stale
+ * leads stop flagging so red always means "act now" — before the window,
+ * ~310 of 313 open leads were red (operator decision 2026-07-23). Kept in
+ * lockstep with getHotLeadsNeedingReply's SQL so the nav badge and the
+ * board's "Needs response" KPI can never disagree (review #9).
+ */
+export function needsReply(
+  lead: { lastContactedAt: Date | null; lastActivityAt: Date | null; createdAt: Date },
+  now: Date,
+): boolean {
+  const signalAt = lead.lastActivityAt ?? lead.createdAt;
+  if (now.getTime() - signalAt.getTime() > REPLY_WINDOW_DAYS * 86_400_000) return false;
+  return lead.lastContactedAt === null || signalAt > lead.lastContactedAt;
 }
 
 /**
@@ -82,11 +161,7 @@ export function toBoardLead(
 ): BoardLead {
   const facts = extractLeadFacts(lead.metadata);
   const source = refineSource(lead.sourceWidget, lead.metadata);
-  // Same signal as getHotLeadsNeedingReply so the nav badge and the board's
-  // "Needs response" KPI can never disagree (review #9).
-  const lastSignal = lead.lastActivityAt ?? lead.createdAt;
-  const needsResponse =
-    lead.lastContactedAt === null || lastSignal > lead.lastContactedAt;
+  const needsResponse = needsReply(lead, ctx.now);
   // CT calendar day, not UTC — a 7pm CT board view must not mark today's
   // event as already passed (review #6).
   const eventPassed =
@@ -171,6 +246,8 @@ export async function getHotLeadsNeedingReply(): Promise<{
         last_contacted_at IS NULL
         OR (last_activity_at IS NOT NULL AND last_activity_at > last_contacted_at)
       )
+      -- Same freshness window as needsReply() — stale signals stop flagging.
+      AND COALESCE(last_activity_at, created_at) > NOW() - make_interval(days => ${REPLY_WINDOW_DAYS})
   `;
   const row = rows[0];
   if (!row || row.count === 0) return { count: 0, oldestWaitHours: null };
@@ -197,7 +274,10 @@ async function fetchBoardRows(
           { pipelineStage: { in: ['WON', 'LOST'] }, stageChangedAt: { gte: closedFloor } },
         ],
       },
-      orderBy: [{ boardSortOrder: 'asc' }, { createdAt: 'desc' }],
+      // Hot→cold so a >500 board truncates the coldest, never the hottest.
+      // boardSortOrder is deliberately ignored: within-column drag order was
+      // never persisted (the client only ever sent stage changes).
+      orderBy: [{ leadScore: { sort: 'desc', nulls: 'last' } }, { createdAt: 'desc' }],
       take: 500,
     }),
     prisma.lead.groupBy({
@@ -244,7 +324,17 @@ async function loadCardFlags(all: Lead[]): Promise<{
   };
 }
 
-/** Group boarded cards into stage columns, then apply the view filters. */
+/**
+ * Hot→cold within a column: score desc, unscored sink to the bottom, newest
+ * first on ties. The operator works each column top-down daily.
+ */
+export function compareBoardCards(a: BoardLead, b: BoardLead): number {
+  const scoreDiff = (b.score ?? -1) - (a.score ?? -1);
+  if (scoreDiff !== 0) return scoreDiff;
+  return b.createdAt.localeCompare(a.createdAt);
+}
+
+/** Group boarded cards into stage columns, then filter and sort hot→cold. */
 export function buildColumns(
   boarded: Lead[],
   toCard: (lead: Lead) => BoardLead,
@@ -259,7 +349,7 @@ export function buildColumns(
     if (card.stage) columns[card.stage].push(card);
   }
   for (const stage of PIPELINE_STAGES) {
-    columns[stage] = applyFilters(columns[stage], filters, now);
+    columns[stage] = applyFilters(columns[stage], filters, now).sort(compareBoardCards);
   }
   return columns;
 }

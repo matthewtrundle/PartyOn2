@@ -50,18 +50,24 @@ export default function LeadCard({
       style={style}
       {...listeners}
       {...attributes}
-      className={`relative w-full text-left bg-white rounded-xl border border-gray-200 p-3 shadow-sm hover:shadow-md transition-shadow touch-manipulation overflow-hidden ${
+      // shrink-0 is load-bearing: as a flex child of the column's overflow-y
+      // scroller, overflow-hidden alone drops the min-height:auto content
+      // floor, letting a tall column compress every card to its top band —
+      // the "wall of red bars" regression (#295).
+      className={`relative w-full shrink-0 text-left bg-white rounded-xl border border-gray-200 p-3 shadow-sm hover:shadow-md transition-shadow touch-manipulation overflow-hidden ${
         isDragging ? 'opacity-90 shadow-lg ring-2 ring-brand-blue' : ''
       } ${snoozed ? 'opacity-55' : ''}`}
     >
       {lead.needsResponse && (
-        // Full-bleed alert bar: negative margins cancel the card's p-3 so it
-        // spans edge-to-edge; the card's overflow-hidden clips it to the radius.
-        <div className="-mx-3 -mt-3 mb-2.5 flex items-center gap-1.5 bg-red-500 px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-white">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5 shrink-0">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-          </svg>
-          Reply needed
+        // Compact act-now tag (solid red per the HQ badge spec), not a
+        // full-bleed bar — the tile body must always stay readable.
+        <div className="mb-2 flex">
+          <span className="inline-flex items-center gap-1.5 rounded bg-red-500 px-2 py-[3px] text-xs font-bold uppercase tracking-[0.05em] text-white">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3 w-3 shrink-0">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+            Reply needed
+          </span>
         </div>
       )}
       <div className="flex items-start justify-between gap-2">
