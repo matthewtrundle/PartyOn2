@@ -28,6 +28,7 @@ import { attributionSchema, attributionNoteLine } from '@/lib/leads/attribution-
 import { cancelJobsForEmail, enqueueJourney } from '@/lib/followups/enqueue';
 import { mirrorLeadToSheet } from '@/lib/premier/pod-leads-sheet';
 import { mirrorLeadToCrm } from '@/lib/leads/crm-mirror';
+import { mirrorQuickBuyLead } from '@/lib/leads/quickbuy-lead';
 import { EmailType, DraftOrderStatus } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
@@ -249,10 +250,26 @@ export async function POST(request: NextRequest) {
       console.warn('[landing/quote] abandoned-quote cancel failed:', err);
     }
 
+    // Board mirror FIRST (never throws): writes the quickBuy metadata surface
+    // (occasion → exact board label, event date, cart total) + attribution
+    // onto the Lead and enrolls it — WITHOUT trustedSubmit, so a WON/LOST
+    // card can never reopen from here. Runs before the CRM mirror so the
+    // by-email lookup finds a fresh Lead row.
+    await mirrorQuickBuyLead({
+      occasion: body.occasion,
+      mode: body.mode,
+      customerName: body.customerName,
+      customerEmail: body.customerEmail,
+      customerPhone: body.customerPhone,
+      groupSize: body.groupSize,
+      deliveryDate: body.deliveryDate,
+      draftOrderId: draftOrder.id,
+      total: Number(draftOrder.total),
+      attribution: body.attribution,
+    });
+
     // Mirror to the POD Leads Google Sheet + CoreLinq CRM. AWAITED — Vercel
     // kills un-awaited promises when the response returns. Never throw.
-    // (No Lead row in scope here — the pixel creates it client-side, so the
-    // CRM mirror resolves by email.)
     const nameParts = (body.customerName ?? '').trim().split(/\s+/);
     await Promise.allSettled([
       mirrorLeadToSheet({
