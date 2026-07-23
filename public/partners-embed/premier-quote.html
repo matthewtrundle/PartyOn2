@@ -1,6 +1,105 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head><script>try{history.replaceState(null,"","/quote")}catch(e){}</script><meta name="robots" content="noindex,nofollow">
+  <head><script>try{history.replaceState(null,"","/quote")}catch(e){}</script>
+<!-- POD partner-embed: Premier hero background slideshow (injected; see PartnerPageTabs.tsx) -->
+<script>
+(function () {
+  var SLIDES = [
+    '/images/partners/premier-boat-slideshow/unicorn-float-crew.jpg',
+    '/images/partners/premier-boat-slideshow/bride-squad-captain.jpg',
+    '/images/partners/premier-boat-slideshow/group-pic.jpg',
+    '/images/partners/premier-boat-slideshow/pontoon-full-crew.jpg',
+    '/images/partners/premier-boat-slideshow/disco-fun-1.jpg',
+    '/images/partners/premier-boat-slideshow/disco-fun-2.jpg'
+  ];
+  var current = 0;
+  var timer = null;
+
+  function findHero() {
+    // SPA hero: the section containing "Let's Get You on the Water".
+    // Tag-agnostic: find the deepest short-text element matching, then
+    // walk up to its SECTION (or a reasonable-height ancestor).
+    var all = document.body.querySelectorAll('*');
+    var best = null;
+    for (var i = 0; i < all.length; i++) {
+      var t = all[i].textContent || '';
+      if (t.length < 160 && /on the water/i.test(t)) best = all[i];
+    }
+    if (!best) return null;
+    var el = best;
+    while (el && el !== document.body) {
+      if (el.tagName === 'SECTION') return el;
+      el = el.parentElement;
+    }
+    // No <section> ancestor: use the highest ancestor under 90vh tall.
+    var pick = best.parentElement;
+    el = best.parentElement;
+    while (el && el !== document.body) {
+      if (el.clientHeight > 0 && el.clientHeight < window.innerHeight * 1.2) pick = el;
+      el = el.parentElement;
+    }
+    return pick;
+  }
+
+  function mount() {
+    var hero = findHero();
+    if (!hero || hero.clientHeight < 200 || hero.querySelector('.pod-hero-bg')) return;
+    var cs = window.getComputedStyle(hero);
+    if (cs.position === 'static') hero.style.position = 'relative';
+    hero.style.overflow = 'hidden';
+
+    var bg = document.createElement('div');
+    bg.className = 'pod-hero-bg';
+    bg.setAttribute('aria-hidden', 'true');
+    bg.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;';
+    SLIDES.forEach(function (src, i) {
+      var img = document.createElement('img');
+      img.src = src;
+      img.alt = '';
+      img.loading = 'eager';
+      img.style.cssText =
+        'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;' +
+        'transition:opacity 1.2s ease;opacity:' + (i === 0 ? '1' : '0') + ';';
+      bg.appendChild(img);
+    });
+    // Dark overlay keeps the hero copy readable over the photos.
+    var overlay = document.createElement('div');
+    overlay.style.cssText =
+      'position:absolute;inset:0;background:linear-gradient(rgba(8,17,34,0.62),rgba(8,17,34,0.72));';
+    bg.appendChild(overlay);
+    hero.insertBefore(bg, hero.firstChild);
+
+    // Lift the hero content above the background.
+    for (var c = 0; c < hero.children.length; c++) {
+      var child = hero.children[c];
+      if (child === bg) continue;
+      var ccs = window.getComputedStyle(child);
+      if (ccs.position === 'static') child.style.position = 'relative';
+      if (ccs.zIndex === 'auto' || parseInt(ccs.zIndex, 10) < 1) child.style.zIndex = '1';
+    }
+
+    if (timer) clearInterval(timer);
+    timer = setInterval(function () {
+      var imgs = bg.querySelectorAll('img');
+      if (!document.body.contains(bg)) { clearInterval(timer); timer = null; return; }
+      imgs[current].style.opacity = '0';
+      current = (current + 1) % imgs.length;
+      imgs[current].style.opacity = '1';
+    }, 4500);
+  }
+
+  function boot() {
+    mount();
+    // The SPA replaces the static shell after hydration — re-mount when it does.
+    new MutationObserver(function () { mount(); }).observe(document.body, { childList: true, subtree: true });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
+})();
+</script><meta name="robots" content="noindex,nofollow">
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
