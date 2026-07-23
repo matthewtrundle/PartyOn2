@@ -17,6 +17,7 @@ import { SOURCE_LABELS } from './board-types';
 import type { BoardData, BoardFilters, BoardKpis, BoardLead } from './board-types';
 import { SOURCE_FILTER_CONSUMER, SOURCE_FILTER_PARTNER } from './board-types';
 import { isPartnerLead } from './partner-tags';
+import { loadBoardJoins } from './board-joins';
 
 export type { BoardData, BoardFilters, BoardKpis, BoardLead } from './board-types';
 
@@ -125,6 +126,23 @@ export function refineSource(
   return { key: widget, label: SOURCE_LABELS[widget] ?? 'Site' };
 }
 
+const CLICK_ID_KEYS = ['gclid', 'gbraid', 'wbraid', 'fbclid', 'msclkid'] as const;
+const PAID_MEDIUMS = new Set(['cpc', 'ppc', 'paid']);
+
+/**
+ * Paid-traffic detector for the card's "Ads" chip: an ad-platform click id
+ * in metadata.attribution, or a paid utm_medium. Pure; exported for tests.
+ */
+export function isAdsLead(lead: {
+  utmMedium: string | null;
+  metadata: unknown;
+}): boolean {
+  if (lead.utmMedium && PAID_MEDIUMS.has(lead.utmMedium.toLowerCase())) return true;
+  const attribution = asRecord(asRecord(lead.metadata)?.attribution);
+  if (!attribution) return false;
+  return CLICK_ID_KEYS.some((k) => typeof attribution[k] === 'string' && attribution[k]);
+}
+
 /** Reply-flag freshness window: signals older than this stop flagging red. */
 export const REPLY_WINDOW_DAYS = 7;
 
@@ -157,6 +175,8 @@ export function toBoardLead(
     hasFollowUp: boolean;
     isDuplicate: boolean;
     now: Date;
+    cart?: BoardLead['cart'];
+    affiliate?: BoardLead['affiliate'];
   },
 ): BoardLead {
   const facts = extractLeadFacts(lead.metadata);
@@ -198,6 +218,9 @@ export function toBoardLead(
     createdAt: lead.createdAt.toISOString(),
     stageChangedAt: lead.stageChangedAt?.toISOString() ?? null,
     suggestLost: isOpenStage && (eventPassed || quietMs > 30 * 86_400_000),
+    cart: ctx.cart ?? null,
+    affiliate: ctx.affiliate ?? null,
+    adsClick: isAdsLead(lead),
   };
 }
 
@@ -397,13 +420,17 @@ export async function getBoardData(filters: BoardFilters = {}): Promise<BoardDat
     filters.includePartial === true,
     closedFloor,
   );
-  const { followUpLeads, emailCounts } = await loadCardFlags([...boarded, ...tray]);
+  const all = [...boarded, ...tray];
+  const [{ followUpLeads, emailCounts }, { cartByLeadId, affiliateByLeadId }] =
+    await Promise.all([loadCardFlags(all), loadBoardJoins(all)]);
 
   const toCard = (lead: Lead): BoardLead =>
     toBoardLead(lead, {
       hasFollowUp: followUpLeads.has(lead.id),
       isDuplicate: (emailCounts.get(lead.email?.toLowerCase() ?? '') ?? 0) > 1,
       now,
+      cart: cartByLeadId.get(lead.id) ?? null,
+      affiliate: affiliateByLeadId.get(lead.id) ?? null,
     });
 
   const columns = buildColumns(boarded, toCard, filters, now);

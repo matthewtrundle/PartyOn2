@@ -12,6 +12,9 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/database/client';
 import { requireAdminRole } from '@/lib/auth/ops-session';
 import { phoneLast10 } from '@/lib/leads/phone';
+import { dashboardGroupId } from '@/lib/leads/board-joins';
+import { getGroupOrderById } from '@/lib/group-orders-v2/service';
+import type { GroupOrderV2Full } from '@/lib/group-orders-v2/types';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -58,6 +61,39 @@ async function matchedOrders(lead: {
   }));
 }
 
+/** Drawer cart section: the lead's dashboard, its draft lines, and status. */
+interface DrawerCartDto {
+  shareCode: string;
+  /** First tab OPEN = guests can still join/order; LOCKED = host closed it. */
+  status: string | null;
+  total: number;
+  items: Array<{ title: string; variantTitle: string | null; quantity: number; price: number }>;
+  participantCount: number;
+  deliveryDate: string | null;
+  affiliateName: string | null;
+}
+
+function toDrawerCart(group: GroupOrderV2Full): DrawerCartDto {
+  const items = group.tabs.flatMap((t) =>
+    t.draftItems.map((i) => ({
+      title: i.title,
+      variantTitle: i.variantTitle,
+      quantity: i.quantity,
+      price: i.price,
+    })),
+  );
+  return {
+    shareCode: group.shareCode,
+    status: group.tabs[0]?.status ?? null,
+    total:
+      Math.round(group.tabs.reduce((sum, t) => sum + t.totals.draftSubtotal, 0) * 100) / 100,
+    items,
+    participantCount: group.participants.length,
+    deliveryDate: group.tabs[0]?.deliveryDate ?? null,
+    affiliateName: group.affiliate?.businessName ?? null,
+  };
+}
+
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -71,8 +107,18 @@ export async function GET(
     return NextResponse.json({ success: false, error: 'not_found' }, { status: 404 });
   }
 
-  const [events, followUps, emailLogs, orders, drafts, inboundEmails, chatConversations] =
-    await Promise.all([
+  const groupId = dashboardGroupId(lead.metadata);
+  const [
+    events,
+    followUps,
+    emailLogs,
+    orders,
+    drafts,
+    inboundEmails,
+    chatConversations,
+    group,
+    affiliateRow,
+  ] = await Promise.all([
     prisma.leadEvent.findMany({
       where: { leadId: id },
       orderBy: { occurredAt: 'desc' },
@@ -139,7 +185,22 @@ export async function GET(
         createdAt: true,
       },
     }),
+    // Dashboard cart preview — one existing service call (never the public
+    // /api/v2 route; this stays behind requireAdminRole).
+    groupId ? getGroupOrderById(groupId) : Promise.resolve(null),
+    lead.affiliateId
+      ? prisma.affiliate.findUnique({
+          where: { id: lead.affiliateId },
+          select: { businessName: true, code: true },
+        })
+      : Promise.resolve(null),
   ]);
+
+  const affiliate = affiliateRow
+    ? { name: affiliateRow.businessName, code: affiliateRow.code }
+    : group?.affiliate
+      ? { name: group.affiliate.businessName, code: group.affiliate.code }
+      : null;
 
   return NextResponse.json({
     success: true,
@@ -152,6 +213,8 @@ export async function GET(
       drafts,
       inboundEmails,
       chatConversations,
+      cart: group ? toDrawerCart(group) : null,
+      affiliate,
     },
   });
 }
