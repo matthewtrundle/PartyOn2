@@ -153,10 +153,19 @@ async function main(): Promise<void> {
   });
   const affName = new Map(affiliates.map((a) => [a.id, `${a.businessName} (${a.code})`]));
 
-  log(`scanned ${scanned} unstamped leads → ${resolutions.length} resolvable`);
+  // Existence guard: the "via dashboard" path reads GroupOrderV2.affiliateId,
+  // which can hold an unvalidated client value (see dashboard-lead.ts /
+  // security review 2026-07-23). Only ever stamp an affiliate id that resolves
+  // to a real Affiliate row — a junk id must never poison Lead.affiliateId.
+  const realAffiliateIds = new Set(affiliates.map((a) => a.id));
+  const applicable = resolutions.filter((r) => realAffiliateIds.has(r.affiliateId));
+  const dropped = resolutions.length - applicable.length;
+
+  log(`scanned ${scanned} unstamped leads → ${resolutions.length} resolvable, ${applicable.length} with a real affiliate`);
+  if (dropped > 0) log(`  dropped ${dropped} pointing at a non-existent affiliate (tainted group.affiliateId)`);
   for (const [via, n] of byVia) log(`  via ${via}: ${n}`);
-  for (const [id, n] of byAffiliate) log(`  → ${affName.get(id) ?? id}: ${n}`);
-  for (const r of resolutions.slice(0, 10)) {
+  for (const [id, n] of byAffiliate) log(`  → ${affName.get(id) ?? `${id} (UNKNOWN — skipped)`}: ${n}`);
+  for (const r of applicable.slice(0, 10)) {
     log(`  sample: ${r.email ?? r.leadId} → ${affName.get(r.affiliateId) ?? r.affiliateId} [${r.via}: ${r.detail}]`);
   }
 
@@ -166,7 +175,7 @@ async function main(): Promise<void> {
   }
 
   let written = 0;
-  for (const r of resolutions) {
+  for (const r of applicable) {
     // Fill-blank guard makes every write idempotent + race-safe.
     const res = await prisma.lead.updateMany({
       where: { id: r.leadId, affiliateId: null },
@@ -174,7 +183,7 @@ async function main(): Promise<void> {
     });
     written += res.count;
   }
-  log(`wrote ${written}/${resolutions.length} leads (skips = stamped since scan).`);
+  log(`wrote ${written}/${applicable.length} leads (skips = stamped since scan).`);
 }
 
 main()

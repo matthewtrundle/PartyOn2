@@ -188,6 +188,10 @@ export async function GET(
     // Dashboard cart preview — one existing service call (never the public
     // /api/v2 route; this stays behind requireAdminRole).
     groupId ? getGroupOrderById(groupId) : Promise.resolve(null),
+    // Lead.affiliateId is SELF-REPORTED, UNVERIFIED attribution (ref_code
+    // cookie / partner slug / dashboard host — see affiliate-resolve.ts). It's
+    // display-only here. Do NOT build any payout/commission logic on this
+    // field without re-deriving trust — commissions run off Order.affiliateId.
     lead.affiliateId
       ? prisma.affiliate.findUnique({
           where: { id: lead.affiliateId },

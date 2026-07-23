@@ -77,6 +77,16 @@ function isoDateOnly(value?: Date | string | null): string | null {
   return Number.isNaN(d.getTime()) ? null : d.toISOString().slice(0, 10);
 }
 
+/** Existence-check an affiliate id (lightweight select); null if unknown. */
+async function verifyAffiliateId(id?: string | null): Promise<string | null> {
+  if (!id) return null;
+  const affiliate = await prisma.affiliate.findUnique({
+    where: { id },
+    select: { id: true },
+  });
+  return affiliate?.id ?? null;
+}
+
 /**
  * Mirror a dashboard host onto the Lead Flow board. Safe to call repeatedly
  * (upsert by email/phone; metadata.groupDashboard is last-write-wins so the
@@ -90,12 +100,20 @@ export async function mirrorDashboardHostLead(ref: DashboardHostRef): Promise<vo
     // landingPage/referrer aren't LeadContext fields — split them off for the
     // metadata merge below; everything else flows into upsertLead's ctx.
     const { landingPage, referrer, ...utmAndClickIds } = ref.attribution ?? {};
+    // Verify the affiliate actually exists before stamping it onto the Lead.
+    // GroupOrderV2.affiliateId can be set with an UNVALIDATED client value via
+    // the unauthenticated POST /api/v2/group-orders/dashboard route (a
+    // pre-existing hole — security review 2026-07-23, HIGH), so a junk/spoofed
+    // id must never poison the fill-blank Lead.affiliateId. This makes the
+    // dashboard-mirror path consistent with the resolveAffiliateId capture
+    // routes, which already only ever forward a real affiliate id.
+    const verifiedAffiliateId = await verifyAffiliateId(ref.affiliateId);
     const lead = await upsertLead(
       { email: ref.hostEmail, phone: ref.hostPhone, firstName, lastName },
       {
         sourcePage: `/dashboard/${ref.shareCode}`,
         sourceWidget: 'GROUP_DASHBOARD',
-        affiliateId: ref.affiliateId ?? null,
+        affiliateId: verifiedAffiliateId,
         ...utmAndClickIds,
       },
     );

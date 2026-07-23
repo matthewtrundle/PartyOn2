@@ -33,8 +33,11 @@ export async function resolveAffiliateId(
   try {
     const affiliate = await getAffiliateBySlug(target);
     return affiliate?.id ?? null;
-  } catch {
+  } catch (err) {
     // Attribution is best-effort — a lookup hiccup must never fail capture.
+    // Warn so a systematic failure (DB outage) that silently disables all
+    // affiliate stamping is at least visible in logs.
+    console.warn('[affiliate-resolve] lookup failed', err);
     return null;
   }
 }

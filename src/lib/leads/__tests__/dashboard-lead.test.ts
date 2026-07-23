@@ -20,8 +20,12 @@ vi.mock('../leadCapture', () => ({
 vi.mock('../pipeline', () => ({
   enrollLeadIfEligible: (...args: unknown[]) => enrollLeadIfEligible(...args),
 }));
+const affiliateFindUnique = vi.fn();
 vi.mock('@/lib/database/client', () => ({
-  prisma: { lead: { update: (...args: unknown[]) => leadUpdate(...args) } },
+  prisma: {
+    lead: { update: (...args: unknown[]) => leadUpdate(...args) },
+    affiliate: { findUnique: (...args: unknown[]) => affiliateFindUnique(...args) },
+  },
 }));
 
 import { mirrorDashboardHostLead } from '../dashboard-lead';
@@ -52,6 +56,10 @@ beforeEach(() => {
   recordEvent.mockResolvedValue(undefined);
   enrollLeadIfEligible.mockResolvedValue(true);
   leadUpdate.mockResolvedValue(undefined);
+  // Default: the affiliate id exists (echo the queried id back).
+  affiliateFindUnique.mockImplementation(async ({ where }: { where: { id: string } }) => ({
+    id: where.id,
+  }));
 });
 
 describe('mirrorDashboardHostLead', () => {
@@ -134,6 +142,20 @@ describe('mirrorDashboardHostLead — affiliate forwarding', () => {
 
   it('defaults to null when the dashboard has no affiliate', async () => {
     await mirrorDashboardHostLead(baseRef);
+    expect(upsertLead).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ affiliateId: null }),
+    );
+  });
+
+  it('does NOT stamp a non-existent (tainted) affiliate id onto the lead', async () => {
+    // GroupOrderV2.affiliateId can hold an unvalidated client value; verify it
+    // exists before stamping (security review 2026-07-23, HIGH).
+    affiliateFindUnique.mockResolvedValue(null);
+    await mirrorDashboardHostLead({ ...baseRef, affiliateId: 'spoofed-id' });
+    expect(affiliateFindUnique).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 'spoofed-id' } }),
+    );
     expect(upsertLead).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({ affiliateId: null }),
