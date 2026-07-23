@@ -10,6 +10,7 @@ import DrawerHeader from './drawer-header';
 import DrawerSummary from './drawer-summary';
 import DrawerStageActions from './drawer-stage-actions';
 import DrawerFacts from './drawer-facts';
+import DrawerCart from './drawer-cart';
 import DrawerInbound from './drawer-inbound';
 import DrawerConversation from './drawer-conversation';
 import DrawerTimeline from './drawer-timeline';
@@ -116,6 +117,7 @@ export default function LeadDrawer({
               onSnooze={(days) => void snooze(days)}
             />
             <DrawerFacts detail={detail} />
+            <DrawerCart cart={detail.cart} />
             <DrawerInbound inboundEmails={detail.inboundEmails} />
             <DrawerConversation chatConversations={detail.chatConversations} />
 

@@ -19,6 +19,8 @@ export interface LeadDetail {
     utmSource: string | null;
     utmMedium: string | null;
     utmCampaign: string | null;
+    utmTerm: string | null;
+    utmContent: string | null;
     owner: string | null;
     snoozedUntil: string | null;
     notes: string | null;
@@ -86,4 +88,16 @@ export interface LeadDetail {
     contactCapturedAt: string | null;
     createdAt: string;
   }>;
+  /** The lead's group-dashboard cart, when one exists. */
+  cart: {
+    shareCode: string;
+    status: string | null;
+    total: number;
+    items: Array<{ title: string; variantTitle: string | null; quantity: number; price: number }>;
+    participantCount: number;
+    deliveryDate: string | null;
+    affiliateName: string | null;
+  } | null;
+  /** Affiliate association (lead's own stamp, else its dashboard's). */
+  affiliate: { name: string; code: string } | null;
 }

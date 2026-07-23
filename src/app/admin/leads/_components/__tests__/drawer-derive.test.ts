@@ -149,6 +149,8 @@ function makeDetail(over: Partial<LeadDetail>): LeadDetail {
       utmSource: null,
       utmMedium: null,
       utmCampaign: null,
+      utmTerm: null,
+      utmContent: null,
       owner: null,
       snoozedUntil: null,
       notes: null,
@@ -162,6 +164,8 @@ function makeDetail(over: Partial<LeadDetail>): LeadDetail {
     drafts: [],
     inboundEmails: [],
     chatConversations: [],
+    cart: null,
+    affiliate: null,
     ...over,
   };
 }

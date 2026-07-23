@@ -44,13 +44,72 @@ export default function DrawerFacts({ detail }: { detail: LeadDetail }): ReactEl
           label="Source"
           value={`${lead.sourceWidget ?? '—'}${lead.sourcePage ? ` · ${lead.sourcePage}` : ''}`}
         />
-        <Fact label="Campaign" value={lead.utmCampaign ?? lead.utmSource ?? 'direct / unknown'} />
+        {detail.affiliate && (
+          <Fact label="Affiliate" value={`${detail.affiliate.name} (${detail.affiliate.code})`} />
+        )}
         <Fact label="Score breakdown" value={formatScoreBreakdown(lead.scoreBreakdown)} />
         <Fact label="Created" value={formatShortDate(lead.createdAt)} />
       </section>
 
+      <Attribution lead={lead} />
+
       <OrdersAndQuotes orders={orders} drafts={drafts} />
     </>
+  );
+}
+
+/** Ad-platform click ids we surface, in display order. */
+const CLICK_ID_LABELS: ReadonlyArray<[key: string, platform: string]> = [
+  ['gclid', 'Google Ads'],
+  ['gbraid', 'Google Ads (iOS)'],
+  ['wbraid', 'Google Ads (web-to-app)'],
+  ['fbclid', 'Meta'],
+  ['msclkid', 'Bing'],
+];
+
+/**
+ * Marketing attribution grid: UTM columns + the click-id/landing/referrer
+ * detail stored in metadata.attribution. Campaign keeps its affirmative
+ * "direct / unknown" fallback; everything else renders only when present —
+ * with Google Ads ValueTrack tagging on, Keyword = the search term bought.
+ */
+function Attribution({ lead }: { lead: LeadDetail['lead'] }): ReactElement {
+  const meta = lead.metadata;
+  const attribution =
+    meta && typeof meta.attribution === 'object' && meta.attribution && !Array.isArray(meta.attribution)
+      ? (meta.attribution as Record<string, unknown>)
+      : null;
+  const str = (v: unknown): string | null => (typeof v === 'string' && v ? v : null);
+
+  const clickId = CLICK_ID_LABELS.flatMap(([key, platform]) => {
+    const value = str(attribution?.[key]);
+    return value ? [{ platform, value }] : [];
+  })[0];
+  const landing = str(attribution?.landingPage) ?? lead.sourcePage;
+  const referrer = str(attribution?.referrer);
+
+  return (
+    <section className="mt-4">
+      <h3 className="font-heading font-bold text-sm tracking-[0.1em] uppercase text-gray-500">
+        Attribution
+      </h3>
+      <div className="mt-1 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+        <Fact label="Campaign" value={lead.utmCampaign ?? lead.utmSource ?? 'direct / unknown'} />
+        {(lead.utmSource || lead.utmMedium) && (
+          <Fact label="Source / medium" value={`${lead.utmSource ?? '—'} / ${lead.utmMedium ?? '—'}`} />
+        )}
+        {lead.utmTerm && <Fact label="Keyword" value={lead.utmTerm} />}
+        {lead.utmContent && <Fact label="Creative" value={lead.utmContent} />}
+        {clickId && (
+          <Fact
+            label="Ad click"
+            value={`${clickId.platform} · ${clickId.value.slice(0, 14)}…`}
+          />
+        )}
+        {landing && <Fact label="Landing page" value={landing} wide />}
+        {referrer && <Fact label="Referrer" value={referrer} wide />}
+      </div>
+    </section>
   );
 }
 

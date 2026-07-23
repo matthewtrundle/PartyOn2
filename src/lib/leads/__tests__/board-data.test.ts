@@ -32,6 +32,7 @@ interface MockLead {
   lostAt: Date | null;
   orderId: string | null;
   draftOrderId: string | null;
+  affiliateId: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -39,7 +40,14 @@ interface MockLead {
 const db: {
   leads: MockLead[];
   followUps: Array<{ leadId: string; status: string }>;
-} = { leads: [], followUps: [] };
+  groups: Array<{
+    id: string;
+    shareCode: string;
+    affiliateId: string | null;
+    tabs: Array<{ draftItems: Array<{ price: number; quantity: number }> }>;
+  }>;
+  affiliates: Array<{ id: string; businessName: string; code: string }>;
+} = { leads: [], followUps: [], groups: [], affiliates: [] };
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 function matchesWhere(lead: MockLead, where: Record<string, any>): boolean {
@@ -89,6 +97,16 @@ vi.mock('@/lib/database/client', () => ({
         return [...byLead.entries()].map(([leadId, n]) => ({ leadId, _count: { _all: n } }));
       }),
     },
+    groupOrderV2: {
+      findMany: vi.fn(async ({ where }: any) =>
+        db.groups.filter((g) => where.id.in.includes(g.id)),
+      ),
+    },
+    affiliate: {
+      findMany: vi.fn(async ({ where }: any) =>
+        db.affiliates.filter((a) => where.id.in.includes(a.id)),
+      ),
+    },
   },
 }));
 /* eslint-enable @typescript-eslint/no-explicit-any */
@@ -103,6 +121,7 @@ vi.mock('../pipeline', async (importOriginal) => {
 import {
   compareBoardCards,
   getBoardData,
+  isAdsLead,
   needsReply,
   refineSource,
   toBoardLead,
@@ -140,6 +159,7 @@ function makeLead(overrides: Partial<MockLead> = {}): MockLead {
     lostAt: null,
     orderId: null,
     draftOrderId: null,
+    affiliateId: null,
     createdAt: daysAgo(2),
     updatedAt: daysAgo(1),
     ...overrides,
@@ -159,6 +179,8 @@ const ctx = (over: Partial<{ hasFollowUp: boolean; isDuplicate: boolean; now: Da
 beforeEach(() => {
   db.leads = [];
   db.followUps = [];
+  db.groups = [];
+  db.affiliates = [];
   seq = 0;
 });
 
@@ -427,6 +449,69 @@ describe('refineSource — sheet-level detail (keys frozen, labels enriched)', (
 
   it('labels Wayne chat leads instead of "Site"', () => {
     expect(refineSource('WAYNE_CHAT', null)).toEqual({ key: 'WAYNE_CHAT', label: 'Wayne Chat' });
+  });
+});
+
+describe('isAdsLead — paid-traffic detector', () => {
+  const lead = (utmMedium: string | null, attribution?: Record<string, unknown>) => ({
+    utmMedium,
+    metadata: attribution ? { attribution } : {},
+  });
+
+  it('flags ad click ids and paid mediums, case-insensitively', () => {
+    expect(isAdsLead(lead(null, { gclid: 'abc' }))).toBe(true);
+    expect(isAdsLead(lead(null, { wbraid: 'w1' }))).toBe(true);
+    expect(isAdsLead(lead(null, { fbclid: 'f1' }))).toBe(true);
+    expect(isAdsLead(lead('CPC'))).toBe(true);
+    expect(isAdsLead(lead('paid'))).toBe(true);
+  });
+
+  it('ignores organic/direct leads and empty click ids', () => {
+    expect(isAdsLead(lead(null))).toBe(false);
+    expect(isAdsLead(lead('organic'))).toBe(false);
+    expect(isAdsLead(lead(null, { gclid: '' }))).toBe(false);
+    expect(isAdsLead({ utmMedium: null, metadata: null })).toBe(false);
+  });
+});
+
+describe('getBoardData — cart + affiliate joins', () => {
+  it('attaches the dashboard cart and resolves the affiliate through the group', async () => {
+    db.groups.push({
+      id: 'g1',
+      shareCode: 'T4Q9S8',
+      affiliateId: 'aff-premier',
+      tabs: [{ draftItems: [{ price: 25, quantity: 2 }, { price: 10, quantity: 1 }] }],
+    });
+    db.affiliates.push({ id: 'aff-premier', businessName: 'Premier Party Cruises', code: 'PREMIER' });
+    makeLead({
+      sourceWidget: 'GROUP_DASHBOARD',
+      metadata: { groupDashboard: { groupOrderId: 'g1', shareCode: 'T4Q9S8' } },
+    });
+    makeLead(); // no dashboard
+
+    const data = await getBoardData();
+    const [withCart, without] = data.columns.NEW.sort((a, b) => (a.cart ? -1 : 1) - (b.cart ? -1 : 1));
+    expect(withCart.cart).toEqual({ shareCode: 'T4Q9S8', total: 60, itemCount: 3 });
+    expect(withCart.affiliate).toEqual({ name: 'Premier Party Cruises', code: 'PREMIER' });
+    expect(without.cart).toBeNull();
+    expect(without.affiliate).toBeNull();
+  });
+
+  it("prefers the lead's own stamped affiliateId over the dashboard's", async () => {
+    db.groups.push({ id: 'g1', shareCode: 'AAA111', affiliateId: 'aff-other', tabs: [] });
+    db.affiliates.push(
+      { id: 'aff-own', businessName: 'Lake Travis Yachts', code: 'LTYACHT' },
+      { id: 'aff-other', businessName: 'Premier Party Cruises', code: 'PREMIER' },
+    );
+    makeLead({
+      affiliateId: 'aff-own',
+      metadata: { groupDashboard: { groupOrderId: 'g1' } },
+    });
+
+    const data = await getBoardData();
+    expect(data.columns.NEW[0].affiliate?.code).toBe('LTYACHT');
+    // Cart ref still present (even with zero items) so the link renders.
+    expect(data.columns.NEW[0].cart).toEqual({ shareCode: 'AAA111', total: 0, itemCount: 0 });
   });
 });
 

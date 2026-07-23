@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactElement } from 'react';
+import { KeyboardEvent, MouseEvent, PointerEvent, ReactElement } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import HqBadge from '@/components/backend/kit/Badge';
 import type { BoardLead } from '@/lib/leads/board-types';
@@ -20,10 +20,31 @@ function eventChip(eventDate: string | null): string | null {
 
 const TEMP_VARIANT = { hot: 'red', warm: 'amber', cold: 'gray' } as const;
 
+const money = (n: number): string =>
+  `$${n.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+
+/** Small partner/affiliate mark (SVG per repo rules — no emoji in UI). */
+function PartnerIcon(): ReactElement {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3 w-3 shrink-0">
+      <circle cx="9" cy="8" r="3.5" />
+      <path d="M2.5 19c.8-3 3.4-5 6.5-5s5.7 2 6.5 5" />
+      <path d="M15.5 4.6a3.5 3.5 0 0 1 0 6.8M17.8 14.2c1.9.7 3.3 2.3 3.7 4.8" />
+    </svg>
+  );
+}
+
 /**
  * One Kanban card. Draggable on desktop (pointer, 8px threshold) and via
- * long-press on touch; tap opens the drawer (dnd-kit only claims the pointer
- * once the drag threshold is passed, so click stays intact).
+ * long-press on touch; tap opens the drawer. Root is a div (not a button):
+ * the tile contains real anchors (dashboard link) and nested interactive
+ * content inside a <button> is invalid HTML. dnd-kit's `attributes` supply
+ * role="button" + tabIndex; Enter/Space open the drawer to match.
+ *
+ * Scan order is deliberate (operator works hot→cold top-down): WHO → HOW HOT
+ * → WHAT/WHEN → MONEY IN CART → SOURCE + BADGES. Color only ever carries
+ * meaning: red = act now, temperature tint = heat, green = cart money,
+ * brand yellow = affiliate flag, blue = paid traffic.
  */
 export default function LeadCard({
   lead,
@@ -42,11 +63,21 @@ export default function LeadCard({
     ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`, zIndex: 30 }
     : undefined;
 
+  const onKeyDown = (e: KeyboardEvent<HTMLDivElement>): void => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onOpen(lead.id);
+    }
+  };
+  // Keep the dashboard link a plain link: don't open the drawer, and don't
+  // let the pointer sensor claim the press as a drag start.
+  const stop = (e: MouseEvent | PointerEvent): void => e.stopPropagation();
+
   return (
-    <button
+    <div
       ref={setNodeRef}
-      type="button"
       onClick={() => onOpen(lead.id)}
+      onKeyDown={onKeyDown}
       style={style}
       {...listeners}
       {...attributes}
@@ -54,7 +85,7 @@ export default function LeadCard({
       // scroller, overflow-hidden alone drops the min-height:auto content
       // floor, letting a tall column compress every card to its top band —
       // the "wall of red bars" regression (#295).
-      className={`relative w-full shrink-0 text-left bg-white rounded-xl border border-gray-200 p-3 shadow-sm hover:shadow-md transition-shadow touch-manipulation overflow-hidden ${
+      className={`relative w-full shrink-0 cursor-pointer text-left bg-white rounded-xl border border-gray-200 p-3 shadow-sm hover:shadow-md transition-shadow touch-manipulation overflow-hidden ${
         isDragging ? 'opacity-90 shadow-lg ring-2 ring-brand-blue' : ''
       } ${snoozed ? 'opacity-55' : ''}`}
     >
@@ -98,15 +129,55 @@ export default function LeadCard({
         {lead.budgetPerPerson != null && <span>${lead.budgetPerPerson}/pp</span>}
       </div>
 
-      <div className="mt-2 flex items-center justify-between text-xs">
-        <span className="text-gray-400 uppercase tracking-[0.05em] font-semibold">
+      {lead.cart && (
+        <div className="mt-2 flex items-center justify-between gap-2 text-sm">
+          {lead.cart.itemCount > 0 ? (
+            <span className="font-semibold text-green-700">
+              {money(lead.cart.total)}
+              <span className="font-normal text-gray-500">
+                {' '}· {lead.cart.itemCount} item{lead.cart.itemCount === 1 ? '' : 's'}
+              </span>
+            </span>
+          ) : (
+            <span className="text-gray-400">Empty cart</span>
+          )}
+          <a
+            href={`/dashboard/${lead.cart.shareCode}`}
+            target="_blank"
+            rel="noreferrer"
+            onClick={stop}
+            onPointerDown={stop}
+            className="inline-flex items-center gap-1 font-medium text-brand-blue hover:underline"
+          >
+            Dashboard
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5">
+              <path d="M7 17 17 7M9 7h8v8" />
+            </svg>
+          </a>
+        </div>
+      )}
+
+      <div className="mt-2 flex items-center justify-between gap-2 text-xs">
+        <span className="text-gray-400 uppercase tracking-[0.05em] font-semibold truncate">
           {lead.sourceLabel}
         </span>
-        <span className="flex items-center gap-1.5">
+        <span className="flex items-center gap-1.5 shrink-0">
+          {lead.adsClick && <HqBadge variant="blue">Ads</HqBadge>}
+          {lead.affiliate && (
+            <HqBadge variant="brand" className="max-w-[120px]">
+              <span className="truncate">{lead.affiliate.name}</span>
+            </HqBadge>
+          )}
           {lead.tags.includes('partner-active') ? (
-            <HqBadge variant="green">🤝 Active Partner</HqBadge>
+            <HqBadge variant="green">
+              <PartnerIcon />
+              <span className="ml-1">Active Partner</span>
+            </HqBadge>
           ) : lead.tags.includes('partner-prospect') ? (
-            <HqBadge variant="blue">🤝 Partner</HqBadge>
+            <HqBadge variant="blue">
+              <PartnerIcon />
+              <span className="ml-1">Partner</span>
+            </HqBadge>
           ) : null}
           {lead.isDuplicate && <HqBadge variant="gray">dupe</HqBadge>}
           {lead.hasFollowUp && (
@@ -120,6 +191,6 @@ export default function LeadCard({
           {lead.owner && <span className="text-gray-500 font-medium">{lead.owner}</span>}
         </span>
       </div>
-    </button>
+    </div>
   );
 }

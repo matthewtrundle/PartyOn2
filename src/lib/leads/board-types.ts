@@ -40,6 +40,12 @@ export interface BoardLead {
   stageChangedAt: string | null;
   /** Suggest-Lost chip: event date passed or quiet for 30 days. */
   suggestLost: boolean;
+  /** Dashboard cart chip + link — set when the lead has a group dashboard. */
+  cart: { shareCode: string; total: number; itemCount: number } | null;
+  /** Affiliate badge (Premier etc.) — lead's own stamp, else its dashboard's. */
+  affiliate: { name: string; code: string } | null;
+  /** Paid-traffic marker: Google/Meta/Bing click id or a cpc/paid medium. */
+  adsClick: boolean;
 }
 
 export interface BoardKpis {
