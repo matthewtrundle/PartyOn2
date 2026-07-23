@@ -23,6 +23,7 @@ const SOURCE_OPTIONS = [
   ['CALL_BOOKING', 'Call Booking'],
   ['DRINK_CALCULATOR', 'Calculator'],
   ['LEAD_MAGNET', 'Lead Magnet'],
+  ['WAYNE_CHAT', 'Wayne Chat'],
   ['EMAIL_SIGNUP', 'Email Signup'],
   ['OTHER', 'Site'],
 ] as const;
