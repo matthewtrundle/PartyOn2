@@ -96,7 +96,12 @@ async function checkRateLimit(ip: string): Promise<boolean> {
  * the ops email escapes these values, this keeps them sane at the source.
  */
 function capStr(v: unknown, max = 200): string {
-  return String(v ?? '').trim().slice(0, max);
+  // Collapse CR/LF too: these values also land in the email subject line, where a
+  // newline could break the header / silently drop the ops notification (CWE-93).
+  return String(v ?? '')
+    .replace(/[\r\n]+/g, ' ')
+    .trim()
+    .slice(0, max);
 }
 
 function normalizeInquiry(body: Record<string, unknown>): PartnerInquiryData {

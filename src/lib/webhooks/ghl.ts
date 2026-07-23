@@ -120,7 +120,9 @@ function buildItemsSummary(
  * downstream systems render them (SMS, contact cards) where an unsanitized name
  * is an injection/spoofing vector — so sanitize at this send boundary.
  */
-function withSanitizedNames<T extends { first_name: string; last_name: string }>(payload: T): T {
+export function withSanitizedNames<T extends { first_name: string; last_name: string }>(
+  payload: T,
+): T {
   return {
     ...payload,
     first_name: sanitizeName(payload.first_name) ?? '',
