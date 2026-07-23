@@ -78,6 +78,18 @@ export interface PodLeadSheetRow {
   leadUrl?: string;
 }
 
+/**
+ * Neutralize spreadsheet formula injection. The append uses
+ * `valueInputOption: 'USER_ENTERED'`, so any cell beginning with `= + - @` (or a
+ * leading tab/CR) is interpreted by Google Sheets as a formula/command — a
+ * lead-supplied name like `=HYPERLINK(...)` would execute in the ops sheet.
+ * Prefix such values with a single quote so Sheets stores them as literal text.
+ * Exported for unit tests.
+ */
+export function sheetCell(v: string): string {
+  return /^[=+\-@\t\r]/.test(v) ? `'${v}` : v;
+}
+
 function rowFromLead(row: PodLeadSheetRow): string[] {
   return [
     row.submittedAt,
@@ -94,7 +106,7 @@ function rowFromLead(row: PodLeadSheetRow): string[] {
     row.activities ?? '',
     row.notes ?? '',
     row.leadUrl ?? '',
-  ];
+  ].map(sheetCell);
 }
 
 function getSheetsClient() {

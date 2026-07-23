@@ -90,16 +90,29 @@ async function checkRateLimit(ip: string): Promise<boolean> {
  * Normalize form data from all partner form types into a consistent shape.
  * Different forms send different field names - this maps them all.
  */
+/**
+ * Trim, coerce to string, and hard-cap length. This is a public, unauthenticated
+ * form; caps bound abuse (multi-MB payloads, giant strings) as defense-in-depth —
+ * the ops email escapes these values, this keeps them sane at the source.
+ */
+function capStr(v: unknown, max = 200): string {
+  // Collapse CR/LF too: these values also land in the email subject line, where a
+  // newline could break the header / silently drop the ops notification (CWE-93).
+  return String(v ?? '')
+    .replace(/[\r\n]+/g, ' ')
+    .trim()
+    .slice(0, max);
+}
+
 function normalizeInquiry(body: Record<string, unknown>): PartnerInquiryData {
   // Contact name: may come as contactName, or firstName+lastName
-  const firstName = String(body.firstName || '').trim();
-  const lastName = String(body.lastName || '').trim();
-  const contactName = String(body.contactName || '').trim()
-    || [firstName, lastName].filter(Boolean).join(' ')
-    || 'Unknown';
+  const firstName = capStr(body.firstName);
+  const lastName = capStr(body.lastName);
+  const contactName =
+    capStr(body.contactName) || [firstName, lastName].filter(Boolean).join(' ') || 'Unknown';
 
   // Business name: may be businessName, hotelName, or company
-  const businessName = String(body.hotelName || body.businessName || body.company || '').trim();
+  const businessName = capStr(body.hotelName || body.businessName || body.company);
 
   // Event types / interests: may be array or comma-separated string
   let eventTypes = '';
@@ -108,6 +121,7 @@ function normalizeInquiry(body: Record<string, unknown>): PartnerInquiryData {
   } else if (typeof body.eventTypes === 'string') {
     eventTypes = body.eventTypes;
   }
+  eventTypes = eventTypes.slice(0, 500);
 
   let interests = '';
   if (Array.isArray(body.interests)) {
@@ -115,28 +129,29 @@ function normalizeInquiry(body: Record<string, unknown>): PartnerInquiryData {
   } else if (typeof body.interests === 'string') {
     interests = body.interests;
   }
+  interests = interests.slice(0, 500);
 
   return {
     contactName,
-    email: String(body.email || '').trim(),
-    phone: String(body.phone || '').trim() || undefined,
+    email: capStr(body.email),
+    phone: capStr(body.phone, 40) || undefined,
     businessName: businessName || undefined,
-    businessType: String(body.businessType || body.eventType || '').trim() || undefined,
-    partnerType: String(body.partnerType || '').trim() || undefined,
-    website: String(body.website || '').trim() || undefined,
-    message: String(body.message || '').trim() || undefined,
-    notes: String(body.notes || '').trim() || undefined,
+    businessType: capStr(body.businessType || body.eventType) || undefined,
+    partnerType: capStr(body.partnerType) || undefined,
+    website: capStr(body.website, 500) || undefined,
+    message: capStr(body.message, 2000) || undefined,
+    notes: capStr(body.notes, 2000) || undefined,
     eventTypes: eventTypes || undefined,
-    serviceArea: String(body.serviceArea || '').trim() || undefined,
-    guestCount: String(body.guestCount || '').trim() || undefined,
-    timeframe: String(body.timeframe || '').trim() || undefined,
-    eventDate: String(body.eventDate || '').trim() || undefined,
-    venue: String(body.venue || '').trim() || undefined,
-    numberOfRooms: String(body.numberOfRooms || '').trim() || undefined,
-    monthlyVolume: String(body.monthlyVolume || '').trim() || undefined,
-    currentProvider: String(body.currentProvider || '').trim() || undefined,
+    serviceArea: capStr(body.serviceArea) || undefined,
+    guestCount: capStr(body.guestCount, 40) || undefined,
+    timeframe: capStr(body.timeframe) || undefined,
+    eventDate: capStr(body.eventDate, 40) || undefined,
+    venue: capStr(body.venue) || undefined,
+    numberOfRooms: capStr(body.numberOfRooms, 40) || undefined,
+    monthlyVolume: capStr(body.monthlyVolume, 40) || undefined,
+    currentProvider: capStr(body.currentProvider) || undefined,
     interests: interests || undefined,
-    source: String(body.source || '').trim() || undefined,
+    source: capStr(body.source) || undefined,
     submittedAt: String(body.submittedAt || new Date().toISOString()),
   };
 }

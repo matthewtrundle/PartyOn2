@@ -18,6 +18,7 @@
 
 import { NextResponse } from 'next/server';
 import { requireOpsAuth } from '@/lib/auth/ops-session';
+import { sanitizeName } from '@/lib/leads/leadCapture';
 import { prisma } from '@/lib/database/client';
 import { mirrorLeadToCrm } from '@/lib/leads/crm-mirror';
 import {
@@ -99,7 +100,9 @@ export async function POST(): Promise<NextResponse> {
             })
           : null);
 
-      const { first, last } = splitName(p.contactName);
+      const rawName = splitName(p.contactName);
+      const first = sanitizeName(rawName.first);
+      const last = sanitizeName(rawName.last);
       const metadata = {
         company: p.name,
         website: p.website,
