@@ -195,6 +195,27 @@ export default function ProspectDrawer({
           />
         </div>
 
+        {/* Variant B — Brian's original enrichment-based personalized email,
+            preserved verbatim from the legacy prospect JSONs (read-only). */}
+        {prospect.draftBSubject && prospect.draftBBody && (
+          <div className="card space-y-2">
+            <h3 className="text-lg font-bold text-gray-900">
+              Variant B — original personalized email
+            </h3>
+            <p className="text-sm text-gray-600">
+              The enrichment-based draft written before the 3-touch redraft
+              {prospect.draftBSource === 'legacy-manual-json' && ' (restored from the prospect files)'}
+              . Reference copy — the campaign sends the draft above.
+            </p>
+            <p className="text-sm text-gray-900">
+              <span className="font-semibold">Subject:</span> {prospect.draftBSubject}
+            </p>
+            <pre className="whitespace-pre-wrap text-sm text-gray-900 bg-gray-50 border border-gray-200 rounded-lg p-3 font-sans">
+              {prospect.draftBBody}
+            </pre>
+          </div>
+        )}
+
         {/* Send actions */}
         <div className="flex flex-wrap items-center gap-3 pb-8">
           <button
