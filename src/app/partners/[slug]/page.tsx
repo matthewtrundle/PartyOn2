@@ -146,6 +146,7 @@ export default async function DynamicPartnerPage({ params }: Props) {
   if (secondTab) {
     return (
       <PartnerPageTabs
+        businessName={affiliate.businessName}
         leftLabel={secondTab.leftLabel}
         rightLabel={secondTab.label}
         embedUrl={secondTab.embedUrl}
