@@ -62,41 +62,41 @@ _(not captured)_
 
 ```json
 {
-  "orders": 65,
-  "revenue": 12390.56,
+  "orders": 58,
+  "revenue": 11376.61,
   "segments": [
     {
       "margin": 463.53,
-      "orders": 48,
-      "revenue": 8998.05,
+      "orders": 49,
+      "revenue": 9594.69,
       "segment": "general",
-      "averageMarginPct": 5.2,
-      "averageOrderValue": 187.46,
-      "marginCoveragePct": 17.2
+      "averageMarginPct": 4.8,
+      "averageOrderValue": 195.81,
+      "marginCoveragePct": 16.1
     },
     {
-      "margin": 417.78,
-      "orders": 17,
-      "revenue": 3392.51,
+      "margin": 222.98,
+      "orders": 9,
+      "revenue": 1781.92,
       "segment": "unknown",
-      "averageMarginPct": 12.3,
-      "averageOrderValue": 199.56,
-      "marginCoveragePct": 41.1
+      "averageMarginPct": 12.5,
+      "averageOrderValue": 197.99,
+      "marginCoveragePct": 41.8
     }
   ],
-  "capturedAt": "2026-07-22T08:00:38.287Z",
+  "capturedAt": "2026-07-23T08:01:13.295Z",
   "affiliateRoi": [
     {
       "code": "PREMIER",
-      "margin": 610.99,
-      "orders": 49,
-      "roiPct": 988.3,
-      "revenue": 7079.86,
-      "netMargin": 554.85,
+      "margin": 501.69,
+      "orders": 43,
+      "roiPct": 793.6,
+      "revenue": 5869.93,
+      "netMargin": 445.55,
       "affiliateId": "d21bac1a-3f99-489c-89fd-e1980c264a8d",
       "businessName": "Premier Party Cruises",
       "commissionPaid": 56.14,
-      "marginCoveragePct": 29.5
+      "marginCoveragePct": 28.8
     },
     {
       "code": "DTRbartending",
@@ -123,15 +123,15 @@ _(not captured)_
       "marginCoveragePct": 0
     }
   ],
-  "snapshotDate": "2026-07-22",
-  "averageOrderValue": 190.624,
+  "snapshotDate": "2026-07-23",
+  "averageOrderValue": 196.1484482758621,
   "marginCoveragePct": null
 }
 ```
 ## Updates
 
 - 2026-05-05 — Created with status `executed` from source `director`.
-- 2026-07-22 — Status shipped → shipped (cron:measure-recommendations). Notes: Auto-captured 14-day measurement
+- 2026-07-23 — Status shipped → shipped (cron:measure-recommendations). Notes: Auto-captured 14-day measurement
 
 ---
 _Mirror file. Edited automatically by the triage queue when status changes. Source of truth is the database (id: `4fe8e34e-83cb-4ee7-9576-4a60386400dc`). Slug: `premier-86-of-group-dashboards-never-convert-diagnose-the-ac`._
