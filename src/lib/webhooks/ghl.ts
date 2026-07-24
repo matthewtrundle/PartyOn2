@@ -35,6 +35,15 @@ export interface GhlOrderPayload {
   customerLastName: string;
   customerEmail: string;
   customerPhone: string;
+  /**
+   * A2P 10DLC: true when the customer affirmatively opted in to marketing/
+   * reminder SMS at checkout. The phone above is ALWAYS sent (transactional
+   * order/delivery texts are permitted by the purchase); this flag is the
+   * marketing gate — downstream (CoreLinq consent records, GHL workflow
+   * branches) must not enroll a false-consent contact into marketing/reminder
+   * campaigns. See Order.smsConsent.
+   */
+  smsConsent: boolean;
   itemsSummary: string;
   subtotal: number;
   tax: number;
@@ -62,6 +71,8 @@ interface OrderLike {
   customerName: string;
   customerEmail: string;
   customerPhone: string | null;
+  /** A2P 10DLC marketing/reminder SMS opt-in (Order.smsConsent). */
+  smsConsent: boolean;
   items: Array<{
     title: string;
     variantTitle: string | null;
@@ -209,6 +220,9 @@ export function buildGhlPayload(order: OrderLike, orderType: string): GhlOrderPa
     customerLastName: lastName,
     customerEmail: order.customerEmail,
     customerPhone: order.customerPhone || '',
+    // Marketing-SMS gate. Phone stays populated above for transactional
+    // order/delivery texts; only marketing/reminder campaigns key off this.
+    smsConsent: order.smsConsent === true,
     itemsSummary: buildItemsSummary(order.items),
     subtotal: Number(order.subtotal),
     tax: Number(order.taxAmount),

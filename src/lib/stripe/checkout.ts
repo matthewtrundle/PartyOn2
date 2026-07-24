@@ -29,6 +29,11 @@ export interface CheckoutMetadata {
   tipAmount?: string;
   /** 'true' | 'false' — A2P 10DLC SMS marketing opt-in captured at checkout. */
   smsConsent?: string;
+  /** The phone the opt-in above was captured against (our form's phone field).
+   *  Consent is only honored at order creation when this matches the phone
+   *  actually stored on the Order (Stripe collects its own, possibly different,
+   *  phone). Present only when smsConsent is 'true'. */
+  smsConsentPhone?: string;
 
   // First-touch marketing attribution (captured on landing, forwarded by client)
   landingPage?: string;
@@ -67,6 +72,10 @@ export interface CreateCheckoutOptions {
   tipAmount?: number;
   /** A2P 10DLC: customer affirmatively opted in to marketing/reminder SMS. */
   smsConsent?: boolean;
+  /** The phone the SMS opt-in was captured against (our checkout form's phone).
+   *  Persisted to metadata so order creation can bind consent to the phone that
+   *  will actually be texted. */
+  smsConsentPhone?: string;
   attribution?: {
     landingPage?: string | null;
     utmSource?: string | null;
@@ -84,7 +93,7 @@ export interface CreateCheckoutOptions {
 export async function createCheckoutSession(
   options: CreateCheckoutOptions
 ): Promise<Stripe.Checkout.Session> {
-  const { cart, successUrl, cancelUrl, customerEmail, stripeCustomerId, affiliateCode, overrideDeliveryFee, tipAmount, attribution, smsConsent } = options;
+  const { cart, successUrl, cancelUrl, customerEmail, stripeCustomerId, affiliateCode, overrideDeliveryFee, tipAmount, attribution, smsConsent, smsConsentPhone } = options;
 
   // Defense-in-depth: refuse to charge for any product that isn't ACTIVE (or whose variant isn't
   // availableForSale), re-read from the DB rather than trusting the cart snapshot. A product
@@ -162,6 +171,8 @@ export async function createCheckoutSession(
     affiliateCode: affiliateCode || undefined,
     tipAmount: tipAmount && tipAmount > 0 ? tipAmount.toFixed(2) : undefined,
     smsConsent: smsConsent === undefined ? undefined : smsConsent ? 'true' : 'false',
+    // Bind the opt-in to the phone it was given for (see resolveOrderSmsConsent).
+    smsConsentPhone: smsConsent && smsConsentPhone ? smsConsentPhone : undefined,
     landingPage: attribution?.landingPage || undefined,
     utmSource: attribution?.utmSource || undefined,
     utmMedium: attribution?.utmMedium || undefined,

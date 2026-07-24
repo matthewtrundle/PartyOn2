@@ -11,6 +11,7 @@ import { DEFAULT_TAX_RATE } from '@/lib/tax';
 import { moveDraftToPurchased, moveAllDraftsToPurchased } from '@/lib/group-orders-v2/service';
 import { notifyNewOrder, buildGhlPayload } from '@/lib/webhooks/ghl';
 import { sanitizeName } from '@/lib/leads/leadCapture';
+import { resolveOrderSmsConsent } from '@/lib/consent/order-sms-consent';
 import { sendOrderConfirmationEmail } from '@/lib/email';
 import { recordDiscountUsage, validateDiscountCode } from '@/lib/discounts/discount-engine';
 import { linkOrderToAffiliate } from '@/lib/affiliates/commission-engine';
@@ -267,6 +268,12 @@ export async function createGroupV2CheckoutSession(input: CreateCheckoutInput) {
       // A2P 10DLC: record express SMS opt-in only when a phone was provided.
       ...(input.participantPhone && input.smsConsent !== undefined
         ? { smsConsent: input.smsConsent ? 'true' : 'false' }
+        : {}),
+      // Bind the opt-in to the phone it was captured against (see
+      // resolveOrderSmsConsent) — the payment webhook honors consent only when
+      // this matches the phone actually persisted on the Order.
+      ...(input.participantPhone && input.smsConsent
+        ? { smsConsentPhone: input.participantPhone }
         : {}),
     },
     billing_address_collection: 'required',
@@ -654,6 +661,14 @@ export async function handleGroupV2PaymentCompleted(
       customerEmail: customerEmail,
       customerName: customerName,
       customerPhone: customerPhone || null,
+      // A2P 10DLC: persist the participant's marketing-SMS opt-in, but ONLY when
+      // the phone it was captured against matches the phone stored on this Order
+      // (guest phone / Stripe-collected). Absent/mismatched → false (fail closed).
+      smsConsent: resolveOrderSmsConsent(
+        session.metadata?.smsConsent,
+        session.metadata?.smsConsentPhone,
+        customerPhone,
+      ),
       groupOrderId: null, // V2 doesn't use v1 group order FK
       groupOrderV2Id: groupOrderId,
       // Inherit the host's first-touch attribution + derived segment from the group, so

@@ -638,7 +638,7 @@ describe('createGroupV2CheckoutSession — SMS consent metadata (A2P 10DLC)', ()
     expect(lastSessionParams().metadata?.smsConsent).toBe('false');
   });
 
-  it("records smsConsent 'true' with a phone, and never leaks the raw phone into the session", async () => {
+  it("records smsConsent 'true' and binds it to the consented phone in metadata (and nowhere else)", async () => {
     await createGroupV2CheckoutSession({
       ...purchasableInput,
       participantPhone: '5559998888',
@@ -646,8 +646,14 @@ describe('createGroupV2CheckoutSession — SMS consent metadata (A2P 10DLC)', ()
     });
     const params = lastSessionParams();
     expect(params.metadata?.smsConsent).toBe('true');
-    // The raw phone must never appear in metadata, custom_text, or anywhere in the params.
-    expect(JSON.stringify(params)).not.toContain('5559998888');
+    // A2P binding: the consented phone is intentionally carried in the
+    // smsConsentPhone metadata field so the payment webhook can bind the opt-in
+    // to the number actually texted (see resolveOrderSmsConsent). It must NOT
+    // leak anywhere else — e.g. custom_text shown to the payer.
+    expect(params.metadata?.smsConsentPhone).toBe('5559998888');
+    const otherMeta = { ...(params.metadata ?? {}) };
+    delete otherMeta.smsConsentPhone;
+    expect(JSON.stringify({ ...params, metadata: otherMeta })).not.toContain('5559998888');
   });
 });
 

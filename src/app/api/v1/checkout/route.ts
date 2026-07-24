@@ -232,7 +232,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         customerPhone || null,
         affiliateCode,
         affiliateFreeDelivery ? 0 : undefined,
-        affiliateFreeDelivery ? Math.max(effectiveTotal, 0) : undefined
+        affiliateFreeDelivery ? Math.max(effectiveTotal, 0) : undefined,
+        typeof smsConsent === 'boolean' ? smsConsent : undefined
       );
 
       // Link order to affiliate and create commission if attributed
@@ -284,6 +285,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       tipAmount: tipAmount > 0 ? tipAmount : undefined,
       attribution: attribution && typeof attribution === 'object' ? attribution : undefined,
       smsConsent: typeof smsConsent === 'boolean' ? smsConsent : undefined,
+      // The phone the consent checkbox was paired with, so order creation can
+      // bind the opt-in to the number actually stored on the Order.
+      smsConsentPhone: typeof customerPhone === 'string' ? customerPhone : undefined,
     });
 
     return NextResponse.json({

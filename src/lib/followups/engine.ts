@@ -150,6 +150,8 @@ async function sweepPostPurchaseReviews(now: Date): Promise<number> {
       id: true,
       customerEmail: true,
       customerName: true,
+      customerPhone: true,
+      smsConsent: true,
       deliveryDate: true,
     },
     orderBy: { deliveryDate: 'desc' },
@@ -163,6 +165,11 @@ async function sweepPostPurchaseReviews(now: Date): Promise<number> {
       entityId: order.id,
       orderId: order.id,
       baseTime: order.deliveryDate,
+      // Carry the order's real marketing-SMS consent + phone so an SMS review
+      // touch (when the engine gains SMS) only fires for opt-ins. Email touches
+      // ignore these; without them the job would default smsConsent=false.
+      phone: order.customerPhone,
+      smsConsent: order.smsConsent,
       payload: { firstName: firstNameFrom(order.customerName) },
     });
     if (result.enqueued) enqueued++;
