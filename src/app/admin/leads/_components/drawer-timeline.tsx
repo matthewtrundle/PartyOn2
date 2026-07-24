@@ -64,6 +64,7 @@ interface FetchedBody {
 export default function DrawerTimeline({ detail }: { detail: LeadDetail }): ReactElement {
   const [openId, setOpenId] = useState<string | null>(null);
   const [bodies, setBodies] = useState<Record<string, FetchedBody>>({});
+  const leadId = detail.lead.id;
 
   const toggleEmail = async (emailLogId: string): Promise<void> => {
     if (openId === emailLogId) {
@@ -74,7 +75,7 @@ export default function DrawerTimeline({ detail }: { detail: LeadDetail }): Reac
     if (bodies[emailLogId]) return; // already fetched
     setBodies((b) => ({ ...b, [emailLogId]: { loading: true } }));
     try {
-      const res = await fetch(`/api/v1/admin/leads/email/${emailLogId}`);
+      const res = await fetch(`/api/v1/admin/leads/${leadId}/email/${emailLogId}`);
       const json = await res.json();
       setBodies((b) => ({ ...b, [emailLogId]: { loading: false, ...(json.data ?? {}) } }));
     } catch {
