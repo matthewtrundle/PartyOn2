@@ -62,41 +62,53 @@ _(not captured)_
 
 ```json
 {
-  "orders": 58,
-  "revenue": 11376.61,
+  "orders": 62,
+  "revenue": 13826.13,
   "segments": [
     {
       "margin": 463.53,
-      "orders": 49,
-      "revenue": 9594.69,
+      "orders": 54,
+      "revenue": 10464.74,
       "segment": "general",
-      "averageMarginPct": 4.8,
-      "averageOrderValue": 195.81,
-      "marginCoveragePct": 16.1
+      "averageMarginPct": 4.4,
+      "averageOrderValue": 193.79,
+      "marginCoveragePct": 14.8
     },
     {
-      "margin": 222.98,
-      "orders": 9,
-      "revenue": 1781.92,
+      "margin": 338.12,
+      "orders": 8,
+      "revenue": 3361.39,
       "segment": "unknown",
-      "averageMarginPct": 12.5,
-      "averageOrderValue": 197.99,
-      "marginCoveragePct": 41.8
+      "averageMarginPct": 10.1,
+      "averageOrderValue": 420.17,
+      "marginCoveragePct": 35.1
     }
   ],
-  "capturedAt": "2026-07-23T08:01:13.295Z",
+  "capturedAt": "2026-07-24T08:00:47.274Z",
   "affiliateRoi": [
     {
       "code": "PREMIER",
       "margin": 501.69,
-      "orders": 43,
-      "roiPct": 793.6,
-      "revenue": 5869.93,
-      "netMargin": 445.55,
+      "orders": 46,
+      "roiPct": 403.7,
+      "revenue": 6448.73,
+      "netMargin": 402.08,
       "affiliateId": "d21bac1a-3f99-489c-89fd-e1980c264a8d",
       "businessName": "Premier Party Cruises",
-      "commissionPaid": 56.14,
-      "marginCoveragePct": 28.8
+      "commissionPaid": 99.61,
+      "marginCoveragePct": 26.2
+    },
+    {
+      "code": "POUR24",
+      "margin": 132.24,
+      "orders": 1,
+      "roiPct": -18.1,
+      "revenue": 1748.57,
+      "netMargin": -29.29,
+      "affiliateId": "7bf14a40-b04f-4622-ba09-0662be41e37f",
+      "businessName": "Pour Twenty Four",
+      "commissionPaid": 161.53,
+      "marginCoveragePct": 30.2
     },
     {
       "code": "DTRbartending",
@@ -113,9 +125,9 @@ _(not captured)_
     {
       "code": "LTYACHTRENTALS",
       "margin": null,
-      "orders": 1,
+      "orders": 2,
       "roiPct": null,
-      "revenue": 216.66,
+      "revenue": 430.9,
       "netMargin": null,
       "affiliateId": "e09b3a40-26cb-4c70-9b2a-6ea311c7a62e",
       "businessName": "Lake Travis Yacht Rentals",
@@ -123,15 +135,15 @@ _(not captured)_
       "marginCoveragePct": 0
     }
   ],
-  "snapshotDate": "2026-07-23",
-  "averageOrderValue": 196.1484482758621,
+  "snapshotDate": "2026-07-24",
+  "averageOrderValue": 223.0020967741936,
   "marginCoveragePct": null
 }
 ```
 ## Updates
 
 - 2026-05-05 — Created with status `executed` from source `director`.
-- 2026-07-23 — Status shipped → shipped (cron:measure-recommendations). Notes: Auto-captured 14-day measurement
+- 2026-07-24 — Status shipped → shipped (cron:measure-recommendations). Notes: Auto-captured 14-day measurement
 
 ---
 _Mirror file. Edited automatically by the triage queue when status changes. Source of truth is the database (id: `4fe8e34e-83cb-4ee7-9576-4a60386400dc`). Slug: `premier-86-of-group-dashboards-never-convert-diagnose-the-ac`._
