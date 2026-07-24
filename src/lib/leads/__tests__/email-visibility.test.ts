@@ -7,11 +7,12 @@ import { EmailType } from '@prisma/client';
 import { isLeadViewableEmailType } from '../email-visibility';
 
 describe('isLeadViewableEmailType', () => {
-  it('blocks credential / affiliate-account mail (fail closed)', () => {
+  it('blocks credential / affiliate / redeemable-code mail (fail closed)', () => {
     expect(isLeadViewableEmailType(EmailType.PASSWORD_RESET)).toBe(false);
     expect(isLeadViewableEmailType(EmailType.AFFILIATE_MAGIC_LINK)).toBe(false);
     expect(isLeadViewableEmailType(EmailType.AFFILIATE_WELCOME)).toBe(false);
     expect(isLeadViewableEmailType(EmailType.AFFILIATE_PAYOUT)).toBe(false);
+    expect(isLeadViewableEmailType(EmailType.PREMIERE_CREDIT)).toBe(false);
   });
 
   it('allows lead correspondence + order/delivery mail', () => {

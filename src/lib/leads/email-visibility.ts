@@ -28,15 +28,15 @@ export const LEAD_VIEWABLE_EMAIL_TYPES: readonly EmailType[] = [
   EmailType.DELIVERY_COMPLETED,
   EmailType.PAYMENT_FAILED,
   EmailType.REFUND_PROCESSED,
-  EmailType.PREMIERE_CREDIT,
 ];
 
 const VIEWABLE = new Set<EmailType>(LEAD_VIEWABLE_EMAIL_TYPES);
 
 /**
  * Excluded (never shown on a lead): PASSWORD_RESET, AFFILIATE_MAGIC_LINK,
- * AFFILIATE_WELCOME, AFFILIATE_PAYOUT — credentials / affiliate-account mail
- * that isn't lead correspondence.
+ * AFFILIATE_WELCOME, AFFILIATE_PAYOUT — credentials / affiliate-account mail;
+ * and PREMIERE_CREDIT, whose body embeds a live redeemable discount code
+ * (security review 2026-07-24 follow-up). None are lead correspondence.
  */
 export function isLeadViewableEmailType(type: EmailType): boolean {
   return VIEWABLE.has(type);
