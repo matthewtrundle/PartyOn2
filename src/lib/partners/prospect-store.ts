@@ -29,6 +29,24 @@ export function websiteKey(website: string): string {
   }
 }
 
+/**
+ * Deterministic 50/50 A/B arm from a stable seed (the prospect's websiteKey).
+ * NOTE: "arm" here is the first-touch copy TEST bucket (A=short, B=detailed) —
+ * distinct from the draftB* "variant B" columns (#309), which preserve the
+ * original email. Same djb2-style hash the web-experiment assigner uses, kept
+ * local so the outreach pipeline doesn't depend on the cookie/web-experiment
+ * module. Only a SAFETY NET: the drafting session normally sets abArm to match
+ * the style it actually wrote; this labels any prospect that reached enroll
+ * without one, so no sent prospect is unbucketed in the results.
+ */
+export function assignAbArm(seed: string): 'A' | 'B' {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = ((hash << 5) - hash + seed.charCodeAt(i)) & 0xffffffff;
+  }
+  return Math.abs(hash) % 2 === 0 ? 'A' : 'B';
+}
+
 /** Loose dossier shape — the UI owns the render contract, we pass through. */
 export type ProspectEnrichment = Record<string, unknown> & {
   outreachEmail?: { subject: string; body: string };
@@ -71,6 +89,10 @@ export interface StoredProspect {
   draftBSubject: string | null;
   draftBBody: string | null;
   draftBSource: string | null;
+  /** A/B first-touch TEST arm ('A' short | 'B' detailed); null when not in a
+   * test. Not the draftB* "variant B" above — that's the preserved original. */
+  abArm: string | null;
+  experimentKey: string | null;
   emailVerifyStatus: string;
   emailVerifyOverride: boolean;
   emailVerifiedAt: string | null;
@@ -134,6 +156,8 @@ function toProspectRecord(row: PartnerProspect): StoredProspect {
     draftBSubject: row.draftBSubject,
     draftBBody: row.draftBBody,
     draftBSource: row.draftBSource,
+    abArm: row.abArm,
+    experimentKey: row.experimentKey,
     emailVerifyStatus: row.emailVerifyStatus,
     emailVerifyOverride: row.emailVerifyOverride,
     emailVerifiedAt: row.emailVerifiedAt ? row.emailVerifiedAt.toISOString() : null,

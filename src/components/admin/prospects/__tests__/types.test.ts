@@ -49,6 +49,8 @@ function row(overrides: Partial<ProspectRow> = {}): ProspectRow {
     draftBSubject: null,
     draftBBody: null,
     draftBSource: null,
+    abArm: null,
+    experimentKey: null,
     emailVerifyStatus: 'UNVERIFIED',
     emailVerifyOverride: false,
     emailVerifiedAt: null,

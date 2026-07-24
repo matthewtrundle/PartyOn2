@@ -10,6 +10,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactElement } from 'react';
 import ProspectsFilterBar from './ProspectsFilterBar';
 import ProspectsMetricsStrip, { type ProspectMetrics } from './ProspectsMetricsStrip';
+import ProspectsAbPanel, { type AbResults } from './ProspectsAbPanel';
 import ProspectsTable from './ProspectsTable';
 import ProspectDrawer from './ProspectDrawer';
 import ResearchQueueBanner from './ResearchQueueBanner';
@@ -25,6 +26,7 @@ export default function ProspectsWorkbench({ vertical }: { vertical: string }): 
   const [prospects, setProspects] = useState<ProspectRow[]>([]);
   const [leadMap, setLeadMap] = useState<Record<string, LeadState>>({});
   const [metrics, setMetrics] = useState<ProspectMetrics | null>(null);
+  const [ab, setAb] = useState<AbResults | null>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -33,15 +35,22 @@ export default function ProspectsWorkbench({ vertical }: { vertical: string }): 
   const [csvCopied, setCsvCopied] = useState(false);
 
   const refresh = useCallback(async (): Promise<void> => {
-    const [listRes, mapRes, metricsRes] = await Promise.all([
+    const [listRes, mapRes, metricsRes, abRes] = await Promise.all([
       fetch(`/api/v1/admin/partner-prospects?vertical=${encodeURIComponent(vertical)}`),
       fetch('/api/v1/admin/partner-prospects/sync'),
       fetch('/api/v1/admin/partner-prospects/metrics'),
+      fetch('/api/v1/admin/partner-prospects/ab'),
     ]);
-    const [list, map, m] = await Promise.all([listRes.json(), mapRes.json(), metricsRes.json()]);
+    const [list, map, m, a] = await Promise.all([
+      listRes.json(),
+      mapRes.json(),
+      metricsRes.json(),
+      abRes.json(),
+    ]);
     if (list.success) setProspects(list.data.prospects);
     if (map.success) setLeadMap(map.data.leads);
     if (m.success) setMetrics(m.data);
+    if (a.success) setAb(a.data);
   }, [vertical]);
 
   useEffect(() => {
@@ -134,6 +143,7 @@ export default function ProspectsWorkbench({ vertical }: { vertical: string }): 
       </div>
 
       <ProspectsMetricsStrip metrics={metrics} />
+      <ProspectsAbPanel data={ab} />
       <ResearchQueueBanner metrics={metrics} />
       <ProspectsFilterBar
         search={search}

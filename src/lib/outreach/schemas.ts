@@ -118,6 +118,16 @@ export const DraftSchema = z.object({
   touch3Body: z.string().min(20).max(1500),
   /** The single hook the body uses — must come from the dossier's hooks. */
   hook: HookSchema,
+  /**
+   * A/B first-touch TEST arm this draft's copy was written for: 'A' (short) or
+   * 'B' (detailed). Each prospect is randomized to one arm and drafted in that
+   * one style, so this only labels the single draft — there is no second copy
+   * slot. (Not the draftB* "variant B" preserved original.) Null/omitted = not
+   * part of an A/B test.
+   */
+  arm: z.enum(['A', 'B']).nullable().optional(),
+  /** Names the A/B test, so results from separate tests stay separable. */
+  experimentKey: z.string().max(80).nullable().optional(),
 });
 export type Draft = z.infer<typeof DraftSchema>;
 
