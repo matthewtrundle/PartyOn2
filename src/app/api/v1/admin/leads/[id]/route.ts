@@ -15,6 +15,7 @@ import { phoneLast10 } from '@/lib/leads/phone';
 import { dashboardGroupId } from '@/lib/leads/board-joins';
 import { getGroupOrderById } from '@/lib/group-orders-v2/service';
 import type { GroupOrderV2Full } from '@/lib/group-orders-v2/types';
+import { LEAD_VIEWABLE_EMAIL_TYPES } from '@/lib/leads/email-visibility';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -140,10 +141,23 @@ export async function GET(
     }),
     lead.email
       ? prisma.emailLog.findMany({
-          where: { to: { equals: lead.email, mode: 'insensitive' } },
+          // Lead correspondence only — never surface a customer's
+          // PASSWORD_RESET / affiliate magic-link that happens to share this
+          // address (security review 2026-07-24).
+          where: {
+            to: { equals: lead.email, mode: 'insensitive' },
+            type: { in: [...LEAD_VIEWABLE_EMAIL_TYPES] },
+          },
           orderBy: { createdAt: 'desc' },
           take: 10,
-          select: { id: true, subject: true, type: true, status: true, createdAt: true },
+          select: {
+            id: true,
+            subject: true,
+            type: true,
+            status: true,
+            createdAt: true,
+            errorMessage: true,
+          },
         })
       : Promise.resolve([]),
     matchedOrders(lead),

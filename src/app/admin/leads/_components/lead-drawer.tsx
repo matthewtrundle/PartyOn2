@@ -10,6 +10,7 @@ import DrawerHeader from './drawer-header';
 import DrawerSummary from './drawer-summary';
 import DrawerStageActions from './drawer-stage-actions';
 import DrawerFacts from './drawer-facts';
+import DrawerSubmission from './drawer-submission';
 import DrawerCart from './drawer-cart';
 import DrawerInbound from './drawer-inbound';
 import DrawerConversation from './drawer-conversation';
@@ -124,6 +125,7 @@ export default function LeadDrawer({
               onLogTouch={(channel) => void logTouch(channel)}
             />
             <DrawerFacts detail={detail} />
+            <DrawerSubmission metadata={lead.metadata} />
             <DrawerCart cart={detail.cart} />
             <DrawerInbound inboundEmails={detail.inboundEmails} />
             <DrawerConversation chatConversations={detail.chatConversations} />

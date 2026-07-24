@@ -45,6 +45,8 @@ export interface BoardLead {
   cart: { shareCode: string; total: number; itemCount: number } | null;
   /** Affiliate badge (Premier etc.) — lead's own stamp, else its dashboard's. */
   affiliate: { name: string; code: string } | null;
+  /** Premier Party Cruises lead — splits the NEW column so the ad funnel is separable. */
+  isPremier: boolean;
   /** Paid-traffic marker: Google/Meta/Bing click id or a cpc/paid medium. */
   adsClick: boolean;
   /** Suggested next move (CALL/TEXT/EMAIL/REPLY + why); null on closed/snoozed. */

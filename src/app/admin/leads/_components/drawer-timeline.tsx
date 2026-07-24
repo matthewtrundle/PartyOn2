@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactElement } from 'react';
+import { ReactElement, useState } from 'react';
 import HqBadge, { type HqBadgeVariant } from '@/components/backend/kit/Badge';
 import type { LeadDetail } from './drawer-types';
 
@@ -9,6 +9,10 @@ interface TimelineEntry {
   kind: 'event' | 'email' | 'followup' | 'inbound';
   label: string;
   detail?: string | null;
+  /** Email entries only: lets the row expand to fetch the sent body. */
+  emailLogId?: string;
+  /** Email entries only: bounce/failure reason, shown inline. */
+  errorMessage?: string | null;
 }
 
 /** Badge style + label per timeline entry kind. */
@@ -48,8 +52,37 @@ function eventLabel(e: LeadDetail['events'][number]): string {
   }
 }
 
+interface FetchedBody {
+  loading: boolean;
+  html?: string | null;
+  text?: string | null;
+  errorMessage?: string | null;
+  bodyError?: string;
+}
+
 /** Merge LeadEvents + EmailLogs + FollowUpJobs into one descending feed. */
 export default function DrawerTimeline({ detail }: { detail: LeadDetail }): ReactElement {
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [bodies, setBodies] = useState<Record<string, FetchedBody>>({});
+  const leadId = detail.lead.id;
+
+  const toggleEmail = async (emailLogId: string): Promise<void> => {
+    if (openId === emailLogId) {
+      setOpenId(null);
+      return;
+    }
+    setOpenId(emailLogId);
+    if (bodies[emailLogId]) return; // already fetched
+    setBodies((b) => ({ ...b, [emailLogId]: { loading: true } }));
+    try {
+      const res = await fetch(`/api/v1/admin/leads/${leadId}/email/${emailLogId}`);
+      const json = await res.json();
+      setBodies((b) => ({ ...b, [emailLogId]: { loading: false, ...(json.data ?? {}) } }));
+    } catch {
+      setBodies((b) => ({ ...b, [emailLogId]: { loading: false, bodyError: 'unavailable' } }));
+    }
+  };
+
   const entries: TimelineEntry[] = [
     ...detail.events.map((e) => ({
       at: e.occurredAt,
@@ -62,6 +95,8 @@ export default function DrawerTimeline({ detail }: { detail: LeadDetail }): Reac
       kind: 'email' as const,
       label: `Email ${l.status.toLowerCase()}: "${l.subject}"`,
       detail: l.type,
+      emailLogId: l.id,
+      errorMessage: l.errorMessage,
     })),
     ...detail.followUps.map((f) => ({
       at: f.sentAt ?? f.scheduledFor,
@@ -85,26 +120,80 @@ export default function DrawerTimeline({ detail }: { detail: LeadDetail }): Reac
 
   return (
     <ol className="space-y-2">
-      {entries.slice(0, 60).map((entry, i) => (
-        <li key={i} className="flex items-start gap-2 text-sm">
-          <HqBadge variant={KIND_BADGE[entry.kind].variant} className="mt-[1px] shrink-0">
-            {KIND_BADGE[entry.kind].label}
-          </HqBadge>
-          <div className="min-w-0">
-            <div className="text-gray-800">{entry.label}</div>
-            <div className="text-sm text-gray-400">
-              {new Date(entry.at).toLocaleString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                hour: 'numeric',
-                minute: '2-digit',
-                timeZone: 'America/Chicago',
-              })}
-              {entry.detail ? ` · ${entry.detail}` : ''}
+      {entries.slice(0, 60).map((entry, i) => {
+        const expandable = entry.kind === 'email' && Boolean(entry.emailLogId);
+        const isOpen = expandable && openId === entry.emailLogId;
+        const body = entry.emailLogId ? bodies[entry.emailLogId] : undefined;
+        return (
+          <li key={i} className="flex items-start gap-2 text-sm">
+            <HqBadge variant={KIND_BADGE[entry.kind].variant} className="mt-[1px] shrink-0">
+              {KIND_BADGE[entry.kind].label}
+            </HqBadge>
+            <div className="min-w-0 flex-1">
+              {expandable ? (
+                <button
+                  type="button"
+                  onClick={() => void toggleEmail(entry.emailLogId as string)}
+                  className="text-left text-gray-800 hover:text-brand-blue inline-flex items-center gap-1"
+                >
+                  <span>{entry.label}</span>
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    className={`h-3.5 w-3.5 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                  >
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
+                </button>
+              ) : (
+                <div className="text-gray-800">{entry.label}</div>
+              )}
+              <div className="text-sm text-gray-400">
+                {new Date(entry.at).toLocaleString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  hour: 'numeric',
+                  minute: '2-digit',
+                  timeZone: 'America/Chicago',
+                })}
+                {entry.detail ? ` · ${entry.detail}` : ''}
+              </div>
+              {/* Bounce reason is always worth showing on a failed email. */}
+              {entry.errorMessage && (
+                <div className="mt-1 text-xs text-red-600">Reason: {entry.errorMessage}</div>
+              )}
+              {isOpen && (
+                <div className="mt-2 rounded-lg border border-gray-200 bg-gray-50 p-2">
+                  {body?.loading && <div className="text-sm text-gray-400">Loading email…</div>}
+                  {body && !body.loading && body.html && (
+                    // Sandboxed: no scripts, no same-origin — safe to render our
+                    // own template HTML (which interpolates customer fields).
+                    <iframe
+                      sandbox=""
+                      srcDoc={body.html}
+                      title="Sent email"
+                      className="h-96 w-full rounded border border-gray-200 bg-white"
+                    />
+                  )}
+                  {body && !body.loading && !body.html && body.text && (
+                    <pre className="max-h-96 overflow-auto whitespace-pre-wrap text-sm text-gray-700">
+                      {body.text}
+                    </pre>
+                  )}
+                  {body && !body.loading && !body.html && !body.text && (
+                    <div className="text-sm text-gray-400">
+                      Body isn&apos;t available for this email (not retained by the mail
+                      provider).
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-          </div>
-        </li>
-      ))}
+          </li>
+        );
+      })}
     </ol>
   );
 }

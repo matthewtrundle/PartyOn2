@@ -144,6 +144,25 @@ export function isAdsLead(lead: {
   return CLICK_ID_KEYS.some((k) => typeof attribution[k] === 'string' && attribution[k]);
 }
 
+/**
+ * Premier Party Cruises lead detector — the operator wants the cruise-partner
+ * flood split out from the ad/organic funnel. True when the resolved affiliate
+ * is PREMIER, or the lead's provenance is a premier funnel (concierge quiz /
+ * partner page) or a boat-webhook dashboard (Premier is the only webhook
+ * dashboard source). Works before the affiliate backfill runs, via metadata.
+ */
+export function isPremierLead(
+  affiliate: BoardLead['affiliate'],
+  metadata: unknown,
+): boolean {
+  if (affiliate?.code === 'PREMIER') return true;
+  const m = asRecord(metadata);
+  if (!m) return false;
+  if (m.partner === 'premier-concierge' || m.partner === 'premier-party-cruises') return true;
+  const gd = asRecord(m.groupDashboard);
+  return gd?.source === 'WEBHOOK';
+}
+
 /** Reply-flag freshness window: signals older than this stop flagging red. */
 export const REPLY_WINDOW_DAYS = 7;
 
@@ -232,6 +251,7 @@ export function toBoardLead(
     suggestLost: isOpenStage && (eventPassed || quietMs > 30 * 86_400_000),
     cart: ctx.cart ?? null,
     affiliate: ctx.affiliate ?? null,
+    isPremier: isPremierLead(ctx.affiliate ?? null, lead.metadata),
     adsClick: isAdsLead(lead),
     nextAction: nextActionFor({
       needsResponse: isOpenStage ? needsResponse : false,
