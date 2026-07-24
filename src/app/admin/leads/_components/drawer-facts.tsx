@@ -6,6 +6,7 @@ import type { LeadDetail } from './drawer-types';
 import {
   describeDaysAway,
   eventIsPast,
+  extractSubmission,
   formatEventDate,
   formatScoreBreakdown,
   formatShortDate,
@@ -13,14 +14,21 @@ import {
 } from './drawer-derive';
 
 /**
- * Drawer facts: the event details (date/occasion/headcount/budget — shown only
- * when captured) lead, then the source/campaign/score grid and the linked
- * orders & quotes list (group-participant orders carry their "confirm before
- * celebrating" caveat).
+ * Drawer facts: the event details (date/occasion/headcount/budget) lead, then
+ * the source/campaign/score grid and the linked orders & quotes list
+ * (group-participant orders carry their "confirm before celebrating" caveat).
+ *
+ * The event-detail facts are HIDDEN when a "What they submitted" section will
+ * render (the lead has a captured form surface) — those same fields live there,
+ * so showing them here too was redundant (operator feedback 2026-07-24). Leads
+ * with no submission surface (dashboard/ops-invoice/pixel) still show them here,
+ * so nothing is lost. Source / affiliate / score / attribution / created always
+ * stay — they aren't part of what the customer submitted.
  */
 export default function DrawerFacts({ detail }: { detail: LeadDetail }): ReactElement {
   const { lead, orders, drafts } = detail;
   const facts = extractLeadFacts(lead.metadata);
+  const hasSubmission = extractSubmission(lead.metadata) !== null;
   const now = new Date();
   const daysAway = facts.eventDate ? describeDaysAway(facts.eventDate, now) : null;
   const past = facts.eventDate ? eventIsPast(facts.eventDate, now) : false;
@@ -28,16 +36,20 @@ export default function DrawerFacts({ detail }: { detail: LeadDetail }): ReactEl
   return (
     <>
       <section className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-        {facts.eventDate && (
+        {!hasSubmission && facts.eventDate && (
           <Fact
             label="Event date"
             wide
             value={<EventDateValue dateStr={facts.eventDate} daysAway={daysAway} past={past} />}
           />
         )}
-        {facts.occasion && <Fact label="Occasion" value={humanizeOccasion(facts.occasion)} />}
-        {facts.headcount != null && <Fact label="Headcount" value={`${facts.headcount} guests`} />}
-        {facts.budgetPerPerson != null && (
+        {!hasSubmission && facts.occasion && (
+          <Fact label="Occasion" value={humanizeOccasion(facts.occasion)} />
+        )}
+        {!hasSubmission && facts.headcount != null && (
+          <Fact label="Headcount" value={`${facts.headcount} guests`} />
+        )}
+        {!hasSubmission && facts.budgetPerPerson != null && (
           <Fact label="Budget / person" value={`$${facts.budgetPerPerson}`} />
         )}
         <Fact
