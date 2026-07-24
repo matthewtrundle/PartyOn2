@@ -10,6 +10,7 @@ import {
   deriveActivitySummary,
   describeDaysAway,
   eventIsPast,
+  extractSubmission,
   formatEventDate,
   formatScoreBreakdown,
   formatShortDate,
@@ -113,7 +114,7 @@ function ev(type: string): LeadDetail['events'][number] {
 }
 
 function emailLog(status: string, createdAt: string): LeadDetail['emailLogs'][number] {
-  return { id: `em-${seq++}`, subject: 'Your inquiry', type: 'reply', status, createdAt };
+  return { id: `em-${seq++}`, subject: 'Your inquiry', type: 'reply', status, createdAt, errorMessage: null };
 }
 
 function draft(status = 'SENT'): LeadDetail['drafts'][number] {
@@ -263,5 +264,44 @@ describe('deriveActivitySummary', () => {
       'submitted',
       'visits',
     ]);
+  });
+});
+
+describe('extractSubmission', () => {
+  it('pulls the concierge questionnaire fields (Cheryle-style bachelor lead)', () => {
+    const sub = extractSubmission({
+      partner: 'premier-concierge',
+      conciergeQuiz: {
+        partyType: 'bachelor',
+        headcount: 12,
+        arrivalDate: '2026-08-14',
+        departureDate: '2026-08-16',
+        budgetPerPerson: '$150–300',
+        activities: ['boat', 'bars', 'golf'],
+        notes: 'Need a party bus too',
+      },
+    });
+    expect(sub?.title).toBe('Concierge questionnaire');
+    const byLabel = Object.fromEntries((sub?.fields ?? []).map((f) => [f.label, f.value]));
+    expect(byLabel['Party type']).toBe('bachelor');
+    expect(byLabel['Headcount']).toBe('12');
+    expect(byLabel['Activities']).toBe('boat, bars, golf');
+    expect(byLabel['Notes']).toBe('Need a party bus too');
+  });
+
+  it('skips empty fields and returns null when no capture surface exists', () => {
+    const sub = extractSubmission({ contactForm: { eventType: 'wedding', message: '' } });
+    expect(sub?.title).toBe('Contact form');
+    expect(sub?.fields.map((f) => f.label)).toEqual(['Event type']); // empty message dropped
+    expect(extractSubmission(null)).toBeNull();
+    expect(extractSubmission({ attribution: { gclid: 'x' } })).toBeNull();
+  });
+
+  it('honors surface priority (a real quote outranks a bare contact form)', () => {
+    const sub = extractSubmission({
+      contactForm: { eventType: 'party' },
+      unifiedQuote: { source: 'chat', partyType: 'bachelorette', headcount: 8 },
+    });
+    expect(sub?.title).toBe('Quote request');
   });
 });

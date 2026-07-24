@@ -143,7 +143,14 @@ export async function GET(
           where: { to: { equals: lead.email, mode: 'insensitive' } },
           orderBy: { createdAt: 'desc' },
           take: 10,
-          select: { id: true, subject: true, type: true, status: true, createdAt: true },
+          select: {
+            id: true,
+            subject: true,
+            type: true,
+            status: true,
+            createdAt: true,
+            errorMessage: true,
+          },
         })
       : Promise.resolve([]),
     matchedOrders(lead),

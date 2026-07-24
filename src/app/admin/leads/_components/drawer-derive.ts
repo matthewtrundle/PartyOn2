@@ -17,6 +17,141 @@ import { daysUntilCT } from '@/lib/leads/scoring';
 import type { HqBadgeVariant } from '@/components/backend/kit/Badge';
 import type { LeadDetail } from './drawer-types';
 
+/** One captured field, ready to render as a labelled row. */
+export interface SubmissionField {
+  label: string;
+  value: string;
+}
+
+/** The exact form the lead filled out (title + the fields they entered). */
+export interface Submission {
+  title: string;
+  fields: SubmissionField[];
+}
+
+function asRec(v: unknown): Record<string, unknown> | null {
+  return v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : null;
+}
+
+/** Render any captured value as a short string; arrays become comma lists. */
+function fmtValue(v: unknown): string | null {
+  if (v == null) return null;
+  if (Array.isArray(v)) {
+    const parts = v.map((x) => String(x).trim()).filter(Boolean);
+    return parts.length ? parts.join(', ') : null;
+  }
+  const s = String(v).trim();
+  return s.length ? s : null;
+}
+
+// Metadata surface → its human title + the fields worth showing, in order.
+// Priority mirrors scoring's intent order (a real quote/concierge outranks a
+// bare contact form when a lead carries more than one surface).
+const SUBMISSION_SURFACES: ReadonlyArray<{
+  key: string;
+  title: string;
+  fields: ReadonlyArray<[key: string, label: string]>;
+}> = [
+  {
+    key: 'conciergeQuiz',
+    title: 'Concierge questionnaire',
+    fields: [
+      ['partyType', 'Party type'],
+      ['headcount', 'Headcount'],
+      ['arrivalDate', 'Arrival'],
+      ['departureDate', 'Departure'],
+      ['budgetPerPerson', 'Budget / person'],
+      ['activities', 'Activities'],
+      ['notes', 'Notes'],
+    ],
+  },
+  {
+    key: 'unifiedQuote',
+    title: 'Quote request',
+    fields: [
+      ['source', 'Flow'],
+      ['partyType', 'Party type'],
+      ['headcount', 'Headcount'],
+      ['deliveryDate', 'Delivery date'],
+    ],
+  },
+  {
+    key: 'chatQuiz',
+    title: 'Chat quiz',
+    fields: [
+      ['partyType', 'Party type'],
+      ['headcount', 'Headcount'],
+      ['deliveryDate', 'Delivery date'],
+    ],
+  },
+  {
+    key: 'eventQuiz',
+    title: 'Event quiz',
+    fields: [
+      ['partyType', 'Party type'],
+      ['timing', 'Timing'],
+      ['headcount', 'Headcount'],
+      ['needs', 'Needs'],
+    ],
+  },
+  {
+    key: 'contactForm',
+    title: 'Contact form',
+    fields: [
+      ['eventType', 'Event type'],
+      ['eventDate', 'Event date'],
+      ['guestCount', 'Guest count'],
+      ['message', 'Message'],
+    ],
+  },
+  {
+    key: 'quickBuy',
+    title: 'Quick Buy',
+    fields: [
+      ['occasion', 'Occasion'],
+      ['groupSize', 'Group size'],
+      ['deliveryDate', 'Delivery date'],
+      ['mode', 'Mode'],
+      ['total', 'Cart total'],
+    ],
+  },
+  {
+    key: 'partnerInquiry',
+    title: 'Partner inquiry',
+    fields: [
+      ['businessName', 'Business'],
+      ['businessType', 'Type'],
+      ['source', 'Source'],
+    ],
+  },
+  {
+    key: 'leadMagnet',
+    title: 'Lead magnet',
+    fields: [['magnetTitle', 'Downloaded']],
+  },
+];
+
+/**
+ * Extract exactly what the lead submitted from the first matching metadata
+ * surface — the "what did they actually fill out" view the operator asked for.
+ * Returns null when the lead has no captured form (e.g. a bare pixel lead).
+ */
+export function extractSubmission(metadata: Record<string, unknown> | null): Submission | null {
+  const m = asRec(metadata);
+  if (!m) return null;
+  for (const surface of SUBMISSION_SURFACES) {
+    const data = asRec(m[surface.key]);
+    if (!data) continue;
+    const fields: SubmissionField[] = [];
+    for (const [key, label] of surface.fields) {
+      const value = fmtValue(data[key]);
+      if (value) fields.push({ label, value });
+    }
+    if (fields.length > 0) return { title: surface.title, fields };
+  }
+  return null;
+}
+
 /**
  * Format a lead's event-date string for display, CT-safe. We read the calendar
  * Y-M-D off the front and build a *local* Date from those parts, so

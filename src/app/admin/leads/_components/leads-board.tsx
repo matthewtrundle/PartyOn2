@@ -79,21 +79,51 @@ export default function LeadsBoard({
           dragging ? 'select-none' : ''
         }`}
       >
-        {PIPELINE_STAGES.map((stage) => (
-          <BoardColumn
-            key={stage}
-            stage={stage}
-            cards={data.columns[stage]}
-            totalCount={
-              stage === 'WON'
-                ? data.closedCounts.won
-                : stage === 'LOST'
-                  ? data.closedCounts.lost
-                  : undefined
-            }
-            onOpen={onOpen}
-          />
-        ))}
+        {PIPELINE_STAGES.flatMap((stage) => {
+          // Split NEW into Premier (cruise partner flood) + Ads & Direct so the
+          // ad funnel is separable. Premier is a visual group only (drops into
+          // it are ignored — a card's Premier-ness is data, not drop target);
+          // the Ads & Direct column keeps the real NEW droppable.
+          if (stage === 'NEW') {
+            const premier = data.columns.NEW.filter((c) => c.isPremier);
+            const adsDirect = data.columns.NEW.filter((c) => !c.isPremier);
+            return [
+              <BoardColumn
+                key="NEW-premier"
+                stage="NEW"
+                droppableId="NEW-premier"
+                title="New · Premier"
+                subtitle="Cruise partner"
+                accent="gold"
+                cards={premier}
+                onOpen={onOpen}
+              />,
+              <BoardColumn
+                key="NEW"
+                stage="NEW"
+                title="New · Ads & Direct"
+                subtitle="Everyone else — your ad funnel"
+                cards={adsDirect}
+                onOpen={onOpen}
+              />,
+            ];
+          }
+          return [
+            <BoardColumn
+              key={stage}
+              stage={stage}
+              cards={data.columns[stage]}
+              totalCount={
+                stage === 'WON'
+                  ? data.closedCounts.won
+                  : stage === 'LOST'
+                    ? data.closedCounts.lost
+                    : undefined
+              }
+              onOpen={onOpen}
+            />,
+          ];
+        })}
       </div>
 
       {data.tray.length > 0 && (

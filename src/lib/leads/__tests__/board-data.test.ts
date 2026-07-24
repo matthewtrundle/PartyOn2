@@ -130,6 +130,7 @@ import {
   compareBoardCards,
   getBoardData,
   isAdsLead,
+  isPremierLead,
   needsReply,
   refineSource,
   toBoardLead,
@@ -533,6 +534,31 @@ describe('getBoardData — touch counts from lead_events', () => {
     const other = data.columns.NEW.find((c) => c.id !== a.id);
     expect(cardA?.touchCount).toBe(2);
     expect(other?.touchCount).toBe(0);
+  });
+});
+
+describe('isPremierLead — NEW column split', () => {
+  it('flags the PREMIER affiliate, premier funnels, and boat-webhook dashboards', () => {
+    expect(isPremierLead({ name: 'Premier Party Cruises', code: 'PREMIER' }, null)).toBe(true);
+    expect(isPremierLead(null, { partner: 'premier-concierge' })).toBe(true);
+    expect(isPremierLead(null, { partner: 'premier-party-cruises' })).toBe(true);
+    expect(isPremierLead(null, { groupDashboard: { source: 'WEBHOOK' } })).toBe(true);
+  });
+
+  it('leaves ad/organic/direct leads out of the Premier group', () => {
+    expect(isPremierLead(null, null)).toBe(false);
+    expect(isPremierLead({ name: 'Lake Travis Yachts', code: 'LTYACHT' }, null)).toBe(false);
+    expect(isPremierLead(null, { partner: 'some-other-partner' })).toBe(false);
+    expect(isPremierLead(null, { groupDashboard: { source: 'DIRECT' } })).toBe(false);
+    expect(isPremierLead(null, { unifiedQuote: { source: 'chat' } })).toBe(false);
+  });
+
+  it('carries onto the board card', () => {
+    const card = toBoardLead(
+      asLead(makeLead({ metadata: { partner: 'premier-concierge', conciergeQuiz: {} } })),
+      ctx(),
+    );
+    expect(card.isPremier).toBe(true);
   });
 });
 

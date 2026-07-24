@@ -51,6 +51,8 @@ export interface LeadDetail {
     type: string;
     status: string;
     createdAt: string;
+    /** Bounce/failure reason from the Resend webhook, when the send failed. */
+    errorMessage: string | null;
   }>;
   orders: Array<{
     id: string;
