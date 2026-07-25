@@ -62,41 +62,41 @@ _(not captured)_
 
 ```json
 {
-  "orders": 62,
-  "revenue": 13826.13,
+  "orders": 61,
+  "revenue": 12143.48,
   "segments": [
     {
       "margin": 463.53,
       "orders": 54,
-      "revenue": 10464.74,
+      "revenue": 9615.04,
       "segment": "general",
-      "averageMarginPct": 4.4,
-      "averageOrderValue": 193.79,
-      "marginCoveragePct": 14.8
+      "averageMarginPct": 4.8,
+      "averageOrderValue": 178.06,
+      "marginCoveragePct": 16.1
     },
     {
-      "margin": 338.12,
-      "orders": 8,
-      "revenue": 3361.39,
+      "margin": 201.36,
+      "orders": 7,
+      "revenue": 2528.44,
       "segment": "unknown",
-      "averageMarginPct": 10.1,
-      "averageOrderValue": 420.17,
-      "marginCoveragePct": 35.1
+      "averageMarginPct": 8,
+      "averageOrderValue": 361.21,
+      "marginCoveragePct": 32
     }
   ],
-  "capturedAt": "2026-07-24T08:00:47.274Z",
+  "capturedAt": "2026-07-25T08:01:33.457Z",
   "affiliateRoi": [
     {
       "code": "PREMIER",
       "margin": 501.69,
-      "orders": 46,
-      "roiPct": 403.7,
-      "revenue": 6448.73,
-      "netMargin": 402.08,
+      "orders": 47,
+      "roiPct": 390.7,
+      "revenue": 6484.43,
+      "netMargin": 399.45,
       "affiliateId": "d21bac1a-3f99-489c-89fd-e1980c264a8d",
       "businessName": "Premier Party Cruises",
-      "commissionPaid": 99.61,
-      "marginCoveragePct": 26.2
+      "commissionPaid": 102.24,
+      "marginCoveragePct": 26.1
     },
     {
       "code": "POUR24",
@@ -135,15 +135,15 @@ _(not captured)_
       "marginCoveragePct": 0
     }
   ],
-  "snapshotDate": "2026-07-24",
-  "averageOrderValue": 223.0020967741936,
+  "snapshotDate": "2026-07-25",
+  "averageOrderValue": 199.0734426229508,
   "marginCoveragePct": null
 }
 ```
 ## Updates
 
 - 2026-05-05 — Created with status `executed` from source `director`.
-- 2026-07-24 — Status shipped → shipped (cron:measure-recommendations). Notes: Auto-captured 14-day measurement
+- 2026-07-25 — Status shipped → shipped (cron:measure-recommendations). Notes: Auto-captured 14-day measurement
 
 ---
 _Mirror file. Edited automatically by the triage queue when status changes. Source of truth is the database (id: `4fe8e34e-83cb-4ee7-9576-4a60386400dc`). Slug: `premier-86-of-group-dashboards-never-convert-diagnose-the-ac`._
