@@ -5,8 +5,9 @@
  * opening live in the orchestrator).
  */
 
-import type { ReactElement } from 'react';
+import { useRef, type ReactElement } from 'react';
 import ProspectRow from './ProspectRow';
+import StickyTableScrollbar from '@/components/admin/StickyTableScrollbar';
 import type { LeadState, ProspectRow as Row, VerticalUiConfig } from './types';
 
 export default function ProspectsTable({
@@ -24,8 +25,10 @@ export default function ProspectsTable({
   onOpen: (id: string) => void;
   config: VerticalUiConfig;
 }): ReactElement {
+  const scrollRef = useRef<HTMLDivElement>(null);
   return (
-    <div className="rounded-lg border border-gray-200 overflow-x-auto bg-white">
+    <div>
+      <div ref={scrollRef} className="rounded-lg border border-gray-200 overflow-x-auto bg-white">
       <table className="w-full text-sm">
         <thead className="bg-gray-50 text-xs uppercase tracking-wider text-gray-600">
           <tr>
@@ -60,6 +63,8 @@ export default function ProspectsTable({
           )}
         </tbody>
       </table>
+      </div>
+      <StickyTableScrollbar targetRef={scrollRef} />
     </div>
   );
 }

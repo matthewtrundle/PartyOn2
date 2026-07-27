@@ -223,6 +223,31 @@
     display: none;
   }
 
+  /* Always-visible thin horizontal scrollbar — for the sticky table scroll
+     strip (StickyTableScrollbar). Forces a persistent thumb even where the OS
+     auto-hides scrollbars (macOS), so the pinned bar is always grabbable. */
+  .always-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(17, 24, 39, 0.35) transparent;
+  }
+  .always-scrollbar::-webkit-scrollbar {
+    height: 12px;
+    -webkit-appearance: none;
+  }
+  .always-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(17, 24, 39, 0.35);
+    border-radius: 9999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  .always-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(17, 24, 39, 0.55);
+    background-clip: content-box;
+  }
+  .always-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
   /* Mobile-first responsive utilities */
   @media (max-width: 640px) {
     .hero-mobile-compact {
