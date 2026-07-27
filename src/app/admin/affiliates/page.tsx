@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect, useCallback, ReactElement } from 'react';
+import { useState, useEffect, useCallback, useRef, ReactElement } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import AddAffiliateModal from '@/components/ops/AddAffiliateModal';
 import PartnersHubBand from '@/components/admin/partners/PartnersHubBand';
+import StickyTableScrollbar from '@/components/admin/StickyTableScrollbar';
 
 interface Application {
   id: string;
@@ -48,6 +49,7 @@ export default function AffiliatesPage(): ReactElement {
   const [showAddModal, setShowAddModal] = useState(false);
   const [search, setSearch] = useState('');
   const [impersonateLoading, setImpersonateLoading] = useState<string | null>(null);
+  const affiliatesScrollRef = useRef<HTMLDivElement>(null);
 
   const fetchApplications = useCallback(async () => {
     const res = await fetch('/api/admin/affiliates/applications');
@@ -391,7 +393,7 @@ export default function AffiliatesPage(): ReactElement {
             <div className="text-gray-500 py-8 text-center">No affiliates yet.</div>
           ) : (
             <div className="bg-white rounded-lg shadow">
-              <div className="hidden md:block overflow-x-auto">
+              <div ref={affiliatesScrollRef} className="hidden md:block overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-gray-50">
                   <tr>
@@ -433,26 +435,26 @@ export default function AffiliatesPage(): ReactElement {
                           <button
                             onClick={() => handleImpersonate(aff.id)}
                             disabled={impersonateLoading === aff.id}
-                            className="px-3 py-1 bg-amber-500 text-white rounded text-sm font-medium hover:bg-amber-600 disabled:opacity-50"
+                            className="px-2.5 py-1 bg-amber-500 text-white rounded text-sm font-medium hover:bg-amber-600 disabled:opacity-50 whitespace-nowrap"
                           >
                             {impersonateLoading === aff.id ? '...' : 'Impersonate'}
                           </button>
                           <Link
                             href={`/admin/affiliates/${aff.id}/dashboard`}
-                            className="px-3 py-1 bg-gray-800 text-white rounded text-sm font-medium hover:bg-gray-900"
+                            className="px-2.5 py-1 bg-gray-800 text-white rounded text-sm font-medium hover:bg-gray-900 whitespace-nowrap"
                           >
                             Dashboard
                           </Link>
                           <Link
                             href={`/admin/affiliates/${aff.id}`}
-                            className="px-3 py-1 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700"
+                            className="px-2.5 py-1 bg-blue-600 text-white rounded text-sm font-medium hover:bg-blue-700 whitespace-nowrap"
                           >
                             Detail
                           </Link>
                           <button
                             onClick={() => handleToggleStatus(aff)}
                             disabled={actionLoading === aff.id}
-                            className={`px-3 py-1 rounded text-sm font-medium disabled:opacity-50 ${
+                            className={`px-2.5 py-1 rounded text-sm font-medium disabled:opacity-50 whitespace-nowrap ${
                               aff.status === 'ACTIVE'
                                 ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
                                 : 'bg-green-100 text-green-700 hover:bg-green-200'
@@ -467,6 +469,7 @@ export default function AffiliatesPage(): ReactElement {
                 </tbody>
               </table>
               </div>
+              <StickyTableScrollbar targetRef={affiliatesScrollRef} />
               <div className="md:hidden divide-y divide-gray-100">
                 {filteredAffiliates.map((aff) => (
                   <div key={aff.id} className="px-4 py-3 space-y-1">

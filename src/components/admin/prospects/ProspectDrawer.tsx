@@ -61,6 +61,14 @@ export default function ProspectDrawer({
             </h2>
             <div className="flex flex-wrap items-center gap-2 mt-1 text-sm text-gray-600">
               <ProspectStatusChip prospect={prospect} state={state} />
+              {prospect.abArm && ARM_CHIP[prospect.abArm] && (
+                <span
+                  className={`text-xs font-bold px-1.5 py-0.5 rounded ${ARM_CHIP[prospect.abArm].cls}`}
+                  title="A/B first-touch test arm — the email version this prospect will send"
+                >
+                  {ARM_CHIP[prospect.abArm].label}
+                </span>
+              )}
               {prospect.website && (
                 <a
                   href={prospect.website}

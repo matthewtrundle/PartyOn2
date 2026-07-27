@@ -24,7 +24,10 @@ export default function PartnersHubBand({
 }): ReactElement {
   return (
     <NavyBand>
-      <SegmentedControl segments={SEGMENTS} active={active} className="max-w-2xl" />
+      {/* Full width so all 7 segments fit without a cramped horizontal
+          scroll; overflow-x-auto in SegmentedControl still handles very
+          narrow screens. */}
+      <SegmentedControl segments={SEGMENTS} active={active} />
     </NavyBand>
   );
 }
