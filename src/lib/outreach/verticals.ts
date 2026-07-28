@@ -40,7 +40,10 @@ export const VERTICALS: VerticalDef[] = [
       'bachelorette airbnb rentals',
     ],
     offer:
-      'Their co-branded ordering page is ALREADY BUILT (or built same-day): guests get free alcohol delivery to the rental as an advertised perk, every group gets a private split-pay dashboard, and the company earns revenue share on orders — zero staff time, no inventory, no liability.',
+      // Two doors: the co-branded page tabs between alcohol delivery and a
+      // Premier Party Cruises boat quote. Commission covers BOTH (Allan
+      // 2026-07-28) — say so without naming a rate; the split is unsettled.
+      'Their co-branded ordering page is ALREADY BUILT (or built same-day): guests get free alcohol delivery to the rental as an advertised perk OR can book a boat through our partner Premier Party Cruises, every group gets a private split-pay dashboard, and the company earns a commission on drinks and boat bookings — zero staff time, no inventory, no liability.',
   },
   {
     key: 'bartender',
