@@ -1,6 +1,9 @@
 'use client';
 
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactElement, type ReactNode } from 'react';
+import { trackCTAClick } from '@/lib/analytics/ga4-events';
+import type { CtaSection } from '@/lib/analytics/ga4-events';
+import { EVENT, HERO } from './event';
 
 interface FullMoonUI {
   shareOpen: boolean;
@@ -11,7 +14,13 @@ interface FullMoonUI {
   closeShare: () => void;
   openSuccess: () => void;
   closeSuccess: () => void;
-  openTicket: () => void;
+  /**
+   * Opens the ticket modal. Pass the section the click came from so the
+   * conversion funnel is attributable per CTA in the analytics hub — the Aug 1
+   * run had no CTA instrumentation at all, so there was no way to tell a dead
+   * page from a dead button.
+   */
+  openTicket: (section?: CtaSection) => void;
   closeTicket: () => void;
   showToast: (message: string) => void;
 }
@@ -39,7 +48,10 @@ export function FullMoonUIProvider({ children }: { children: ReactNode }): React
   const closeShare = useCallback(() => setShareOpen(false), []);
   const openSuccess = useCallback(() => setSuccessOpen(true), []);
   const closeSuccess = useCallback(() => setSuccessOpen(false), []);
-  const openTicket = useCallback(() => setTicketOpen(true), []);
+  const openTicket = useCallback((section: CtaSection = 'hero') => {
+    trackCTAClick(HERO.primaryCta, EVENT.shareUrl, section);
+    setTicketOpen(true);
+  }, []);
   const closeTicket = useCallback(() => setTicketOpen(false), []);
 
   const value = useMemo<FullMoonUI>(

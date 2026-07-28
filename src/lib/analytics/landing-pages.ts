@@ -302,10 +302,20 @@ export const LANDING_PAGES: LandingPageDef[] = [
     displayName: 'Full Moon Cruise',
     navOrder: 109,
     group: 'secondary-consumer',
-    // /full-moon 301s to the dated route (2026-07-08); kept so historical
-    // rows still count toward this page.
-    canonicalPath: '/full-moon-aug1',
-    aliasPaths: ['/full-moon'],
+    // Each cruise gets its own dated route. 2026-07-28: the Aug 1 date was
+    // postponed (0 paid tickets) and rescheduled to Aug 28, so the canonical
+    // moved. Both /full-moon and the retired /full-moon-aug1 301 here and stay
+    // as aliases, so the Aug 1 traffic still rolls into this page's numbers.
+    canonicalPath: '/full-moon-aug28',
+    aliasPaths: ['/full-moon', '/full-moon-aug1'],
+    // Instrumented as of the Aug 28 rebuild — the Aug 1 run had no
+    // trackCTAClick calls at all, so an empty CTA table was indistinguishable
+    // from a page nobody clicked.
+    ctaSections: [
+      { id: 'hero', label: 'Hero — get your ticket' },
+      { id: 'final_cta', label: 'Threshold widget — get your ticket' },
+      { id: 'services', label: 'Drinks via POD — order now' },
+    ],
   },
   {
     key: 'kegs',

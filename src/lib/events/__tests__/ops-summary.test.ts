@@ -56,7 +56,7 @@ describe('getOpsEventSummaries', () => {
 
   it('summarizes the ticketed event from the shared roster + postponed flag', async () => {
     const summaries = await getOpsEventSummaries(Date.parse('2026-07-20T00:00:00Z'));
-    const fm = summaries.find((s) => s.key === 'full-moon-aug1')!;
+    const fm = summaries.find((s) => s.key === 'full-moon-aug28')!;
     expect(fm.type).toBe('ticketed');
     expect(fm.ticketed?.ticketsSold).toBe(10);
     expect(fm.ticketed?.collected).toBe(531);
@@ -67,7 +67,7 @@ describe('getOpsEventSummaries', () => {
   it('reflects the postponed flag in the ticketed status', async () => {
     isFullMoonPostponedMock.mockResolvedValue(true);
     const summaries = await getOpsEventSummaries(Date.parse('2026-07-20T00:00:00Z'));
-    const fm = summaries.find((s) => s.key === 'full-moon-aug1')!;
+    const fm = summaries.find((s) => s.key === 'full-moon-aug28')!;
     expect(fm.status).toBe('postponed');
     expect(fm.ticketed?.postponed).toBe(true);
   });

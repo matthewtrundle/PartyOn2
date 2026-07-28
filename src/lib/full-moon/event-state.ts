@@ -15,9 +15,25 @@
  */
 import { prisma } from '@/lib/database/client';
 import { FEATURE_FLAGS } from '@/lib/features/feature-flags';
+import { EVENT } from '@/components/full-moon/event';
 
 /** Public threshold-widget state. 'cancelled' === postponed / rolled forward. */
 export type FullMoonState = 'working' | 'met' | 'cancelled';
+
+/**
+ * The postponed-flag key for a given event date, e.g.
+ * `full_moon_postponed_2026-08-28`.
+ *
+ * Date-scoped on purpose. The original key was a single global boolean, which
+ * meant rescheduling the cruise carried the previous date's "postponed" state
+ * onto the new one — the Aug 1 event was postponed by the deadline cron on
+ * 2026-07-25, so an un-scoped Aug 28 page would have launched showing
+ * POSTPONED. With a per-date key a fresh event simply has no row yet, and a
+ * missing row reads as false ("selling"). No operator reset step, no trap.
+ */
+export function fullMoonPostponedKey(isoDate: string = EVENT.isoDate): string {
+  return `${FEATURE_FLAGS.FULL_MOON_POSTPONED}_${isoDate}`;
+}
 
 /**
  * Whether the event is currently marked postponed/cancelled. Reads the flag
@@ -25,10 +41,10 @@ export type FullMoonState = 'working' | 'met' | 'cancelled';
  * cache) so a flip is reflected immediately. Fails open to `false` (keep
  * selling) so a DB hiccup never falsely tells buyers the event is off.
  */
-export async function isFullMoonPostponed(): Promise<boolean> {
+export async function isFullMoonPostponed(isoDate: string = EVENT.isoDate): Promise<boolean> {
   try {
     const flag = await prisma.featureFlag.findUnique({
-      where: { key: FEATURE_FLAGS.FULL_MOON_POSTPONED },
+      where: { key: fullMoonPostponedKey(isoDate) },
       select: { enabled: true },
     });
     return flag?.enabled === true;
@@ -39,23 +55,31 @@ export async function isFullMoonPostponed(): Promise<boolean> {
 }
 
 /**
- * Set (or clear) the postponed flag. Idempotent — safe to call repeatedly.
+ * Set (or clear) the postponed flag for an event date. Idempotent — safe to
+ * call repeatedly.
  * @param postponed true to postpone/cancel, false to resume selling.
  * @param by short actor label for the audit description (e.g. 'deadline-cron').
+ * @param isoDate event date to scope the flag to; defaults to the current event.
  */
-export async function setFullMoonPostponed(postponed: boolean, by = 'system'): Promise<void> {
+export async function setFullMoonPostponed(
+  postponed: boolean,
+  by = 'system',
+  isoDate: string = EVENT.isoDate,
+): Promise<void> {
+  const key = fullMoonPostponedKey(isoDate);
+  const description = `Full Moon ${isoDate} ${postponed ? 'postponed' : 'selling'} — set by ${by}`;
   await prisma.featureFlag.upsert({
-    where: { key: FEATURE_FLAGS.FULL_MOON_POSTPONED },
+    where: { key },
     update: {
       enabled: postponed,
       rolloutPercentage: postponed ? 100 : 0,
-      description: `Full Moon ${postponed ? 'postponed' : 'selling'} — set by ${by}`,
+      description,
     },
     create: {
-      key: FEATURE_FLAGS.FULL_MOON_POSTPONED,
+      key,
       enabled: postponed,
       rolloutPercentage: postponed ? 100 : 0,
-      description: `Full Moon ${postponed ? 'postponed' : 'selling'} — set by ${by}`,
+      description,
     },
   });
 }

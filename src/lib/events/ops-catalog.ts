@@ -44,11 +44,11 @@ export interface OpsEventEntry {
 
 export const OPS_EVENTS: OpsEventEntry[] = [
   {
-    key: 'full-moon-aug1',
+    key: 'full-moon-aug28',
     title: 'Lake Travis Full Moon Party',
     type: 'ticketed',
     date: EVENT.isoDate,
-    publicPath: '/full-moon-aug1',
+    publicPath: '/full-moon-aug28',
     detailPath: '/ops/full-moon',
     ticket: {
       productHandle: TICKET_PRODUCT_HANDLE,

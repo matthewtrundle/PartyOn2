@@ -7,11 +7,12 @@ import NeonHalo from './NeonHalo';
 import Wordmark from './Wordmark';
 import HeroCarousel from './HeroCarousel';
 import { Icon } from './icons';
+import type { CtaSection } from '@/lib/analytics/ga4-events';
 import { DATESTAMP, HERO, LOCATION, SECTIONS, type HeadlineLine } from './event';
 
 interface HeroProps {
   /** Primary "Get Your Ticket" action (opens the purchase form). */
-  onGetTicket: () => void;
+  onGetTicket: (section?: CtaSection) => void;
 }
 
 /** Maps a headline line's tone to its color-treatment CSS class. */
@@ -19,6 +20,7 @@ const TONE_CLASS: Record<HeadlineLine['tone'], string> = {
   moon: styles.hlMoon,
   water: styles.hlWater,
   groovy: styles.hlGroovy,
+  disco: styles.hlDisco,
 };
 
 /** The hero: copy stack + datestamp + single CTA (with logo), and the carousel. */
@@ -68,7 +70,7 @@ export default function Hero({ onGetTicket }: HeroProps): ReactElement {
                 <Wordmark height={34} />
               </span>
               <NeonHalo>
-                <Button variant="cart" size="lg" onClick={onGetTicket} className="uppercase">
+                <Button variant="cart" size="lg" onClick={() => onGetTicket('hero')} className="uppercase">
                   {HERO.primaryCta}
                 </Button>
               </NeonHalo>

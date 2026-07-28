@@ -95,6 +95,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/austin-corporate-event-delivery',
     '/austin-wedding-weekend-delivery',
     '/austin-4th-of-july-delivery',
+    // Ticketed event lander (added 2026-07-28). The Aug 1 run was indexable but
+    // never listed here, so Google was never pointed at it. Date-scoped: when
+    // the cruise rolls to the next full moon, repoint this at the new route —
+    // the retired one 301s, so a stale entry would just be a redirect hop.
+    '/full-moon-aug28',
   ].map(route => ({
     url: `${baseUrl}${route}`,
     lastModified: new Date('2026-05-06'),

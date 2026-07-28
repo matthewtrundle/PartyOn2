@@ -4,13 +4,14 @@ import { useEffect, useRef, useState, type ReactElement } from 'react';
 import Button from '@/components/Button';
 import Section from './Section';
 import NeonHalo from './NeonHalo';
+import type { CtaSection } from '@/lib/analytics/ga4-events';
 import { EVENT, SECTIONS, THRESHOLD } from './event';
 import { fireConfetti } from './confetti';
 import { useReducedMotion } from './useReducedMotion';
 import styles from './full-moon.module.css';
 
 interface ThresholdWidgetProps {
-  onGetTicket: () => void;
+  onGetTicket: (section?: CtaSection) => void;
 }
 
 type TicketState = 'working' | 'met' | 'cancelled';
@@ -160,7 +161,7 @@ export default function ThresholdWidget({ onGetTicket }: ThresholdWidgetProps): 
               </a>
             ) : (
               <NeonHalo>
-                <Button variant="cart" size="lg" onClick={onGetTicket} className="uppercase">
+                <Button variant="cart" size="lg" onClick={() => onGetTicket('final_cta')} className="uppercase">
                   {state === 'met' ? 'Grab a Remaining Spot' : 'Claim Your Spot'} &mdash; ${EVENT.price}
                 </Button>
               </NeonHalo>

@@ -17,7 +17,9 @@ import { config } from 'dotenv';
 import { PrismaClient } from '@prisma/client';
 
 // Keep in sync with TICKET_PRODUCT_HANDLE in src/components/full-moon/event.ts.
-const TICKET_PRODUCT_HANDLE = 'full-moon-party-ticket';
+// Date-scoped per event — bump this whenever the cruise is rescheduled, or
+// you'll comp guests onto the previous event's roster.
+const TICKET_PRODUCT_HANDLE = 'full-moon-party-ticket-aug28';
 
 config({ path: '.env.local' });
 config();

@@ -2,10 +2,16 @@
  * Upsert the Lake Travis Full Moon Party ticket product (idempotent).
  *
  * Creates a DRAFT Product "Lake Travis Full Moon Party Ticket" (handle
- * `full-moon-party-ticket`, productType "Event Ticket", one $59 variant with
- * trackInventory=false) in its own "Events" category. Status DRAFT keeps it out
- * of every storefront/catalog/dashboard listing (all require ACTIVE), while it
- * stays purchasable by handle through the /api/v1/full-moon/ticket endpoint.
+ * `full-moon-party-ticket-aug28`, productType "Event Ticket", one $79 variant
+ * with trackInventory=false) in its own "Events" category. Status DRAFT keeps it
+ * out of every storefront/catalog/dashboard listing (all require ACTIVE), while
+ * it stays purchasable by handle through the /api/v1/full-moon/ticket endpoint.
+ *
+ * ONE PRODUCT PER EVENT — the handle, sku and price below must match
+ * TICKET_PRODUCT_HANDLE / EVENT.price in src/components/full-moon/event.ts.
+ * Date-scoping the handle is what keeps the roster, sold count, guest list and
+ * batch refund pointed at a single cruise. The Aug 1 attempt's product
+ * (`full-moon-party-ticket`, $59) is left alone as history.
  *
  * Usage:
  *   node scripts/full-moon/upsert-ticket-product.mjs           # DRY RUN (default)
@@ -22,17 +28,17 @@ config();
 const APPLY = process.argv.includes('--apply');
 
 const PRODUCT = {
-  handle: 'full-moon-party-ticket',
-  title: 'Lake Travis Full Moon Party Ticket',
+  handle: 'full-moon-party-ticket-aug28',
+  title: 'Lake Travis Full Moon Party Ticket — Fri Aug 28',
   productType: 'Event Ticket',
   vendor: 'Party On Delivery',
-  description: 'One spot on the Lake Travis Full Moon Party — a three-and-a-half-hour sunset cruise with DJ Trey, water, ice & cups, and life jackets on board. BYOB via Party On Delivery.',
-  basePrice: '59.00',
+  description: 'One spot on the Lake Travis Full Moon Party, Fri Aug 28 — a four-hour sunset cruise with DJ Trey, a full taco bar, water, ice & cups, and life jackets on board. BYOB via Party On Delivery.',
+  basePrice: '79.00',
 };
 const VARIANT = {
   title: 'General Admission',
-  sku: 'FM-PARTY-TICKET',
-  price: '59.00',
+  sku: 'FM-PARTY-TICKET-AUG28',
+  price: '79.00',
 };
 const CATEGORY = { handle: 'events', title: 'Events' };
 
