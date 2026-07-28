@@ -14,6 +14,7 @@
  */
 
 import type { DeliveryContextType } from '@/lib/group-orders-v2/types';
+import { PREMIER_QUOTE_EMBED_PATH } from '@/lib/partners/premier-embed';
 import { STR_PROSPECT_SLUGS } from '@/lib/partners/str-prospect-slugs';
 
 /** One bookable rental property belonging to an STR partner. */
@@ -41,7 +42,11 @@ export interface PartnerSecondTab {
   leftLabel: string;
   /** Label for the embedded tab (right). */
   label: string;
-  /** External page to embed (must allow framing — verified for Premier). */
+  /**
+   * Page to embed. Must be same-origin: Premier's bundle loads `/assets/*`
+   * root-relative with no CORS headers, so it can only boot from a POD path
+   * (see PREMIER_QUOTE_EMBED_PATH).
+   */
   embedUrl: string;
 }
 
@@ -62,6 +67,24 @@ export interface StrPartnerConfig {
   /** Optional second tab (e.g. Premier Party Cruises boat-quote embed). */
   secondTab?: PartnerSecondTab;
 }
+
+/**
+ * Lynn's Lodging is THE template for partner-page replication (Brian,
+ * 2026-07-21): the two-tab layout with the POD delivery page on the left
+ * and the Premier Party Cruises quote page on the right. Every STR partner
+ * page not explicitly configured below inherits this via
+ * defaultStrConfigFor().
+ *
+ * `embedUrl` is a POD route that proxies Premier's live `/quote` shell —
+ * NOT a committed copy of it. See `src/lib/partners/premier-embed.ts`: a
+ * frozen snapshot went blank every time Premier redeployed, because their
+ * bundle filenames are content-hashed.
+ */
+export const LYNNS_TEMPLATE_SECOND_TAB: PartnerSecondTab = {
+  leftLabel: 'Alcohol Delivery',
+  label: 'Party Boat Rentals',
+  embedUrl: PREMIER_QUOTE_EMBED_PATH,
+};
 
 /**
  * Registry of STR partners, keyed by route slug.
@@ -92,18 +115,8 @@ const STR_PARTNERS: Record<string, StrPartnerConfig> = {
     allowCustomAddress: true,
     properties: [],
     // Pilot for the two-tab partner page (Brian 2026-07-21): POD delivery
-    // on the left, Premier Party Cruises quote embed on the right. Once
-    // approved, duplicate to the other STR/bartending partners.
-    // Same-origin MIRROR of premierpartycruises.com/quote (Brian's own
-    // site) — public/partners-embed/premier-quote.html serves the exact
-    // page with a <base> tag so all assets/scripts (incl. the Xola
-    // checkout slide-out) load live from Premier. Refresh the mirror by
-    // re-running the curl+inject step in the PR that added it.
-    secondTab: {
-      leftLabel: 'Alcohol Delivery',
-      label: 'Party Boat Rentals',
-      embedUrl: '/partners-embed/premier-quote.html',
-    },
+    // on the left, Premier Party Cruises quote embed on the right.
+    secondTab: LYNNS_TEMPLATE_SECOND_TAB,
   },
   // The MODEL page — identical to the Lynn's Lodging layout but with the
   // placeholder business name "Company Name" (backed by a DRAFT affiliate
@@ -116,11 +129,7 @@ const STR_PARTNERS: Record<string, StrPartnerConfig> = {
     deliveryContextType: 'HOUSE',
     allowCustomAddress: true,
     properties: [],
-    secondTab: {
-      leftLabel: 'Alcohol Delivery',
-      label: 'Party Boat Rentals',
-      embedUrl: '/partners-embed/premier-quote.html',
-    },
+    secondTab: LYNNS_TEMPLATE_SECOND_TAB,
   },
 };
 
@@ -128,19 +137,6 @@ const STR_PARTNERS: Record<string, StrPartnerConfig> = {
 function normalizeCode(code: string): string {
   return code.toUpperCase().replace(/-/g, '');
 }
-
-/**
- * Lynn's Lodging is THE template for partner-page replication (Brian,
- * 2026-07-21): the two-tab layout with the POD delivery page on the left
- * and the Premier Party Cruises quote mirror on the right. Every STR
- * partner page not explicitly configured above inherits this via
- * defaultStrConfigFor() below.
- */
-export const LYNNS_TEMPLATE_SECOND_TAB: PartnerSecondTab = {
-  leftLabel: 'Alcohol Delivery',
-  label: 'Party Boat Rentals',
-  embedUrl: '/partners-embed/premier-quote.html',
-};
 
 /**
  * Build the Lynn's-template config for an STR prospect that has a live
