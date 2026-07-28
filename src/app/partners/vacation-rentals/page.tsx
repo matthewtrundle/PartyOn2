@@ -721,7 +721,7 @@ UTM Campaign: ${formData.utm_campaign || 'none'}`,
             <div className="grid md:grid-cols-2 gap-8">
               <div className="bg-white border border-gray-200 p-10 rounded-xl">
                 <div className="editorial text-xl md:text-2xl mb-6 text-gray-900 leading-relaxed">
-                  Pre-stocked before check-in, restocked same-day on request. Your guests get hotel-grade
+                  Stocked at check-in, restocked same-day on request. Your guests get hotel-grade
                   bar service &mdash; and you never touch a bottle.
                 </div>
                 <div className="flex items-center gap-3 text-sm font-semibold text-brand-blue tracking-[0.08em] uppercase">

@@ -123,6 +123,15 @@ export function refineSource(
       const label = typeof src === 'string' ? DASHBOARD_SOURCE_LABELS[src] : undefined;
       if (label) return { key: widget, label };
     }
+    if (widget === 'PARTNER_INQUIRY') {
+      // businessType is free text from the inquiry form ('Mobile Bartender',
+      // 'Vacation Rental', a hotel/property dropdown value…) — show it so a
+      // bartender doesn't read identically to an STR manager on the board.
+      const businessType = asRecord(m.partnerInquiry)?.businessType;
+      if (typeof businessType === 'string' && businessType.trim()) {
+        return { key: widget, label: `B2B · ${titleCaseSlug(businessType)}` };
+      }
+    }
   }
   return { key: widget, label: SOURCE_LABELS[widget] ?? 'Site' };
 }
@@ -269,14 +278,27 @@ export function toBoardLead(
   };
 }
 
+/**
+ * Widgets whose leads are a BUSINESS reaching out, not a customer: outbound
+ * prospects and the inbound partner-inquiry form. Deliberately excludes
+ * PARTNER_LANDING_PAGE / PARTNER_FAREHARBOR_WEBHOOK / PARTNER_EMAIL_OPTIN —
+ * those are consumers who arrived *via* a partner. Used by both the PARTNER
+ * and CONSUMER filters so the two stay exact complements.
+ */
+const B2B_SOURCE_WIDGETS = new Set(['PARTNER_OUTREACH', 'PARTNER_INQUIRY']);
+
+function isB2bLead(card: BoardLead): boolean {
+  return isPartnerLead(card.tags) || B2B_SOURCE_WIDGETS.has(card.sourceWidget ?? '');
+}
+
 function applyFilters(cards: BoardLead[], f: BoardFilters, now: Date): BoardLead[] {
   return cards.filter((c) => {
     if (f.temp && c.temperature !== f.temp) return false;
     if (f.occasion && (c.occasion ?? '').toLowerCase() !== f.occasion.toLowerCase()) return false;
     if (f.source === SOURCE_FILTER_PARTNER) {
-      if (!isPartnerLead(c.tags) && c.sourceWidget !== 'PARTNER_OUTREACH') return false;
+      if (!isB2bLead(c)) return false;
     } else if (f.source === SOURCE_FILTER_CONSUMER) {
-      if (isPartnerLead(c.tags) || c.sourceWidget === 'PARTNER_OUTREACH') return false;
+      if (isB2bLead(c)) return false;
     } else if (f.source && c.sourceKey !== f.source) return false;
     if (!f.showSnoozed && c.snoozedUntil && new Date(c.snoozedUntil) > now) return false;
     if (f.q) {

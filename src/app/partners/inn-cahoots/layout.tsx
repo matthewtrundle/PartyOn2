@@ -4,11 +4,11 @@ import type { ReactElement, ReactNode } from 'react';
 export const metadata: Metadata = {
   title: 'Inn Cahoots - Free Alcohol Delivery | Party On Delivery',
   description:
-    'Get free alcohol delivery to Inn Cahoots on East 6th Street in Austin. We stock your fridge before check-in with beer, wine, spirits, and mixers. Perfect for bachelorette parties, weddings, and corporate retreats.',
+    'Get free alcohol delivery to Inn Cahoots on East 6th Street in Austin. We stock your fridge at check-in with beer, wine, spirits, and mixers. Perfect for bachelorette parties, weddings, and corporate retreats.',
   openGraph: {
     title: 'Inn Cahoots - Free Alcohol Delivery',
     description:
-      "Austin's boutique hotel on East 6th. Get free delivery to your room — fridge stocked before you check in. Easy group ordering for bach parties, weddings, and corporate retreats.",
+      "Austin's boutique hotel on East 6th. Get free delivery to your room — fridge stocked when you check in. Easy group ordering for bach parties, weddings, and corporate retreats.",
     images: [
       {
         url: '/images/partners/hotel-partner.webp',

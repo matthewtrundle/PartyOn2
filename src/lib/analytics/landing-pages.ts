@@ -14,6 +14,7 @@
 import type { CtaSection } from './ga4-events';
 
 export type LandingPageKey =
+  // Primary — the tab bar.
   | 'home'
   | 'weddings'
   | 'boat-parties'
@@ -21,7 +22,46 @@ export type LandingPageKey =
   | 'bachelorette'
   | 'corporate'
   | 'cocktail-kits'
-  | 'order';
+  | 'order'
+  // Secondary consumer landers — the "More pages" picker.
+  | 'wedding-venue-boats'
+  | 'event-quiz'
+  | 'bachelor-ai-test'
+  | 'bachelor-concierge'
+  | 'bachelorette-concierge'
+  | 'concierge'
+  | 'byob-venues'
+  | 'july-fourth'
+  | 'full-moon'
+  | 'kegs'
+  | 'gift-cocktail-kits'
+  | 'rentals'
+  | 'plan-event'
+  | 'custom-package'
+  | 'corporate-holiday'
+  | 'corporate-products'
+  | 'fast-delivery'
+  | 'ai-party-planner'
+  | 'area-downtown'
+  | 'area-east-austin'
+  | 'area-lake-travis'
+  | 'area-south-congress'
+  // Secondary B2B / partner-recruitment pages.
+  | 'partners-bartenders'
+  | 'partners-vacation-rentals'
+  | 'partners-hotels'
+  | 'partners-property-management'
+  | 'partners-pitch'
+  | 'partners-hub';
+
+/**
+ * Where an entry appears in the hub's navigation. `primary` (the default)
+ * is the tab bar — kept to the eight core funnels so the band stays one row.
+ * The two `secondary-*` groups render as optgroups in the "More pages"
+ * picker: every other marketing lander, so its numbers are visible without
+ * crowding the tabs.
+ */
+export type LandingPageGroup = 'primary' | 'secondary-consumer' | 'secondary-b2b';
 
 export interface CtaSectionDef {
   /** Matches a CtaSection value fired by trackCTAClick. */
@@ -34,16 +74,25 @@ export interface LandingPageDef {
   key: LandingPageKey;
   /** Tab label in the hub. */
   displayName: string;
-  /** Left-to-right order in the tab bar. */
+  /** Left-to-right order in the tab bar (and within a "More pages" group). */
   navOrder: number;
+  /** Nav placement; omitted means 'primary' (a tab). */
+  group?: LandingPageGroup;
   /** The primary public route for this page. */
   canonicalPath: string;
   /** Other routes that count as the same page for analytics. */
   aliasPaths: string[];
-  /** CTA sections we expect clicks in — drives the CTA-click table grouping. */
-  ctaSections: CtaSectionDef[];
-  /** Pre-fills the "element" field when creating an A/B test for this page. */
-  defaultExperimentElementId: string;
+  /**
+   * CTA sections we expect clicks in — documents the grouping in the
+   * CTA-click table, which is built from the event data itself. Omit on
+   * secondary pages: an uninstrumented page simply shows an empty table.
+   */
+  ctaSections?: CtaSectionDef[];
+  /**
+   * Pre-fills the "element" field when creating an A/B test for this page.
+   * Defaults to 'hero' when omitted.
+   */
+  defaultExperimentElementId?: string;
   /**
    * Routes on this tab that render their OWN hero and can host a hero A/B
    * test. Defaults to [canonicalPath]. Only set when a tab unions several
@@ -179,6 +228,247 @@ export const LANDING_PAGES: LandingPageDef[] = [
     ctaSections: [{ id: 'party_type_chip', label: 'Party-type chip' }],
     defaultExperimentElementId: 'hero',
   },
+
+  // ── Secondary: consumer landers ────────────────────────────────────────
+  // Traffic + engagement come free (PageViewTracker fires site-wide, GA4
+  // matches on pagePath). CTA rows appear only where trackCTAClick is wired,
+  // and conversion only where Order.landingPage records the route — an empty
+  // panel here means "not instrumented", not "broken".
+  {
+    key: 'wedding-venue-boats',
+    displayName: 'Wedding Venue Boats',
+    navOrder: 101,
+    group: 'secondary-consumer',
+    canonicalPath: '/austin-wedding-venue-boats',
+    aliasPaths: [],
+  },
+  {
+    key: 'event-quiz',
+    displayName: 'Event Quiz',
+    navOrder: 102,
+    group: 'secondary-consumer',
+    canonicalPath: '/event-quiz',
+    aliasPaths: [],
+  },
+  {
+    key: 'bachelor-ai-test',
+    displayName: 'Bachelor (AI test)',
+    navOrder: 103,
+    group: 'secondary-consumer',
+    canonicalPath: '/austin-bachelor-party-delivery-ai-test',
+    aliasPaths: [],
+  },
+  {
+    key: 'bachelor-concierge',
+    displayName: 'Bachelor Concierge',
+    navOrder: 104,
+    group: 'secondary-consumer',
+    canonicalPath: '/austin-bachelor-concierge',
+    aliasPaths: [],
+  },
+  {
+    key: 'bachelorette-concierge',
+    displayName: 'Bachelorette Concierge',
+    navOrder: 105,
+    group: 'secondary-consumer',
+    canonicalPath: '/austin-bachelorette-concierge',
+    aliasPaths: [],
+  },
+  {
+    key: 'concierge',
+    displayName: 'Concierge (routing)',
+    navOrder: 106,
+    group: 'secondary-consumer',
+    canonicalPath: '/austin-concierge',
+    aliasPaths: [],
+  },
+  {
+    key: 'byob-venues',
+    displayName: 'BYOB Venues',
+    navOrder: 107,
+    group: 'secondary-consumer',
+    canonicalPath: '/austin-byob-venues',
+    aliasPaths: [],
+  },
+  {
+    key: 'july-fourth',
+    displayName: '4th of July',
+    navOrder: 108,
+    group: 'secondary-consumer',
+    canonicalPath: '/austin-4th-of-july-delivery',
+    aliasPaths: [],
+  },
+  {
+    key: 'full-moon',
+    displayName: 'Full Moon Cruise',
+    navOrder: 109,
+    group: 'secondary-consumer',
+    // /full-moon 301s to the dated route (2026-07-08); kept so historical
+    // rows still count toward this page.
+    canonicalPath: '/full-moon-aug1',
+    aliasPaths: ['/full-moon'],
+  },
+  {
+    key: 'kegs',
+    displayName: 'Kegs',
+    navOrder: 110,
+    group: 'secondary-consumer',
+    canonicalPath: '/kegs',
+    aliasPaths: [],
+  },
+  {
+    key: 'gift-cocktail-kits',
+    displayName: 'Gift Cocktail Kits',
+    navOrder: 111,
+    group: 'secondary-consumer',
+    canonicalPath: '/gifts/cocktail-kits',
+    aliasPaths: [],
+  },
+  {
+    key: 'rentals',
+    displayName: 'Rentals',
+    navOrder: 112,
+    group: 'secondary-consumer',
+    // The three item pages are the same funnel as the hub for reporting.
+    canonicalPath: '/rentals',
+    aliasPaths: [
+      '/rentals/chair-rentals-austin',
+      '/rentals/cocktail-table-rentals-austin',
+      '/rentals/cooler-rentals-austin',
+    ],
+  },
+  {
+    key: 'plan-event',
+    displayName: 'Plan My Event',
+    navOrder: 113,
+    group: 'secondary-consumer',
+    canonicalPath: '/plan-event',
+    aliasPaths: [],
+  },
+  {
+    key: 'custom-package',
+    displayName: 'Custom Package',
+    navOrder: 114,
+    group: 'secondary-consumer',
+    canonicalPath: '/custom-package',
+    aliasPaths: [],
+  },
+  {
+    key: 'corporate-holiday',
+    displayName: 'Corporate Holiday Party',
+    navOrder: 115,
+    group: 'secondary-consumer',
+    canonicalPath: '/corporate/holiday-party',
+    aliasPaths: [],
+  },
+  {
+    key: 'corporate-products',
+    displayName: 'Corporate Products',
+    navOrder: 116,
+    group: 'secondary-consumer',
+    canonicalPath: '/corporate/products',
+    aliasPaths: [],
+  },
+  {
+    key: 'fast-delivery',
+    displayName: 'Fast Delivery',
+    navOrder: 117,
+    group: 'secondary-consumer',
+    canonicalPath: '/fast-delivery',
+    aliasPaths: [],
+  },
+  {
+    key: 'ai-party-planner',
+    displayName: 'AI Party Planner',
+    navOrder: 118,
+    group: 'secondary-consumer',
+    canonicalPath: '/ai-party-planner',
+    aliasPaths: [],
+  },
+  {
+    key: 'area-downtown',
+    displayName: 'Area · Downtown',
+    navOrder: 119,
+    group: 'secondary-consumer',
+    canonicalPath: '/areas/downtown',
+    aliasPaths: [],
+  },
+  {
+    key: 'area-east-austin',
+    displayName: 'Area · East Austin',
+    navOrder: 120,
+    group: 'secondary-consumer',
+    canonicalPath: '/areas/east-austin',
+    aliasPaths: [],
+  },
+  {
+    key: 'area-lake-travis',
+    displayName: 'Area · Lake Travis',
+    navOrder: 121,
+    group: 'secondary-consumer',
+    canonicalPath: '/areas/lake-travis',
+    aliasPaths: [],
+  },
+  {
+    key: 'area-south-congress',
+    displayName: 'Area · South Congress',
+    navOrder: 122,
+    group: 'secondary-consumer',
+    canonicalPath: '/areas/south-congress',
+    aliasPaths: [],
+  },
+
+  // ── Secondary: B2B / partner recruitment ───────────────────────────────
+  // These recruit partners rather than sell orders, so expect real traffic
+  // with zero conversion — the lead lands on /admin/leads, not in Order.
+  {
+    key: 'partners-bartenders',
+    displayName: 'Partners · Bartenders',
+    navOrder: 201,
+    group: 'secondary-b2b',
+    canonicalPath: '/partners/mobile-bartenders',
+    aliasPaths: [],
+  },
+  {
+    key: 'partners-vacation-rentals',
+    displayName: 'Partners · Vacation Rentals',
+    navOrder: 202,
+    group: 'secondary-b2b',
+    canonicalPath: '/partners/vacation-rentals',
+    aliasPaths: [],
+  },
+  {
+    key: 'partners-hotels',
+    displayName: 'Partners · Hotels & Resorts',
+    navOrder: 203,
+    group: 'secondary-b2b',
+    canonicalPath: '/partners/hotels-resorts',
+    aliasPaths: [],
+  },
+  {
+    key: 'partners-property-management',
+    displayName: 'Partners · Property Mgmt',
+    navOrder: 204,
+    group: 'secondary-b2b',
+    canonicalPath: '/partners/property-management',
+    aliasPaths: [],
+  },
+  {
+    key: 'partners-pitch',
+    displayName: 'Partners · Pitch Deck',
+    navOrder: 205,
+    group: 'secondary-b2b',
+    canonicalPath: '/partners/pitch',
+    aliasPaths: [],
+  },
+  {
+    key: 'partners-hub',
+    displayName: 'Partners · Hub',
+    navOrder: 206,
+    group: 'secondary-b2b',
+    canonicalPath: '/austin-partners',
+    aliasPaths: [],
+  },
 ];
 
 /** Normalize a pathname for comparison: strip query/hash + trailing slash (keep root). */
@@ -213,6 +503,42 @@ export function landingPageForPath(path: string): LandingPageDef | undefined {
       normalizePath(p.canonicalPath) === norm ||
       p.aliasPaths.some((a) => normalizePath(a) === norm)
   );
+}
+
+/** Nav placement for an entry ('primary' when unset). */
+export function groupOf(def: LandingPageDef): LandingPageGroup {
+  return def.group ?? 'primary';
+}
+
+/** Tab-bar entries, in nav order. */
+export function primaryLandingPages(): LandingPageDef[] {
+  return [...LANDING_PAGES]
+    .filter((p) => groupOf(p) === 'primary')
+    .sort((a, b) => a.navOrder - b.navOrder);
+}
+
+/**
+ * "More pages" picker contents: the secondary groups with their optgroup
+ * labels, each sorted by navOrder. Empty groups are dropped.
+ */
+export function secondaryLandingPageGroups(): Array<{
+  group: Exclude<LandingPageGroup, 'primary'>;
+  label: string;
+  pages: LandingPageDef[];
+}> {
+  const labels: Record<Exclude<LandingPageGroup, 'primary'>, string> = {
+    'secondary-consumer': 'Other landing pages',
+    'secondary-b2b': 'Partner pages (B2B)',
+  };
+  return (['secondary-consumer', 'secondary-b2b'] as const)
+    .map((group) => ({
+      group,
+      label: labels[group],
+      pages: [...LANDING_PAGES]
+        .filter((p) => groupOf(p) === group)
+        .sort((a, b) => a.navOrder - b.navOrder),
+    }))
+    .filter((g) => g.pages.length > 0);
 }
 
 /** Type guard: is this string a known landing-page key? */

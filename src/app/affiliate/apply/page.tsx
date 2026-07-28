@@ -7,6 +7,7 @@ const CATEGORIES = [
   { value: 'BARTENDER', label: 'Mobile Bartender' },
   { value: 'BOAT', label: 'Boat Operator / Captain' },
   { value: 'VENUE', label: 'Venue / Event Space' },
+  { value: 'LODGING', label: 'Vacation Rental / Hotel' },
   { value: 'PLANNER', label: 'Event Planner' },
   { value: 'OTHER', label: 'Other' },
 ];

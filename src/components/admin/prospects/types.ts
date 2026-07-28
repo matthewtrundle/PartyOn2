@@ -141,7 +141,7 @@ export const VERTICAL_UI: Record<string, VerticalUiConfig> = {
       locations: 'Service area',
       maxGroupSize: 'Largest events',
     },
-    csvCategory: 'EVENT_SERVICES',
+    csvCategory: 'BARTENDER',
   },
   venue: {
     title: 'BYOB Venues — Austin prospect list',

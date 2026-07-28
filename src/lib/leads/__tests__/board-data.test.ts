@@ -460,6 +460,44 @@ describe('refineSource — sheet-level detail (keys frozen, labels enriched)', (
   it('labels Wayne chat leads instead of "Site"', () => {
     expect(refineSource('WAYNE_CHAT', null)).toEqual({ key: 'WAYNE_CHAT', label: 'Wayne Chat' });
   });
+
+  it('names the business type on inbound partner inquiries', () => {
+    expect(
+      refineSource('PARTNER_INQUIRY', { partnerInquiry: { businessType: 'Mobile Bartender' } }),
+    ).toEqual({ key: 'PARTNER_INQUIRY', label: 'B2B · Mobile Bartender' });
+    expect(
+      refineSource('PARTNER_INQUIRY', { partnerInquiry: { businessType: 'vacation-rental' } })
+        .label,
+    ).toBe('B2B · Vacation Rental');
+    // No/blank businessType keeps the flat base label.
+    expect(refineSource('PARTNER_INQUIRY', { partnerInquiry: { businessType: '  ' } }).label).toBe(
+      'B2B / Partner',
+    );
+    expect(refineSource('PARTNER_INQUIRY', null).label).toBe('B2B / Partner');
+  });
+});
+
+describe('board source filter — B2B vs consumer', () => {
+  it('counts inbound partner inquiries as PARTNER, not CONSUMER', async () => {
+    makeLead({ sourceWidget: 'PARTNER_INQUIRY', metadata: {} });
+    makeLead({ sourceWidget: 'CONTACT_FORM' });
+
+    const partner = await getBoardData({ source: 'PARTNER' });
+    const consumer = await getBoardData({ source: 'CONSUMER' });
+
+    expect(partner.columns.NEW.map((c) => c.sourceWidget)).toEqual(['PARTNER_INQUIRY']);
+    expect(consumer.columns.NEW.map((c) => c.sourceWidget)).toEqual(['CONTACT_FORM']);
+  });
+
+  it('keeps consumers who arrived via a partner page on the CONSUMER side', async () => {
+    makeLead({ sourceWidget: 'PARTNER_LANDING_PAGE', metadata: { partner: 'premier-concierge' } });
+
+    const partner = await getBoardData({ source: 'PARTNER' });
+    const consumer = await getBoardData({ source: 'CONSUMER' });
+
+    expect(partner.columns.NEW).toHaveLength(0);
+    expect(consumer.columns.NEW.map((c) => c.sourceWidget)).toEqual(['PARTNER_LANDING_PAGE']);
+  });
 });
 
 describe('isAdsLead — paid-traffic detector', () => {

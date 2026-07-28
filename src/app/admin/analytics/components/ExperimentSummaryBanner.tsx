@@ -282,7 +282,7 @@ export default function ExperimentSummaryBanner({ def, experiments, loading, rel
         <CreateHeroTestModal
           canonicalPath={def.canonicalPath}
           pathOptions={pathOptions}
-          elementId={def.defaultExperimentElementId}
+          elementId={def.defaultExperimentElementId ?? 'hero'}
           pageLabel={def.displayName}
           onClose={() => setShowCreate(false)}
           onCreated={() => {

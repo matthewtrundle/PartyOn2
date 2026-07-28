@@ -75,7 +75,7 @@ style — there is no second copy per prospect. The DB carries the arm on
 `draft_variant` and the test name on `experiment_key`; results group by them
 (reply rate is the win metric — GET `/api/v1/admin/partner-prospects/ab`).
 - Assign 50/50 deterministically: `arm = A if a stable hash of websiteKey is even
-  else B` (matches `assignAbVariant` in `src/lib/partners/prospect-store.ts`).
+  else B` (matches `assignAbArm` in `src/lib/partners/prospect-store.ts`).
 - **Arm A = short & sweet** first touch (≤70 words). **Arm B = detailed** first
   touch (full 60–110). Only the FIRST touch differs — write `followUpBody` and
   `touch3Body` the SAME standard way for both arms so the opener is the only
