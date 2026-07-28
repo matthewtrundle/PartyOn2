@@ -150,7 +150,7 @@ export default function PropertyManagementPartnerPage() {
                 </svg>
               </div>
               <h3 className="font-medium text-gray-900 mb-1">Revenue Share</h3>
-              <p className="text-sm text-gray-600">15% commission on resident orders</p>
+              <p className="text-sm text-gray-600">Revenue share on resident orders</p>
             </div>
             <div className="text-center">
               <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -285,7 +285,7 @@ export default function PropertyManagementPartnerPage() {
                   </svg>
                   <div>
                     <h3 className="font-medium text-gray-900 mb-1">Monthly Revenue Share</h3>
-                    <p className="text-gray-600">15% commission on all resident orders</p>
+                    <p className="text-gray-600">Revenue share on all resident orders</p>
                   </div>
                 </li>
               </ul>

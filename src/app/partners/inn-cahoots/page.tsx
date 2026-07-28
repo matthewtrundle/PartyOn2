@@ -38,11 +38,11 @@ const TESTIMONIALS = [
 const FAQ_ITEMS = [
   {
     q: 'How does delivery to Inn Cahoots work?',
-    a: 'Place your order online and select your check-in date and time. We\'ll deliver everything to Inn Cahoots and stock your fridge before you arrive. It\'s that simple.',
+    a: 'Place your order online and select your check-in date and time. We\'ll deliver everything to Inn Cahoots and have your fridge stocked at check-in. It\'s that simple.',
   },
   {
-    q: 'Can you stock the fridge before we check in?',
-    a: 'Absolutely — that\'s our specialty. Just let us know your check-in time and we\'ll coordinate with the hotel to have your drinks cold and ready when you walk in.',
+    q: 'Will our drinks be ready when we check in?',
+    a: 'Absolutely — that\'s our specialty. Tell us your check-in time and we\'ll time the delivery to it, so your drinks are cold and waiting when your group walks in. Someone 21+ from your party receives it at the door.',
   },
   {
     q: 'What\'s the ordering deadline?',
@@ -199,7 +199,7 @@ function InnCahootsPageContent(): ReactElement {
               <div className="space-y-4 flex-grow">
                 {[
                   { item: 'FREE delivery to Inn Cahoots', value: '$50' },
-                  { item: 'Fridge stocked before check-in', value: '$25' },
+                  { item: 'Fridge stocked at check-in', value: '$25' },
                   { item: 'Group ordering with split payments', value: 'FREE' },
                   { item: 'Drinks ready when you arrive', value: 'FREE' },
                 ].map((row, idx) => (
@@ -354,7 +354,7 @@ function InnCahootsPageContent(): ReactElement {
             Ready for Your Stay?
           </h2>
           <p className="text-gray-800 text-lg mb-8 max-w-2xl mx-auto">
-            Get your drinks delivered before you check in. Free delivery. Easy group ordering. Zero hassle.
+            Get your drinks delivered right at check-in. Free delivery. Easy group ordering. Zero hassle.
           </p>
 
           <div className="flex flex-col items-center gap-3 mb-6">

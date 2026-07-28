@@ -9,6 +9,7 @@ import { enqueueJourney } from '@/lib/followups/enqueue'
 import { markLeadStatus, upsertLead } from '@/lib/leads/leadCapture'
 import { enrollLeadIfEligible } from '@/lib/leads/pipeline'
 import { attributionSchema, compactAttribution } from '@/lib/leads/attribution-schema'
+import { verticalForBusinessType } from '@/lib/leads/partner-tags'
 
 // Sources that trigger an automated outbound email with the partner one-pager
 // PDF + Calendly CTA (in addition to the existing ops notification).
@@ -314,12 +315,22 @@ export async function POST(request: NextRequest) {
             !Array.isArray(prevMeta.attribution)
               ? (prevMeta.attribution as Record<string, string>)
               : {}
+          // Vertical tag only (never partner-prospect/partner-active — those
+          // mean "in the outbound prospect DB" / "signed affiliate"). Merged,
+          // never clobbered, so a synced prospect keeps its existing tags.
+          const vertical = verticalForBusinessType(
+            inquiry.businessType || inquiry.partnerType || null
+          )
+          // `push` so a concurrent write (e.g. the prospect sync adding
+          // partner-prospect) can't be clobbered by a stale read.
+          const nextTags = vertical && !lead.tags.includes(vertical) ? vertical : null
           await prisma.lead.update({
             where: { id: lead.id },
             data: {
               // Last-touch stamp — this B2B submission is the active context.
               sourcePage: '/partners',
               sourceWidget: 'PARTNER_INQUIRY',
+              ...(nextTags ? { tags: { push: nextTags } } : {}),
               metadata: {
                 ...prevMeta,
                 ...(attribution

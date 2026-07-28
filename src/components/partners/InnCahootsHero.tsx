@@ -29,7 +29,7 @@ export default function InnCahootsHero(): ReactElement {
           {/* Left Column: Content */}
           <div className="order-1 text-center">
             <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl text-white mb-4 tracking-wide leading-tight">
-              Your Drinks, Ready Before Check-In
+              Your Drinks, Ready At Check-In
             </h1>
             <p className="text-gray-300 text-lg md:text-xl mb-8">
               Delivered to Inn Cahoots on East 6th. Fridge stocked. Zero hassle.

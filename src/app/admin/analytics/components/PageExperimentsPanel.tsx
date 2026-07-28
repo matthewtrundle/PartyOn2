@@ -113,7 +113,7 @@ export default function PageExperimentsPanel({ def, experiments, loading, reload
         <CreateHeroTestModal
           canonicalPath={def.canonicalPath}
           pathOptions={experimentPathsFor(def)}
-          elementId={def.defaultExperimentElementId}
+          elementId={def.defaultExperimentElementId ?? 'hero'}
           pageLabel={def.displayName}
           onClose={() => setShowCreate(false)}
           onCreated={() => { setShowCreate(false); reload(); }}

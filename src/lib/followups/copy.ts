@@ -193,11 +193,11 @@ And if anything was off — late, wrong item, anything — reply and tell me fir
       subject: 'Partnering with {company} — free drink delivery for your clients',
       body: `Hi {firstName},
 
-I'm Brian, founder of Party On Delivery — Austin's premium alcohol delivery and guest-concierge service. We partner with companies like {company} to handle the drinks side of every booking: free delivery for your clients, a co-branded ordering page, group dashboards with split payments, and a commission to you on every order.
+I'm Brian, founder of Party On Delivery — Austin's alcohol delivery and guest-concierge service. We work with companies like {company} to handle the drinks side of every booking: free delivery for your clients, a co-branded ordering page, group dashboards that split payment automatically, and revenue share to you on orders.
 
 Your page is ready to go: {partnerUrl}
 
-Worth a 15-minute call this week?`,
+Want me to send over how it works?`,
     },
     {
       subject: 'quick follow-up — free perk for {company} clients',
@@ -205,11 +205,11 @@ Worth a 15-minute call this week?`,
 
 Following up on my note from a couple of days ago — the short version:
 
-We stock the bar for your clients (free delivery, iced and on time, TABC-licensed), they order from a page with {company}'s branding on it, and you earn a commission on every order. Zero work for your team — you just share a link.
+We stock the bar for your clients (free delivery, iced and on time, TABC-licensed), they order from a page with {company}'s branding on it, and you earn revenue share on orders. Zero work for your team — you just share a link.
 
 Your co-branded page: {partnerUrl}
 
-If it's a fit, reply here and I'll walk you through it in 15 minutes. If not, no worries — tell me and I won't follow up again.`,
+If it's not a fit, tell me and I won't write again.`,
     },
   ],
 };

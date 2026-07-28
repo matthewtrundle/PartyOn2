@@ -344,7 +344,7 @@ export default function HomePage() {
                   Airbnbs &amp; House Parties
                 </h3>
                 <p className="text-gray-600 mb-6 leading-relaxed">
-                  Stock the fridge before guests arrive — alcohol, mixers, ice, and extras delivered to the door code.
+                  Alcohol, mixers, ice, and extras — delivery timed to when your group arrives.
                 </p>
                 <TrackedLink href="/order" section="services" buttonText="START HOUSE PARTY ORDER">
                   <button className="px-6 py-3 bg-brand-yellow text-gray-900 hover:bg-yellow-600 transition-colors tracking-[0.1em] text-sm">
@@ -553,8 +553,8 @@ export default function HomePage() {
                 description: "No waiting in lobby; we coordinate with staff"
               },
               {
-                title: "Airbnb door code coordination",
-                description: "Seamless check-in delivery timing"
+                title: "Airbnb check-in coordination",
+                description: "Delivery timed to when your group arrives"
               },
               {
                 title: "Dockside or cove handoff",

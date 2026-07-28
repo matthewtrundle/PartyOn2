@@ -16,7 +16,7 @@ import { ACTIVE_STAGES, PIPELINE_STAGES, type PipelineStage } from './pipeline-t
 import { SOURCE_LABELS } from './board-types';
 import type { BoardData, BoardFilters, BoardKpis, BoardLead } from './board-types';
 import { SOURCE_FILTER_CONSUMER, SOURCE_FILTER_PARTNER } from './board-types';
-import { isPartnerLead } from './partner-tags';
+import { isB2bBusinessType, isPartnerLead } from './partner-tags';
 import { loadBoardJoins } from './board-joins';
 import { nextActionFor } from './next-action';
 
@@ -123,8 +123,42 @@ export function refineSource(
       const label = typeof src === 'string' ? DASHBOARD_SOURCE_LABELS[src] : undefined;
       if (label) return { key: widget, label };
     }
+    if (widget === 'PARTNER_INQUIRY') {
+      // businessType is free text from the inquiry form ('Mobile Bartender',
+      // 'Vacation Rental', a hotel/property dropdown value…) — show it so a
+      // bartender doesn't read identically to an STR manager on the board.
+      const businessType = asRecord(m.partnerInquiry)?.businessType;
+      if (typeof businessType === 'string' && businessType.trim()) {
+        return { key: widget, label: `B2B · ${titleCaseSlug(businessType)}` };
+      }
+    }
   }
   return { key: widget, label: SOURCE_LABELS[widget] ?? 'Site' };
+}
+
+/**
+ * Is this card a BUSINESS reaching out rather than a customer?
+ *
+ * `PARTNER_OUTREACH` (our own cold prospects) and the `partner-prospect` tag
+ * are unambiguous. `PARTNER_INQUIRY` is NOT: `/api/partners/inquiry` is a
+ * shared endpoint that consumer landers post to as well (the corporate
+ * holiday-party quote form is one), so those are classified on the submitted
+ * business type — unrecognized stays consumer, which is where every
+ * PARTNER_INQUIRY lead sat before this distinction existed.
+ *
+ * Deliberately excludes PARTNER_LANDING_PAGE / PARTNER_FAREHARBOR_WEBHOOK /
+ * PARTNER_EMAIL_OPTIN: those are consumers who arrived *via* a partner.
+ */
+export function isB2bLead(
+  sourceWidget: string | null,
+  tags: string[],
+  metadata: unknown,
+): boolean {
+  if (isPartnerLead(tags)) return true;
+  if (sourceWidget === 'PARTNER_OUTREACH') return true;
+  if (sourceWidget !== 'PARTNER_INQUIRY') return false;
+  const businessType = asRecord(asRecord(metadata)?.partnerInquiry)?.businessType;
+  return typeof businessType === 'string' && isB2bBusinessType(businessType);
 }
 
 const CLICK_ID_KEYS = ['gclid', 'gbraid', 'wbraid', 'fbclid', 'msclkid'] as const;
@@ -236,6 +270,7 @@ export function toBoardLead(
     sourceWidget: lead.sourceWidget,
     sourceKey: source.key,
     sourceLabel: source.label,
+    isB2b: isB2bLead(lead.sourceWidget, lead.tags ?? [], lead.metadata),
     sourcePage: lead.sourcePage,
     tags: lead.tags ?? [],
     owner: lead.owner,
@@ -274,9 +309,9 @@ function applyFilters(cards: BoardLead[], f: BoardFilters, now: Date): BoardLead
     if (f.temp && c.temperature !== f.temp) return false;
     if (f.occasion && (c.occasion ?? '').toLowerCase() !== f.occasion.toLowerCase()) return false;
     if (f.source === SOURCE_FILTER_PARTNER) {
-      if (!isPartnerLead(c.tags) && c.sourceWidget !== 'PARTNER_OUTREACH') return false;
+      if (!c.isB2b) return false;
     } else if (f.source === SOURCE_FILTER_CONSUMER) {
-      if (isPartnerLead(c.tags) || c.sourceWidget === 'PARTNER_OUTREACH') return false;
+      if (c.isB2b) return false;
     } else if (f.source && c.sourceKey !== f.source) return false;
     if (!f.showSnoozed && c.snoozedUntil && new Date(c.snoozedUntil) > now) return false;
     if (f.q) {

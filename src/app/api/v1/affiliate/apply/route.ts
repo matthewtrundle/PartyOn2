@@ -11,7 +11,14 @@ import { enrollLeadIfEligible } from '@/lib/leads/pipeline';
 import { prisma } from '@/lib/database/client';
 import { AffiliateCategory } from '@prisma/client';
 
-const VALID_CATEGORIES: AffiliateCategory[] = ['BARTENDER', 'BOAT', 'VENUE', 'PLANNER', 'OTHER'];
+const VALID_CATEGORIES: AffiliateCategory[] = [
+  'BARTENDER',
+  'BOAT',
+  'VENUE',
+  'LODGING',
+  'PLANNER',
+  'OTHER',
+];
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {

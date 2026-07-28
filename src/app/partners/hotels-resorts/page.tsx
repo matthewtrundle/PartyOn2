@@ -258,7 +258,7 @@ export default function HotelsResortsPartnerPage() {
                       <div>
                         <strong>Revenue Share Model</strong>
                         <p className="text-sm text-gray-600 mt-1">
-                          Earn 15-25% commission on all orders with no upfront costs
+                          Earn revenue share on every order with no upfront costs
                         </p>
                       </div>
                     </li>
@@ -587,7 +587,8 @@ export default function HotelsResortsPartnerPage() {
               PARTNERSHIP PROGRAMS
             </h2>
             <p className="text-gray-600">
-              Flexible solutions scaled to your property size and needs
+              Flexible solutions scaled to your property size and needs. Every tier earns
+              revenue share on each order, with no upfront cost.
             </p>
           </div>
 
@@ -596,10 +597,6 @@ export default function HotelsResortsPartnerPage() {
               <div className="text-center mb-6">
                 <h3 className="font-cormorant text-2xl mb-2 tracking-[0.1em]">SELECT</h3>
                 <p className="text-gray-600 text-sm">For boutique properties</p>
-              </div>
-              <div className="text-center mb-6">
-                <p className="text-4xl font-cormorant text-gray-900">15%</p>
-                <p className="text-sm text-gray-600">Revenue Share</p>
               </div>
               <ul className="space-y-3 mb-8 text-sm">
                 <li className="flex items-center">
@@ -639,10 +636,6 @@ export default function HotelsResortsPartnerPage() {
               <div className="text-center mb-6">
                 <h3 className="font-cormorant text-2xl mb-2 tracking-[0.1em]">PREMIER</h3>
                 <p className="text-gray-600 text-sm">For full-service hotels</p>
-              </div>
-              <div className="text-center mb-6">
-                <p className="text-4xl font-cormorant text-gray-900">20%</p>
-                <p className="text-sm text-gray-600">Revenue Share</p>
               </div>
               <ul className="space-y-3 mb-8 text-sm">
                 <li className="flex items-center">
@@ -685,10 +678,6 @@ export default function HotelsResortsPartnerPage() {
               <div className="text-center mb-6">
                 <h3 className="font-cormorant text-2xl mb-2 tracking-[0.1em]">LUXURY</h3>
                 <p className="text-gray-600 text-sm">For resort properties</p>
-              </div>
-              <div className="text-center mb-6">
-                <p className="text-4xl font-cormorant text-gray-900">25%</p>
-                <p className="text-sm text-gray-600">Revenue Share</p>
               </div>
               <ul className="space-y-3 mb-8 text-sm">
                 <li className="flex items-center">

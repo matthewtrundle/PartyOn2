@@ -1349,59 +1349,6 @@ Source: ${formData.source}`,
 
       <Footer />
 
-      {/* TODO: IMPLEMENTATION CHECKLIST (remove before production)
-
-        [ ] Replace {{FORM_ACTION}} with actual form submission endpoint
-            - GoHighLevel webhook: https://...
-            - Shopify contact form
-            - Custom API endpoint
-
-        [ ] Replace placeholder commission values:
-            - {{BASE_COMMISSION}} = actual starting percentage (e.g., 10)
-            - {{BONUS}} = signup bonus percentage (e.g., 5)
-            - {{N}} = number of bonus orders (e.g., 10)
-
-        [ ] Upload generated images to CDN/Shopify:
-            - Hero banner: /images/hero/bartender-hero-placeholder.jpg
-            - Use case images (5): /images/services/*.jpg
-            - Testimonial portraits (3): /images/testimonials/*.jpg
-            - Background images: /images/backgrounds/*.jpg
-
-        [ ] Add tracking pixels in head section:
-            - Google Analytics 4
-            - Meta Pixel
-            - LinkedIn Insight Tag (if running B2B ads)
-
-        [ ] Test form submission:
-            - Verify all fields post correctly
-            - Check UTM parameters capture
-            - Test email notifications
-            - Confirm CRM/Shopify integration
-
-        [ ] Verify meta tags:
-            - Update og:image with actual hero URL
-            - Confirm twitter:image URL
-            - Test social sharing previews
-
-        [ ] Accessibility audit:
-            - Run Lighthouse score
-            - Test keyboard navigation
-            - Verify screen reader compatibility
-            - Check color contrast ratios
-
-        [ ] Mobile testing:
-            - iOS Safari
-            - Android Chrome
-            - Form field tap targets
-            - Image loading performance
-
-        [ ] SEO verification:
-            - Submit sitemap to Google
-            - Test rich results (FAQ schema)
-            - Verify canonical URL
-            - Check internal linking
-
-      */}
     </div>
   );
 }
