@@ -1,11 +1,12 @@
 'use client';
 
-import { ReactElement, useCallback, useEffect, useRef, useState } from 'react';
+import { ReactElement, ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import BottomSheet from '@/components/backend/kit/BottomSheet';
 import { extractLeadFacts } from '@/lib/leads/scoring';
 import { type PipelineStage } from '@/lib/leads/pipeline-types';
 import type { LeadMutations } from './use-lead-mutations';
 import type { LeadDetail } from './drawer-types';
+import { readDetail, writeDetail } from './lead-detail-cache';
 import DrawerHeader from './drawer-header';
 import DrawerSummary from './drawer-summary';
 import DrawerStageActions from './drawer-stage-actions';
@@ -23,18 +24,38 @@ import ReplyComposer from './reply-composer';
  * sections are presentational children. Stage buttons confirm the
  * destructive-feeling moves; Lost prompts for a reason. Includes the 1:1
  * email reply composer.
+ *
+ * `banner` and `onReplySent` exist for the work queue: it renders its progress
+ * bar above the header and takes over what "sent" means (advance, don't reload).
  */
 export default function LeadDrawer({
   leadId,
   onClose,
   mutations,
+  banner,
+  onReplySent,
+  onConfirmed,
 }: {
   leadId: string | null;
   onClose: () => void;
   mutations: LeadMutations;
+  banner?: ReactNode;
+  onReplySent?: () => void;
+  onConfirmed?: (leadId: string) => void;
 }): ReactElement | null {
   const [detail, setDetail] = useState<LeadDetail | null>(null);
   const [loading, setLoading] = useState(false);
+  // WHICH lead's fetch has come back — not a bare boolean. A card painted from
+  // the prefetch cache is readable immediately, but acting on it waits for
+  // confirmation, or a stale snapshot could be marked Lost.
+  //
+  // It stores the id rather than a flag because a flag leaks across cards: on a
+  // lead change both effects below run in the same pass, so the announce effect
+  // would still see the PREVIOUS card's `true` alongside the new id and arm the
+  // new card instantly. Comparing ids makes that unrepresentable, and also makes
+  // a late out-of-order fetch resolve harmlessly against the card it belongs to.
+  const [confirmedFor, setConfirmedFor] = useState<string | null>(null);
+  const confirmed = confirmedFor !== null && confirmedFor === leadId;
   const [notes, setNotes] = useState('');
   const notesTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -47,16 +68,34 @@ export default function LeadDrawer({
         const body = await res.json();
         setDetail(body.data);
         setNotes(body.data?.lead?.notes ?? '');
+        if (body.data) writeDetail(leadId, body.data);
+        // leadId is the one this callback fetched for, so a slow response can
+        // never confirm whichever card the operator has moved on to.
+        setConfirmedFor(leadId);
       }
     } finally {
       setLoading(false);
     }
   }, [leadId]);
 
+  // Stale-while-revalidate: paint a prefetched lead instantly (the queue warms
+  // the next one), then always refetch so what's on screen converges on truth.
   useEffect(() => {
-    setDetail(null);
+    const cached = leadId ? readDetail(leadId) : null;
+    setDetail(cached);
+    // No reset needed — `confirmed` is derived by comparing ids, so the previous
+    // card's confirmation stops applying the moment leadId changes.
+    if (cached) setNotes(cached.lead.notes ?? '');
     void load();
-  }, [load]);
+  }, [leadId, load]);
+
+  // Tell the queue this lead is confirmed fresh, so it can arm its own actions.
+  // Held in a ref so a caller passing an inline function can't churn load()'s deps.
+  const onConfirmedRef = useRef(onConfirmed);
+  onConfirmedRef.current = onConfirmed;
+  useEffect(() => {
+    if (confirmed && leadId) onConfirmedRef.current?.(leadId);
+  }, [confirmed, leadId]);
 
   const saveNotes = (value: string): void => {
     setNotes(value);
@@ -114,11 +153,12 @@ export default function LeadDrawer({
         {loading && !detail && <div className="py-10 text-center text-gray-400">Loading…</div>}
         {lead && detail && (
           <>
+            {banner}
             <DrawerHeader lead={lead} name={name} />
             <DrawerSummary detail={detail} />
             <DrawerStageActions
               lead={lead}
-              mutating={mutations.mutating}
+              mutating={mutations.mutating || !confirmed}
               onMove={(stage) => void moveTo(stage)}
               onSetOwner={(owner) => void setOwner(owner)}
               onSnooze={(days) => void snooze(days)}
@@ -143,7 +183,7 @@ export default function LeadDrawer({
                   sourceWidget={lead.sourceWidget}
                   occasion={extractLeadFacts(lead.metadata).occasion}
                   inbound={detail.inboundEmails[0] ?? null}
-                  onSent={() => void load()}
+                  onSent={onReplySent ?? (() => void load())}
                 />
               </div>
             </section>

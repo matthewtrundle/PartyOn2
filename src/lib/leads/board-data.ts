@@ -13,9 +13,12 @@ import { prisma } from '@/lib/database/client';
 import { dateStrCT, extractLeadFacts, temperatureFor, SCORE_THRESHOLDS } from './scoring';
 import { isNewsletterOnly, sweepEnrollSubmitted } from './pipeline';
 import { ACTIVE_STAGES, PIPELINE_STAGES, type PipelineStage } from './pipeline-types';
-import { SOURCE_LABELS } from './board-types';
+import { compareBoardCards, SOURCE_LABELS } from './board-types';
 import type { BoardData, BoardFilters, BoardKpis, BoardLead } from './board-types';
 import { SOURCE_FILTER_CONSUMER, SOURCE_FILTER_PARTNER } from './board-types';
+
+// Re-exported so existing importers (and its test) keep their board-data path.
+export { compareBoardCards };
 import { isB2bBusinessType, isPartnerLead } from './partner-tags';
 import { loadBoardJoins } from './board-joins';
 import { nextActionFor } from './next-action';
@@ -442,16 +445,6 @@ async function loadCardFlags(all: Lead[]): Promise<{
     emailCounts,
     touchCounts: new Map(touchRows.map((r) => [r.lead_id, r.n])),
   };
-}
-
-/**
- * Hot→cold within a column: score desc, unscored sink to the bottom, newest
- * first on ties. The operator works each column top-down daily.
- */
-export function compareBoardCards(a: BoardLead, b: BoardLead): number {
-  const scoreDiff = (b.score ?? -1) - (a.score ?? -1);
-  if (scoreDiff !== 0) return scoreDiff;
-  return b.createdAt.localeCompare(a.createdAt);
 }
 
 /** Group boarded cards into stage columns, then filter and sort hot→cold. */

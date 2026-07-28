@@ -11,19 +11,30 @@
  * rather than restoring a possibly-stale snapshot.
  */
 
-import { ReactElement, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { ReactElement, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import NavyBand from '@/components/backend/shell/NavyBand';
 import SkeletonCard from '@/components/backend/kit/SkeletonCard';
 import type { BoardData, BoardFilters } from '@/lib/leads/board-types';
 import type { PipelineStage } from '@/lib/leads/pipeline-types';
+import { buildWorkQueue, queueCounts, type QueueLane } from '@/lib/leads/work-queue';
 import KpiStrip from './_components/kpi-strip';
 import BoardFiltersBar from './_components/board-filters';
 import LeadsBoard from './_components/leads-board';
 import LeadDrawer from './_components/lead-drawer';
+import LeadQueue from './_components/lead-queue';
+import LeadQueueLauncher from './_components/lead-queue-launcher';
 import { useLeadMutations } from './_components/use-lead-mutations';
 
 const TEMPS = ['hot', 'warm', 'cold'] as const;
+
+/**
+ * Queue mutations must never trigger a board refetch: that GET re-reads 500
+ * leads and runs sweepEnrollSubmitted (a write), so a 30-action sitting would
+ * fire 30 of them. The queue reconciles once, on exit. Module-level so the
+ * hook's useCallback identity stays stable across renders.
+ */
+const NO_REFETCH = async (): Promise<void> => {};
 
 function filtersToQuery(f: BoardFilters): string {
   const params = new URLSearchParams();
@@ -82,6 +93,26 @@ function LeadsPageInner(): ReactElement {
   }, [search]);
 
   const mutations = useLeadMutations(load);
+  const queueMutations = useLeadMutations(NO_REFETCH);
+
+  const [lane, setLane] = useState<QueueLane>('direct');
+  // Non-null while a queue is running; the value also keys the LeadQueue mount,
+  // which is what freezes its snapshot for the duration of the sitting.
+  const [queueRunAt, setQueueRunAt] = useState<number | null>(null);
+
+  const counts = useMemo(
+    () => (data ? queueCounts(data.columns) : { all: 0, premier: 0, direct: 0 }),
+    [data],
+  );
+  const workQueue = useMemo(
+    () => (data ? buildWorkQueue(data.columns, { lane, now: new Date() }) : []),
+    [data, lane],
+  );
+
+  const exitQueue = useCallback((): void => {
+    setQueueRunAt(null);
+    void load(); // the one reconcile for the whole sitting
+  }, [load]);
 
   const optimisticMove = useCallback((leadId: string, to: PipelineStage): void => {
     setData((prev) => {
@@ -125,13 +156,21 @@ function LeadsPageInner(): ReactElement {
             <p className="text-sm text-[#B7C4D0]">
               Every inquiry, scored and tracked to Won or Lost.
             </p>
-            <button
-              type="button"
-              onClick={() => void load()}
-              className="min-h-[36px] px-3 rounded-lg bg-white/10 text-white text-sm font-semibold hover:bg-white/20"
-            >
-              Refresh
-            </button>
+            <div className="flex items-center gap-2">
+              <LeadQueueLauncher
+                counts={counts}
+                lane={lane}
+                onLaneChange={setLane}
+                onStart={() => setQueueRunAt(Date.now())}
+              />
+              <button
+                type="button"
+                onClick={() => void load()}
+                className="min-h-[36px] px-3 rounded-lg bg-white/10 text-white text-sm font-semibold hover:bg-white/20"
+              >
+                Refresh
+              </button>
+            </div>
           </div>
           <BoardFiltersBar filters={filters} onChange={setFilters} />
         </div>
@@ -165,7 +204,23 @@ function LeadsPageInner(): ReactElement {
         )}
       </div>
 
-      <LeadDrawer leadId={openLead} onClose={closeDrawer} mutations={mutations} />
+      {/* Only ever one live drawer: the queue owns it while a sitting runs, so
+          the deep-link drawer stands down (two open sheets would fight over the
+          body scroll lock and the Escape handler). */}
+      <LeadDrawer
+        leadId={queueRunAt === null ? openLead : null}
+        onClose={closeDrawer}
+        mutations={mutations}
+      />
+
+      {queueRunAt !== null && (
+        <LeadQueue
+          key={queueRunAt}
+          queue={workQueue}
+          mutations={queueMutations}
+          onExit={exitQueue}
+        />
+      )}
     </div>
   );
 }

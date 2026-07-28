@@ -91,6 +91,19 @@ export interface BoardFilters {
   includePartial?: boolean;
 }
 
+/**
+ * Hot→cold within a column: score desc, unscored sink to the bottom, newest
+ * first on ties. The operator works each column top-down daily.
+ *
+ * Lives here rather than in board-data.ts so the client-side work queue can
+ * reuse it — board-data.ts imports Prisma and is server-only.
+ */
+export function compareBoardCards(a: BoardLead, b: BoardLead): number {
+  const scoreDiff = (b.score ?? -1) - (a.score ?? -1);
+  if (scoreDiff !== 0) return scoreDiff;
+  return b.createdAt.localeCompare(a.createdAt);
+}
+
 /** Human labels for the board columns. */
 export const STAGE_LABELS: Record<PipelineStage, string> = {
   NEW: 'New',

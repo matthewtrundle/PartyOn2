@@ -19,6 +19,11 @@ const bodySchema = z.object({
   stage: z.enum(PIPELINE_STAGES),
   sortOrder: z.number().finite().optional(),
   lostReason: z.string().max(200).nullable().optional(),
+  // Only the two human-initiated origins are accepted over the wire. The
+  // system values ('auto' | 'order' | 'enroll' | 'reopen' | 'reply' | 'touch')
+  // are deliberately excluded so a client can never forge an audit record that
+  // claims a sweep or a payment made the move.
+  via: z.enum(['drag', 'queue']).optional(),
 });
 
 export async function PATCH(
@@ -37,7 +42,7 @@ export async function PATCH(
   }
 
   const result = await transitionStage(id, body.stage, {
-    via: 'drag',
+    via: body.via ?? 'drag',
     sortOrder: body.sortOrder,
     lostReason: body.lostReason ?? undefined,
   });

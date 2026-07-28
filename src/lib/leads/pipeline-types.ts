@@ -30,7 +30,8 @@ export type StageChangeVia =
   | 'touch' // operator logged a call/text from the board (NEW → CONTACTED)
   | 'order' // paid order / deposit matched (→ WON)
   | 'reopen' // WON/LOST lead submitted a fresh inquiry (→ NEW)
-  | 'enroll'; // lead entered the board (→ NEW)
+  | 'enroll' // lead entered the board (→ NEW)
+  | 'queue'; // operator worked the card in /admin/leads focus mode
 
 export function isPipelineStage(v: unknown): v is PipelineStage {
   return typeof v === 'string' && (PIPELINE_STAGES as readonly string[]).includes(v);
