@@ -418,6 +418,18 @@
   color: #fff;
   letter-spacing: 0.02em;
 }
+/* Line-item breakdown under the quantity stepper: tickets × price, sales tax,
+   and the all-in total the card is actually charged. */
+.priceBreakdown {
+  margin: 10px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.72);
+}
+.priceBreakdown strong {
+  color: #fff;
+  font-weight: 600;
+}
 .check {
   display: flex;
   align-items: flex-start;

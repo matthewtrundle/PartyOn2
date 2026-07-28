@@ -162,7 +162,7 @@ export default function ThresholdWidget({ onGetTicket }: ThresholdWidgetProps): 
             ) : (
               <NeonHalo>
                 <Button variant="cart" size="lg" onClick={() => onGetTicket('final_cta')} className="uppercase">
-                  {state === 'met' ? 'Grab a Remaining Spot' : 'Claim Your Spot'} &mdash; ${EVENT.price}
+                  {state === 'met' ? 'Grab a Remaining Spot' : 'Claim Your Spot'} &mdash; ${EVENT.price} + tax
                 </Button>
               </NeonHalo>
             )}

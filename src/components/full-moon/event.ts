@@ -22,6 +22,7 @@
  *
  * Note that Aug 28 is a FRIDAY. The Aug 1 attempt was a Saturday.
  */
+import { getTaxRateForZip } from '@/lib/tax/rates';
 
 /** A single hero-carousel slide. */
 export interface CarouselSlide {
@@ -138,6 +139,47 @@ export const EVENT: FullMoonEvent = {
   ordersUrl: '/order',
 };
 
+/**
+ * Sales tax on tickets. Texas treats a ticketed cruise as a taxable amusement
+ * service, and the Aug 1 build charged $0 tax — under-collection we'd have owed
+ * out of pocket at filing time.
+ *
+ * Tax is added ON TOP of the advertised price (Allan's call 2026-07-28), so a
+ * $79 ticket costs $85.52 at checkout. Every customer-facing price on the page
+ * therefore says "+ tax", and the ticket modal shows the full breakdown —
+ * advertising $79 and silently charging $85.52 is the thing to avoid.
+ *
+ * 8.25% = 6.25% Texas state + 2.00% local. DERIVED from the shared rate table
+ * rather than hardcoded: rates.ts is a general-purpose file that delivery
+ * pricing also edits, and a hardcoded copy here would keep quoting the old rate
+ * in the modal while the server (which calls calculateTax) immediately charged
+ * the new one — quoting one number and billing another. rates.ts is pure data
+ * with no imports, so pulling it into the client bundle costs nothing.
+ *
+ * The server remains the authority: it recomputes via calculateTax() from the
+ * DB price. This constant only drives what the buyer is shown.
+ *
+ * Declared above FAQS on purpose: FAQS reads TICKET_TOTAL_DISPLAY at module
+ * evaluation time, so a later `const` would land in the temporal dead zone and
+ * throw on import.
+ */
+export const TICKET_TAX_ZIP = '78734';
+export const TICKET_TAX_RATE = getTaxRateForZip(TICKET_TAX_ZIP).rate;
+
+/** Subtotal / tax / all-in total for a ticket quantity, rounded to cents. Pure. */
+export function ticketTotals(
+  quantity: number,
+  unitPrice: number = EVENT.price,
+): { subtotal: number; tax: number; total: number } {
+  const q = Math.max(1, Math.floor(quantity));
+  const subtotal = Math.round(unitPrice * q * 100) / 100;
+  const tax = Math.round(subtotal * TICKET_TAX_RATE * 100) / 100;
+  return { subtotal, tax, total: Math.round((subtotal + tax) * 100) / 100 };
+}
+
+/** "$85.52" — all-in price of a single ticket, for display. */
+export const TICKET_TOTAL_DISPLAY = `$${ticketTotals(1).total.toFixed(2)}`;
+
 export const SHARE = {
   title: 'Lake Travis Full Moon Party',
   text: `Sunset cruise, moonrise dance party on Lake Travis — ${EVENT.shortDate}. Come with me?`,
@@ -158,10 +200,10 @@ export const HERO = {
     { text: "Y'ALL", tone: 'disco' },
   ] as HeadlineLine[],
   sub: 'Watch the sun set over Lake Travis, then dance as the full moon comes up over the water. This is what summer is for.',
-  primaryCta: `Get Your Ticket — $${EVENT.price}`,
+  primaryCta: `Get Your Ticket — $${EVENT.price} + tax`,
 };
 
-/** Where we board (shown under the datestamp). Verify the exact street number before launch. */
+/** Where we board (shown under the datestamp). Address confirmed by Allan 2026-07-28. */
 export const LOCATION = {
   name: 'Anderson Mill Marina',
   address: '13993 FM 2769, Leander, TX 78641',
@@ -303,7 +345,7 @@ export const GALLERY: GalleryItem[] = [
 export const FAQS: FaqItem[] = [
   {
     q: "What's the ticket price, exactly?",
-    a: `$${EVENT.price} per person for the four-hour cruise, the captain & crew, DJ Trey, a full taco bar, and water, ice & cups. Drinks are the one thing that isn't included — it's BYOB, so order yours ahead through Party On Delivery and we'll have them iced in a cooler on board.`,
+    a: `$${EVENT.price} per person plus Texas sales tax — ${TICKET_TOTAL_DISPLAY} all in. That covers the four-hour cruise, the captain & crew, DJ Trey, a full taco bar, and water, ice & cups. Drinks are the one thing that isn't included — it's BYOB, so order yours ahead through Party On Delivery and we'll have them iced in a cooler on board.`,
   },
   {
     q: 'Where do we board?',

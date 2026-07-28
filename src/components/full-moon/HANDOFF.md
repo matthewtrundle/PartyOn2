@@ -5,7 +5,7 @@ Last updated 2026-07-28 (Aug 28 reschedule).
 
 ## Current event — Fri Aug 28, 2026
 **7:00–11:00 PM** (4-hr cruise), **$79**, cap **50** advertised / **60** hard, min **32**,
-**Anderson Mill Marina · 13993 FM 2769, Leander, TX 78641** (⚠️ street number STILL unverified),
+**Anderson Mill Marina · 13993 FM 2769, Leander, TX 78641** (confirmed by Allan 2026-07-28),
 **60-foot** party boat, **adults 25+**, **taco bar INCLUDED**, **BYOB** (drinks via POD, iced cooler
 on board), **DJ Trey**, water/ice/cups, life jackets. Fetii code **PartyOn** (25% off).
 Co-brand: Premier Party Cruises. **Note: Aug 28 is a FRIDAY.**
@@ -81,11 +81,25 @@ pushing traffic at it — drafts are in `docs/marketing/full-moon-aug28-outreach
 - **Visual appearance of the disco shimmer** — CLAUDE.md forbids screenshots; it's for Allan's eyes
   on the preview. The CSS follows the existing `.hlGroovy` pattern and honors reduced motion.
 - **Sunset time 7:55 PM** for Aug 28 — derived, not looked up. It drives the schedule timeline.
-- **Marina street number** — carried over from the disco-cruise address, never confirmed.
+- A **real paid purchase end-to-end** on live Stripe keys, now including the tax line. No ticket has
+  EVER been sold on this system (Aug 1 sold zero), so the `eventTicket=1` webhook branch is still
+  unexercised with real money. Operator test: buy one, verify order + email + count + guest list,
+  then refund in Stripe.
 - A **real paid purchase end-to-end** on live Stripe keys (operator-only test).
 
+## Pricing & tax
+$79 + **8.25% Texas sales tax added on top** = **$85.52** at checkout (Allan's call 2026-07-28;
+a ticketed cruise is a taxable amusement service, and the Aug 1 build charged $0). The rate lives
+in `TICKET_TAX_RATE` / `ticketTotals()` in event.ts for display; the server re-derives it with
+`calculateTax()` from the DB price, so the browser can never influence what's billed. Tax rides as
+its own Stripe line item so the receipt itemizes it. `ticket-tax.test.ts` asserts the modal's
+breakdown equals the server charge at every allowed quantity — if you change the price or rate,
+that test is the tripwire.
+
+Because tax is on top, every advertised price says "+ tax" (hero CTA, threshold CTA, What's
+Included eyebrow, modal eyebrow) and the modal shows a full subtotal/tax/total breakdown.
+
 ## Open decisions / operator actions
-- ⏳ Verify the marina street number.
 - ⏳ Confirm the taco-bar caterer + per-head cost (the $79 price assumes ~$15–18/head).
 - ⏳ Push actual traffic: drafts sit unsent in `docs/marketing/full-moon-aug28-outreach.md`.
   Per memory, the email list has an unresolved consent problem that blocks cold sends.
