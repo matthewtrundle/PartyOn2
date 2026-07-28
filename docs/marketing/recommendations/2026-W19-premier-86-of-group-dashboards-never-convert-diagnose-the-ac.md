@@ -62,8 +62,8 @@ _(not captured)_
 
 ```json
 {
-  "orders": 62,
-  "revenue": 11899.78,
+  "orders": 60,
+  "revenue": 11436.79,
   "segments": [
     {
       "margin": 463.53,
@@ -75,28 +75,28 @@ _(not captured)_
       "marginCoveragePct": 16
     },
     {
-      "margin": 171.94,
-      "orders": 6,
-      "revenue": 2211.56,
+      "margin": 132.24,
+      "orders": 4,
+      "revenue": 1748.57,
       "segment": "unknown",
-      "averageMarginPct": 7.8,
-      "averageOrderValue": 368.59,
-      "marginCoveragePct": 31
+      "averageMarginPct": 7.6,
+      "averageOrderValue": 437.14,
+      "marginCoveragePct": 30.2
     }
   ],
-  "capturedAt": "2026-07-27T08:01:05.212Z",
+  "capturedAt": "2026-07-28T08:00:30.221Z",
   "affiliateRoi": [
     {
       "code": "PREMIER",
-      "margin": 472.27,
-      "orders": 48,
-      "roiPct": 341.2,
-      "revenue": 6240.73,
-      "netMargin": 365.23,
+      "margin": 441.31,
+      "orders": 47,
+      "roiPct": 312.3,
+      "revenue": 6088.24,
+      "netMargin": 334.27,
       "affiliateId": "d21bac1a-3f99-489c-89fd-e1980c264a8d",
       "businessName": "Premier Party Cruises",
       "commissionPaid": 107.04,
-      "marginCoveragePct": 25.1
+      "marginCoveragePct": 23.7
     },
     {
       "code": "POUR24",
@@ -135,15 +135,15 @@ _(not captured)_
       "marginCoveragePct": 0
     }
   ],
-  "snapshotDate": "2026-07-27",
-  "averageOrderValue": 191.931935483871,
+  "snapshotDate": "2026-07-28",
+  "averageOrderValue": 190.6131666666667,
   "marginCoveragePct": null
 }
 ```
 ## Updates
 
 - 2026-05-05 — Created with status `executed` from source `director`.
-- 2026-07-27 — Status shipped → shipped (cron:measure-recommendations). Notes: Auto-captured 14-day measurement
+- 2026-07-28 — Status shipped → shipped (cron:measure-recommendations). Notes: Auto-captured 14-day measurement
 
 ---
 _Mirror file. Edited automatically by the triage queue when status changes. Source of truth is the database (id: `4fe8e34e-83cb-4ee7-9576-4a60386400dc`). Slug: `premier-86-of-group-dashboards-never-convert-diagnose-the-ac`._
