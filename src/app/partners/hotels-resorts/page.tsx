@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { blankHoneypotFields } from '@/lib/forms/honeypot'
 import Image from 'next/image'
+import Link from 'next/link'
 import Navigation from "@/components/Navigation"
 import Footer from '@/components/Footer'
 
@@ -129,9 +130,6 @@ export default function HotelsResortsPartnerPage() {
               >
                 BECOME A PARTNER
               </button>
-              <button className="px-8 py-3 border border-white text-white hover:bg-white hover:text-gray-900 transition-all tracking-[0.1em]">
-                DOWNLOAD CASE STUDY
-              </button>
             </div>
           </div>
         </div>
@@ -166,36 +164,36 @@ export default function HotelsResortsPartnerPage() {
         <div className="max-w-7xl mx-auto px-8">
           <div className="text-center mb-16">
             <h2 className="font-cormorant text-4xl mb-4 tracking-[0.1em]">
-              PROVEN REVENUE IMPACT
+              WHY PROPERTIES PARTNER WITH US
             </h2>
             <p className="text-gray-600 max-w-2xl mx-auto">
-              Our hotel partners see measurable improvements in guest satisfaction and F&B revenue
+              A beverage offering your guests actually want, with none of the licensing,
+              inventory, or staffing on your side
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
             <div className="bg-white p-8 border border-gray-200 text-center hover:shadow-lg transition-shadow">
-
-              <div className="text-5xl font-cormorant text-brand-yellow mb-4">35%</div>
-              <h3 className="font-medium text-gray-900 mb-2 tracking-[0.1em]">INCREASE IN F&B REVENUE</h3>
+              <h3 className="font-medium text-gray-900 mb-3 tracking-[0.1em]">NEW REVENUE, NO COST</h3>
               <p className="text-sm text-gray-600">
-                Average revenue growth from in-room beverage sales in first year
+                Revenue share on every order placed through your link. No upfront cost, no
+                monthly minimum, no inventory to carry.
               </p>
             </div>
 
             <div className="bg-white p-8 border border-gray-200 text-center hover:shadow-lg transition-shadow">
-              <div className="text-5xl font-cormorant text-brand-yellow mb-4">87%</div>
-              <h3 className="font-medium text-gray-900 mb-2 tracking-[0.1em]">GUEST SATISFACTION</h3>
+              <h3 className="font-medium text-gray-900 mb-3 tracking-[0.1em]">THE LICENSE IS OURS</h3>
               <p className="text-sm text-gray-600">
-                Guests rate our service as excellent or outstanding
+                We hold the TABC permit and check ID at every handoff, so alcohol service
+                never sits on your license or your staff.
               </p>
             </div>
 
             <div className="bg-white p-8 border border-gray-200 text-center hover:shadow-lg transition-shadow">
-              <div className="text-5xl font-cormorant text-brand-yellow mb-4">$45K</div>
-              <h3 className="font-medium text-gray-900 mb-2 tracking-[0.1em]">AVG MONTHLY REVENUE</h3>
+              <h3 className="font-medium text-gray-900 mb-3 tracking-[0.1em]">BUILT FOR GROUPS</h3>
               <p className="text-sm text-gray-600">
-                Additional monthly revenue per 100-room property
+                Split-pay group ordering for wedding blocks, bach parties, and corporate
+                stays — plus returns on unopened bottles.
               </p>
             </div>
           </div>
@@ -513,65 +511,63 @@ export default function HotelsResortsPartnerPage() {
         </div>
       </section>
 
-      {/* Case Study */}
+      {/* How a partnership runs */}
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-8">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="relative h-[500px]">
               <Image
                 src="/images/gallery/sunset-champagne-pontoon.webp"
-                alt="Hotel Success Story"
+                alt="Chilled bottles and glassware set up for a hotel guest delivery"
                 fill
                 className="object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
               <div className="absolute bottom-8 left-8 right-8 text-white">
-                <div className="text-sm tracking-[0.1em] mb-2">CASE STUDY</div>
-                <h3 className="font-cormorant text-2xl">Four Seasons Austin</h3>
+                <div className="text-sm tracking-[0.1em] mb-2">HOW IT RUNS</div>
+                <h3 className="font-cormorant text-2xl">From guest request to doorstep</h3>
               </div>
             </div>
-            
+
             <div>
-              <span className="text-brand-yellow text-sm tracking-[0.1em]">SUCCESS STORY</span>
+              <span className="text-brand-yellow text-sm tracking-[0.1em]">WHAT A PARTNERSHIP LOOKS LIKE</span>
               <h2 className="font-cormorant text-4xl mt-2 mb-6 tracking-[0.1em]">
-                How Four Seasons Austin Increased F&B Revenue by 40%
+                A Bar Program Without The Bar
               </h2>
-              
+
               <div className="space-y-6 mb-8">
                 <div>
-                  <h4 className="font-medium text-gray-900 mb-2">THE CHALLENGE</h4>
+                  <h4 className="font-medium text-gray-900 mb-2">THE PROBLEM WE SOLVE</h4>
                   <p className="text-gray-600">
-                    Limited minibar options and slow room service were impacting guest satisfaction scores 
-                    and missing revenue opportunities during peak occupancy periods.
+                    Guests want a real drink selection in the room, for the group, or for an event
+                    on property. Stocking, licensing, and staffing that yourself is expensive — and
+                    minibars rarely cover what a celebrating group actually wants.
                   </p>
                 </div>
-                
+
                 <div>
-                  <h4 className="font-medium text-gray-900 mb-2">THE SOLUTION</h4>
+                  <h4 className="font-medium text-gray-900 mb-2">HOW IT WORKS</h4>
                   <p className="text-gray-600">
-                    Party On implemented a comprehensive beverage program including express in-room delivery, 
-                    curated VIP packages, and integrated billing through their PMS system.
+                    Your guests order from a page branded to your property. We handle the licensing,
+                    the selection, and the delivery — timed to check-in or to the event, received by
+                    someone 21+ with ID at the door, as Texas law requires.
                   </p>
                 </div>
-                
+
                 <div>
-                  <h4 className="font-medium text-gray-900 mb-2">THE RESULTS</h4>
+                  <h4 className="font-medium text-gray-900 mb-2">WHAT YOU PROVIDE</h4>
                   <ul className="space-y-2 text-gray-600">
-                    <li>• 40% increase in F&B revenue per occupied room</li>
-                    <li>• 92% guest satisfaction rating for beverage services</li>
-                    <li>• $75,000 additional monthly revenue</li>
-                    <li>• 50% reduction in minibar operational costs</li>
+                    <li>• A link or QR code your front desk and concierge can hand out</li>
+                    <li>• A handoff point — front desk, bell desk, or the guest&apos;s door</li>
+                    <li>• Nothing else: no inventory, no license, no staff time</li>
                   </ul>
                 </div>
               </div>
-              
+
               <div className="border-l-4 border-brand-yellow pl-6">
-                <p className="text-gray-700 italic mb-2">
-                  &ldquo;Party On has transformed our beverage service. The integration is seamless, 
-                  guests love the selection, and our F&B revenue has never been stronger.&rdquo;
-                </p>
-                <p className="text-sm text-gray-500">
-                  — Michael Chen, Director of Operations
+                <p className="text-gray-700">
+                  We are a TABC-licensed Austin retailer, not a marketplace — the same team packs,
+                  ices, and delivers every order, and handles returns on unopened bottles.
                 </p>
               </div>
             </div>
@@ -729,13 +725,24 @@ export default function HotelsResortsPartnerPage() {
       <section className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-8">
           <div className="text-center mb-12">
-            <p className="text-sm text-gray-600 tracking-[0.1em]">TRUSTED BY AUSTIN&apos;S FINEST HOTELS</p>
+            <p className="text-sm text-gray-600 tracking-[0.1em]">
+              AUSTIN LODGING &amp; HOSPITALITY PARTNERS
+            </p>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-8 items-center opacity-60">
-            {['Four Seasons', 'W Austin', 'Fairmont', 'JW Marriott', 'The LINE'].map((hotel) => (
-              <div key={hotel} className="text-center">
-                <p className="font-cormorant text-xl text-gray-700">{hotel}</p>
-              </div>
+          {/* Real signed partners only — each has a live co-branded page on this
+              site. Never list a property we do not actually have an agreement with. */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 items-center">
+            {[
+              { name: 'Inn Cahoots', detail: 'Boutique hotel · East 6th', href: '/partners/inn-cahoots' },
+              { name: 'Five Star Vacation Home Rentals', detail: 'Vacation rentals', href: '/partners/five-star' },
+              { name: "Lynn's Lodging", detail: 'Vacation rentals', href: '/partners/lynns-lodging' },
+            ].map((partner) => (
+              <Link key={partner.name} href={partner.href} className="text-center group">
+                <p className="font-cormorant text-xl text-gray-700 group-hover:text-brand-blue transition-colors">
+                  {partner.name}
+                </p>
+                <p className="text-sm text-gray-500 mt-1">{partner.detail}</p>
+              </Link>
             ))}
           </div>
         </div>
