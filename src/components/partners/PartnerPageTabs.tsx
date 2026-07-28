@@ -14,6 +14,7 @@
  */
 
 import { useEffect, useRef, useState, type ReactElement, type ReactNode } from 'react';
+import { trackPodEvent } from '@/lib/analytics/client-tracker';
 
 /** "Lynn's Lodging" → "Lynn's Lodging's"; "Cocktail Cowboys" → "Cocktail Cowboys'". */
 function possessive(name: string): string {
@@ -48,24 +49,58 @@ export default function PartnerPageTabs({
       u.searchParams.set('sourceType', 'embedded_quote_builder');
       setEmbedSrc(u.toString());
     }
+    // Measured from the parent, not the iframe: this is the only reliable
+    // count of how often the boat tab is actually opened.
+    trackPodEvent('partner_embed_opened', { businessName, label: rightLabel });
     setEmbedLoaded(true);
     setTab('right');
   };
 
-  // The embed posts its content height (quote-builder-resize) so the
-  // frame can grow instead of double-scrolling.
+  // Grow the frame to its content instead of double-scrolling.
+  //
+  // The embed is same-origin (it is a POD route proxying Premier), so we can
+  // measure its body directly rather than depend on Premier's own
+  // quote-builder-resize postMessage — one less contract of theirs to break.
+  // The message listener stays as a fallback for the cross-origin case.
   useEffect(() => {
+    if (!embedLoaded) return;
+    const setHeight = (height: number) => {
+      if (height > 0 && iframeRef.current) {
+        iframeRef.current.style.height = `${Math.max(height + 50, 900)}px`;
+      }
+    };
+
+    let observer: ResizeObserver | undefined;
+    const attach = () => {
+      try {
+        const body = iframeRef.current?.contentDocument?.body;
+        if (!body) return;
+        observer?.disconnect();
+        observer = new ResizeObserver(() => setHeight(body.scrollHeight));
+        observer.observe(body);
+        setHeight(body.scrollHeight);
+      } catch {
+        // Cross-origin or not ready yet — the message listener covers it.
+      }
+    };
+    attach();
+    const frame = iframeRef.current;
+    frame?.addEventListener('load', attach);
+
     const origin = new URL(embedUrl, window.location.origin).origin;
     const onMessage = (event: MessageEvent) => {
       if (event.origin !== origin) return;
       const data = event.data as { type?: string; height?: number };
-      if (data?.type === 'quote-builder-resize' && data.height && iframeRef.current) {
-        iframeRef.current.style.height = `${Math.max(data.height + 50, 900)}px`;
-      }
+      if (data?.type === 'quote-builder-resize' && data.height) setHeight(data.height);
     };
     window.addEventListener('message', onMessage);
-    return () => window.removeEventListener('message', onMessage);
-  }, [embedUrl]);
+
+    return () => {
+      observer?.disconnect();
+      frame?.removeEventListener('load', attach);
+      window.removeEventListener('message', onMessage);
+    };
+  }, [embedUrl, embedLoaded]);
 
   const tabClass = (active: boolean) =>
     `w-full px-2 py-3.5 md:py-4 text-sm sm:text-base md:text-xl font-heading font-bold tracking-[0.08em] uppercase border-b-4 transition-colors touch-manipulation ${

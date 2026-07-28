@@ -25,7 +25,13 @@
  * `/attached_assets/*` root-relative and their CDN sends no CORS headers, so
  * the module scripts cannot be `<base>`-loaded cross-origin. `next.config.ts`
  * proxies those two prefixes through to Premier.
+ *
+ * EVERY CHECK BELOW FAILS OPEN, DELIBERATELY. A guard that rejects a working
+ * Premier shell blanks the boat tab on every partner page at once — the exact
+ * outage it exists to prevent. Prefer serving a shell we are unsure about.
  */
+
+import { buildEmbedScript } from '@/lib/partners/premier-embed-script';
 
 /** Premier's live quote page. Netlify serves the SPA shell for this route. */
 export const PREMIER_QUOTE_UPSTREAM = 'https://premierpartycruises.com/quote';
@@ -36,142 +42,97 @@ export const PREMIER_QUOTE_EMBED_PATH = '/partners-embed/premier-quote';
 /** How long a fetched copy of Premier's shell stays fresh, in seconds. */
 export const PREMIER_EMBED_REVALIDATE_SECONDS = 300;
 
+/**
+ * Root-relative prefixes `next.config.ts` proxies through to Premier. A shell
+ * referencing anything outside this set cannot boot on our origin — the health
+ * check reports that as "about to go blank" before it actually does.
+ */
+export const PROXIED_ASSET_PREFIXES = ['/assets/', '/attached_assets/'] as const;
+
 /** Marker so a double-injection is detectable (and a no-op). */
 const INJECTION_MARKER = 'pod-partner-embed-injection';
 
-/**
- * Photos layered behind Premier's hero inside the embed. Served from POD's
- * own `/public`, which the iframe can reach because the embed is same-origin.
- */
-const HERO_SLIDES = [
-  '/images/partners/premier-boat-slideshow/unicorn-float-crew.jpg',
-  '/images/partners/premier-boat-slideshow/bride-squad-captain.jpg',
-  '/images/partners/premier-boat-slideshow/group-pic.jpg',
-  '/images/partners/premier-boat-slideshow/pontoon-full-crew.jpg',
-  '/images/partners/premier-boat-slideshow/disco-fun-1.jpg',
-  '/images/partners/premier-boat-slideshow/disco-fun-2.jpg',
-];
+/** Premier's own route, so the SPA router mounts the quote view. */
+function premierQuotePath(): string {
+  try {
+    return new URL(PREMIER_QUOTE_UPSTREAM).pathname;
+  } catch {
+    return '/quote';
+  }
+}
 
 /**
- * Everything POD adds to Premier's shell, injected immediately after `<head>`:
+ * Every root-relative asset URL the shell references, deduped.
  *
- * - `history.replaceState` to `/quote` so Premier's client router mounts the
- *   quote view (their Netlify host returns the same shell for every route, and
- *   the iframe's own URL is a POD path their router would not recognise).
- * - `noindex` so the embed never competes with either site in search.
- * - the hero background slideshow, re-mounted via MutationObserver because the
- *   SPA replaces the static shell on hydration.
- *
- * Kept verbatim from the committed snapshot it replaces (PRs #308 / #310) so
- * the proxy is a drop-in swap of delivery mechanism, not a visual change.
+ * Matches `src="..."` / `href="..."` on any prefix rather than hardcoding
+ * `/assets/` — the point is to notice when Premier's build output moves.
  */
-const POD_INJECTION = `<script>try{history.replaceState(null,"","/quote")}catch(e){}</script>
-<meta name="robots" content="noindex,nofollow">
-<!-- ${INJECTION_MARKER}: Premier hero background slideshow (see src/lib/partners/premier-embed.ts) -->
-<script>
-(function () {
-  var SLIDES = ${JSON.stringify(HERO_SLIDES)};
-  var current = 0;
-  var timer = null;
-
-  function findHero() {
-    // SPA hero: the section containing "Let's Get You on the Water".
-    // Tag-agnostic: find the deepest short-text element matching, then
-    // walk up to its SECTION (or a reasonable-height ancestor).
-    var all = document.body.querySelectorAll('*');
-    var best = null;
-    for (var i = 0; i < all.length; i++) {
-      var t = all[i].textContent || '';
-      if (t.length < 160 && /on the water/i.test(t)) best = all[i];
-    }
-    if (!best) return null;
-    var el = best;
-    while (el && el !== document.body) {
-      if (el.tagName === 'SECTION') return el;
-      el = el.parentElement;
-    }
-    // No <section> ancestor: use the highest ancestor under 90vh tall.
-    var pick = best.parentElement;
-    el = best.parentElement;
-    while (el && el !== document.body) {
-      if (el.clientHeight > 0 && el.clientHeight < window.innerHeight * 1.2) pick = el;
-      el = el.parentElement;
-    }
-    return pick;
+export function extractAssetPaths(html: string): string[] {
+  const found = new Set<string>();
+  const attr = /(?:src|href)\s*=\s*"(\/[^"]+\.(?:js|css|mjs))"/gi;
+  let match = attr.exec(html);
+  while (match !== null) {
+    found.add(match[1]);
+    match = attr.exec(html);
   }
+  return [...found];
+}
 
-  function mount() {
-    var hero = findHero();
-    if (!hero || hero.clientHeight < 200 || hero.querySelector('.pod-hero-bg')) return;
-    var cs = window.getComputedStyle(hero);
-    if (cs.position === 'static') hero.style.position = 'relative';
-    hero.style.overflow = 'hidden';
-
-    var bg = document.createElement('div');
-    bg.className = 'pod-hero-bg';
-    bg.setAttribute('aria-hidden', 'true');
-    bg.style.cssText = 'position:absolute;inset:0;z-index:0;pointer-events:none;';
-    SLIDES.forEach(function (src, i) {
-      var img = document.createElement('img');
-      img.src = src;
-      img.alt = '';
-      img.loading = 'eager';
-      img.style.cssText =
-        'position:absolute;inset:0;width:100%;height:100%;object-fit:cover;' +
-        'transition:opacity 1.2s ease;opacity:' + (i === 0 ? '1' : '0') + ';';
-      bg.appendChild(img);
-    });
-    // Dark overlay keeps the hero copy readable over the photos.
-    var overlay = document.createElement('div');
-    overlay.style.cssText =
-      'position:absolute;inset:0;background:linear-gradient(rgba(8,17,34,0.45),rgba(8,17,34,0.6));';
-    bg.appendChild(overlay);
-    hero.insertBefore(bg, hero.firstChild);
-
-    // Lift the hero content above the background.
-    for (var c = 0; c < hero.children.length; c++) {
-      var child = hero.children[c];
-      if (child === bg) continue;
-      var ccs = window.getComputedStyle(child);
-      if (ccs.position === 'static') child.style.position = 'relative';
-      if (ccs.zIndex === 'auto' || parseInt(ccs.zIndex, 10) < 1) child.style.zIndex = '1';
-    }
-
-    if (timer) clearInterval(timer);
-    timer = setInterval(function () {
-      var imgs = bg.querySelectorAll('img');
-      if (!document.body.contains(bg)) { clearInterval(timer); timer = null; return; }
-      imgs[current].style.opacity = '0';
-      current = (current + 1) % imgs.length;
-      imgs[current].style.opacity = '1';
-    }, 4500);
+/**
+ * The SPA's entry bundle — the one whose disappearance blanks the page.
+ *
+ * Attribute-order independent: Vite currently emits
+ * `<script type="module" crossorigin src="...">`, but that ordering is a
+ * build-tool detail, not a contract.
+ */
+export function extractEntryScriptUrl(html: string): string | null {
+  const scripts = html.match(/<script\b[^>]*>/gi) ?? [];
+  for (const tag of scripts) {
+    if (!/\btype\s*=\s*["']?module["']?/i.test(tag)) continue;
+    const src = tag.match(/\bsrc\s*=\s*"([^"]+)"/i);
+    if (src && src[1].startsWith('/')) return src[1];
   }
+  return null;
+}
 
-  function boot() {
-    mount();
-    // The SPA replaces the static shell after hydration — re-mount when it does.
-    new MutationObserver(function () { mount(); }).observe(document.body, { childList: true, subtree: true });
+/** Distinct `/<prefix>/` segments the shell loads assets from. */
+export function extractAssetPrefixes(html: string): string[] {
+  const prefixes = new Set<string>();
+  for (const path of extractAssetPaths(html)) {
+    const slash = path.indexOf('/', 1);
+    if (slash > 0) prefixes.add(path.slice(0, slash + 1));
   }
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', boot);
-  } else {
-    boot();
-  }
-})();
-</script>`;
+  return [...prefixes];
+}
+
+/** Asset prefixes the shell uses that our rewrites do NOT proxy. */
+export function unproxiedAssetPrefixes(html: string): string[] {
+  const proxied = PROXIED_ASSET_PREFIXES as readonly string[];
+  return extractAssetPrefixes(html).filter((p) => !proxied.includes(p));
+}
+
+/**
+ * Does a content-type header describe executable JavaScript?
+ *
+ * The decisive test for the blank-panel bug: a vanished bundle comes back as
+ * `text/html` (Netlify's SPA fallback), and the browser refuses to run it.
+ */
+export function isJavaScriptContentType(contentType: string | null): boolean {
+  if (!contentType) return false;
+  return /(?:^|[\s;])(?:application|text)\/(?:x-)?(?:java|ecma)script/i.test(contentType);
+}
 
 /**
  * Does this look like Premier's SPA shell, with a bootable entry bundle?
  *
- * Guards the exact failure this module exists to prevent: an upstream response
- * that is HTTP 200 but is not a shell we can boot (Netlify error page, holding
- * page, a build that stopped emitting a module entry). Serving the fallback is
- * always better than serving something that renders blank.
+ * Structural only — no filename, prefix, or attribute-order assumptions. It
+ * catches an upstream that is HTTP 200 but not a shell at all (a Netlify error
+ * page, a holding page), which is the case that would otherwise render blank.
  */
 export function isBootablePremierShell(html: string): boolean {
   if (!/<head[^>]*>/i.test(html)) return false;
-  if (!/<div id="root">/i.test(html)) return false;
-  return /<script[^>]+type="module"[^>]+src="\/assets\/index-[^"]+\.js"/i.test(html);
+  if (!/<div\b[^>]*\bid\s*=\s*["']?root["']?/i.test(html)) return false;
+  return extractEntryScriptUrl(html) !== null;
 }
 
 /**
@@ -184,7 +145,17 @@ export function isBootablePremierShell(html: string): boolean {
 export function buildPremierEmbedHtml(upstreamHtml: string): string | null {
   if (!isBootablePremierShell(upstreamHtml)) return null;
   if (upstreamHtml.includes(INJECTION_MARKER)) return upstreamHtml;
-  return upstreamHtml.replace(/<head[^>]*>/i, (head) => `${head}\n${POD_INJECTION}`);
+
+  const injection = [
+    `<meta name="robots" content="noindex,nofollow">`,
+    `<!-- ${INJECTION_MARKER}: see src/lib/partners/premier-embed.ts -->`,
+    buildEmbedScript({
+      embedPath: PREMIER_QUOTE_EMBED_PATH,
+      quotePath: premierQuotePath(),
+    }),
+  ].join('\n');
+
+  return upstreamHtml.replace(/<head[^>]*>/i, (head) => `${head}\n${injection}`);
 }
 
 /**
