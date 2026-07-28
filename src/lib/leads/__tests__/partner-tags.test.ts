@@ -69,9 +69,10 @@ describe('isB2bBusinessType', () => {
     expect(isB2bBusinessType('Event Space')).toBe(true);
   });
 
-  it('rejects consumer forms that share the partner endpoint', () => {
-    // /corporate/holiday-party is a customer booking a party — it posts to
-    // /api/partners/inquiry, so without this it would land on the B2B board.
+  it('rejects the consumer forms that share the partner endpoint', () => {
+    // Both post to /api/partners/inquiry: the corporate holiday-party quote
+    // form and the wedding-DJ form (a couple asking for quotes). Neither
+    // matches a B2B pattern, so the allow-list alone keeps them consumer.
     expect(isB2bBusinessType('Corporate Holiday Party')).toBe(false);
     expect(isB2bBusinessType('wedding-dj')).toBe(false);
     expect(isB2bBusinessType(null)).toBe(false);
@@ -82,6 +83,17 @@ describe('isB2bBusinessType', () => {
     // Pre-existing behavior for every PARTNER_INQUIRY lead; only a positive
     // match moves one to the partner board.
     expect(isB2bBusinessType('something else entirely')).toBe(false);
+  });
+
+  it('does not let a consumer-sounding word hide a real partner', () => {
+    // No deny-list: a wedding venue or a bachelorette bar service is still a
+    // business, and a keyword veto would be a one-word way off the partner
+    // board for anyone who wanted it.
+    expect(isB2bBusinessType('wedding venue')).toBe(true);
+    expect(verticalForBusinessType('wedding venue')).toBe('venue');
+    expect(isB2bBusinessType('bachelorette party bartending service')).toBe(true);
+    expect(verticalForBusinessType('bachelorette party bartending service')).toBe('bartender');
+    expect(isB2bBusinessType('birthday party event space')).toBe(true);
   });
 });
 
