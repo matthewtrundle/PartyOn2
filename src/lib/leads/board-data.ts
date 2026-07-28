@@ -16,7 +16,7 @@ import { ACTIVE_STAGES, PIPELINE_STAGES, type PipelineStage } from './pipeline-t
 import { SOURCE_LABELS } from './board-types';
 import type { BoardData, BoardFilters, BoardKpis, BoardLead } from './board-types';
 import { SOURCE_FILTER_CONSUMER, SOURCE_FILTER_PARTNER } from './board-types';
-import { isPartnerLead } from './partner-tags';
+import { isB2bBusinessType, isPartnerLead } from './partner-tags';
 import { loadBoardJoins } from './board-joins';
 import { nextActionFor } from './next-action';
 
@@ -136,6 +136,31 @@ export function refineSource(
   return { key: widget, label: SOURCE_LABELS[widget] ?? 'Site' };
 }
 
+/**
+ * Is this card a BUSINESS reaching out rather than a customer?
+ *
+ * `PARTNER_OUTREACH` (our own cold prospects) and the `partner-prospect` tag
+ * are unambiguous. `PARTNER_INQUIRY` is NOT: `/api/partners/inquiry` is a
+ * shared endpoint that consumer landers post to as well (the corporate
+ * holiday-party quote form is one), so those are classified on the submitted
+ * business type — unrecognized stays consumer, which is where every
+ * PARTNER_INQUIRY lead sat before this distinction existed.
+ *
+ * Deliberately excludes PARTNER_LANDING_PAGE / PARTNER_FAREHARBOR_WEBHOOK /
+ * PARTNER_EMAIL_OPTIN: those are consumers who arrived *via* a partner.
+ */
+export function isB2bLead(
+  sourceWidget: string | null,
+  tags: string[],
+  metadata: unknown,
+): boolean {
+  if (isPartnerLead(tags)) return true;
+  if (sourceWidget === 'PARTNER_OUTREACH') return true;
+  if (sourceWidget !== 'PARTNER_INQUIRY') return false;
+  const businessType = asRecord(asRecord(metadata)?.partnerInquiry)?.businessType;
+  return typeof businessType === 'string' && isB2bBusinessType(businessType);
+}
+
 const CLICK_ID_KEYS = ['gclid', 'gbraid', 'wbraid', 'fbclid', 'msclkid'] as const;
 const PAID_MEDIUMS = new Set(['cpc', 'ppc', 'paid']);
 
@@ -245,6 +270,7 @@ export function toBoardLead(
     sourceWidget: lead.sourceWidget,
     sourceKey: source.key,
     sourceLabel: source.label,
+    isB2b: isB2bLead(lead.sourceWidget, lead.tags ?? [], lead.metadata),
     sourcePage: lead.sourcePage,
     tags: lead.tags ?? [],
     owner: lead.owner,
@@ -278,27 +304,14 @@ export function toBoardLead(
   };
 }
 
-/**
- * Widgets whose leads are a BUSINESS reaching out, not a customer: outbound
- * prospects and the inbound partner-inquiry form. Deliberately excludes
- * PARTNER_LANDING_PAGE / PARTNER_FAREHARBOR_WEBHOOK / PARTNER_EMAIL_OPTIN —
- * those are consumers who arrived *via* a partner. Used by both the PARTNER
- * and CONSUMER filters so the two stay exact complements.
- */
-const B2B_SOURCE_WIDGETS = new Set(['PARTNER_OUTREACH', 'PARTNER_INQUIRY']);
-
-function isB2bLead(card: BoardLead): boolean {
-  return isPartnerLead(card.tags) || B2B_SOURCE_WIDGETS.has(card.sourceWidget ?? '');
-}
-
 function applyFilters(cards: BoardLead[], f: BoardFilters, now: Date): BoardLead[] {
   return cards.filter((c) => {
     if (f.temp && c.temperature !== f.temp) return false;
     if (f.occasion && (c.occasion ?? '').toLowerCase() !== f.occasion.toLowerCase()) return false;
     if (f.source === SOURCE_FILTER_PARTNER) {
-      if (!isB2bLead(c)) return false;
+      if (!c.isB2b) return false;
     } else if (f.source === SOURCE_FILTER_CONSUMER) {
-      if (isB2bLead(c)) return false;
+      if (c.isB2b) return false;
     } else if (f.source && c.sourceKey !== f.source) return false;
     if (!f.showSnoozed && c.snoozedUntil && new Date(c.snoozedUntil) > now) return false;
     if (f.q) {

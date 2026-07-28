@@ -42,7 +42,7 @@ const FAQ_ITEMS = [
   },
   {
     q: 'Will our drinks be ready when we check in?',
-    a: 'Absolutely — that\'s our specialty. Just let us know your check-in time and we\'ll coordinate with the hotel to have your drinks cold and ready when you walk in.',
+    a: 'Absolutely — that\'s our specialty. Tell us your check-in time and we\'ll time the delivery to it, so your drinks are cold and waiting when your group walks in. Someone 21+ from your party receives it at the door.',
   },
   {
     q: 'What\'s the ordering deadline?',

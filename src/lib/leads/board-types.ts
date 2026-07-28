@@ -27,6 +27,12 @@ export interface BoardLead {
   /** Display label — splits CONTACT_FORM into Quote Request / Chat / Event Quiz / Contact Form. */
   sourceLabel: string;
   sourcePage: string | null;
+  /**
+   * A business reached out, not a customer. Derived server-side because
+   * /api/partners/inquiry is shared with consumer landers, so the widget
+   * alone can't tell them apart. Drives the PARTNER/CONSUMER filters.
+   */
+  isB2b: boolean;
   /** Segmentation tags — partner-prospect / partner-active / vertical. */
   tags: string[];
   owner: string | null;

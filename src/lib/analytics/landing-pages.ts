@@ -40,7 +40,6 @@ export type LandingPageKey =
   | 'custom-package'
   | 'corporate-holiday'
   | 'corporate-products'
-  | 'fast-delivery'
   | 'ai-party-planner'
   | 'area-downtown'
   | 'area-east-austin'
@@ -369,14 +368,10 @@ export const LANDING_PAGES: LandingPageDef[] = [
     canonicalPath: '/corporate/products',
     aliasPaths: [],
   },
-  {
-    key: 'fast-delivery',
-    displayName: 'Fast Delivery',
-    navOrder: 117,
-    group: 'secondary-consumer',
-    canonicalPath: '/fast-delivery',
-    aliasPaths: [],
-  },
+  // NOTE: /fast-delivery is deliberately absent. The page exists at
+  // src/app/(main)/fast-delivery/ but next.config.ts's '/fast-deliver:suffix(.*)'
+  // rule 308s it to /delivery-areas, so it never serves and would always
+  // report zero. Add it here only if that redirect is narrowed.
   {
     key: 'ai-party-planner',
     displayName: 'AI Party Planner',

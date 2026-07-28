@@ -40,7 +40,7 @@ export const VERTICALS: VerticalDef[] = [
       'bachelorette airbnb rentals',
     ],
     offer:
-      'Their co-branded ordering page is ALREADY BUILT (or built same-day): guests get free alcohol delivery to the rental as an advertised perk, every group gets a private split-pay dashboard, and the company earns revenue share on orders — zero staff time, no inventory, no liability. NEVER quote a percentage or a rate: comp terms are unsettled, so keep it unquantified.',
+      'Their co-branded ordering page is ALREADY BUILT (or built same-day): guests get free alcohol delivery to the rental as an advertised perk, every group gets a private split-pay dashboard, and the company earns revenue share on orders — zero staff time, no inventory, no liability.',
   },
   {
     key: 'bartender',
@@ -70,7 +70,7 @@ export const VERTICALS: VerticalDef[] = [
       'wedding venue bring your own alcohol',
     ],
     offer:
-      'Their BYOB policy becomes a selling point instead of homework: clients get a venue-branded ordering page with delivery timed to the event (iced, arranged, unopened returns), the venue lands on our directory as a featured BYOB space, and coordinators stop fielding "where do we buy the alcohol" — zero lift, and revenue share on orders. NEVER quote a percentage or a rate: comp terms are unsettled, so keep it unquantified.',
+      'Their BYOB policy becomes a selling point instead of homework: clients get a venue-branded ordering page with delivery timed to the event (iced, arranged, unopened returns), the venue lands on our directory as a featured BYOB space, and coordinators stop fielding "where do we buy the alcohol" — zero lift, and revenue share on orders.',
   },
 ];
 

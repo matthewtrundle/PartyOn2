@@ -321,15 +321,16 @@ export async function POST(request: NextRequest) {
           const vertical = verticalForBusinessType(
             inquiry.businessType || inquiry.partnerType || null
           )
-          const nextTags =
-            vertical && !lead.tags.includes(vertical) ? [...lead.tags, vertical] : null
+          // `push` so a concurrent write (e.g. the prospect sync adding
+          // partner-prospect) can't be clobbered by a stale read.
+          const nextTags = vertical && !lead.tags.includes(vertical) ? vertical : null
           await prisma.lead.update({
             where: { id: lead.id },
             data: {
               // Last-touch stamp — this B2B submission is the active context.
               sourcePage: '/partners',
               sourceWidget: 'PARTNER_INQUIRY',
-              ...(nextTags ? { tags: nextTags } : {}),
+              ...(nextTags ? { tags: { push: nextTags } } : {}),
               metadata: {
                 ...prevMeta,
                 ...(attribution

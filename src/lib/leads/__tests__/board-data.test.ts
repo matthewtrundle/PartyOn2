@@ -478,8 +478,11 @@ describe('refineSource — sheet-level detail (keys frozen, labels enriched)', (
 });
 
 describe('board source filter — B2B vs consumer', () => {
-  it('counts inbound partner inquiries as PARTNER, not CONSUMER', async () => {
-    makeLead({ sourceWidget: 'PARTNER_INQUIRY', metadata: {} });
+  it('counts a real business inquiry as PARTNER, not CONSUMER', async () => {
+    makeLead({
+      sourceWidget: 'PARTNER_INQUIRY',
+      metadata: { partnerInquiry: { businessType: 'Mobile Bartender' } },
+    });
     makeLead({ sourceWidget: 'CONTACT_FORM' });
 
     const partner = await getBoardData({ source: 'PARTNER' });
@@ -487,6 +490,38 @@ describe('board source filter — B2B vs consumer', () => {
 
     expect(partner.columns.NEW.map((c) => c.sourceWidget)).toEqual(['PARTNER_INQUIRY']);
     expect(consumer.columns.NEW.map((c) => c.sourceWidget)).toEqual(['CONTACT_FORM']);
+  });
+
+  it('keeps consumer landers that post to the partner endpoint on the CONSUMER side', async () => {
+    // /corporate/holiday-party is a customer quote form that submits through
+    // /api/partners/inquiry — filtering on the widget alone would bury it.
+    makeLead({
+      sourceWidget: 'PARTNER_INQUIRY',
+      metadata: { partnerInquiry: { businessType: 'Corporate Holiday Party' } },
+    });
+
+    const partner = await getBoardData({ source: 'PARTNER' });
+    const consumer = await getBoardData({ source: 'CONSUMER' });
+
+    expect(partner.columns.NEW).toHaveLength(0);
+    expect(consumer.columns.NEW.map((c) => c.sourceWidget)).toEqual(['PARTNER_INQUIRY']);
+  });
+
+  it('leaves an unrecognized inquiry where it sat before — consumer', async () => {
+    makeLead({ sourceWidget: 'PARTNER_INQUIRY', metadata: {} });
+
+    const partner = await getBoardData({ source: 'PARTNER' });
+    const consumer = await getBoardData({ source: 'CONSUMER' });
+
+    expect(partner.columns.NEW).toHaveLength(0);
+    expect(consumer.columns.NEW).toHaveLength(1);
+  });
+
+  it('always counts our own outbound prospects as PARTNER', async () => {
+    makeLead({ sourceWidget: 'PARTNER_OUTREACH', metadata: {} });
+
+    const partner = await getBoardData({ source: 'PARTNER' });
+    expect(partner.columns.NEW.map((c) => c.sourceWidget)).toEqual(['PARTNER_OUTREACH']);
   });
 
   it('keeps consumers who arrived via a partner page on the CONSUMER side', async () => {

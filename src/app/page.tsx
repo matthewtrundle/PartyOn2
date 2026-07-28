@@ -344,7 +344,7 @@ export default function HomePage() {
                   Airbnbs &amp; House Parties
                 </h3>
                 <p className="text-gray-600 mb-6 leading-relaxed">
-                  Fridge stocked at check-in — alcohol, mixers, ice, and extras delivered right on time.
+                  Alcohol, mixers, ice, and extras — delivery timed to when your group arrives.
                 </p>
                 <TrackedLink href="/order" section="services" buttonText="START HOUSE PARTY ORDER">
                   <button className="px-6 py-3 bg-brand-yellow text-gray-900 hover:bg-yellow-600 transition-colors tracking-[0.1em] text-sm">

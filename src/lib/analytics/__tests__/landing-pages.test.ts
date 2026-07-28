@@ -5,6 +5,8 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import {
   LANDING_PAGES,
   LANDING_PAGE_KEYS,
@@ -75,6 +77,54 @@ describe('landing-page registry', () => {
     expect(LANDING_PAGE_KEYS).toHaveLength(LANDING_PAGES.length);
     for (const p of LANDING_PAGES) expect(isLandingPageKey(p.key)).toBe(true);
     expect(isLandingPageKey('not-a-page')).toBe(false);
+  });
+
+  it('points every path at a route that actually exists', () => {
+    // A typo'd or deleted route reports zero forever and looks like a traffic
+    // collapse. Route groups like (main) don't appear in the URL, so check
+    // both the literal path and the grouped variants.
+    const appDir = join(process.cwd(), 'src', 'app');
+    const groups = ['', '(main)'];
+    const missing: string[] = [];
+
+    for (const p of LANDING_PAGES) {
+      for (const path of [p.canonicalPath, ...p.aliasPaths]) {
+        const segments = path === '/' ? [] : path.slice(1).split('/');
+        const found = groups.some((g) =>
+          existsSync(join(appDir, g, ...segments, 'page.tsx')),
+        );
+        // Redirect-only aliases (e.g. /corporate, /bach-parties, /full-moon)
+        // have no page of their own — they're covered by the redirect test.
+        if (!found) missing.push(path);
+      }
+    }
+
+    expect(missing).toEqual(['/bach-parties', '/corporate', '/full-moon']);
+  });
+
+  it('does not register a path that a redirect swallows', async () => {
+    // /fast-delivery is the cautionary tale: '/fast-deliver:suffix(.*)' in
+    // next.config.ts 308s it away, so the page never serves. A registry entry
+    // for a shadowed route silently reports zero.
+    const { readFileSync } = await import('node:fs');
+    const config = readFileSync(join(process.cwd(), 'next.config.ts'), 'utf8');
+    const sources = [...config.matchAll(/source:\s*'([^']+)'/g)].map((m) => m[1]!);
+    // Only prefix-ish wildcard rules can swallow a sibling route.
+    const wildcards = sources.filter((s) => s.includes(':suffix') || s.endsWith('(.*)'));
+
+    const swallowed: string[] = [];
+    for (const p of LANDING_PAGES) {
+      for (const path of [p.canonicalPath, ...p.aliasPaths]) {
+        for (const w of wildcards) {
+          const prefix = w.split(':')[0]!.replace(/\(\.\*\)$/, '');
+          if (prefix.length > 1 && path.startsWith(prefix)) {
+            swallowed.push(`${path} ← ${w}`);
+          }
+        }
+      }
+    }
+
+    expect(swallowed).toEqual([]);
   });
 
   it('unions alias paths into the metric query', () => {
