@@ -182,9 +182,10 @@ const nextConfig: NextConfig = {
   // 301 Redirects for SEO (from SEMrush audit - January 2025)
   async rewrites() {
     return [
-      // Same-origin proxy for the Premier Party Cruises quote-page mirror
-      // (public/partners-embed/premier-quote.html — Brian's own site,
-      // mirrored per his direction). Premier's Vite build references
+      // Same-origin asset proxy for the Premier Party Cruises quote embed
+      // (Brian's own site, embedded per his direction — the HTML shell is
+      // proxied live by src/app/partners-embed/premier-quote/route.ts).
+      // Premier's Vite build references
       // /assets/* + /attached_assets/* root-relative, and their CDN sends
       // no CORS headers, so <base>-loading the module scripts cross-origin
       // fails. Proxying through our origin sidesteps CORS entirely.

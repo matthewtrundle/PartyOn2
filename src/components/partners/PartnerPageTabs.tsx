@@ -100,7 +100,7 @@ export default function PartnerPageTabs({
       <div hidden={tab !== 'left'}>{children}</div>
 
       {/* Right: embedded booking page (its hero carries the photo slideshow —
-          injected inside public/partners-embed/premier-quote.html) */}
+          injected by the proxy route; see src/lib/partners/premier-embed.ts) */}
       <div hidden={tab !== 'right'} className="bg-white">
         {embedLoaded && (
           <iframe
