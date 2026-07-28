@@ -104,6 +104,7 @@ const STR_PARTNERS: Record<string, StrPartnerConfig> = {
     deliveryContextType: 'HOUSE',
     allowCustomAddress: true,
     properties: [],
+    secondTab: LYNNS_TEMPLATE_SECOND_TAB,
   },
   // First bulk-researched STR partner (Brian, 2026-07-14). Properties stay
   // empty until Lynn sends the rental roster — guests enter their address.
