@@ -9,7 +9,7 @@ export default function WhatsIncluded(): ReactElement {
   return (
     <Section id={SECTIONS.included}>
       <ScrollReveal>
-        <p className={[styles.eyebrow, styles.eyebrowNeon].join(' ')}>Every ticket, ${EVENT.price}</p>
+        <p className={[styles.eyebrow, styles.eyebrowNeon].join(' ')}>Every ticket, ${EVENT.price} + tax</p>
       </ScrollReveal>
       <ScrollReveal>
         <h2 className={styles.sectionTitle}>WHAT&rsquo;S ON BOARD.</h2>

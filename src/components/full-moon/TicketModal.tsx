@@ -5,7 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import Button from '@/components/Button';
 import NeonHalo from './NeonHalo';
 import { useFullMoonUI } from './ui-context';
-import { EVENT, MAX_TICKETS_PER_ORDER } from './event';
+import { EVENT, MAX_TICKETS_PER_ORDER, ticketTotals } from './event';
 import base from './full-moon.module.css';
 import styles from './full-moon-overlays.module.css';
 
@@ -36,7 +36,7 @@ export default function TicketModal(): ReactElement {
     return () => document.removeEventListener('keydown', onKey);
   }, [ticketOpen, closeTicket]);
 
-  const total = EVENT.price * qty;
+  const { subtotal, tax, total } = ticketTotals(qty);
   const canSubmit = Boolean(name.trim() && email.trim() && phone.trim() && agree) && !submitting;
 
   const submit = async (e: FormEvent): Promise<void> => {
@@ -97,7 +97,7 @@ export default function TicketModal(): ReactElement {
               &times;
             </button>
             <p className={[base.eyebrow, styles.sheetEyebrow].join(' ')}>
-              {EVENT.dateLabel} · ${EVENT.price} each
+              {EVENT.dateLabel} · ${EVENT.price} each + tax
             </p>
             <h3 className={styles.sheetHeading}>Get your ticket.</h3>
             <p className={styles.sheetSub}>
@@ -185,8 +185,18 @@ export default function TicketModal(): ReactElement {
                   >
                     +
                   </button>
-                  <span className={styles.qtyTotal}>${total}</span>
+                  <span className={styles.qtyTotal}>${total.toFixed(2)}</span>
                 </div>
+                {/* Tax is added on top of the advertised price, so show the
+                    customer the exact breakdown before they're sent to Stripe
+                    rather than surprising them on the payment page. */}
+                <p className={styles.priceBreakdown}>
+                  {qty} × ${EVENT.price} = ${subtotal.toFixed(2)}
+                  <span aria-hidden="true"> · </span>
+                  sales tax ${tax.toFixed(2)}
+                  <span aria-hidden="true"> · </span>
+                  <strong>total ${total.toFixed(2)}</strong>
+                </p>
               </div>
               <label className={styles.check}>
                 <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} />

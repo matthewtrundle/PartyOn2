@@ -1,11 +1,16 @@
 /**
  * POST /api/v1/full-moon/ticket
  *
- * Sells a $59 Lake Travis Full Moon Party ticket (×quantity) via Stripe.
- * Creates a zeroed DraftOrder (no delivery fee, no tax) for the DRAFT ticket
- * product, then a Stripe Checkout Session that rides the existing
- * `draft_order_invoice` webhook (which creates the Order + confirmation email
- * + GHL). `eventTicket=1` metadata tells the webhook to skip the delivery task.
+ * Sells a Lake Travis Full Moon Party ticket (×quantity) via Stripe at the
+ * price held on the DRAFT ticket product, plus Texas sales tax added on top
+ * (a ticketed cruise is a taxable amusement service). Creates a DraftOrder
+ * with that tax and no delivery fee, then a Stripe Checkout Session that rides
+ * the existing `draft_order_invoice` webhook (which creates the Order +
+ * confirmation email + GHL). `eventTicket=1` metadata tells the webhook to skip
+ * the delivery task.
+ *
+ * Price and tax are BOTH server-derived — the request body has no amount field
+ * at all — so the browser can never influence what's charged.
  *
  * Gated by FULL_MOON_TICKETS_LIVE=1 — nothing is purchasable until an operator
  * flips it on (Stripe is on live keys). Public endpoint: rate-limited + a
@@ -27,7 +32,8 @@ import {
   TicketPurchaseSchema,
   EVENT_TICKET_METADATA_FLAG,
 } from '@/lib/full-moon/ticket';
-import { EVENT, TICKET_PRODUCT_HANDLE } from '@/components/full-moon/event';
+import { calculateTax } from '@/lib/tax';
+import { EVENT, TICKET_PRODUCT_HANDLE, TICKET_TAX_ZIP } from '@/components/full-moon/event';
 
 /**
  * Public path of the current event page, derived from EVENT.shareUrl so the
@@ -114,8 +120,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       price: Number(variant.price),
     };
 
-    // Zeroed draft — no delivery fee, no tax. The delivery fields double as the
-    // event location/time so the confirmation email reads sensibly.
+    // Sales tax on top of the ticket price. A ticketed cruise is a taxable
+    // amusement service in Texas; the Aug 1 build charged $0, which would have
+    // been under-collection we'd owe at filing time. Computed server-side from
+    // the DB price — never trusted from the client.
+    const { taxAmount, taxRateDisplay } = calculateTax({
+      taxableAmount: subtotal,
+      zipCode: TICKET_TAX_ZIP,
+    });
+    const taxAmountCents = Math.round(taxAmount * 100);
+
+    // Delivery fee is zero (this isn't a delivery); the delivery fields double
+    // as the event location/time so the confirmation email reads sensibly.
     const draft = await createDraftOrder({
       customerEmail: body.email,
       customerName: body.name,
@@ -123,12 +139,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       deliveryAddress: 'Lake Travis marina — exact dock + pin sent by text',
       deliveryCity: 'Austin',
       deliveryState: 'TX',
-      deliveryZip: '78734',
+      deliveryZip: TICKET_TAX_ZIP,
       deliveryDate: new Date(`${EVENT.isoDate}T19:00:00`),
       deliveryTime: EVENT.castOff,
       items: [item],
       subtotal,
-      taxAmount: 0,
+      taxAmount,
       deliveryFee: 0,
     });
 
@@ -150,6 +166,24 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             },
             quantity,
           },
+          // Tax as its own line so the Stripe receipt shows the customer
+          // exactly what they were charged and why, instead of burying it in
+          // an inflated ticket price.
+          ...(taxAmountCents > 0
+            ? [
+                {
+                  price_data: {
+                    currency: 'usd',
+                    product_data: {
+                      name: `Sales tax (${taxRateDisplay})`,
+                      description: 'Texas state + local sales tax',
+                    },
+                    unit_amount: taxAmountCents,
+                  },
+                  quantity: 1,
+                },
+              ]
+            : []),
         ],
         customer_email: body.email,
         phone_number_collection: { enabled: true },
