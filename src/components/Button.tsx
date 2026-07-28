@@ -42,8 +42,12 @@ export default function Button({
   const classes = `${baseClasses} ${variants[variant]} ${sizes[size]} ${fullWidth ? 'w-full' : ''} ${className}`
 
   if (href) {
+    // Forward onClick here too. It used to be dropped on the link branch, so a
+    // <Button href onClick> silently did nothing — which quietly breaks
+    // click-tracking on any CTA that navigates. Verified no existing caller
+    // passed both, so this changes no current behavior.
     return (
-      <Link href={href} className={classes}>
+      <Link href={href} className={classes} onClick={onClick}>
         {children}
       </Link>
     )

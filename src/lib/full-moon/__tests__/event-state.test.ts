@@ -1,5 +1,27 @@
 import { describe, it, expect } from 'vitest';
-import { deriveFullMoonState, deadlineWindow, deadlineTimestamp } from '../event-state';
+import {
+  deriveFullMoonState,
+  deadlineWindow,
+  deadlineTimestamp,
+  fullMoonPostponedKey,
+} from '../event-state';
+import { EVENT } from '@/components/full-moon/event';
+
+describe('fullMoonPostponedKey', () => {
+  it('scopes the postponed flag to a single event date', () => {
+    expect(fullMoonPostponedKey('2026-08-28')).toBe('full_moon_postponed_2026-08-28');
+  });
+
+  it('gives different dates different keys, so a rescheduled event does not inherit the old postponed state', () => {
+    // The Aug 1 cruise was postponed by the deadline cron on 2026-07-25. With a
+    // single global key, the Aug 28 page would have launched showing POSTPONED.
+    expect(fullMoonPostponedKey('2026-08-01')).not.toBe(fullMoonPostponedKey('2026-08-28'));
+  });
+
+  it('defaults to the current event date', () => {
+    expect(fullMoonPostponedKey()).toBe(`full_moon_postponed_${EVENT.isoDate}`);
+  });
+});
 
 describe('deriveFullMoonState', () => {
   const MIN = 32;

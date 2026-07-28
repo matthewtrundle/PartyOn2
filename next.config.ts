@@ -224,12 +224,23 @@ const nextConfig: NextConfig = {
       },
 
       // 2026-07-08 Full Moon Party moved to a date-specific URL so each
-      // month's cruise gets its own page (/full-moon → /full-moon-aug1).
+      // month's cruise gets its own page (/full-moon → /full-moon-<date>).
       // Keeps the already-live/indexed URL, shared links, and OG preview
       // working, and preserves the Stripe return URL for anyone mid-checkout.
+      //
+      // 2026-07-28: the Aug 1 cruise was postponed (0 paid tickets, short of
+      // the 32 minimum) and rescheduled to Aug 28, the real August full moon.
+      // Both the generic URL and the retired Aug 1 URL point at the live page,
+      // so previously shared links and anything Google already indexed land on
+      // the cruise that's actually selling.
       {
         source: '/full-moon',
-        destination: '/full-moon-aug1',
+        destination: '/full-moon-aug28',
+        permanent: true,
+      },
+      {
+        source: '/full-moon-aug1',
+        destination: '/full-moon-aug28',
         permanent: true,
       },
 

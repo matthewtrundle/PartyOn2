@@ -1,99 +1,98 @@
 # Full Moon Party — Handoff
 
 Working state for the Lake Travis Full Moon Party landing page + ticketing.
-Pick up here in a new session. Last updated 2026-07-08.
+Last updated 2026-07-28 (Aug 28 reschedule).
+
+## Current event — Fri Aug 28, 2026
+**7:00–11:00 PM** (4-hr cruise), **$79**, cap **50** advertised / **60** hard, min **32**,
+**Anderson Mill Marina · 13993 FM 2769, Leander, TX 78641** (⚠️ street number STILL unverified),
+**60-foot** party boat, **adults 25+**, **taco bar INCLUDED**, **BYOB** (drinks via POD, iced cooler
+on board), **DJ Trey**, water/ice/cups, life jackets. Fetii code **PartyOn** (25% off).
+Co-brand: Premier Party Cruises. **Note: Aug 28 is a FRIDAY.**
+
+Aug 28 is the *real* August full moon — it rises within ~30 min of sunset, so it comes up over the
+water during the cruise. That's now the core pitch, and the schedule + FAQ lean on it.
+
+## What happened to the Aug 1 attempt (read this before planning the next one)
+**0 paid tickets. Postponed by the deadline cron 2026-07-25.** The only 3 "sales" were $0 comps
+(Allan, Betsy, Brian) added to test the guest list. No refunds were needed — comps are skipped.
+
+It was not a build failure: `FULL_MOON_TICKETS_LIVE=1` was set and checkout worked end to end.
+It was a **distribution** failure. The page got **37 pageviews from 10 unique visitors, all direct**
+(one referrer: our own `/ops/events`). It was never in the sitemap, never in the landing-page
+registry, had no CTA instrumentation, and no email/SMS/social/paid push ever went out. The
+"analytics niceties" deferred at Aug 1 go-live were, in hindsight, the launch itself.
+
+**All of that wiring is now in place** (see "Launch wiring" below). The remaining lever is actually
+pushing traffic at it — drafts are in `docs/marketing/full-moon-aug28-outreach.md`, unsent.
 
 ## Where it lives
-- **Branch**: `feat/full-moon-party` (pushed to origin; NOT merged — preview-first).
-  ⚠️ The branch has hopped worktrees before (another session hijacked the old
-  `vigorous-shaw-12b70c` checkout). Always `git worktree list | grep full-moon`
-  first; if it's not checked out anywhere, claim it in your own worktree before editing.
-- **Preview** (hard-refresh): https://party-on2-git-feat-full-moon-party-infinite-burn-rate.vercel.app/full-moon
-- **Route**: `src/app/full-moon/page.tsx` — `robots: noindex` (unlaunched).
-- **Components**: `src/components/full-moon/` (~26 files). Composition shell: `FullMoonParty.tsx`.
+- **Route**: `src/app/full-moon-aug28/page.tsx` — `robots: index` (live).
+  `/full-moon` and `/full-moon-aug1` both **301** here (next.config.ts).
+- **Components**: `src/components/full-moon/` (~26 files). Shell: `FullMoonParty.tsx`.
 - **Copy source of truth**: `src/components/full-moon/event.ts` — change event facts/copy here.
 - **APIs**: `src/app/api/v1/full-moon/{ticket,count,guests}/route.ts`.
-- **Ticket lib + test**: `src/lib/full-moon/ticket.ts` (+ `__tests__/ticket.test.ts`).
-- **Webhook edit**: `src/lib/stripe/webhooks.ts` — skips the delivery task for event tickets (`isEventTicketSession`, keyed on Stripe metadata `eventTicket=1`).
-- **Chat hidden on this route**: `src/components/chat/PartyChatMount.tsx` (added `/full-moon`).
-- **Product script**: `scripts/full-moon/upsert-ticket-product.mjs` (DRAFT ticket product, operator-gated, **dry-run default**, `--apply` to write).
-- **Feature flag**: `FULL_MOON_TICKETS_LIVE` — fails closed; nothing purchasable until set to `1`.
+- **Roster/refund/state**: `src/lib/full-moon/{roster,refund,event-state,guest-moderation}.ts`.
+- **Ops**: `/ops/full-moon` (roster) and `/ops/events` (hub, `src/lib/events/ops-catalog.ts`).
+- **Deadline cron**: `/api/cron/full-moon-deadline`, daily 15:00 UTC. Detect + alert ONLY —
+  it flips the postponed flag and emails the operator, and **never** moves money.
+- **Feature flag**: `FULL_MOON_TICKETS_LIVE` (Vercel env) — fails closed.
+- **Scripts**: `scripts/full-moon/{upsert-ticket-product.mjs,comp-guest.mjs,batch-refund.ts}`.
 
-## Current event facts (event.ts)
-Sat **Aug 1, 2026**, **8:00–11:30 PM** (3.5-hr cruise), **$59**, cap **50**, min **32**,
-**Anderson Mill Marina · 13993 FM 2769, Leander, TX 78641** (⚠️ verify street number),
-**60-foot** party boat, **adults 25+**, **BYOB** (drinks via POD, iced cooler on board),
-**DJ Trey**, water/ice/cups, life jackets. **No food** (light bites were dropped in round 4).
-Fetii ride discount code **PartyOn** (25% off). Co-brand: Premier Party Cruises.
+## Rescheduling checklist (what changed this round — do all of it next time)
+1. `event.ts`: `isoDate`, `dateLabel`, `shortDate`, `castOff`, `backAtDock`, `sunset`, `price`,
+   `shareUrl`, **`TICKET_PRODUCT_HANDLE`**, SCHEDULE times, and any duration wording.
+2. **New dated route dir**, delete the old one, add a 301 from it in `next.config.ts`.
+3. `src/lib/events/ops-catalog.ts` — `key` + `publicPath`.
+4. `src/app/sitemap.ts` — repoint the `/full-moon-*` entry.
+5. `src/lib/analytics/landing-pages.ts` — repoint `canonicalPath`, push the old route to
+   `aliasPaths`.
+6. `scripts/full-moon/upsert-ticket-product.mjs` (handle/sku/price/description) and
+   `comp-guest.mjs` (handle). Then run upsert with `--apply`.
+7. `PartyChatMount.tsx` route regex.
+8. **Do NOT** need to reset the postponed flag — it's date-scoped now (see below).
 
-## Round 5 (2026-07-08) — done this session
-- **Headline per-line color**: "FULL MOON" solid moonlight, "ON THE WATER" solid lake-cyan,
-  "DANCE PARTY"/"Y'ALL" keep the animated rainbow (event.ts `HeadlineLine.tone` → Hero `TONE_CLASS`).
-- **Location** moved into its own glass pill (`whereBox`) matching the datestamp timing box.
-- **Removed the sticky nav header + top logo** entirely (deleted `FullMoonNav.tsx`).
-- **Drinks/POD tile**: brighter photo (lighter overlay + `brightness()`) + a giant corner logo.
-- **Ticketing go-live prep**: guest-list moderation (`src/lib/full-moon/guest-moderation.ts` —
-  profanity denylist + `FULL_MOON_GUEST_HIDE` operator override; catches letter-spaced profanity;
-  no false-positives on legit names) wired into `/guests`; `OrderItem @@index([productId])` migration
-  **applied to prod** (verified present); DRAFT $59 ticket product **created in prod** (id
-  `49eda525-3b1f-464c-a8fc-741a2c182801`, hidden, purchasable by handle); fixed stale customer-facing
-  copy (Stripe line-item "taco bar included" → BYOB; $69 → $59). Third security review **passed**
-  (0 crit/high/med; 2 LOWs addressed). Commits `cd5f9bc5`, `d44a92f0`, `c63dea3d`.
+## Non-obvious things fixed this round (don't regress these)
+- **Postponed flag is now DATE-SCOPED**: `full_moon_postponed_<isoDate>` via
+  `fullMoonPostponedKey()` in `event-state.ts`. It used to be one global boolean, which meant a
+  rescheduled event silently inherited the previous one's postponed state — the Aug 28 page would
+  have launched reading POSTPONED off Aug 1's row. A fresh event now has no row, and no row = selling.
+- **One ticket product per event**: `full-moon-party-ticket-aug28`. The roster, sold count, guest
+  list and batch refund are all scoped by product handle, so reusing one product across events
+  would blend two cruises' orders and make a batch refund dangerous.
+- **Stripe return URLs derive from `EVENT.shareUrl`** (`EVENT_PATH` in the ticket route). They were
+  hardcoded to `/full-moon-aug1` and would have bounced Aug 28 buyers through a redirect after paying.
+- **`Button` now forwards `onClick` on the `href` branch.** It was dropped, so click-tracking on any
+  navigating CTA silently did nothing. Verified no other caller passed both before changing it.
 
-## What's built
-- Full immersive dark page: fixed sunset→moonrise sky/sun/moon/stars (scroll-driven, no in-hero
-  parallax), **no top nav/logo**, hero (per-line-colored headline + datestamp + location pill +
-  logo-by-CTA + carousel), quick facts, "Bring your people" (share, partygoers bg), one-tile "What's on board"
-  (included + what-to-bring), schedule timeline, drinks-via-POD (bar bg), 3-state ticket-threshold
-  widget (big animated status + **See guest list**), "Very important" safety/Fetii note, gallery +
-  lightbox, FAQ, footer. Overlays: share sheet, success modal, toast, floating share FAB.
-  Reduced-motion honored. Built with POD components (Button, Fraunces, framer-motion, ScrollReveal)
-  + a scoped CSS module (`full-moon.module.css` + `full-moon-overlays.module.css`).
-- **Ticketing (flagged OFF)**: `$59×qty` sold via a zeroed DraftOrder → existing Stripe
-  `draft_order_invoice` webhook → Order + confirmation email + GHL. TicketModal (name/email/phone/
-  qty 1–8/25+). Returns to `/full-moon?ticket=success` → success/share modal.
-- **Live count** + **guest list** (first name + last initial of paid buyers) endpoints.
+## Launch wiring (was missing at Aug 1 — now done)
+- Registry entry in `src/lib/analytics/landing-pages.ts` (key `full-moon`, canonical
+  `/full-moon-aug28`, aliases `/full-moon` + `/full-moon-aug1`) → gets an analytics-hub tab.
+- Sitemap entry at priority 0.9.
+- CTA instrumentation: `openTicket(section)` fires `trackCTAClick` — `hero` from the hero button,
+  `final_cta` from the threshold widget, `services` from the Drinks-via-POD "Order Now".
+- OG/link-preview image unchanged (`moonrise-dance-hero.webp`), still accurate.
 
-## Verified
-tsc 0, lint clean, `npm run test:run` **613/613** (incl. 7 guest-moderation tests). Deployed checks
-on the preview: page 200; `/count` → `{"sold":0,"minimum":32,"capacity":50}` (now resolves the real
-product); `/ticket` POST → 403 (fails closed); `/guests` → `{"guests":[]}`. Nav removal confirmed in
-served HTML (0 `<header>` tags, 0 section-anchor nav links, 2 logos = hero CTA + drinks corner).
-Three security reviews passed (ticketing + guest list + round-5 delta), all findings addressed.
-Prod: `OrderItem.order_items_product_id_idx` present; DRAFT ticket product exists.
+## Verified this round
+`npx tsc --noEmit` exit 0 · `npm run lint` exit 0 (only pre-existing `<img>` warnings elsewhere) ·
+`npm run test:run` **1250/1250** (+3 new `fullMoonPostponedKey` cases).
 
 ## NOT verified
-- Visual appearance / mobile layout — **colors + brightness are for Allan's eyes on the preview**
-  (CLAUDE.md forbids screenshots). Structural changes confirmed via served HTML.
-- The **real paid purchase end-to-end** (live Stripe keys — that's the controlled go-live test).
+- **Visual appearance of the disco shimmer** — CLAUDE.md forbids screenshots; it's for Allan's eyes
+  on the preview. The CSS follows the existing `.hlGroovy` pattern and honors reduced motion.
+- **Sunset time 7:55 PM** for Aug 28 — derived, not looked up. It drives the schedule timeline.
+- **Marina street number** — carried over from the disco-cruise address, never confirmed.
+- A **real paid purchase end-to-end** on live Stripe keys (operator-only test).
 
-## Open decisions (Allan's call — STILL OPEN, gate go-live)
-- **Date**: Aug 1 vs. the real Aug full moon (**Aug 28**). Aug 1 moon is ~88% and rises ~11 PM.
-- **Light bites**: dropped in round 4 to match the new list — restore if wanted.
-- **Marina exact street number** (used the disco-cruise address 13993 FM 2769).
-- **Google Drive images**: Allan to share a folder; approach is "propose a mapping first" then apply.
-
-## Go-live checklist (ticketing)
-1. ✅ DRAFT $59 ticket product created in prod (`upsert-ticket-product.mjs --apply`).
-2. ⏳ Set `FULL_MOON_TICKETS_LIVE=1` in Vercel env (Allan — I can't set Vercel env from here).
-3. ⏳ **Controlled live test** (Allan): buy 1 ticket with a real card → confirm Order + email + GHL +
-   count increments + guest list shows the name + success/share modal → **refund it in Stripe**.
-4. ✅ `OrderItem.@@index([productId])` applied to prod (verified). ✅ Guest-list **moderation** shipped
-   (denylist + `FULL_MOON_GUEST_HIDE` env override). Remaining moderation option (nice-to-have): an
-   admin "hide from guest list" toggle instead of the env var.
-5. ⏳ Deferred **landing-page-launch** items (NOT done — analytics niceties, not functional gates):
-   registry entry in `src/lib/analytics/landing-pages.ts`; CTA instrumentation (`trackCTAClick` +
-   `trackPodEvent`); OG image regen; optional A/B + analytics-hub tab; post-launch re-measure task.
-6. ⏳ Verify marina address; confirm the date (Aug 1 vs Aug 28); decide light bites.
-7. ⏳ **merge via the `ship` skill** (never merge outside ship; mandatory post-merge verification).
-   `/code-review` on the round-5 delta done. Manual refund for the <32 roll-forward (no auto-refund).
+## Open decisions / operator actions
+- ⏳ Verify the marina street number.
+- ⏳ Confirm the taco-bar caterer + per-head cost (the $79 price assumes ~$15–18/head).
+- ⏳ Push actual traffic: drafts sit unsent in `docs/marketing/full-moon-aug28-outreach.md`.
+  Per memory, the email list has an unresolved consent problem that blocks cold sends.
 
 ## Gotchas
-- **Worktree**: `node_modules` + `.env.local` are symlinked from the main checkout (fine for
-  tsc/lint/test; per memory `worktree_npm_run_dev`, `node_modules` must be **copied** for Turbopack dev).
-- **Tailwind comma-in-arbitrary-value trap** → fluid type uses inline `clamp()` styles, not
-  `text-[clamp(...)]`.
-- **Stripe is on live keys** → nothing purchasable until the flag is on; test only with a real card
-  you then refund.
-- Gates only: `npx tsc --noEmit`, `npm run lint`, `npm run test:run` (never `next build`, Playwright,
-  or screenshots). Visual review happens on the Vercel preview.
+- **Tailwind comma-in-arbitrary-value trap** → fluid type uses inline `clamp()` styles.
+- **Stripe is on LIVE keys** — test only with a real card you then refund.
+- Gates only: `npx tsc --noEmit`, `npm run lint`, `npm run test:run`. Never `next build`,
+  Playwright, or screenshots. Visual review happens on the Vercel preview.
+- Merges go through the `ship` skill (mandatory post-merge verification).

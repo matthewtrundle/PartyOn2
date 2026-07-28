@@ -1,7 +1,10 @@
+'use client';
+
 import type { ReactElement } from 'react';
 import Image from 'next/image';
 import Button from '@/components/Button';
 import ScrollReveal from '@/components/ui/ScrollReveal';
+import { trackCTAClick } from '@/lib/analytics/ga4-events';
 import Section from './Section';
 import Wordmark from './Wordmark';
 import { DRINKS, EVENT } from './event';
@@ -35,7 +38,13 @@ export default function DrinksViaPod(): ReactElement {
               </h2>
               <p className={styles.drinksBody}>{DRINKS.body}</p>
               <div style={{ marginTop: 24 }}>
-                <Button variant="primary" size="lg" href={EVENT.ordersUrl} className="uppercase">
+                <Button
+                  variant="primary"
+                  size="lg"
+                  href={EVENT.ordersUrl}
+                  className="uppercase"
+                  onClick={() => trackCTAClick(DRINKS.cta, EVENT.ordersUrl, 'services')}
+                >
                   {DRINKS.cta} &rarr;
                 </Button>
               </div>

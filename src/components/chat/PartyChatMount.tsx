@@ -40,7 +40,7 @@ const HIDE_PATTERNS: RegExp[] = [
   // own dedicated flow.
   /^\/events(\/|$)/,
   // Full Moon Party lander — has its own share FAB; keep it distraction-free.
-  /^\/full-moon-aug1(\/|$)/,
+  /^\/full-moon-aug28(\/|$)/,
   // Premier Concierge landers — own questionnaire modal; no drink-planner bubble.
   /^\/austin-bachelor-concierge(\/|$)/,
   /^\/austin-bachelorette-concierge(\/|$)/,

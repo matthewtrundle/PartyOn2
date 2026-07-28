@@ -124,7 +124,7 @@ export default function FullMoonRosterPage(): ReactElement {
         </div>
         <div className="flex items-center gap-3">
           <a
-            href="/full-moon-aug1"
+            href="/full-moon-aug28"
             target="_blank"
             rel="noopener noreferrer"
             className="text-sm font-medium text-blue-600 hover:underline"

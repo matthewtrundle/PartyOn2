@@ -5,12 +5,22 @@
  * date, times, price, ticket counts, copy, and the image assets each slot uses.
  * Swap these values month-to-month; the components read from here.
  *
- * NOTE (2026-07-07): First event is Sat, Aug 1, 2026, 8-11 PM (a 3-hour cruise).
- * Verified: sunset in Austin on Aug 1 is 8:26 PM. Aug 1 is a ~88%-lit waning
- * gibbous (the actual August full moon is Aug 28), so the datestamp intentionally
- * shows Date / Cast Off / Back at Dock rather than a precise moonrise time.
- * $59 ticket includes light bites, water + ice on board. No dinner, no drinks —
- * drinks are ordered ahead through Party On Delivery (iced in a cooler on board).
+ * NOTE (2026-07-28): Rescheduled to Fri, Aug 28, 2026, 7-11 PM (a 4-hour cruise).
+ * Aug 28 is the REAL August full moon — unlike the Aug 1 attempt (a ~88% waning
+ * gibbous whose moon didn't rise until ~11 PM, after the dance floor peaked).
+ * On the true full-moon date the moon rises within about half an hour of sunset,
+ * so it clears the ridge DURING the cruise. That's the whole product now, and the
+ * schedule + copy lean on it.
+ *
+ * Sunset in Austin on Aug 28 is ~7:55 PM (Aug 1's 8:26 PM was verified; sunset
+ * moves ~1.15 min/day earlier through late August). ⚠ Worth a spot-check before
+ * launch — it drives the schedule timeline.
+ *
+ * $79 ticket includes a TACO BAR (back in as of this round — it was dropped in
+ * round 4 of the Aug 1 build), water, ice & cups. Still no drinks — those are
+ * ordered ahead through Party On Delivery and iced in a cooler on board.
+ *
+ * Note that Aug 28 is a FRIDAY. The Aug 1 attempt was a Saturday.
  */
 
 /** A single hero-carousel slide. */
@@ -72,8 +82,10 @@ export interface HeadlineLine {
    * - `moon`   → one solid moonlight color (like the moon)
    * - `water`  → one solid lake-cyan color (like the water)
    * - `groovy` → the animated rainbow gradient
+   * - `disco`  → shimmering mirror-ball: a metallic sheen with a specular
+   *              highlight that sweeps across the letters
    */
-  tone: 'moon' | 'water' | 'groovy';
+  tone: 'moon' | 'water' | 'groovy' | 'disco';
 }
 
 /** The full per-event config. */
@@ -111,18 +123,18 @@ export const THEME = {
 } as const;
 
 export const EVENT: FullMoonEvent = {
-  isoDate: '2026-08-01',
-  dateLabel: 'Sat, Aug 1',
-  shortDate: 'Sat Aug 1',
-  castOff: '8:00 PM',
-  backAtDock: '11:30 PM',
-  sunset: '8:26 PM',
-  price: 59,
+  isoDate: '2026-08-28',
+  dateLabel: 'Fri, Aug 28',
+  shortDate: 'Fri Aug 28',
+  castOff: '7:00 PM',
+  backAtDock: '11:00 PM',
+  sunset: '7:55 PM',
+  price: 79,
   capacity: 50,
   hardCap: 60,
   minimum: 32,
   deadlineDays: 7,
-  shareUrl: 'https://partyondelivery.com/full-moon-aug1',
+  shareUrl: 'https://partyondelivery.com/full-moon-aug28',
   ordersUrl: '/order',
 };
 
@@ -136,15 +148,16 @@ export const SHARE = {
 export const HERO = {
   /**
    * H1 rendered one line per entry. Per-line color: "FULL MOON" solid moonlight,
-   * "ON THE WATER" solid lake-cyan, "DANCE PARTY" / "Y'ALL" the animated rainbow.
+   * "ON THE WATER" solid lake-cyan, "DANCE PARTY" the animated rainbow, and
+   * "Y'ALL" the shimmering mirror-ball disco treatment.
    */
   headlineLines: [
     { text: 'FULL MOON', tone: 'moon' },
     { text: 'ON THE WATER', tone: 'water' },
     { text: 'DANCE PARTY', tone: 'groovy' },
-    { text: "Y'ALL", tone: 'groovy' },
+    { text: "Y'ALL", tone: 'disco' },
   ] as HeadlineLine[],
-  sub: 'Watch the sun set over Lake Travis. Dance under a bright, nearly-full moon. This is what summer is for.',
+  sub: 'Watch the sun set over Lake Travis, then dance as the full moon comes up over the water. This is what summer is for.',
   primaryCta: `Get Your Ticket — $${EVENT.price}`,
 };
 
@@ -157,8 +170,8 @@ export const LOCATION = {
 /** Datestamp cells (3-cell visual hierarchy). */
 export const DATESTAMP: { key: string; value: string; suffix?: string }[] = [
   { key: 'The Date', value: EVENT.dateLabel },
-  { key: 'Cast Off', value: '8:00', suffix: ' PM' },
-  { key: 'Back at Dock', value: '11:30', suffix: ' PM' },
+  { key: 'Cast Off', value: '7:00', suffix: ' PM' },
+  { key: 'Back at Dock', value: '11:00', suffix: ' PM' },
 ];
 
 export const CAROUSEL: CarouselSlide[] = [
@@ -212,9 +225,9 @@ export const FACTS: FactItem[] = [
     body: "Austin's best DJ and a floating dance floor — a one-of-a-kind Austin experience.",
   },
   {
-    icon: 'bottle',
-    title: 'Water, Ice & Cups',
-    body: 'Life jackets and floating devices too — everything on board but the drinks.',
+    icon: 'taco',
+    title: 'Taco Bar Included',
+    body: 'A full taco bar on board, included with every ticket. Come hungry.',
   },
   {
     icon: 'bottle',
@@ -225,7 +238,8 @@ export const FACTS: FactItem[] = [
 
 /** "What's on board" — a single tile with two lists. */
 export const BOARD_INCLUDED: string[] = [
-  'A three-and-a-half-hour cruise around Lake Travis with a captain & crew on board',
+  'A four-hour cruise around Lake Travis with a captain & crew on board',
+  'A full taco bar, included with your ticket',
   'Smooth beats by DJ Trey',
   'Water, ice & cups',
   'Life jackets & floating devices',
@@ -236,14 +250,15 @@ export const BOARD_BRING: string[] = [
   'Drinks! This event is BYOB — please order through our partner, Party On Delivery (see below)',
   'A towel, if you like',
   "A plan to get home if you're drinking (FM 2769 is no joke)",
+  'An appetite — the tacos are on us',
 ];
 
 export const SCHEDULE: ScheduleStop[] = [
-  { time: '8:00', label: 'Board at the marina. Cast off into the last warm light.', skyColor: '#f0913f' },
-  { time: '8:26', label: 'Sunset over the hills. The sky does its best work.', skyColor: '#d24a6e' },
-  { time: '9:15', label: 'The moon takes the lake and the deck lights up.', skyColor: '#cfd9ee', moonlight: true },
+  { time: '7:00', label: 'Board at the marina. Cast off into the last warm light.', skyColor: '#f0913f' },
+  { time: '7:55', label: 'Sunset over the hills. The sky does its best work.', skyColor: '#d24a6e' },
+  { time: '8:30', label: 'Taco bar opens as the full moon clears the ridge.', skyColor: '#cfd9ee', moonlight: true },
   { time: '10:00', label: 'Full dance floor under the moon. Peak glow.', skyColor: '#7a3a86' },
-  { time: '11:30', label: 'Back to the dock, glowing. Same time next moon.', skyColor: '#2a3566' },
+  { time: '11:00', label: 'Back to the dock, glowing. Same time next moon.', skyColor: '#2a3566' },
 ];
 
 export const DRINKS = {
@@ -272,7 +287,7 @@ export const SAFETY = {
  */
 export const THRESHOLD = {
   state: 'working' as 'working' | 'met' | 'cancelled',
-  sold: 26,
+  sold: 3,
 };
 
 export const GALLERY: GalleryItem[] = [
@@ -288,15 +303,19 @@ export const GALLERY: GalleryItem[] = [
 export const FAQS: FaqItem[] = [
   {
     q: "What's the ticket price, exactly?",
-    a: `$${EVENT.price} per person for the three-and-a-half-hour cruise, the captain & crew, DJ Trey, and water, ice & cups. It's BYOB — order your drinks ahead through Party On Delivery and we'll have them iced in a cooler on board.`,
+    a: `$${EVENT.price} per person for the four-hour cruise, the captain & crew, DJ Trey, a full taco bar, and water, ice & cups. Drinks are the one thing that isn't included — it's BYOB, so order yours ahead through Party On Delivery and we'll have them iced in a cooler on board.`,
   },
   {
     q: 'Where do we board?',
-    a: 'A Lake Travis marina — the exact dock and a pin drop go out by text two days before the cruise. Plan to arrive 15 minutes before the 8:00 PM cast-off.',
+    a: 'A Lake Travis marina — the exact dock and a pin drop go out by text two days before the cruise. Plan to arrive 15 minutes before the 7:00 PM cast-off.',
+  },
+  {
+    q: 'Is there food?',
+    a: "Yes — a full taco bar is included with every ticket, served on board once we're out on the water. Come hungry.",
   },
   {
     q: 'How do drinks work?',
-    a: "No drinks or dinner are included. Order beer, wine, spirits, and mixers through Party On Delivery ahead of time and we'll have them iced in a cooler on board, ready to go at cast off.",
+    a: "Drinks aren't included — this is a BYOB cruise. Order beer, wine, spirits, and mixers through Party On Delivery ahead of time and we'll have them iced in a cooler on board, ready to go at cast off.",
   },
   {
     q: "What happens if it doesn't fill up?",
@@ -309,6 +328,10 @@ export const FAQS: FaqItem[] = [
   {
     q: 'Is it every month?',
     a: 'Once a month, timed to the full moon, all summer long. Miss one and the next is never more than a few weeks away.',
+  },
+  {
+    q: 'Is the moon actually full that night?',
+    a: 'Yes — August 28 is the real full moon, and it rises within about half an hour of sunset, so it comes up over the water while we’re out there. That’s the whole reason we picked this date.',
   },
 ];
 
@@ -337,6 +360,13 @@ export const OG_IMAGE = '/images/full-moon/moonrise-dance-hero.webp';
  * scripts/full-moon/upsert-ticket-product.mjs; the purchase endpoint is gated
  * by the FULL_MOON_TICKETS_LIVE env flag so nothing is publicly purchasable
  * until an operator flips it on.
+ *
+ * ONE PRODUCT PER EVENT. The handle is date-scoped so the roster, the sold
+ * count, the guest list, and any batch refund only ever see THIS event's
+ * orders. The Aug 1 attempt used `full-moon-party-ticket` (3 comps, 0 paid
+ * sales); those rows stay put as history and are invisible here.
+ * When you set up the next cruise: bump this handle, then re-run
+ * upsert-ticket-product.mjs --apply.
  */
-export const TICKET_PRODUCT_HANDLE = 'full-moon-party-ticket';
+export const TICKET_PRODUCT_HANDLE = 'full-moon-party-ticket-aug28';
 export const MAX_TICKETS_PER_ORDER = 8;

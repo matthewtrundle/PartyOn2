@@ -50,6 +50,12 @@ export const FEATURE_FLAGS = {
   // the minimum at the deadline). Flips the public threshold widget to its
   // "postponed" state. Set by the deadline cron or the operator; reset to
   // resume selling. See src/lib/full-moon/event-state.ts.
+  //
+  // ⚠ This is the LEGACY un-scoped key, kept only so the Aug 1 row is still
+  // readable. The live key is now DATE-SCOPED — `full_moon_postponed_<isoDate>`
+  // — built by fullMoonPostponedKey() in event-state.ts. Rescheduling used to
+  // mean a new event silently inherited the previous one's postponed state;
+  // date-scoping makes a fresh event default to "selling" with no operator step.
   FULL_MOON_POSTPONED: 'full_moon_postponed',
 
   // Premiere credit automation (src/lib/premiere-credits) — master kill switch

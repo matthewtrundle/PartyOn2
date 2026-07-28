@@ -29,6 +29,14 @@ import {
 } from '@/lib/full-moon/ticket';
 import { EVENT, TICKET_PRODUCT_HANDLE } from '@/components/full-moon/event';
 
+/**
+ * Public path of the current event page, derived from EVENT.shareUrl so the
+ * Stripe return URLs follow the event when it's rescheduled to a new dated
+ * route. (These were hardcoded to /full-moon-aug1 and would have sent Aug 28
+ * buyers to a redirect after paying.)
+ */
+const EVENT_PATH = new URL(EVENT.shareUrl).pathname;
+
 export const dynamic = 'force-dynamic';
 
 function clientIp(request: NextRequest): string {
@@ -116,7 +124,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       deliveryCity: 'Austin',
       deliveryState: 'TX',
       deliveryZip: '78734',
-      deliveryDate: new Date(`${EVENT.isoDate}T20:00:00`),
+      deliveryDate: new Date(`${EVENT.isoDate}T19:00:00`),
       deliveryTime: EVENT.castOff,
       items: [item],
       subtotal,
@@ -136,7 +144,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
               currency: 'usd',
               product_data: {
                 name: 'Lake Travis Full Moon Party — Ticket',
-                description: `${EVENT.dateLabel} · sunset cruise + moonrise dance party on Lake Travis · BYOB via Party On Delivery`,
+                description: `${EVENT.dateLabel} · sunset cruise + full-moon dance party on Lake Travis · taco bar included · BYOB via Party On Delivery`,
               },
               unit_amount: unitAmountCents,
             },
@@ -156,8 +164,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           ...(body.attribution?.utmSource ? { utmSource: body.attribution.utmSource } : {}),
           ...(body.attribution?.utmCampaign ? { utmCampaign: body.attribution.utmCampaign } : {}),
         },
-        success_url: `${baseUrl}/full-moon-aug1?ticket=success`,
-        cancel_url: `${baseUrl}/full-moon-aug1?ticket=cancelled`,
+        success_url: `${baseUrl}${EVENT_PATH}?ticket=success`,
+        cancel_url: `${baseUrl}${EVENT_PATH}?ticket=cancelled`,
       },
       // Same email + quantity within ~5 min resolves to one session → one charge.
       { idempotencyKey: ticketIdempotencyKey(body.email, quantity, Date.now()) },

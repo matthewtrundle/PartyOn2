@@ -29,7 +29,7 @@ function Experience(): ReactElement {
   // The Get-a-Ticket CTA opens the purchase form (→ Stripe Checkout).
   const onGetTicket = openTicket;
 
-  // Returning from Stripe: /full-moon-aug1?ticket=success|cancelled.
+  // Returning from Stripe: /full-moon-aug28?ticket=success|cancelled.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const status = params.get('ticket');

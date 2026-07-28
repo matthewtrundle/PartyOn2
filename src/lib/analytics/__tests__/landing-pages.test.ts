@@ -99,7 +99,16 @@ describe('landing-page registry', () => {
       }
     }
 
-    expect(missing).toEqual(['/bach-parties', '/corporate', '/full-moon']);
+    // /full-moon-aug1 joined this list on 2026-07-28: the Aug 1 cruise was
+    // postponed and the page moved to /full-moon-aug28, leaving the old dated
+    // route as a 301-only alias. Expect one more entry here each time a cruise
+    // is rescheduled and its dated route retires.
+    expect(missing).toEqual([
+      '/bach-parties',
+      '/corporate',
+      '/full-moon',
+      '/full-moon-aug1',
+    ]);
   });
 
   it('does not register a path that a redirect swallows', async () => {
