@@ -245,33 +245,35 @@
   color: #22d3ee;
   filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.5)) drop-shadow(0 0 22px rgba(34, 211, 238, 0.3));
 }
-/* "Y'ALL" — shimmering mirror ball. A polished-chrome base broken up by
-   magenta / cyan / gold facet glints, with hard white specular bands that
-   sweep across the letters as the "ball" turns. The first and last stops are
-   the same silver so the loop is seamless with linear timing. */
+/* "Y'ALL" — shimmering mirror ball, black / white / silver only. No hue: the
+   ramp runs from shadowed graphite facets up through polished silver to hard
+   white speculars, which sweep across the letters as the "ball" turns. The
+   dark stops stay above ~#454b5c so the letters never dissolve into the dark
+   sky behind them. First and last stops match so the loop is seamless. */
 .hlDisco {
   background: linear-gradient(
     100deg,
-    #cfd6e6 0%,
+    #9aa3b4 0%,
     #ffffff 7%,
-    #9fb0d2 15%,
-    #e879f9 27%,
-    #ffffff 35%,
-    #22d3ee 45%,
-    #c6d1e8 55%,
-    #ffffff 64%,
-    #f2d34f 74%,
-    #aebbd8 84%,
+    #5a6273 15%,
+    #d5dae4 24%,
+    #ffffff 33%,
+    #474e5f 42%,
+    #aeb6c4 52%,
+    #ffffff 62%,
+    #4d5466 72%,
+    #c3cad6 82%,
     #ffffff 92%,
-    #cfd6e6 100%
+    #9aa3b4 100%
   );
   background-size: 200% 100%;
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent;
-  filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.5))
-    drop-shadow(0 0 20px rgba(214, 228, 255, 0.45));
+  /* Neutral white glow — a colored halo would put hue back in. */
+  filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.55))
+    drop-shadow(0 0 20px rgba(255, 255, 255, 0.4));
   animation: discoShimmer 6s linear infinite;
 }
 @media (prefers-reduced-motion: reduce) {
