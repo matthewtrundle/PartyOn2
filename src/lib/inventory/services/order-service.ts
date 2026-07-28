@@ -11,6 +11,7 @@ import type { DraftOrderWithTotal, DraftOrderItem } from '@/lib/draft-orders/typ
 import { snapshotItemCost, finalizeOrderMargin } from '@/lib/analytics/margin-service';
 import { classifySegment } from '@/lib/analytics/segment-classifier';
 import { sanitizeName } from '@/lib/leads/leadCapture';
+import { resolveOrderSmsConsent } from '@/lib/consent/order-sms-consent';
 import { unitsOffShelf } from './pick-inventory-service';
 import {
   parseChargedLineItems,
@@ -45,6 +46,8 @@ export interface OrderWithItems {
   customerEmail: string;
   customerPhone: string | null;
   customerName: string;
+  /** A2P 10DLC marketing/reminder SMS opt-in captured at checkout. */
+  smsConsent: boolean;
   items: OrderItemWithProduct[];
   groupOrderV2Id?: string | null;
   groupOrderV2?: { shareCode: string } | null;
@@ -516,6 +519,15 @@ export async function createOrderFromCheckout(
         customerEmail,
         customerPhone,
         customerName,
+        // A2P 10DLC: persist the marketing-SMS opt-in, but ONLY when the phone
+        // it was captured against matches the phone stored on this Order —
+        // Stripe collects its own phone that can differ from our form's. Absent/
+        // mismatched → false (fail closed). See resolveOrderSmsConsent.
+        smsConsent: resolveOrderSmsConsent(
+          session.metadata?.smsConsent,
+          session.metadata?.smsConsentPhone,
+          customerPhone,
+        ),
         landingPage: session.metadata?.landingPage || null,
         utmSource: session.metadata?.utmSource || null,
         utmMedium: session.metadata?.utmMedium || null,
@@ -607,7 +619,10 @@ export async function createFreeOrder(
   customerPhone: string | null,
   affiliateCode?: string,
   overrideDeliveryFee?: number,
-  overrideTotal?: number
+  overrideTotal?: number,
+  /** A2P 10DLC marketing-SMS opt-in from the $0-checkout body. Only honored
+   *  when a phone is present (parity with the paid metadata rule). */
+  smsConsent?: boolean
 ): Promise<OrderWithItems> {
   // This name arrives straight from the client-supplied request body ($0
   // checkout) — the easiest-to-reach injection vector of the order paths — so
@@ -685,6 +700,8 @@ export async function createFreeOrder(
         customerEmail,
         customerPhone,
         customerName,
+        // Only record marketing-SMS consent when a phone was captured.
+        smsConsent: Boolean(customerPhone && smsConsent),
         affiliateId: affiliateId || undefined,
       },
       include: { items: true, groupOrderV2: { select: { shareCode: true } } },

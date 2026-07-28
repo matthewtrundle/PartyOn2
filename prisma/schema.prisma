@@ -898,6 +898,13 @@ model Order {
   customerPhone String? @map("customer_phone")
   customerName  String  @map("customer_name")
 
+  // A2P 10DLC marketing/reminder SMS opt-in captured at checkout (affirmative,
+  // unchecked-by-default). false = no marketing consent (fail-closed default for
+  // legacy/invoice/free paths that capture none). Read at the order-fan-out
+  // boundary (buildGhlPayload) + the follow-up engine to gate marketing SMS;
+  // transactional order texts are unaffected. See 2026-07-24-order-sms-consent.sql.
+  smsConsent Boolean @default(false) @map("sms_consent")
+
   // Group order
   groupOrderId   String? @map("group_order_id")
   groupOrderV2Id String? @map("group_order_v2_id")

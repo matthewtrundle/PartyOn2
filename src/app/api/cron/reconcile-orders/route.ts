@@ -295,6 +295,12 @@ export async function GET(request: NextRequest) {
         const order = await prisma.order.create({
           data: {
             customerId,
+            // A2P 10DLC: cron-recovered group orders carry no customerPhone
+            // (this path never sets it), so a marketing SMS could not reach them
+            // regardless — consent defaults false (fail closed). The main
+            // handleGroupV2PaymentCompleted webhook is authoritative for consent;
+            // reconcile only runs as a backstop when that failed to create the order.
+            smsConsent: false,
             status: 'CONFIRMED',
             financialStatus: 'PAID',
             fulfillmentStatus: 'UNFULFILLED',
