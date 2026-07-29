@@ -66,7 +66,7 @@ const BOAT_FAQS = [
 const HOUSE_FAQS = [
   {
     question: 'How does the House Tab work?',
-    answer: 'Add a house delivery to your group order. Everyone uses the same group link to pick drinks for the house — we deliver separately to your rental before you arrive.',
+    answer: 'Add a house delivery to your group order. Everyone uses the same group link to pick drinks for the house — we deliver separately to your rental, timed to your check-in, and someone from your group (21+ with valid ID) receives it at the door.',
   },
   {
     question: 'Can people pay separately on the House Tab too?',

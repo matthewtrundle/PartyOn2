@@ -195,7 +195,7 @@ export const weddingVenueBoatsConfig: LandingConfig = {
     },
     {
       q: 'Who handles the bar?',
-      a: 'Party On Delivery handles all alcohol. TABC-licensed, $1M insured. Premier doesn\'t sell alcohol on the boat — we deliver it to the marina and stock the boat before guests arrive.',
+      a: 'Party On Delivery handles all alcohol. TABC-licensed, $1M insured. Premier doesn\'t sell alcohol on the boat — we deliver to the marina, where the boat crew (21+, ID checked) receives it and stocks the bar so it\'s iced and ready when guests board.',
     },
     {
       q: 'What if it rains?',

@@ -41,9 +41,13 @@ export const VERTICALS: VerticalDef[] = [
     ],
     offer:
       // Two doors: the co-branded page tabs between alcohol delivery and a
-      // Premier Party Cruises boat quote. Commission covers BOTH (Allan
-      // 2026-07-28) — say so without naming a rate; the split is unsettled.
-      'Their co-branded ordering page is ALREADY BUILT (or built same-day): guests get free alcohol delivery to the rental as an advertised perk OR can book a boat through our partner Premier Party Cruises, every group gets a private split-pay dashboard, and the company earns a commission on drinks and boat bookings — zero staff time, no inventory, no liability.',
+      // Premier Party Cruises boat quote. Comp framing (compliance pass
+      // 2026-07-29, supersedes the 2026-07-28 "commission on both" wording):
+      // the ALCOHOL side is a flat per-order bounty, never a percentage or
+      // "commission" — %-of-alcohol-sales comp to new unlicensed parties is
+      // the construction the legal posture forbids. Boat bookings are not
+      // alcohol, so a boat-side commission may still be named.
+      'Their co-branded ordering page is ALREADY BUILT (or built same-day): guests get free alcohol delivery to the rental as an advertised perk OR can book a boat through our partner Premier Party Cruises, every group gets a private split-pay dashboard, and the company earns a flat per-order bounty on drink orders plus a commission on boat bookings — zero staff time, no inventory, no liability.',
   },
   {
     key: 'bartender',
@@ -73,7 +77,7 @@ export const VERTICALS: VerticalDef[] = [
       'wedding venue bring your own alcohol',
     ],
     offer:
-      'Their BYOB policy becomes a selling point instead of homework: clients get a venue-branded ordering page with delivery timed to the event (iced, arranged, unopened returns), the venue lands on our directory as a featured BYOB space, and coordinators stop fielding "where do we buy the alcohol" — zero lift, and revenue share on orders.',
+      'Their BYOB policy becomes a selling point instead of homework: clients get a venue-branded ordering page with delivery timed to the event (iced, arranged, unopened returns), the venue lands on our directory as a featured BYOB space, and coordinators stop fielding "where do we buy the alcohol" — zero lift, and a flat per-order bounty on orders.',
   },
 ];
 

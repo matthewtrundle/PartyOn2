@@ -169,7 +169,7 @@ function ConnectedAustinPageContent(): ReactElement {
                   { item: 'FREE delivery to your rental', value: '$50' },
                   { item: 'Cooler stocking with ice', value: '$25' },
                   { item: 'Group ordering with split payments', value: 'FREE' },
-                  { item: 'Your drinks ready before you arrive', value: 'FREE' },
+                  { item: 'Your drinks ready at check-in', value: 'FREE' },
                 ].map((row, idx) => (
                   <div
                     key={idx}
