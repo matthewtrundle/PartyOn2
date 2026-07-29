@@ -108,7 +108,7 @@ export default function EmailPreviewPage(): ReactElement {
     }
   }, []);
 
-  const loadPreview = async (type: EmailType) => {
+  const loadPreview = useCallback(async (type: EmailType) => {
     setSelectedEmail(type);
     setLoading(true);
     setSendResult(null);
@@ -123,7 +123,13 @@ export default function EmailPreviewPage(): ReactElement {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  // Show the default template immediately on page open instead of an empty
+  // panel that waits for a button click.
+  useEffect(() => {
+    void loadPreview('order-confirmation');
+  }, [loadPreview]);
 
   // Live preview for prospect email with debounce
   const updateProspectPreview = useCallback(async (name: string, business: string, intro: string) => {
