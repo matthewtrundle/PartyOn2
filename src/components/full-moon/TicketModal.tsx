@@ -201,8 +201,13 @@ export default function TicketModal(): ReactElement {
               <label className={styles.check}>
                 <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
                 <span>
-                  I&rsquo;m 25 or older (this event is adults only) and I understand every ticket is refunded in full
-                  if the cruise doesn&rsquo;t reach {EVENT.minimum} guests.
+                  I&rsquo;m 25 or older (this event is adults only), I understand every ticket is refunded in full
+                  if the cruise doesn&rsquo;t reach {EVENT.minimum} guests, and I agree to the{' '}
+                  {/* New tab so the half-filled form isn't lost. */}
+                  <a href="/full-moon-terms" target="_blank" rel="noopener noreferrer" className={styles.checkLink}>
+                    event terms
+                  </a>
+                  .
                 </span>
               </label>
 
