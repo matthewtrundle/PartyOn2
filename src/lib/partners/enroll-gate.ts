@@ -15,7 +15,8 @@ export type EnrollGateReason =
   | 'draft-not-approved'
   | 'email-invalid'
   | 'email-not-verified'
-  | 'email-catch-all-needs-override';
+  | 'email-catch-all-needs-override'
+  | 'email-role-needs-override';
 
 /**
  * The first failing gate, or null when the prospect is enrollable.
@@ -36,8 +37,16 @@ export function enrollGateReason(
       return null;
     case 'CATCH_ALL':
       return prospect.emailVerifyOverride ? null : 'email-catch-all-needs-override';
-    case 'INVALID':
     case 'ROLE':
+      // A role address (info@ / hello@ / reservations@) is usually the address
+      // the business publishes on its own site for exactly this contact — at a
+      // small operator it IS the owner's inbox. So it is an operator decision,
+      // not a hard block: same per-prospect override as CATCH_ALL. Pair it with
+      // a non-personal greeting; "Hi <FirstName>" into a shared inbox reads as
+      // a mail merge. Deliberately NOT blanket-allowed — the override is ticked
+      // one row at a time.
+      return prospect.emailVerifyOverride ? null : 'email-role-needs-override';
+    case 'INVALID':
       return 'email-invalid';
     default:
       // UNVERIFIED / UNKNOWN — run Verify first.

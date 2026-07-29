@@ -4,8 +4,9 @@
  * Enroll prospects in the 'partner-outreach' 3-touch campaign (approved
  * personalized email on enroll, open-branched touch 2 at +5d, standalone
  * close at +12d; ≤10 sends/day across all touches). Batches are capped at
- * 10 per request. Gates: APPROVED draft + verified email (or catch-all
- * override) + not suppressed — see enrollGateReason. Enqueueing is
+ * 10 per request. Gates: APPROVED draft + verified email (or a catch-all /
+ * role address the operator has OK'd) + not suppressed — see
+ * enrollGateReason. Enqueueing is
  * idempotent (dedupeKey), and NOTHING SENDS while the
  * followups_partner_outreach feature flag is off.
  *

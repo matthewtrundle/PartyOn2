@@ -46,7 +46,8 @@ export const ARM_CHIP: Record<string, { label: string; cls: string }> = {
 export function isEmailVerified(p: ProspectRow): boolean {
   return (
     p.emailVerifyStatus === 'VALID' ||
-    (p.emailVerifyStatus === 'CATCH_ALL' && p.emailVerifyOverride)
+    ((p.emailVerifyStatus === 'CATCH_ALL' || p.emailVerifyStatus === 'ROLE') &&
+      p.emailVerifyOverride)
   );
 }
 
