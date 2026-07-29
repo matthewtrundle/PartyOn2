@@ -8,8 +8,8 @@
  *     drops back to DRAFTED (edits un-approve — re-review before send)
  *   - { action: 'approve' }           — requires a complete draft
  *   - { action: 'unapprove' }
- *   - { action: 'toggle-verify-override' } — CATCH_ALL rows only; lets the
- *     operator accept a catch-all address for sending (PR6 gate)
+ *   - { action: 'toggle-verify-override' } — CATCH_ALL and ROLE rows only; lets
+ *     the operator accept a catch-all or role address for sending (PR6 gate)
  *   - { action: 'request-redraft', guidance? } — flips draft to NONE and
  *     stores the note; the next drafting session picks these up first
  *
@@ -158,9 +158,15 @@ export async function PATCH(
       return NextResponse.json({ success: true, data: updated });
     }
     case 'toggle-verify-override': {
-      if (existing.emailVerifyStatus !== 'CATCH_ALL') {
+      // CATCH_ALL and ROLE both need an explicit operator OK before they can
+      // send. Every other status is decided by the verifier, not the operator —
+      // an INVALID or UNVERIFIED address must never be overridable.
+      if (
+        existing.emailVerifyStatus !== 'CATCH_ALL' &&
+        existing.emailVerifyStatus !== 'ROLE'
+      ) {
         return NextResponse.json(
-          { success: false, error: 'override-only-for-catch-all' },
+          { success: false, error: 'override-only-for-catch-all-or-role' },
           { status: 400 },
         );
       }

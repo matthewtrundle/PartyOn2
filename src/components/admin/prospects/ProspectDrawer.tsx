@@ -132,7 +132,8 @@ export default function ProspectDrawer({
             {prospect.emailVerifiedAt && <> · checked {prospect.emailVerifiedAt.slice(0, 10)}</>}
             {isEmailVerified(prospect) && <> · sendable</>}
           </p>
-          {prospect.emailVerifyStatus === 'CATCH_ALL' && (
+          {(prospect.emailVerifyStatus === 'CATCH_ALL' ||
+            prospect.emailVerifyStatus === 'ROLE') && (
             <button
               type="button"
               onClick={() => void actions.patch(prospect.id, { action: 'toggle-verify-override' })}
@@ -140,13 +141,20 @@ export default function ProspectDrawer({
               className="btn-secondary px-4 py-2 text-sm disabled:opacity-50"
             >
               {prospect.emailVerifyOverride
-                ? 'Remove catch-all override'
-                : 'Accept catch-all for sending'}
+                ? prospect.emailVerifyStatus === 'ROLE'
+                  ? 'Remove role-address override'
+                  : 'Remove catch-all override'
+                : prospect.emailVerifyStatus === 'ROLE'
+                  ? 'Accept role address for sending'
+                  : 'Accept catch-all for sending'}
             </button>
           )}
-          {prospect.emailVerifyStatus === 'ROLE' && (
+          {prospect.emailVerifyStatus === 'ROLE' && !prospect.emailVerifyOverride && (
             <p className="text-sm text-amber-800">
-              Role address (info@/office@) — edit to a direct person before this can send.
+              Role address (info@/hello@/reservations@) — often the address the business
+              publishes for exactly this, and at a small operator it is the owner&apos;s inbox.
+              Accept it to send, or edit to a direct person. Use a non-personal greeting when
+              sending to a shared inbox.
             </p>
           )}
         </div>

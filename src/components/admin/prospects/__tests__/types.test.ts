@@ -95,6 +95,17 @@ describe('deriveStatus precedence', () => {
     ).toBe(true);
   });
 
+  it('role addresses count as verified only with the operator override', () => {
+    expect(isEmailVerified(row({ emailVerifyStatus: 'ROLE' }))).toBe(false);
+    expect(isEmailVerified(row({ emailVerifyStatus: 'ROLE', emailVerifyOverride: true }))).toBe(
+      true
+    );
+    // Mirrors the server gate: the override is meaningless on a rejected status.
+    expect(isEmailVerified(row({ emailVerifyStatus: 'INVALID', emailVerifyOverride: true }))).toBe(
+      false
+    );
+  });
+
   it('flags failures as an overlay, not a status', () => {
     expect(hasFailure(row({ researchStatus: 'FAILED' }))).toBe(true);
     expect(hasFailure(row({ draftStatus: 'FAILED' }))).toBe(true);

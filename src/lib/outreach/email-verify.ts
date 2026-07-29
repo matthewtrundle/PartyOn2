@@ -3,8 +3,9 @@
  *
  * ZeroBounce is the vendor (Allan's locked decision 2026-07-22): pay-as-you-go,
  * ~$0.008/verification. Gating rules live with the enroll path (PR6):
- * only VALID auto-sends; CATCH_ALL needs a per-prospect operator override;
- * ROLE addresses are blocked until the operator edits to a direct address.
+ * only VALID auto-sends; CATCH_ALL and ROLE each need a per-prospect operator
+ * override (a role inbox is usually the address the business publishes for
+ * inbound contact, so it is an operator call — see enroll-gate.ts).
  *
  * Fail-closed design: 'unknown' results and timeouts DO NOT update the row —
  * the caller returns 502 and the prospect stays at its previous status, so a
