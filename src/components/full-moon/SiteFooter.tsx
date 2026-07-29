@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react';
+import Link from 'next/link';
 import { FOOTER } from './event';
 import styles from './full-moon.module.css';
 
@@ -19,6 +20,11 @@ export default function SiteFooter(): ReactElement {
         </div>
         <div className={styles.footLegal}>
           <span>{FOOTER.legal}</span>
+          <span>
+            <Link href="/full-moon-terms" className={styles.footTermsLink}>
+              Event terms
+            </Link>
+          </span>
           <span>{FOOTER.legalNote}</span>
         </div>
       </div>

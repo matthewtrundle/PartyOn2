@@ -28,6 +28,10 @@ const AGE_GATE_EXEMPT_PATHS = [
   '/austin-bachelorette-concierge',
   '/austin-concierge',
   '/concierge-quote',
+  // Legal text linked from the Full Moon ticket modal and the confirmation
+  // email — no purchase on the page, and a buyer following the terms link
+  // from their email must be able to read it without an entrance gate.
+  '/full-moon-terms',
 ]
 
 /**
