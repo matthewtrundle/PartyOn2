@@ -273,7 +273,7 @@ function Slide2() {
     },
     {
       img: '/email-assets/pod-stocked-fridge.jpg',
-      alt: 'Pre-stocked fridge sorted by use case',
+      alt: 'Stocked fridge sorted by use case',
       eyebrow: 'Pre-Stocking',
       title: 'The fridge is ready.',
       desc: 'Sorted by use case. Welcome cocktails chilled. Pool-day cans within reach. Same-day restock if guests run out.',

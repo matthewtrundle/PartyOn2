@@ -166,7 +166,7 @@ export function generatePartnerOnePagerEmail(data: PartnerOnePagerEmailData): st
           A branded link that earns you revenue.
         </h2>
         <p style="margin:0; font-family: -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif; font-size:15px; line-height:24px; color:#5A6671;">
-          We give you a white-label ordering link for your guest welcome packet &mdash; looks like your concierge, powered by us. You earn a revenue share on every order: <strong style="color:#11181C;">5% to start, rising to 8% and 10%</strong> as order volume through your link grows. No upfront cost, no monthly minimums.
+          We give you a white-label ordering link for your guest welcome packet &mdash; looks like your concierge, powered by us. You earn a revenue share on every order, and it <strong style="color:#11181C;">grows as order volume through your link grows</strong>. No upfront cost, no monthly minimums.
         </p>
       </td>
     </tr>
@@ -272,11 +272,11 @@ export function generatePartnerOnePagerEmail(data: PartnerOnePagerEmailData): st
           <tr>
             <td valign="top" width="50%" style="padding-right:6px;">
               <img src="https://partyondelivery.com/email-assets/pod-stocked-fridge.jpg"
-                   alt="Pre-stocked fridge with Karbach Ranch Water, High Noon, prosecco, and mixers"
+                   alt="Stocked fridge with Karbach Ranch Water, High Noon, prosecco, and mixers"
                    width="260"
                    style="display:block; width:100%; max-width:260px; height:auto; border:0;" />
               <p style="margin:8px 0 0 0; font-family:'Barlow Condensed', Arial, sans-serif; font-size:13px; font-weight:700; color:#11181C; letter-spacing:-0.005em;" class="display-font">
-                Pre-stocked, pre-chilled
+                Stocked and chilled
               </p>
               <p style="margin:2px 0 0 0; font-family: -apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif; font-size:12px; line-height:18px; color:#5A6671;">
                 Sorted by use case. Welcome cocktails chilled and waiting.
@@ -427,7 +427,7 @@ Schedule a 15-min meeting:
 ${calendlyUrl}
 
 How partnership works:
-We give you a white-label ordering link for your guest welcome packet — looks like your concierge, powered by us. You earn a revenue share on every order: 5% to start, rising to 8% and 10% as order volume through your link grows. No upfront cost, no monthly minimums.
+We give you a white-label ordering link for your guest welcome packet — looks like your concierge, powered by us. You earn a revenue share on every order, and it grows as order volume through your link grows. No upfront cost, no monthly minimums.
 
 What POD handles:
   01. TABC-licensed delivery — beer, wine, spirits, mixers, ice. Direct to the property. ID checks at handoff.

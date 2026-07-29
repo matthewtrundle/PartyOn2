@@ -10,9 +10,6 @@ import ScrollRevealCSS from '@/components/ui/ScrollRevealCSS';
 import YouTubeEmbed from '@/components/YouTubeEmbed';
 
 export default function MobileBartenderPartnerPage() {
-  // Commission configuration
-  const BASE_COMMISSION = "5";
-
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -211,8 +208,8 @@ Source: ${formData.source}`,
           <path d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       ),
-      title: "Earn Commission on Every Order",
-      description: `Start at ${BASE_COMMISSION}% commission on all orders you refer. The more you send, the more you earn.`
+      title: "Earn Rewards on Every Order",
+      description: "Earn a per-order referral reward on every order you send. The more you refer, the more you earn."
     },
     {
       icon: (
@@ -270,7 +267,7 @@ Source: ${formData.source}`,
         </svg>
       ),
       title: "Join Our Affiliate Network",
-      description: "Sign up below and get your unique discount code to share with clients. We track your commission and the client gets FREE DELIVERY."
+      description: "Sign up below and get your unique discount code to share with clients. We track every order you refer and the client gets FREE DELIVERY."
     },
     {
       icon: (
@@ -297,7 +294,7 @@ Source: ${formData.source}`,
           <path d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       ),
-      title: "You Pour, Earn Commission",
+      title: "You Pour, You Earn",
       description: "Focus on what you do best—crafting amazing drinks. Get paid automatically for every order you referred."
     }
   ];
@@ -353,12 +350,12 @@ Source: ${formData.source}`,
 
   const faqs = [
     {
-      question: "How much commission do I earn as a partner?",
-      answer: `Partners start at ${BASE_COMMISSION}% commission on all referred orders. The more orders you send, the higher your commission tier.`
+      question: "How do partner rewards work?",
+      answer: "Partners earn a per-order referral reward on all referred orders. The more orders you send, the higher your partner tier."
     },
     {
       question: "How do I get paid?",
-      answer: "We process payouts twice per month via direct deposit or check. You'll receive detailed reports showing all your referred orders and earned commissions."
+      answer: "We process payouts twice per month via direct deposit or check. You'll receive detailed reports showing all your referred orders and earned rewards."
     },
     {
       question: "Do I need a business license to partner?",
@@ -478,7 +475,7 @@ Source: ${formData.source}`,
           <div className="w-24 h-px bg-brand-yellow mx-auto mb-6" />
 
           <p className="text-2xl font-light tracking-[0.1em] mb-10 text-gray-200 max-w-3xl mx-auto">
-            Partner with Austin&apos;s top alcohol delivery service. Earn commission on every order, skip the store runs, and focus on what you do best.
+            Partner with Austin&apos;s top alcohol delivery service. Earn rewards on every order you refer, skip the store runs, and focus on what you do best.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -575,7 +572,7 @@ Source: ${formData.source}`,
               </h2>
               <div className="w-16 h-px bg-brand-yellow mx-auto mb-6" />
               <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                Four simple steps to start earning commission on every event
+                Four simple steps to start earning on every event
               </p>
             </div>
           </ScrollRevealCSS>
@@ -606,7 +603,7 @@ Source: ${formData.source}`,
                 Partnership Tiers
               </h2>
               <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                The more you refer, the more you earn
+                Every tier earns a per-order referral reward — the more you refer, the more you earn
               </p>
             </div>
           </ScrollRevealCSS>
@@ -616,8 +613,7 @@ Source: ${formData.source}`,
               <div className="bg-white p-8 border-2 border-gray-200">
 
               <h3 className="font-heading text-2xl mb-2 text-gray-900">Tier 1 Partner</h3>
-              <p className="text-gray-600 mb-2">$0 - $5,000 in referred orders</p>
-              <p className="text-3xl font-light text-brand-yellow mb-6">5% Commission</p>
+              <p className="text-gray-600 mb-6">$0 - $5,000 in referred orders</p>
               <ul className="space-y-3">
                 <li className="flex items-start">
                   <svg className="w-5 h-5 text-brand-yellow mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -657,8 +653,7 @@ Source: ${formData.source}`,
               <div className="bg-white p-8 border-2 border-gray-200">
 
               <h3 className="font-heading text-2xl mb-2 text-gray-900">Tier 2 Partner</h3>
-              <p className="text-gray-600 mb-2">$10,000 - $20,000 in referred orders</p>
-              <p className="text-3xl font-light text-brand-yellow mb-6">8% Commission</p>
+              <p className="text-gray-600 mb-6">$10,000 - $20,000 in referred orders</p>
               <ul className="space-y-3">
                 <li className="flex items-start">
                   <svg className="w-5 h-5 text-brand-yellow mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -686,8 +681,7 @@ Source: ${formData.source}`,
               <div className="bg-white p-8 border-2 border-gray-200">
 
               <h3 className="font-heading text-2xl mb-2 text-gray-900">Tier 3 Partner</h3>
-              <p className="text-gray-600 mb-2">$20,000+ in referred orders</p>
-              <p className="text-3xl font-light text-brand-yellow mb-6">10% Commission</p>
+              <p className="text-gray-600 mb-6">$20,000+ in referred orders</p>
               <ul className="space-y-3">
                 <li className="flex items-start">
                   <svg className="w-5 h-5 text-brand-yellow mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">

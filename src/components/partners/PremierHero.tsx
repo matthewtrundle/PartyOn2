@@ -80,7 +80,7 @@ export default function PremierHero(): ReactElement {
           transition={{ duration: 0.6, delay: 0.15, ease: [0.25, 0.1, 0.25, 1] }}
           className="font-sans text-lg md:text-xl text-white/90 mb-4 md:mb-6 max-w-2xl mx-auto"
         >
-          Delivered to the marina before you arrive — with ice, cups, and an easy way for the whole crew to pay separately.
+          Delivered to the marina and handed to the boat crew — with ice, cups, and an easy way for the whole group to pay separately.
         </motion.p>
 
         {/* Trust Chips */}

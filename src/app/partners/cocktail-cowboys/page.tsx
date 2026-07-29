@@ -136,7 +136,7 @@ function CocktailCowboysPageContent(): ReactElement {
                 Party Hosts + Drinks, All Handled
               </h1>
               <p className="text-gray-300 text-lg md:text-xl mb-8">
-                Book Cocktail Cowboys. We&apos;ll deliver the drinks before they arrive.
+                Book Cocktail Cowboys. We&apos;ll have the drinks there before your bar crew arrives.
               </p>
 
               <div className="mb-8">

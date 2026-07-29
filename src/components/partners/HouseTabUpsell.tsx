@@ -31,7 +31,7 @@ export default function HouseTabUpsell(): ReactElement {
             <div className="space-y-4 mb-8">
               {[
                 'One group link for house and boat orders',
-                'Delivered and stocked before you arrive',
+                'Stocked and ready when your group walks in',
               ].map((bullet, idx) => (
                 <ScrollRevealCSS key={bullet} delay={idx * 100}>
                   <div className="flex items-start gap-3">
