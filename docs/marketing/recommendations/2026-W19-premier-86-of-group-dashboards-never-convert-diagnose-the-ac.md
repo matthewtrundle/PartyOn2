@@ -62,41 +62,41 @@ _(not captured)_
 
 ```json
 {
-  "orders": 60,
-  "revenue": 11436.79,
+  "orders": 67,
+  "revenue": 11771.37,
   "segments": [
     {
       "margin": 463.53,
-      "orders": 56,
-      "revenue": 9688.22,
+      "orders": 60,
+      "revenue": 10022.8,
       "segment": "general",
-      "averageMarginPct": 4.8,
-      "averageOrderValue": 173,
-      "marginCoveragePct": 16
+      "averageMarginPct": 4.6,
+      "averageOrderValue": 167.05,
+      "marginCoveragePct": 15.4
     },
     {
       "margin": 132.24,
-      "orders": 4,
+      "orders": 7,
       "revenue": 1748.57,
       "segment": "unknown",
       "averageMarginPct": 7.6,
-      "averageOrderValue": 437.14,
+      "averageOrderValue": 249.8,
       "marginCoveragePct": 30.2
     }
   ],
-  "capturedAt": "2026-07-28T08:00:30.221Z",
+  "capturedAt": "2026-07-29T08:00:34.222Z",
   "affiliateRoi": [
     {
       "code": "PREMIER",
       "margin": 441.31,
-      "orders": 47,
-      "roiPct": 312.3,
-      "revenue": 6088.24,
-      "netMargin": 334.27,
+      "orders": 51,
+      "roiPct": 236.8,
+      "revenue": 6422.82,
+      "netMargin": 310.28,
       "affiliateId": "d21bac1a-3f99-489c-89fd-e1980c264a8d",
       "businessName": "Premier Party Cruises",
-      "commissionPaid": 107.04,
-      "marginCoveragePct": 23.7
+      "commissionPaid": 131.03,
+      "marginCoveragePct": 22.5
     },
     {
       "code": "POUR24",
@@ -135,15 +135,15 @@ _(not captured)_
       "marginCoveragePct": 0
     }
   ],
-  "snapshotDate": "2026-07-28",
-  "averageOrderValue": 190.6131666666667,
+  "snapshotDate": "2026-07-29",
+  "averageOrderValue": 175.6920895522388,
   "marginCoveragePct": null
 }
 ```
 ## Updates
 
 - 2026-05-05 — Created with status `executed` from source `director`.
-- 2026-07-28 — Status shipped → shipped (cron:measure-recommendations). Notes: Auto-captured 14-day measurement
+- 2026-07-29 — Status shipped → shipped (cron:measure-recommendations). Notes: Auto-captured 14-day measurement
 
 ---
 _Mirror file. Edited automatically by the triage queue when status changes. Source of truth is the database (id: `4fe8e34e-83cb-4ee7-9576-4a60386400dc`). Slug: `premier-86-of-group-dashboards-never-convert-diagnose-the-ac`._
