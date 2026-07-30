@@ -11,6 +11,7 @@ import OrdersHeader from './OrdersHeader';
 import OrdersStatsStrip from './OrdersStatsStrip';
 import PackModeOverlay from './PackModeOverlay';
 import PickSheetPrint from './print/PickSheetPrint';
+import CruiseTypeGateDialog, { type CruisePick } from './CruiseTypeGateDialog';
 import ReviewRequestModal from './ReviewRequestModal';
 import ShortageListModal from './ShortageListModal';
 import { buildShortageList } from './shortage';
@@ -52,6 +53,7 @@ export default function UnifiedOrdersView({
   const [sheetOpen, setSheetOpen] = useState(false);
   const [fulfilling, setFulfilling] = useState(false);
   const [printCards, setPrintCards] = useState<OrderCardData[]>([]);
+  const [cruiseGate, setCruiseGate] = useState<{ unresolved: OrderCardData[]; cards: OrderCardData[] } | null>(null);
   const [reviewModalOrders, setReviewModalOrders] = useState<Order[] | null>(null);
   const [reviewChecked, setReviewChecked] = useState<Set<string>>(new Set());
   const [sendingReviews, setSendingReviews] = useState(false);
@@ -78,6 +80,23 @@ export default function UnifiedOrdersView({
 
   // --- Print paths ---
 
+  // Prefetch authoritative pick state for EVERY order across the selected
+  // coolers (not just the clicked one) so the sheet reflects cross-device
+  // updates, then render + print the pick sheets.
+  const doPrintPickSheets = useCallback(async (cards: OrderCardData[]) => {
+    await Promise.all(
+      cards
+        .flatMap((c) => c.orders)
+        .map((o) =>
+          fetchChecks(o.id).then((server) => {
+            if (server) cacheChecks(o.id, server);
+          }),
+        ),
+    );
+    setPrintCards(cards);
+    setTimeout(() => window.print(), 100);
+  }, []);
+
   const handlePrintPickSheets = useCallback(async (orderIds: string[]) => {
     // Resolve each requested order to its cooler card and print the WHOLE
     // cooler, so a group dashboard's guest orders share one combined sheet.
@@ -94,21 +113,39 @@ export default function UnifiedOrdersView({
       cards.push(card);
     }
     if (!cards.length) return;
-    // Prefetch authoritative pick state for EVERY order across the selected
-    // coolers (not just the clicked one) so the sheet reflects cross-device
-    // updates.
+    // Gate: any marina delivery whose cruise type (Private/Disco) is unknown
+    // must be resolved before the sheet prints — the pick sheet has to say it.
+    const unresolved = cards.filter((c) => c.isMarina && !c.cruiseTypeKnown);
+    if (unresolved.length) {
+      setCruiseGate({ unresolved, cards });
+      return;
+    }
+    await doPrintPickSheets(cards);
+  }, [view.allCards, doPrintPickSheets]);
+
+  // Operator resolved the cruise-type gate: persist each pick to its dashboard,
+  // stamp the resolved type onto the print cards, then print.
+  const handleCruiseGateConfirm = useCallback(async (picks: Record<string, CruisePick>) => {
+    const gate = cruiseGate;
+    if (!gate) return;
     await Promise.all(
-      cards
-        .flatMap((c) => c.orders)
-        .map((o) =>
-          fetchChecks(o.id).then((server) => {
-            if (server) cacheChecks(o.id, server);
-          }),
-        ),
+      gate.unresolved.map((c) => {
+        const cruiseType = picks[c.key];
+        if (!cruiseType || !c.shareCode) return Promise.resolve(); // no dashboard → this-print-only
+        return fetch('/api/ops/orders/cruise-type', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ shareCode: c.shareCode, cruiseType }),
+        }).catch(() => undefined);
+      }),
     );
-    setPrintCards(cards);
-    setTimeout(() => window.print(), 100);
-  }, [view.allCards]);
+    const applied = gate.cards.map((c) =>
+      picks[c.key] ? { ...c, cruiseType: picks[c.key], cruiseTypeKnown: true } : c,
+    );
+    setCruiseGate(null);
+    view.refresh();
+    await doPrintPickSheets(applied);
+  }, [cruiseGate, doPrintPickSheets, view]);
 
   const handlePrintChecklist = useCallback(() => {
     setPrintCards([]);
@@ -505,6 +542,14 @@ export default function UnifiedOrdersView({
           label={packSection.label}
           cards={packSection.cards}
           onClose={() => setPackSection(null)}
+        />
+      )}
+
+      {cruiseGate && (
+        <CruiseTypeGateDialog
+          cards={cruiseGate.unresolved}
+          onConfirm={(picks: Record<string, CruisePick>) => void handleCruiseGateConfirm(picks)}
+          onCancel={() => setCruiseGate(null)}
         />
       )}
 

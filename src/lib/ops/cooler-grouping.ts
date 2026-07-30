@@ -45,6 +45,26 @@ export interface CoolerLike {
   partyType: string | null;
   manifestMatch: BoatScheduleRow | null;
   payments: Array<{ payer: string }>;
+  /** Operator-set cruise-type override ('DISCO' | 'PRIVATE') from GroupOrderV2. */
+  cruiseType?: string | null;
+}
+
+/**
+ * Authoritative cruise type for a boat delivery: the boat manifest (source of
+ * truth) first, then an operator-set override. `known` is false when neither
+ * exists — that is what the pick-sheet gate asks the operator to resolve.
+ *
+ * Deliberately does NOT guess DISCO from a WEBHOOK source the way the on-screen
+ * `shortTypeFor` tag does — a private cruise must not be silently labelled Disco.
+ */
+export function resolveCruiseType(c: CoolerLike): { type: 'DISCO' | 'PRIVATE' | null; known: boolean } {
+  const tab = c.manifestMatch?.sheetTab?.toUpperCase() || '';
+  if (tab.includes('DSC')) return { type: 'DISCO', known: true };
+  if (tab.includes('PVT')) return { type: 'PRIVATE', known: true };
+  const override = (c.cruiseType || '').toUpperCase();
+  if (override === 'DISCO') return { type: 'DISCO', known: true };
+  if (override === 'PRIVATE') return { type: 'PRIVATE', known: true };
+  return { type: null, known: false };
 }
 
 const PLACEHOLDER_NAMES = new Set([

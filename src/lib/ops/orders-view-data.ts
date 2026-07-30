@@ -26,12 +26,14 @@ import {
   isBoatish,
   isPlaceholderName,
   preferredCustomerName,
+  resolveCruiseType,
   serializeManifestMatch,
   shortTypeFor,
   todayCT,
 } from './cooler-grouping';
 import { getOrdersSummaryStats, type OrdersSummaryStats } from './orders-stats';
 import { resolveGroupLabel } from './group-label';
+import { isBoatAddress } from './boat-address';
 
 /** Per-order shape — matches the admin orders route serialization. */
 export interface OrdersViewOrder {
@@ -99,6 +101,12 @@ export interface OrderCardData {
   isVeryLarge: boolean;
   shortType: WeeklyShortType;
   isBoatish: boolean;
+  /** True when this cooler delivers to the Premier boat marina. */
+  isMarina: boolean;
+  /** Authoritative cruise type (manifest or operator override); null if unknown. */
+  cruiseType: 'DISCO' | 'PRIVATE' | null;
+  /** False when a marina delivery has no known cruise type — the pick-sheet gate resolves these. */
+  cruiseTypeKnown: boolean;
   orders: OrdersViewOrder[];
 }
 
@@ -168,6 +176,7 @@ type OrderWithIncludes = Prisma.OrderGetPayload<{
         shareCode: true;
         source: true;
         partyType: true;
+        cruiseType: true;
         externalBookingId: true;
       };
     };
@@ -190,6 +199,7 @@ const ORDER_INCLUDE = {
       shareCode: true,
       source: true,
       partyType: true,
+      cruiseType: true,
       externalBookingId: true,
     },
   },
@@ -321,6 +331,7 @@ interface CardAccumulator {
   hostPhone: string;
   hostEmail: string;
   manifestMatch: BoatScheduleRow | null;
+  cruiseType: string | null;
   payments: Array<{ payer: string }>;
   aggregatedItems: Map<string, number>;
   orders: OrdersViewOrder[];
@@ -338,13 +349,17 @@ function buildCards(
     const addr = (o.deliveryAddress || {}) as { address1?: string; city?: string; zip?: string };
     const dateKey = o.deliveryDate.toISOString().slice(0, 10);
     const timeKey = o.deliveryTime || 'TBD';
-    const manifestMatch = lbl.isGroupOrder
-      ? findManifestMatch(boatSchedule, {
-          manifestName: lbl.manifestName || o.customerName,
-          payerPhone: o.customerPhone,
-          deliveryDate: o.deliveryDate,
-        })
-      : null;
+    const addrStr = [addr.address1, addr.city, addr.zip].filter(Boolean).join(', ');
+    // Match the boat manifest for group orders AND any marina delivery (a solo
+    // marina order still needs its cruise type + full manifest name).
+    const manifestMatch =
+      lbl.isGroupOrder || isBoatAddress(addrStr)
+        ? findManifestMatch(boatSchedule, {
+            manifestName: lbl.manifestName || o.customerName,
+            payerPhone: o.customerPhone,
+            deliveryDate: o.deliveryDate,
+          })
+        : null;
     const key = coolerKey({
       shareCode: lbl.shareCode,
       deliveryDate: dateKey,
@@ -376,6 +391,7 @@ function buildCards(
         hostPhone: o.groupOrderV2?.hostPhone || o.customerPhone || '',
         hostEmail: o.groupOrderV2?.hostEmail || o.customerEmail || '',
         manifestMatch,
+        cruiseType: o.groupOrderV2?.cruiseType || null,
         payments: [],
         aggregatedItems: new Map(),
         orders: [],
@@ -394,6 +410,7 @@ function buildCards(
     const total = c.orders.reduce((s, o) => s + o.total, 0);
     const totalItems = [...c.aggregatedItems.values()].reduce((s, q) => s + q, 0);
     const displayName = preferredCustomerName(c);
+    const cruise = resolveCruiseType(c);
     const groupTitle =
       c.primaryName && !isPlaceholderName(c.primaryName) && c.primaryName !== displayName
         ? c.primaryName
@@ -426,6 +443,9 @@ function buildCards(
       isVeryLarge: total >= 500 || totalItems >= 15,
       shortType: shortTypeFor(c),
       isBoatish: isBoatish(c),
+      isMarina: isBoatAddress(c.address),
+      cruiseType: cruise.type,
+      cruiseTypeKnown: cruise.known,
       orders: c.orders.sort((a, b) => a.orderNumber - b.orderNumber),
     };
   });

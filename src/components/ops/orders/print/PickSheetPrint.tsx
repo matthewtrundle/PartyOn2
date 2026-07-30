@@ -45,7 +45,7 @@ export default function PickSheetPrint({ cards }: { cards: OrderCardData[] }): R
             {card.orders.length > 1 ? (
               <GroupSheet card={card} cruiseLabel={cruiseLabel} />
             ) : (
-              <SoloSheet order={card.orders[0]} cruiseLabel={cruiseLabel} />
+              <SoloSheet order={card.orders[0]} displayName={card.displayName} cruiseLabel={cruiseLabel} />
             )}
           </div>
         );
@@ -59,9 +59,13 @@ export default function PickSheetPrint({ cards }: { cards: OrderCardData[] }): R
 /** One payer / direct order — the familiar single-order pick sheet. */
 function SoloSheet({
   order,
+  displayName,
   cruiseLabel,
 }: {
   order: OrdersViewOrder;
+  /** Card's resolved name (boat-manifest full name when available) — beats the
+   *  raw customerName, which is often just a first name ("Mary"). */
+  displayName: string;
   cruiseLabel: string | null;
 }): ReactElement {
   const addrStr = order.deliveryAddress ? formatAddress(order.deliveryAddress) : '';
@@ -69,7 +73,7 @@ function SoloSheet({
     <>
       <SheetBanner
         orderNumber={`#${order.orderNumber}`}
-        name={fullName(order)}
+        name={displayName?.trim() || fullName(order)}
         dateLine={bannerDateLine(order)}
         affiliate={order.affiliate?.businessName}
         marina={addrMarina(addrStr)}

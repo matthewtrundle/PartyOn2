@@ -1964,6 +1964,9 @@ model GroupOrderV2 {
   shareCode       String             @unique @map("share_code")
   status          GroupOrderV2Status @default(ACTIVE)
   partyType       PartyType?         @map("party_type")
+  // Operator-set cruise-type override ('DISCO' | 'PRIVATE') for boat/marina
+  // dashboards without a Premier manifest match — set from the pick-sheet gate.
+  cruiseType      String?            @map("cruise_type")
   affiliateId     String?            @map("affiliate_id")
   source          DashboardSource    @default(DIRECT)
   hostClaimToken    String?            @unique @map("host_claim_token")

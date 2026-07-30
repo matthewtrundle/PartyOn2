@@ -154,9 +154,10 @@ export function typeTagClasses(t: 'DISCO' | 'PRIVATE' | 'HOUSE'): { label: strin
  * is not a qualified cruise delivery.
  */
 export function cruiseLabelForCard(card: OrderCardData): 'DISCO' | 'PRIVATE' | null {
-  if (!card.manifestMatch) return null;
   if (!isBoatAddress(card.address)) return null;
-  return card.shortType === 'DISCO' || card.shortType === 'PRIVATE'
-    ? card.shortType
+  // Authoritative cruise type only (manifest match or operator override) —
+  // never the WEBHOOK→DISCO guess, so a private cruise isn't mislabelled.
+  return card.cruiseType === 'DISCO' || card.cruiseType === 'PRIVATE'
+    ? card.cruiseType
     : null;
 }
