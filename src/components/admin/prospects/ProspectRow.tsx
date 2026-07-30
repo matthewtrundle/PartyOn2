@@ -92,11 +92,6 @@ export default function ProspectRow({
           {verify && (
             <span className={`text-xs font-bold px-1.5 py-0.5 rounded ${verify.cls}`}>
               {verify.label}
-              {(prospect.emailVerifyStatus === 'CATCH_ALL' ||
-                prospect.emailVerifyStatus === 'ROLE') &&
-              prospect.emailVerifyOverride
-                ? ' · OK’d'
-                : ''}
             </span>
           )}
           {prospect.phone && <span className="text-xs text-gray-500">{prospect.phone}</span>}

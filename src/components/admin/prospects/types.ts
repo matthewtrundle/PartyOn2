@@ -42,12 +42,15 @@ export const ARM_CHIP: Record<string, { label: string; cls: string }> = {
   B: { label: 'B · detailed', cls: 'bg-indigo-100 text-indigo-800' },
 };
 
-/** True when the email counts as sendable-verified (PR6 gate mirror). */
+/**
+ * True when the email counts as sendable-verified — mirrors enrollGateReason.
+ * Anything ZeroBounce could check and did not call INVALID is sendable.
+ */
 export function isEmailVerified(p: ProspectRow): boolean {
   return (
     p.emailVerifyStatus === 'VALID' ||
-    ((p.emailVerifyStatus === 'CATCH_ALL' || p.emailVerifyStatus === 'ROLE') &&
-      p.emailVerifyOverride)
+    p.emailVerifyStatus === 'CATCH_ALL' ||
+    p.emailVerifyStatus === 'ROLE'
   );
 }
 

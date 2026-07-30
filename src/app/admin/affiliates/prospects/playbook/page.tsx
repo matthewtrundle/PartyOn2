@@ -86,11 +86,14 @@ export default function OutreachPlaybookPage(): ReactElement {
           <ul className="list-disc pl-5 space-y-1">
             <li><strong>Verified</strong> — sendable.</li>
             <li>
-              <strong>Catch-all</strong> — needs the per-prospect &ldquo;accept for
-              sending&rdquo; override in the drawer.
+              <strong>Catch-all</strong> — sendable. The server accepts any address, so
+              ZeroBounce cannot confirm the mailbox, but nothing hard-bounces.
             </li>
-            <li><strong>Role addr</strong> (info@/office@) — blocked until edited to a direct person.</li>
-            <li><strong>Invalid</strong> — never sends.</li>
+            <li>
+              <strong>Role addr</strong> (info@/hello@/reservations@) — sendable. It is
+              usually the address the business publishes for inbound contact.
+            </li>
+            <li><strong>Invalid</strong> — never sends (no mailbox = hard bounce).</li>
           </ul>
           <p>
             Editing an email resets its verification. A vendor outage never flips an address
@@ -140,7 +143,7 @@ export default function OutreachPlaybookPage(): ReactElement {
             <li>An email on the row (enrich or edit to add one).</li>
             <li>A synced Lead (run Sync to CRM).</li>
             <li>An APPROVED draft.</li>
-            <li>A verified email (or the catch-all override).</li>
+            <li>A verified email that is not Invalid.</li>
             <li>Not suppressed, not already in a campaign.</li>
           </ul>
         </Card>

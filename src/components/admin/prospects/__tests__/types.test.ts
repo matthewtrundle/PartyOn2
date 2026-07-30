@@ -88,22 +88,13 @@ describe('deriveStatus precedence', () => {
     expect(deriveStatus(row(), state())).toBe('SOURCED');
   });
 
-  it('catch-all counts as verified only with the operator override', () => {
-    expect(isEmailVerified(row({ emailVerifyStatus: 'CATCH_ALL' }))).toBe(false);
-    expect(
-      isEmailVerified(row({ emailVerifyStatus: 'CATCH_ALL', emailVerifyOverride: true }))
-    ).toBe(true);
-  });
-
-  it('role addresses count as verified only with the operator override', () => {
-    expect(isEmailVerified(row({ emailVerifyStatus: 'ROLE' }))).toBe(false);
-    expect(isEmailVerified(row({ emailVerifyStatus: 'ROLE', emailVerifyOverride: true }))).toBe(
-      true
-    );
-    // Mirrors the server gate: the override is meaningless on a rejected status.
-    expect(isEmailVerified(row({ emailVerifyStatus: 'INVALID', emailVerifyOverride: true }))).toBe(
-      false
-    );
+  it('mirrors the server gate: everything verified except INVALID is sendable', () => {
+    for (const status of ['VALID', 'CATCH_ALL', 'ROLE'] as const) {
+      expect(isEmailVerified(row({ emailVerifyStatus: status }))).toBe(true);
+    }
+    for (const status of ['INVALID', 'UNVERIFIED', 'UNKNOWN'] as const) {
+      expect(isEmailVerified(row({ emailVerifyStatus: status }))).toBe(false);
+    }
   });
 
   it('flags failures as an overlay, not a status', () => {
