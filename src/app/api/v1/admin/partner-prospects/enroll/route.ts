@@ -4,9 +4,8 @@
  * Enroll prospects in the 'partner-outreach' 3-touch campaign (approved
  * personalized email on enroll, open-branched touch 2 at +5d, standalone
  * close at +12d; ≤10 sends/day across all touches). Batches are capped at
- * 10 per request. Gates: APPROVED draft + verified email (or a catch-all /
- * role address the operator has OK'd) + not suppressed — see
- * enrollGateReason. Enqueueing is
+ * 10 per request. Gates: APPROVED draft + a verified email that is not
+ * INVALID + not suppressed — see enrollGateReason. Enqueueing is
  * idempotent (dedupeKey), and NOTHING SENDS while the
  * followups_partner_outreach feature flag is off.
  *
@@ -57,8 +56,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       results.push({ website, ok: false, reason: 'no-email' });
       continue;
     }
-    // Full enrollment gates: not suppressed + APPROVED draft + verified
-    // email (or catch-all override). Reasons surface in the UI.
+    // Full enrollment gates: not suppressed + APPROVED draft + a verified,
+    // non-INVALID email. Reasons surface in the UI.
     const gateReason = enrollGateReason(prospect, await isSuppressed(email));
     if (gateReason) {
       results.push({ website, ok: false, reason: gateReason });

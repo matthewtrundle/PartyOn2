@@ -2,10 +2,9 @@
  * Prospect email deliverability verification (Partner Outreach 2.0, PR2).
  *
  * ZeroBounce is the vendor (Allan's locked decision 2026-07-22): pay-as-you-go,
- * ~$0.008/verification. Gating rules live with the enroll path (PR6):
- * only VALID auto-sends; CATCH_ALL and ROLE each need a per-prospect operator
- * override (a role inbox is usually the address the business publishes for
- * inbound contact, so it is an operator call — see enroll-gate.ts).
+ * ~$0.008/verification. Gating rules live with the enroll path: VALID,
+ * CATCH_ALL and ROLE all send; only INVALID blocks (missing mailbox =
+ * guaranteed hard bounce). See enroll-gate.ts.
  *
  * Fail-closed design: 'unknown' results and timeouts DO NOT update the row —
  * the caller returns 502 and the prospect stays at its previous status, so a
@@ -49,9 +48,9 @@ const TIMEOUT_MS = 8_000;
  * Map a ZeroBounce response to our status vocabulary.
  * Exported for the test matrix.
  *
- *   role_based* sub-status → ROLE (blocked until edited to a direct address)
+ *   role_based* sub-status → ROLE (sendable — usually the published inbox)
  *   valid                  → VALID
- *   catch-all              → CATCH_ALL (needs operator override)
+ *   catch-all              → CATCH_ALL (sendable — server accepts anything)
  *   invalid / spamtrap / abuse / do_not_mail → INVALID
  *   unknown / anything else → UNKNOWN (caller must NOT store it)
  */
