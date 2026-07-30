@@ -8,5 +8,9 @@
  */
 export function isBoatAddress(address: string | null | undefined): boolean {
   const a = (address || '').toLowerCase();
-  return a.includes('13993 fm 2769') || a.includes('rocky hills');
+  if (a.includes('rocky hills')) return true;
+  // Premier marina at 13993, stored variously as "FM 2769" / "Farm to Market
+  // Rd 2769" / "Farm to Market 2769". Match the distinctive road number (2769)
+  // together with any of those road forms so all spellings resolve.
+  return /2769/.test(a) && /(\bfm\b|farm to market|13993)/.test(a);
 }
