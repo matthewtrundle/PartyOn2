@@ -81,7 +81,7 @@ export const VERTICALS: VerticalDef[] = [
       'wedding venue bring your own alcohol',
     ],
     offer:
-      'Their BYOB policy becomes a selling point instead of homework: clients get a venue-branded ordering page with delivery timed to the event (iced, arranged, unopened returns), the venue lands on our directory as a featured BYOB space, and coordinators stop fielding "where do we buy the alcohol" — zero lift, and a flat per-order bounty on orders.',
+      'Their BYOB policy becomes a selling point instead of homework: clients get a venue-branded ordering page with delivery timed to the event (iced, arranged, unopened returns), the venue lands on our directory as a featured BYOB space, and coordinators stop fielding "where do we buy the alcohol" — zero lift, and a commission on the orders.',
   },
 ];
 

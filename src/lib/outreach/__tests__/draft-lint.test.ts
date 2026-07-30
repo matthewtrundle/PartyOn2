@@ -112,6 +112,25 @@ describe('banned content', () => {
     expect(issues.some((i) => i.message.includes('exclamation'))).toBe(false);
   });
 
+  it('flags the CURRENT signature inline, not just the retired one', () => {
+    // Regression: SIGNATURE_RE only knew Brian's block, so once the outreach
+    // signature became Allan's an inline sign-off stopped being caught and the
+    // renderer would append a second signature underneath it.
+    const issues = lintDraft(
+      cleanDraft({ followUpBody: `${words(30)}.\n\nAllan\nOwner, Party On Delivery` })
+    );
+    expect(
+      issues.some((i) => i.field === 'followUpBody' && i.message.includes('signature'))
+    ).toBe(true);
+  });
+
+  it('flags "noticed" — Allan says "saw"', () => {
+    const issues = lintDraft(
+      cleanDraft({ body: `Hi there! I noticed your site. ${words(55)}. Want the link?` })
+    );
+    expect(issues.some((i) => i.message.includes('noticed'))).toBe(true);
+  });
+
   it('flags inline signatures and unsubscribe text in any touch', () => {
     const issues = lintDraft(
       cleanDraft({

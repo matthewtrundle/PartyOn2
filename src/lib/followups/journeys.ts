@@ -16,7 +16,7 @@ import type { FollowUpJob } from '@prisma/client';
 import { prisma } from '@/lib/database/client';
 import { FEATURE_FLAGS } from '@/lib/features/feature-flags';
 import { entityIdFromDedupeKey, type JourneyDef, type JourneyKey } from './types';
-import { BRIAN_SIGNATURE, buildStepEmail, renderFollowUpEmail } from './copy';
+import { PARTNER_OUTREACH_SIGNATURE, buildStepEmail, renderFollowUpEmail } from './copy';
 import { getSendableDraft } from '@/lib/partners/prospect-store';
 
 /**
@@ -249,7 +249,7 @@ export const JOURNEYS: JourneyDef[] = [
     key: 'partner-outreach',
     label: 'Partner outreach',
     description:
-      'B2B campaign to the partner-prospect database: approved personalized email on enroll, open-branched touch 2 at +5d (no open → resend under the alternate subject; opened → substantive bump), standalone close at +12d. ≤10 sends/day (all touches). Flag OFF until Brian approves sends.',
+      'B2B campaign to the partner-prospect database: approved personalized email on enroll, open-branched touch 2 at +5d (no open → resend under the alternate subject; opened → substantive bump), standalone close at +12d. ≤10 sends/day (all touches). Flag OFF until Allan or Brian approves sends.',
     featureFlag: FEATURE_FLAGS.FOLLOWUPS_PARTNER_OUTREACH,
     phase: 3,
     // Prospects may also be past customers — a paid order says nothing
@@ -257,7 +257,7 @@ export const JOURNEYS: JourneyDef[] = [
     skipGlobalPaidGuard: true,
     from: {
       email: process.env.PARTNER_OUTREACH_FROM_EMAIL || 'info@partyondelivery.com',
-      name: 'Brian at Party On Delivery',
+      name: 'Allan at Party On Delivery',
     },
     steps: [
       {
@@ -265,14 +265,14 @@ export const JOURNEYS: JourneyDef[] = [
         // Step 1 = the APPROVED draft from partner_prospects, read fresh at
         // send time so edits ship without re-enrolling (payloads are clamped
         // to 200 chars — copy can never ride in the payload). Drafts are
-        // stored signature-free; the renderer signs as Brian. The generic
+        // stored signature-free; the renderer signs as Allan. The generic
         // template only ever fires for legacy jobs with no website payload —
         // shouldCancel kills anything whose draft is no longer approved.
         buildEmail: async (ctx) => {
           const website = typeof ctx.payload.website === 'string' ? ctx.payload.website : null;
           const draft = website ? await getSendableDraft(website) : null;
           if (draft) {
-            return renderFollowUpEmail(draft.subject, draft.body, ctx.unsubscribeUrl, BRIAN_SIGNATURE);
+            return renderFollowUpEmail(draft.subject, draft.body, ctx.unsubscribeUrl, PARTNER_OUTREACH_SIGNATURE);
           }
           return buildStepEmail('partner-outreach', 1, ctx);
         },
@@ -312,7 +312,7 @@ export const JOURNEYS: JourneyDef[] = [
               draft.altSubject ?? draft.subject,
               draft.body,
               ctx.unsubscribeUrl,
-              BRIAN_SIGNATURE
+              PARTNER_OUTREACH_SIGNATURE
             );
           }
           if (!draft.followUpBody) return null;
@@ -320,7 +320,7 @@ export const JOURNEYS: JourneyDef[] = [
             `Re: ${draft.subject}`,
             draft.followUpBody,
             ctx.unsubscribeUrl,
-            BRIAN_SIGNATURE
+            PARTNER_OUTREACH_SIGNATURE
           );
         },
       },
@@ -335,7 +335,7 @@ export const JOURNEYS: JourneyDef[] = [
             draft.subject,
             draft.touch3Body,
             ctx.unsubscribeUrl,
-            BRIAN_SIGNATURE
+            PARTNER_OUTREACH_SIGNATURE
           );
         },
       },

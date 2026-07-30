@@ -8,9 +8,9 @@
  * for each prospect, writes the JSON, and imports it via
  * scripts/import-prospect-drafts.ts (which runs draft-lint on every record).
  *
- * These emails send FROM info@partyondelivery.com in Brian's voice — the
- * renderer appends Brian's signature and the CAN-SPAM footer, so drafts are
- * SIGNATURE-FREE by contract.
+ * These emails send FROM info@partyondelivery.com in Allan's voice (switched
+ * from Brian 2026-07-29) — the renderer appends his signature and the CAN-SPAM
+ * footer, so drafts are SIGNATURE-FREE by contract.
  */
 
 import type { StoredProspect } from '@/lib/partners/prospect-store';
