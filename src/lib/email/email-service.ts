@@ -26,6 +26,13 @@ import {
   generatePartnerOnePagerEmail,
   generatePartnerOnePagerEmailText,
 } from './templates/partner-onepager';
+import {
+  generateFullMoonTicketEmail,
+  generateFullMoonTicketText,
+  FullMoonTicketData,
+} from './templates/full-moon-ticket';
+import { EVENT } from '@/components/full-moon/event';
+import { escapeHtml } from './escape-html';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -263,16 +270,10 @@ export interface PartnerInquiryData {
  * Escape untrusted text before interpolating it into an HTML email body. The
  * partner-inquiry fields below come from a public, unauthenticated form and are
  * rendered in an email ops staff open and trust — so every lead-supplied value
- * must be neutralized (CWE-79).
+ * must be neutralized (CWE-79). Uses the canonical null-safe helper from
+ * ./escape-html (a local duplicate lived here until 2026-07-29 — one escaping
+ * implementation, one place, per the 2026-07-23 incident notes).
  */
-function escapeHtml(v: string): string {
-  return v
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
 
 export async function sendPartnerInquiryNotification(
   data: PartnerInquiryData
@@ -721,6 +722,73 @@ export async function sendOrderCancellationEmail(
     metadata: {
       orderNumber: data.orderNumber,
       refundIssued: data.refundIssued || false,
+    },
+  });
+}
+
+/**
+ * Send the Full Moon Party ticket confirmation (event-voiced replacement for
+ * the delivery confirmation — the Stripe webhook picks it for event-ticket
+ * sessions). Same EmailType as an order confirmation: it IS one, just themed.
+ */
+export async function sendFullMoonTicketEmail(
+  data: FullMoonTicketData & { orderId?: string }
+): Promise<string | null> {
+  const html = generateFullMoonTicketEmail(data);
+  const text = generateFullMoonTicketText(data);
+
+  return sendEmail({
+    to: data.customerEmail,
+    subject: `You're on the boat — Full Moon Party, ${EVENT.dateLabel} (#${data.orderNumber})`,
+    html,
+    text,
+    type: EmailType.ORDER_CONFIRMATION,
+    ...(data.orderId ? { orderId: data.orderId } : {}),
+    metadata: {
+      orderNumber: data.orderNumber,
+      customerName: data.customerName,
+      event: 'full-moon-aug28',
+      quantity: data.quantity,
+    },
+  });
+}
+
+/**
+ * Operator "cha-ching" — one short email per Full Moon ticket sale with the
+ * running count toward the sail minimum. Reuses EmailType.WELCOME the same way
+ * the deadline cron does (internal ops alert; no dedicated type — adding one
+ * would be a DB enum migration for zero customer value).
+ */
+export async function sendFullMoonSaleAlert(input: {
+  orderNumber: number;
+  customerName: string;
+  quantity: number;
+  total: number;
+  ticketsSold: number;
+  minimum: number;
+}): Promise<string | null> {
+  const to = process.env.OPS_ALERT_EMAIL || 'allan@partyondelivery.com';
+  const remaining = Math.max(0, input.minimum - input.ticketsSold);
+  const status = remaining > 0 ? `${remaining} more to sail` : 'MINIMUM MET — the cruise is a go';
+  const name = escapeHtml(input.customerName);
+
+  return sendEmail({
+    to,
+    subject: `Full Moon ticket sale: ${input.quantity} × $${(input.total / Math.max(1, input.quantity)).toFixed(0)} — ${input.ticketsSold}/${input.minimum} (${status})`,
+    html: `<div style="font-family:Helvetica,Arial,sans-serif; font-size:14px; color:#1a1a1a; line-height:1.6;">
+      <p style="margin:0 0 8px;"><strong>New Full Moon Party ticket sale</strong></p>
+      <p style="margin:0 0 8px;">Order <strong>#${input.orderNumber}</strong> — ${name}, ${input.quantity} ticket${input.quantity === 1 ? '' : 's'}, $${input.total.toFixed(2)} collected.</p>
+      <p style="margin:0 0 8px;">Running count: <strong>${input.ticketsSold} / ${input.minimum}</strong> (${status}).</p>
+      <p style="margin:0; color:#6b7280;">Roster: https://partyondelivery.com/ops/full-moon</p>
+    </div>`,
+    // Plain text isn't HTML-escaped (entities would render literally); just
+    // neutralize line breaks so a hostile name can't reshape the message.
+    text: `Full Moon ticket sale — order #${input.orderNumber}: ${input.customerName.replace(/[\r\n]+/g, ' ')}, ${input.quantity} ticket(s), $${input.total.toFixed(2)}. Count ${input.ticketsSold}/${input.minimum} (${status}). Roster: https://partyondelivery.com/ops/full-moon`,
+    type: EmailType.WELCOME, // reuse — internal ops alert, no dedicated type
+    metadata: {
+      orderNumber: input.orderNumber,
+      event: 'full-moon-aug28',
+      ticketsSold: input.ticketsSold,
     },
   });
 }
