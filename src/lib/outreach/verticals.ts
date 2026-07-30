@@ -41,13 +41,17 @@ export const VERTICALS: VerticalDef[] = [
     ],
     offer:
       // Two doors: the co-branded page tabs between alcohol delivery and a
-      // Premier Party Cruises boat quote. Comp framing (compliance pass
-      // 2026-07-29, supersedes the 2026-07-28 "commission on both" wording):
-      // the ALCOHOL side is a flat per-order bounty, never a percentage or
-      // "commission" — %-of-alcohol-sales comp to new unlicensed parties is
-      // the construction the legal posture forbids. Boat bookings are not
-      // alcohol, so a boat-side commission may still be named.
-      'Their co-branded ordering page is ALREADY BUILT (or built same-day): guests get free alcohol delivery to the rental as an advertised perk OR can book a boat through our partner Premier Party Cruises, every group gets a private split-pay dashboard, and the company earns a flat per-order bounty on drink orders plus a commission on boat bookings — zero staff time, no inventory, no liability.',
+      // Premier Party Cruises boat quote.
+      //
+      // COMP WORDING — this sentence has flipped three times in two days; read
+      // this before changing it again. #327 (07-28) "commission on both" →
+      // #331 (07-29 compliance pass) "flat per-order bounty on drinks" →
+      // CURRENT (Allan, 07-29, after #331): back to "commission" on both,
+      // his reasoning being that "commission" does not necessarily mean a
+      // percentage. What is NOT negotiable and survives every flip: never a
+      // percentage, rate, tier, or dollar figure while counsel Q1–Q2 are open.
+      // Boat bookings are not alcohol and settle through Premier's own system.
+      'Their co-branded ordering page is ALREADY BUILT (or built same-day): guests get free alcohol delivery to the rental as an advertised perk OR can book a boat through our partner Premier Party Cruises, every group gets a private split-pay dashboard, and the company earns a commission on the drink orders AND on every booked boat — zero staff time, no inventory, no liability.',
   },
   {
     key: 'bartender',

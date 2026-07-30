@@ -106,7 +106,7 @@ export default function OutreachPlaybookPage(): ReactElement {
               but unanswered, the substantive bump goes out instead.
             </li>
             <li>
-              <strong>Touch 3</strong> (+12 days): a standalone ≤90-word soft close that makes
+              <strong>Touch 3</strong> (+12 days): a standalone ≤120-word soft close that makes
               &ldquo;no&rdquo; easy.
             </li>
           </ul>

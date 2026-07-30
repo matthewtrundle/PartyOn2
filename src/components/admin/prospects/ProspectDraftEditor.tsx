@@ -82,8 +82,8 @@ export default function ProspectDraftEditor({
 
   const touches: Array<{ key: keyof DraftFields; label: string; hint: string; rows: number }> = [
     { key: 'body', label: 'Touch 1 — body', hint: '60–110 words, one cited hook, binary CTA', rows: 8 },
-    { key: 'followUpBody', label: 'Touch 2 — opened bump (+5d)', hint: '≤90 words, new substance', rows: 5 },
-    { key: 'touch3Body', label: 'Touch 3 — close (+12d)', hint: '≤90 words, easy no', rows: 5 },
+    { key: 'followUpBody', label: 'Touch 2 — opened bump (+5d)', hint: '≤120 words, new substance', rows: 5 },
+    { key: 'touch3Body', label: 'Touch 3 — close (+12d)', hint: '≤120 words, easy no', rows: 5 },
   ];
 
   return (
