@@ -33,15 +33,17 @@ export const GOOGLE_REVIEW_URL = 'https://123.partyondelivery.com/reviews';
 const SIGNATURE = 'Allan\nParty On Delivery\n(737) 371-9700';
 
 /**
- * Partner-outreach sends from info@ in Brian's voice — bodies are stored
- * signature-free (drafts + templates) and the renderer appends this.
+ * Partner-outreach signature. Was Brian Hill's; switched to Allan 2026-07-29
+ * when the drafting contract moved to his voice — every draft body now opens
+ * "My name is Allan and I own…", so a Brian signature contradicted the letter
+ * it was attached to. Bodies stay signature-free; the renderer appends this.
  */
-export const BRIAN_SIGNATURE =
-  'Brian Hill\nFounder, Party On Delivery\npartyondelivery.com · (737) 371-9700';
+export const PARTNER_OUTREACH_SIGNATURE =
+  'Allan\nOwner, Party On Delivery\npartyondelivery.com · (737) 371-9700';
 
-/** Journeys that sign as someone other than Allan. */
+/** Journeys that sign as someone other than the default Allan block. */
 const JOURNEY_SIGNATURES: Partial<Record<JourneyKey, string>> = {
-  'partner-outreach': BRIAN_SIGNATURE,
+  'partner-outreach': PARTNER_OUTREACH_SIGNATURE,
 };
 
 /** One journey step's copy: a subject and a plain-text body template. */
@@ -193,7 +195,7 @@ And if anything was off — late, wrong item, anything — reply and tell me fir
       subject: 'Partnering with {company} — free drink delivery for your clients',
       body: `Hi {firstName},
 
-I'm Brian, founder of Party On Delivery — Austin's alcohol delivery and guest-concierge service. We work with companies like {company} to handle the drinks side of every booking: free delivery for your clients, a co-branded ordering page, group dashboards that split payment automatically, and a flat per-order bounty to you on orders.
+My name is Allan and I own a local & licensed alcohol-delivery business here in Austin - Party On Delivery. We work with companies like {company} to handle the drinks side of every booking: free delivery for your clients, a co-branded ordering page, and group dashboards where everybody can contribute to an order and split the tab. You would earn a commission on the orders.
 
 Your page is ready to go: {partnerUrl}
 
@@ -205,7 +207,7 @@ Want me to send over how it works?`,
 
 Following up on my note from a couple of days ago — the short version:
 
-We stock the bar for your clients (free delivery, iced and on time, TABC-licensed), they order from a page with {company}'s branding on it, and you earn a flat per-order bounty on orders. Zero work for your team — you just share a link.
+We stock the bar for your clients (free delivery, iced and on time, TABC-licensed), they order from a page with {company}'s branding on it, and you earn a commission on the orders. Zero work for your team — you just share a link.
 
 Your co-branded page: {partnerUrl}
 

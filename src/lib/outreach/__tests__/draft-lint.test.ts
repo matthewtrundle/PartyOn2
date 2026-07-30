@@ -93,16 +93,42 @@ describe('body bounds + CTA', () => {
 });
 
 describe('banned content', () => {
-  it('flags banned phrases, exclamation points, meeting asks', () => {
+  it('flags banned phrases, piled-on exclamation points, meeting asks', () => {
     const issues = lintDraft(
       cleanDraft({
-        body: `Hi Lynn — I hope this finds you well! I'm excited about this. ${words(55)}. Worth a 15-minute call this week?`,
+        body: `Hi Lynn — I hope this finds you well! I'm excited about this! ${words(55)}. Worth a 15-minute call this week?`,
       })
     );
     const messages = issues.map((i) => i.message).join(' | ');
     expect(messages).toContain('banned phrase');
     expect(messages).toContain('exclamation');
     expect(messages).toContain('meeting/call ask');
+  });
+
+  it('allows a single exclamation point (a greeting is not spam)', () => {
+    const issues = lintDraft(
+      cleanDraft({ body: `Hi there! ${words(60)}. Want me to send it over?` })
+    );
+    expect(issues.some((i) => i.message.includes('exclamation'))).toBe(false);
+  });
+
+  it('flags the CURRENT signature inline, not just the retired one', () => {
+    // Regression: SIGNATURE_RE only knew Brian's block, so once the outreach
+    // signature became Allan's an inline sign-off stopped being caught and the
+    // renderer would append a second signature underneath it.
+    const issues = lintDraft(
+      cleanDraft({ followUpBody: `${words(30)}.\n\nAllan\nOwner, Party On Delivery` })
+    );
+    expect(
+      issues.some((i) => i.field === 'followUpBody' && i.message.includes('signature'))
+    ).toBe(true);
+  });
+
+  it('flags "noticed" — Allan says "saw"', () => {
+    const issues = lintDraft(
+      cleanDraft({ body: `Hi there! I noticed your site. ${words(55)}. Want the link?` })
+    );
+    expect(issues.some((i) => i.message.includes('noticed'))).toBe(true);
   });
 
   it('flags inline signatures and unsubscribe text in any touch', () => {
@@ -128,11 +154,18 @@ describe('banned content', () => {
 });
 
 describe('follow-up + touch 3 bounds', () => {
-  it('caps both at 90 words', () => {
+  it('caps both at 120 words', () => {
     const issues = lintDraft(
-      cleanDraft({ followUpBody: `${words(95)}.`, touch3Body: `${words(95)}.` })
+      cleanDraft({ followUpBody: `${words(125)}.`, touch3Body: `${words(125)}.` })
     );
-    expect(issues.filter((i) => i.message.includes('max is 90'))).toHaveLength(2);
+    expect(issues.filter((i) => i.message.includes('max is 120'))).toHaveLength(2);
+  });
+
+  it('allows a follow-up between the old 90 cap and the new 120 one', () => {
+    const issues = lintDraft(cleanDraft({ followUpBody: `${words(106)}.` }));
+    expect(issues.some((i) => i.field === 'followUpBody' && i.message.includes('words'))).toBe(
+      false
+    );
   });
 });
 

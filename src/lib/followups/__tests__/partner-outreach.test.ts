@@ -1,6 +1,6 @@
 /**
  * partner-outreach journey: 3-touch registry shape (0h / +120h / +168h),
- * APPROVED-draft rendering signed as Brian, the touch-2 open-branch
+ * APPROVED-draft rendering signed as Allan, the touch-2 open-branch
  * (no open → alt-subject resend; opened → "Re:" bump; no EmailLog →
  * resend), the touch-3 standalone close, and shouldCancel — including the
  * draft-not-approved kill switch.
@@ -94,13 +94,15 @@ describe('partner-outreach journey', () => {
     expect(journey!.from?.email).toBe('info@partyondelivery.com');
   });
 
-  it('step 1 renders the approved draft, signed as Brian', async () => {
+  it('step 1 renders the approved draft, signed as Allan', async () => {
     const journey = getJourney('partner-outreach')!;
     const email = await journey.steps[0].buildEmail(ctxFor(LYNN));
     expect(email!.subject).toBe('guest perk');
     expect(email!.text).toContain('personalized body for Lynn');
-    expect(email!.text).toContain('Brian Hill\nFounder, Party On Delivery');
-    expect(email!.text).not.toContain('Allan\nParty On Delivery');
+    // Switched from Brian 2026-07-29: every draft body now opens "My name is
+    // Allan and I own…", so the signature has to be his too.
+    expect(email!.text).toContain('Allan\nOwner, Party On Delivery');
+    expect(email!.text).not.toContain('Brian Hill');
     expect(email!.text).toContain('Unsubscribe');
   });
 

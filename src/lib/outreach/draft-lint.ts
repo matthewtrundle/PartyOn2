@@ -36,13 +36,19 @@ const BANNED_PHRASES = [
   'win-win',
   'just bumping',
   'just checking in',
+  // Allan never writes "noticed" — he says "saw" (voice rule, draft-prompt.ts).
+  'noticed',
 ];
 
 /** "worth a 15-minute call?" style asks — the CTA must be a send-offer, never a meeting. */
 const MEETING_ASK_RE =
   /\b(15|fifteen|30|thirty)[- ]?min(ute)?s?\b|\b(quick|short|brief)?\s?(call|chat|meeting|zoom|demo)\b.{0,30}\?|worth a call|hop on a|schedule (a|some)|book a (call|time|meeting)|calendar link/i;
 
-const SIGNATURE_RE = /brian hill|founder, party on delivery|partyondelivery\.com\s*·|\(737\) 371-9700/i;
+// Matches BOTH the current Allan block and the retired Brian one — a body
+// carrying either would be double-signed once the renderer appends the real
+// signature. Keep the old strings: legacy drafts still hold them.
+const SIGNATURE_RE =
+  /brian hill|allan\s*\n\s*owner, party on delivery|owner, party on delivery|founder, party on delivery|partyondelivery\.com\s*·|\(737\) 371-9700/i;
 const UNSUBSCRIBE_RE = /unsubscribe|opt[- ]out|preferences link/i;
 const URL_RE = /https?:\/\/[^\s<)]+/g;
 
@@ -78,8 +84,16 @@ function lintBodyCommon(
       issues.push({ severity: 'error', field, message: `banned phrase: "${phrase}"` });
     }
   }
-  if (/!/.test(text)) {
-    issues.push({ severity: 'error', field, message: 'no exclamation points' });
+  // One is a greeting ("Hi there!"); a string of them is what reads as spam.
+  // Allan's voice call 2026-07-29 — the old zero-tolerance rule was ours, not
+  // a deliverability requirement.
+  const exclamations = (text.match(/!/g) ?? []).length;
+  if (exclamations > 1) {
+    issues.push({
+      severity: 'error',
+      field,
+      message: `${exclamations} exclamation points — at most one`,
+    });
   }
   if (MEETING_ASK_RE.test(text)) {
     issues.push({
@@ -158,9 +172,12 @@ export function lintDraft(draft: LintableDraft): LintIssue[] {
       issues.push({ severity: 'warning', field, message: `missing — the ${label} touch will fall back to nothing` });
       continue;
     }
+    // 120 matches the first-touch cap. Raised from 90 (Allan, 2026-07-29): the
+    // follow-up carries the live link plus how the ordering actually works, and
+    // 90 was forcing that substance out.
     const words = wordCount(text);
-    if (words > 90) {
-      issues.push({ severity: 'error', field, message: `${words} words — ${label} max is 90` });
+    if (words > 120) {
+      issues.push({ severity: 'error', field, message: `${words} words — ${label} max is 120` });
     }
     lintBodyCommon(field, text, issues);
   }

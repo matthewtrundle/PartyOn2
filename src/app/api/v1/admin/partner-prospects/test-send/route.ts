@@ -19,7 +19,7 @@ import { z } from 'zod';
 import { requireOpsAuth } from '@/lib/auth/ops-session';
 import { sendEmailDetailed } from '@/lib/email/resend-client';
 import {
-  BRIAN_SIGNATURE,
+  PARTNER_OUTREACH_SIGNATURE,
   DEFAULT_COPY,
   renderFollowUpEmail,
   renderSubject,
@@ -78,7 +78,7 @@ ${step2Body}`;
     `[TEST — ${prospect.name}] ${outreach.subject}`,
     combinedBody,
     `${SITE_BASE_URL}/email/preferences`,
-    BRIAN_SIGNATURE,
+    PARTNER_OUTREACH_SIGNATURE,
   );
 
   const result = await sendEmailDetailed({
@@ -87,7 +87,7 @@ ${step2Body}`;
     html: rendered.html,
     text: rendered.text,
     type: 'FOLLOW_UP',
-    from: { email: TEST_INBOX, name: 'Brian at Party On Delivery' },
+    from: { email: TEST_INBOX, name: 'Allan at Party On Delivery' },
     tags: [{ name: 'campaign', value: 'partner_outreach_test' }],
     respectSuppression: false,
   });

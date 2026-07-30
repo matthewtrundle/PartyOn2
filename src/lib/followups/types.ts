@@ -124,7 +124,7 @@ export interface JourneyDef {
   afterSend?: (job: FollowUpJob) => Promise<void>;
   /**
    * Per-journey sender identity. Defaults to the engine's
-   * FOLLOWUP_FROM_EMAIL/NAME; partner-outreach sends from info@ in Brian's
+   * FOLLOWUP_FROM_EMAIL/NAME; partner-outreach sends from info@ in Allan's
    * voice so replies land in the monitored inbox.
    */
   from?: { email: string; name: string };
