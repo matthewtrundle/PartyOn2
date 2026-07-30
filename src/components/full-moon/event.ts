@@ -140,24 +140,28 @@ export const EVENT: FullMoonEvent = {
 };
 
 /**
- * Sales tax on tickets. Texas treats a ticketed cruise as a taxable amusement
- * service, and the Aug 1 build charged $0 tax — under-collection we'd have owed
- * out of pocket at filing time.
+ * Sales tax on tickets — TAX-INCLUDED pricing (Allan's call 2026-07-29,
+ * reversing the brief 2026-07-28 "+tax on top" model; nobody bought at the
+ * $85.52 price, so there is no remediation trail).
  *
- * Tax is added ON TOP of the advertised price (Allan's call 2026-07-28), so a
- * $79 ticket costs $85.52 at checkout. Every customer-facing price on the page
- * therefore says "+ tax", and the ticket modal shows the full breakdown —
- * advertising $79 and silently charging $85.52 is the thing to avoid.
+ * The customer pays a flat $${EVENT.price} — POD absorbs the tax. "Absorb"
+ * does NOT mean charging $0 tax (that was the Aug 1 bug: a ticketed cruise is
+ * a taxable amusement service in Texas, and the monthly WebFile filing reads
+ * the Order rows). It means the tax is backed OUT of the flat price:
+ * $79.00 = $72.98 ticket + $6.02 included tax per seat. Order rows carry that
+ * split so the filing stays honest, while Stripe charges one clean $79 line.
  *
- * 8.25% = 6.25% Texas state + 2.00% local. DERIVED from the shared rate table
- * rather than hardcoded: rates.ts is a general-purpose file that delivery
- * pricing also edits, and a hardcoded copy here would keep quoting the old rate
- * in the modal while the server (which calls calculateTax) immediately charged
- * the new one — quoting one number and billing another. rates.ts is pure data
- * with no imports, so pulling it into the client bundle costs nothing.
+ * Texas allows tax-included pricing when it's disclosed — which is why the
+ * modal and receipt say "includes Texas sales tax" rather than hiding it.
  *
- * The server remains the authority: it recomputes via calculateTax() from the
- * DB price. This constant only drives what the buyer is shown.
+ * 8.25% = 6.25% state + 2.00% local, DERIVED from the shared rate table
+ * (rates.ts is pure data, safe in the client bundle; a hardcoded copy would
+ * silently diverge if the table is ever edited).
+ *
+ * ticketTotals() is used by BOTH the modal display and the ticket route, so
+ * what the buyer is shown and what the server books are the same numbers by
+ * construction. Per-seat rounding first, then scale by quantity — keeps the
+ * math linear and the per-seat split summing to exactly the flat price.
  *
  * Declared above FAQS on purpose: FAQS reads TICKET_TOTAL_DISPLAY at module
  * evaluation time, so a later `const` would land in the temporal dead zone and
@@ -166,18 +170,27 @@ export const EVENT: FullMoonEvent = {
 export const TICKET_TAX_ZIP = '78734';
 export const TICKET_TAX_RATE = getTaxRateForZip(TICKET_TAX_ZIP).rate;
 
-/** Subtotal / tax / all-in total for a ticket quantity, rounded to cents. Pure. */
+/**
+ * Net / included-tax / charged-total for a ticket quantity, rounded to cents.
+ * `total` is what the card is charged (flat price × qty); `subtotal` + `tax`
+ * are the tax-included split of that same amount for the books. Pure.
+ */
 export function ticketTotals(
   quantity: number,
   unitPrice: number = EVENT.price,
 ): { subtotal: number; tax: number; total: number } {
   const q = Math.max(1, Math.floor(quantity));
-  const subtotal = Math.round(unitPrice * q * 100) / 100;
-  const tax = Math.round(subtotal * TICKET_TAX_RATE * 100) / 100;
-  return { subtotal, tax, total: Math.round((subtotal + tax) * 100) / 100 };
+  const netUnit = Math.round((unitPrice / (1 + TICKET_TAX_RATE)) * 100) / 100;
+  // Complement, not an independent rounding — the split always sums to unitPrice.
+  const taxUnit = Math.round((unitPrice - netUnit) * 100) / 100;
+  return {
+    subtotal: Math.round(netUnit * q * 100) / 100,
+    tax: Math.round(taxUnit * q * 100) / 100,
+    total: Math.round(unitPrice * q * 100) / 100,
+  };
 }
 
-/** "$85.52" — all-in price of a single ticket, for display. */
+/** "$79.00" — what one ticket costs, tax included, for display. */
 export const TICKET_TOTAL_DISPLAY = `$${ticketTotals(1).total.toFixed(2)}`;
 
 export const SHARE = {
@@ -200,7 +213,7 @@ export const HERO = {
     { text: "Y'ALL", tone: 'disco' },
   ] as HeadlineLine[],
   sub: 'Watch the sun set over Lake Travis, then dance as the full moon comes up over the water. This is what summer is for.',
-  primaryCta: `Get Your Ticket — $${EVENT.price} + tax`,
+  primaryCta: `Get Your Ticket — $${EVENT.price}`,
 };
 
 /** Where we board (shown under the datestamp). Address confirmed by Allan 2026-07-28. */
@@ -345,7 +358,7 @@ export const GALLERY: GalleryItem[] = [
 export const FAQS: FaqItem[] = [
   {
     q: "What's the ticket price, exactly?",
-    a: `$${EVENT.price} per person plus Texas sales tax — ${TICKET_TOTAL_DISPLAY} all in. That covers the four-hour cruise, the captain & crew, DJ Trey, a full taco bar, and water, ice & cups. Drinks are the one thing that isn't included — it's BYOB, so order yours ahead through Party On Delivery and we'll have them iced in a cooler on board.`,
+    a: `A flat $${EVENT.price} per person, Texas sales tax included — no surprises at checkout. That covers the four-hour cruise, the captain & crew, DJ Trey, a full taco bar, and water, ice & cups. Drinks are the one thing that isn't included — it's BYOB, so order yours ahead through Party On Delivery and we'll have them iced in a cooler on board.`,
   },
   {
     q: 'Where do we board?',

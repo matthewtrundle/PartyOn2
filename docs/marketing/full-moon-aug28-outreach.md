@@ -4,7 +4,7 @@
 Every send below is a manual, human-triggered action. Written 2026-07-28.
 
 **Landing page**: https://partyondelivery.com/full-moon-aug28
-**Offer**: Fri Aug 28, 7–11 PM · Lake Travis · $79 + tax ($85.52 all in) · taco bar included · BYOB via POD · adults 25+
+**Offer**: Fri Aug 28, 7–11 PM · Lake Travis · $79 flat (tax included) · taco bar included · BYOB via POD · adults 25+
 **Sell-by math**: 32 tickets to sail, 50 advertised capacity. Deadline is **Fri Aug 21** (event−7d)
 — if we're under 32 that morning, the cron postpones and everyone gets refunded.
 
@@ -30,7 +30,7 @@ Every send below is a manual, human-triggered action. Written 2026-07-28.
 - B: `Friday Aug 28: sunset cruise, tacos, and a full moon over Lake Travis`
 - C: `You, 49 other people, and a full moon on Lake Travis`
 
-**Preview text**: `$79 + tax. Tacos on us. Bring your own drinks — we’ll ice them.`
+**Preview text**: `$79 flat. Tacos on us. Bring your own drinks — we’ll ice them.`
 
 **Body:**
 
@@ -48,7 +48,7 @@ Every send below is a manual, human-triggered action. Written 2026-07-28.
 > - **10:00 PM** — full dance floor, DJ Trey, peak glow
 > - **11:00 PM** — back at the dock
 >
-> **$79 a ticket, plus tax — $85.52 all in.** That covers the cruise, the captain and crew, DJ Trey, a full taco bar, and
+> **$79 a ticket, flat — tax included.** That covers the cruise, the captain and crew, DJ Trey, a full taco bar, and
 > water, ice and cups. Adults 25 and up.
 >
 > Drinks are the one thing we don't include — it's BYOB, and you order them ahead through us. We'll
@@ -78,7 +78,7 @@ Every send below is a manual, human-triggered action. Written 2026-07-28.
 > Quick one — the Lake Travis full moon cruise on Friday the 28th needs 32 people to sail, and we
 > decide on the 21st.
 >
-> {{tickets_sold}} spots are spoken for. $85.52 all in gets you four hours on the water, a taco bar, DJ Trey,
+> {{tickets_sold}} spots are spoken for. $79 flat gets you four hours on the water, a taco bar, DJ Trey,
 > and a full moon coming up over the lake. BYOB, and we ice your drinks for you.
 >
 > [**Ticket →**](https://partyondelivery.com/full-moon-aug28)
@@ -98,7 +98,7 @@ Every send below is a manual, human-triggered action. Written 2026-07-28.
 Keep under 160 chars where possible. Include STOP language per the A2P campaign.
 
 **Announce:**
-> Party On: Full moon cruise on Lake Travis, Fri Aug 28, 7-11pm. $79+tax w/ taco bar, BYOB. 50 spots.
+> Party On: Full moon cruise on Lake Travis, Fri Aug 28, 7-11pm. $79 w/ taco bar, BYOB. 50 spots.
 > partyondelivery.com/full-moon-aug28 Reply STOP to opt out
 
 **Bump (Aug 19–20):**
@@ -120,7 +120,7 @@ manual posting.
 > 7pm cast off · sunset at 7:55 · taco bar when the moon clears the ridge · DJ Trey all night ·
 > back at the dock at 11.
 >
-> $79 + tax. Tacos on us. Drinks are BYOB and we'll ice them down for you.
+> $79 flat, tax included. Tacos on us. Drinks are BYOB and we'll ice them down for you.
 >
 > 50 spots, 25+. Link in bio.
 >

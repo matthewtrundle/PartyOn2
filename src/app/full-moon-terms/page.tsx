@@ -58,8 +58,8 @@ export default function FullMoonTermsPage(): ReactElement {
           </p>
           <p>
             We may refuse boarding to anyone who appears intoxicated or unsafe, without a refund. Your ticket
-            covers the cruise, captain and crew, DJ, taco bar, and water, ice &amp; cups
-            ({`$${EVENT.price}`} + tax, {TICKET_TOTAL_DISPLAY} total per person).
+            covers the cruise, captain and crew, DJ, taco bar, and water, ice &amp; cups — a flat{' '}
+            {TICKET_TOTAL_DISPLAY} per person, Texas sales tax included.
           </p>
           <p>
             Tickets are transferable — if you can&rsquo;t make it, a friend 25+ can take your spot under your
