@@ -2,12 +2,12 @@
  * POST /api/v1/full-moon/ticket
  *
  * Sells a Lake Travis Full Moon Party ticket (×quantity) via Stripe at the
- * price held on the DRAFT ticket product, plus Texas sales tax added on top
- * (a ticketed cruise is a taxable amusement service). Creates a DraftOrder
- * with that tax and no delivery fee, then a Stripe Checkout Session that rides
- * the existing `draft_order_invoice` webhook (which creates the Order +
- * confirmation email + GHL). `eventTicket=1` metadata tells the webhook to skip
- * the delivery task.
+ * flat, TAX-INCLUDED price held on the DRAFT ticket product ($79 — Texas
+ * sales tax is backed out of it for the books, since a ticketed cruise is a
+ * taxable amusement service). Creates a DraftOrder carrying the net/tax split
+ * and no delivery fee, then a Stripe Checkout Session that rides the existing
+ * `draft_order_invoice` webhook (which creates the Order + confirmation email
+ * + GHL). `eventTicket=1` metadata tells the webhook to skip the delivery task.
  *
  * Price and tax are BOTH server-derived — the request body has no amount field
  * at all — so the browser can never influence what's charged.
@@ -32,8 +32,7 @@ import {
   TicketPurchaseSchema,
   EVENT_TICKET_METADATA_FLAG,
 } from '@/lib/full-moon/ticket';
-import { calculateTax } from '@/lib/tax';
-import { EVENT, TICKET_PRODUCT_HANDLE, TICKET_TAX_ZIP } from '@/components/full-moon/event';
+import { EVENT, TICKET_PRODUCT_HANDLE, TICKET_TAX_ZIP, ticketTotals } from '@/components/full-moon/event';
 
 /**
  * Public path of the current event page, derived from EVENT.shareUrl so the
@@ -85,7 +84,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ success: false, error: 'Tickets are unavailable right now.' }, { status: 503 });
     }
 
-    const { quantity, subtotal, unitAmountCents } = computeTicketAmounts(Number(variant.price), body.quantity);
+    const { quantity, unitAmountCents } = computeTicketAmounts(Number(variant.price), body.quantity);
 
     // Hard-cap guard. The public page advertises capacity 50, but the real boat
     // limit is EVENT.hardCap (60). Reject any purchase that would push total
@@ -120,18 +119,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       price: Number(variant.price),
     };
 
-    // Sales tax on top of the ticket price. A ticketed cruise is a taxable
-    // amusement service in Texas; the Aug 1 build charged $0, which would have
-    // been under-collection we'd owe at filing time. Computed server-side from
-    // the DB price — never trusted from the client.
-    const { taxAmount, taxRateDisplay } = calculateTax({
-      taxableAmount: subtotal,
-      zipCode: TICKET_TAX_ZIP,
-    });
-    const taxAmountCents = Math.round(taxAmount * 100);
+    // TAX-INCLUDED pricing (2026-07-29): the card is charged a flat $79 × qty,
+    // and the tax is backed OUT of that price for the books — $72.98 ticket +
+    // $6.02 included tax per seat. NOT the same as charging $0 tax (the Aug 1
+    // bug): a ticketed cruise is a taxable amusement service, the monthly
+    // Texas filing reads these Order fields, and "absorb the tax" means POD
+    // pays it out of the flat price, not that it goes unrecorded. ticketTotals
+    // is the same helper the modal renders, so the buyer's breakdown and the
+    // booked split agree by construction; the DB price stays the authority.
+    const { subtotal: netSubtotal, tax: includedTax } = ticketTotals(quantity, Number(variant.price));
 
     // Delivery fee is zero (this isn't a delivery); the delivery fields double
     // as the event location/time so the confirmation email reads sensibly.
+    // subtotal(net) + taxAmount(included) sum to exactly the Stripe charge, so
+    // DraftOrder.total === the charged amount (charge-snapshot invariant).
     const draft = await createDraftOrder({
       customerEmail: body.email,
       customerName: body.name,
@@ -143,8 +144,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       deliveryDate: new Date(`${EVENT.isoDate}T19:00:00`),
       deliveryTime: EVENT.castOff,
       items: [item],
-      subtotal,
-      taxAmount,
+      subtotal: netSubtotal,
+      taxAmount: includedTax,
       deliveryFee: 0,
     });
 
@@ -166,24 +167,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             },
             quantity,
           },
-          // Tax as its own line so the Stripe receipt shows the customer
-          // exactly what they were charged and why, instead of burying it in
-          // an inflated ticket price.
-          ...(taxAmountCents > 0
-            ? [
-                {
-                  price_data: {
-                    currency: 'usd',
-                    product_data: {
-                      name: `Sales tax (${taxRateDisplay})`,
-                      description: 'Texas state + local sales tax',
-                    },
-                    unit_amount: taxAmountCents,
-                  },
-                  quantity: 1,
-                },
-              ]
-            : []),
+          // No separate tax line — pricing is tax-included, so the single $79
+          // line IS the whole charge (and matches the OrderItem snapshot).
         ],
         customer_email: body.email,
         phone_number_collection: { enabled: true },
