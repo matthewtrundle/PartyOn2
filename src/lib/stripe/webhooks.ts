@@ -18,7 +18,7 @@ import {
   sendFullMoonSaleAlert,
 } from '@/lib/email';
 import { getFullMoonRoster } from '@/lib/full-moon/roster';
-import { EVENT as FULL_MOON_EVENT } from '@/components/full-moon/event';
+import { EVENT as FULL_MOON_EVENT, LOCATION as FULL_MOON_LOCATION } from '@/components/full-moon/event';
 import { notifyNewOrder, buildGhlPayload } from '@/lib/webhooks/ghl';
 import { syncStageFromConversion } from '@/lib/leads/pipeline';
 import { recordDiscountUsage } from '@/lib/discounts/discount-engine';
@@ -347,8 +347,22 @@ async function handleDraftOrderPayment(
     const order = await createOrderFromDraftOrder(draftOrder, session);
     console.log('[Stripe Webhook] Order created from draft order:', order.orderNumber);
 
-    // Notify GHL webhook
-    await notifyNewOrder(buildGhlPayload(order, 'draft'));
+    // Notify GHL webhook. Event tickets add a ready-made SMS + a branch flag:
+    // the workflow's default confirmation text is delivery-voiced ("Delivering
+    // 2026-08-28 ... to Lake Travis marina"), which reads wrong for a ticket.
+    // Additive fields only — normal orders send the exact same payload as
+    // before, so nothing changes in GHL until the operator adds the branch.
+    const ghlPayload = buildGhlPayload(order, 'draft');
+    if (isEventTicketSession(session.metadata)) {
+      ghlPayload.eventTicket = true;
+      ghlPayload.eventName = 'Lake Travis Full Moon Party';
+      ghlPayload.smsMessage =
+        `Thanks for grabbing your Full Moon Party ticket (#${order.orderNumber})! ` +
+        `${FULL_MOON_EVENT.dateLabel}, cast off ${FULL_MOON_EVENT.castOff} at ${FULL_MOON_LOCATION.name} - ` +
+        `exact dock + pin drop by text 2 days before, arrive 15 min early. ` +
+        `Questions? Just text this number. PARTY ON!`;
+    }
+    await notifyNewOrder(ghlPayload);
 
     // Create Google Calendar event
     createOrderCalendarEvent(order).catch((err) =>

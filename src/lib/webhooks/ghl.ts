@@ -24,6 +24,18 @@ export interface GhlOrderPayload {
   orderNumber: number;
   orderType: string;
   orderUrl: string;
+  /**
+   * Event-ticket extras (ADDITIVE — absent on normal orders so existing GHL
+   * workflows are untouched). The order-confirmation SMS template lives in the
+   * GHL workflow, not in this repo; it reads delivery fields and produces
+   * "your order is confirmed! Delivering ... to Lake Travis marina", which is
+   * wrong-voiced for a ticket. These fields let the workflow branch:
+   * if eventTicket → send smsMessage verbatim; else → the delivery template.
+   * Flipping that branch is a one-time operator edit in GHL.
+   */
+  eventTicket?: boolean;
+  eventName?: string;
+  smsMessage?: string;
   // GHL-standard contact fields (used by Create Contact action)
   first_name: string;
   last_name: string;

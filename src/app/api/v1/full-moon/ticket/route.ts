@@ -183,7 +183,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           ...(body.attribution?.utmSource ? { utmSource: body.attribution.utmSource } : {}),
           ...(body.attribution?.utmCampaign ? { utmCampaign: body.attribution.utmCampaign } : {}),
         },
-        success_url: `${baseUrl}${EVENT_PATH}?ticket=success`,
+        // Success lands on the dedicated thank-you page (event facts + share
+        // push); cancel returns to the event page. The old ?ticket=success
+        // modal handling on the event page stays as a harmless fallback for
+        // anyone mid-checkout across a deploy.
+        success_url: `${baseUrl}/full-moon-thanks`,
         cancel_url: `${baseUrl}${EVENT_PATH}?ticket=cancelled`,
       },
       // Same email + quantity within ~5 min resolves to one session → one charge.
