@@ -32,6 +32,12 @@ const AGE_GATE_EXEMPT_PATHS = [
   // email — no purchase on the page, and a buyer following the terms link
   // from their email must be able to read it without an entrance gate.
   '/full-moon-terms',
+  // Post-purchase landing (Stripe success_url). Exempt because the page is
+  // static non-alcohol marketing content already public on the event page —
+  // NOT because visitors are verified (the route has no purchase check; the
+  // binding 25+/21+ controls are the ticket checkout attestation and ID at
+  // the dock). Gating the Stripe bounce-back would be pure friction.
+  '/full-moon-thanks',
 ]
 
 /**
