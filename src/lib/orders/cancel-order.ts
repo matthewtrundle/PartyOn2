@@ -222,16 +222,23 @@ export async function cancelOrder(
       where: { stripeRefundId: stripeRefund.id },
       select: { id: true },
     });
-    const refundRowId =
-      existingRow?.id ?? (await createRefund(orderId, refundAmount, 'Order cancelled'));
-    await prisma.refund.update({
-      where: { id: refundRowId },
-      data: {
-        stripeRefundId: stripeRefund.id,
-        processedBy: actorRole ?? 'admin',
-        processedAt: new Date(),
-      },
-    });
+
+    // An existing row is left exactly as it is. It was written either by a
+    // concurrent cancel or by the charge.refunded webhook, which stamps
+    // processedBy: 'stripe' to mean "not one of our admin routes" — and
+    // re-stamping it here would relabel the webhook's own record as an admin
+    // action. Reusing the row is the point; re-attributing it is not.
+    if (!existingRow) {
+      const refundRowId = await createRefund(orderId, refundAmount, 'Order cancelled');
+      await prisma.refund.update({
+        where: { id: refundRowId },
+        data: {
+          stripeRefundId: stripeRefund.id,
+          processedBy: actorRole ?? 'admin',
+          processedAt: new Date(),
+        },
+      });
+    }
 
     refundResult = {
       stripeRefundId: stripeRefund.id,

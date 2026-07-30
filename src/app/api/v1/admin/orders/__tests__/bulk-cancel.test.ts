@@ -223,10 +223,10 @@ describe('POST /bulk-cancel', () => {
   });
 
   it('does not write a second DB refund row when Stripe replays an existing refund', async () => {
-    // A concurrent cancel already recorded this exact Stripe refund. Stripe's
-    // idempotency key replays the same refund object, so the row must be
-    // reused — a duplicate would inflate the DB total and wrongly cap
-    // getMaxRefundable on any later partial refund.
+    // A concurrent cancel — or the charge.refunded webhook — already recorded
+    // this exact Stripe refund. Stripe's idempotency key replays the same
+    // refund object, so the row must be reused: a duplicate would inflate the
+    // DB total and wrongly cap getMaxRefundable on any later partial refund.
     mockOrderFindUnique.mockResolvedValue(order());
     mockRefundFindFirst.mockResolvedValue({ id: 'rf_existing' });
 
@@ -234,9 +234,9 @@ describe('POST /bulk-cancel', () => {
 
     expect(data.data.cancelledCount).toBe(1);
     expect(mockCreateRefund).not.toHaveBeenCalled();
-    expect(mockRefundUpdate).toHaveBeenCalledWith(
-      expect.objectContaining({ where: { id: 'rf_existing' } }),
-    );
+    // And the existing row keeps its own attribution — re-stamping it would
+    // relabel the webhook's processedBy: 'stripe' record as an admin action.
+    expect(mockRefundUpdate).not.toHaveBeenCalled();
   });
 
   it('emails the amount Stripe actually refunded, not the order total', async () => {
