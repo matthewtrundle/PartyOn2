@@ -14,6 +14,8 @@ export {
   sendPaymentFailedEmail,
   sendRefundProcessedEmail,
   sendOrderCancellationEmail,
+  sendFullMoonTicketEmail,
+  sendFullMoonSaleAlert,
 } from './email-service';
 
 // Template types

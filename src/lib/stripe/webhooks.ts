@@ -14,7 +14,11 @@ import {
   sendOrderConfirmationEmail,
   sendPaymentFailedEmail,
   sendRefundProcessedEmail,
+  sendFullMoonTicketEmail,
+  sendFullMoonSaleAlert,
 } from '@/lib/email';
+import { getFullMoonRoster } from '@/lib/full-moon/roster';
+import { EVENT as FULL_MOON_EVENT } from '@/components/full-moon/event';
 import { notifyNewOrder, buildGhlPayload } from '@/lib/webhooks/ghl';
 import { syncStageFromConversion } from '@/lib/leads/pipeline';
 import { recordDiscountUsage } from '@/lib/discounts/discount-engine';
@@ -434,6 +438,45 @@ async function handleDraftOrderPayment(
       }
     }
 
+    // Event tickets get the event-voiced confirmation (night-sky template,
+    // boarding info, tax-included receipt) instead of the delivery email,
+    // plus a per-sale operator alert with the running count toward the sail
+    // minimum. if/else (NOT an early return) so a future side effect appended
+    // below runs for ticket orders too. A mail failure must never fail the
+    // webhook — the payment has already happened.
+    if (isEventTicketSession(session.metadata)) {
+      const ticketQty = order.items.reduce((sum: number, item: { quantity: number }) => sum + item.quantity, 0);
+      try {
+        await sendFullMoonTicketEmail({
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          customerName: order.customerName,
+          customerEmail: order.customerEmail,
+          quantity: ticketQty,
+          total: Number(order.total),
+          taxAmount: Number(order.taxAmount),
+        });
+        console.log('[Stripe Webhook] Full Moon ticket email sent for order:', order.orderNumber);
+      } catch (emailError) {
+        console.error('[Stripe Webhook] Failed to send Full Moon ticket email:', emailError);
+      }
+      // Operator FYI — fire-and-forget so the roster query + send never sit on
+      // Stripe's response path (same pattern as createOrderCalendarEvent above).
+      void getFullMoonRoster()
+        .then((roster) =>
+          sendFullMoonSaleAlert({
+            orderNumber: order.orderNumber,
+            customerName: order.customerName,
+            quantity: ticketQty,
+            total: Number(order.total),
+            ticketsSold: roster.totals.ticketsSold,
+            minimum: FULL_MOON_EVENT.minimum,
+          }),
+        )
+        .catch((alertError) => {
+          console.error('[Stripe Webhook] Failed to send Full Moon sale alert:', alertError);
+        });
+    } else {
     // Send confirmation email
     try {
       const deliveryAddress = order.deliveryAddress as {
@@ -475,6 +518,7 @@ async function handleDraftOrderPayment(
       console.log('[Stripe Webhook] Confirmation email sent for order:', order.orderNumber);
     } catch (emailError) {
       console.error('[Stripe Webhook] Failed to send confirmation email:', emailError);
+    }
     }
   } catch (error) {
     console.error('[Stripe Webhook] Failed to process draft order payment:', error);
