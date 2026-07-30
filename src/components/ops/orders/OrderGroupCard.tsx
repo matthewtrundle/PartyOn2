@@ -122,6 +122,18 @@ export default function OrderGroupCard({
                 >
                   {c.displayName}
                 </Link>
+              ) : c.dashboard ? (
+                /* A multi-payer cooler is a derived grouping, not a record, so
+                   there's no page to open — clicking the name isolates the
+                   group instead, which is what "act on the whole thing" needs. */
+                <button
+                  type="button"
+                  onClick={() => onFilterByDashboard(c.dashboard!.id)}
+                  className="text-left text-gray-900 hover:text-brand-blue hover:underline print:no-underline print:pointer-events-none"
+                  title="Show only this group's orders"
+                >
+                  {c.displayName}
+                </button>
               ) : (
                 <span className="text-gray-900">{c.displayName}</span>
               )}

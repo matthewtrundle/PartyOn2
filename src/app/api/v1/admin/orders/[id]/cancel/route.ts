@@ -1,21 +1,37 @@
 /**
  * Order Cancel API
  * POST /api/v1/admin/orders/[id]/cancel
- * Cancel an order with optional refund and email notification
+ * Cancel an order with optional refund and email notification.
+ *
+ * All of the actual work lives in `@/lib/orders/cancel-order` so this route and
+ * the bulk (whole-cooler) cancel route share one money path.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { requireOpsAuth } from '@/lib/auth/ops-session';
-import { prisma } from '@/lib/database/client';
-import { stripe } from '@/lib/stripe/client';
-import { getMaxRefundable } from '@/lib/stripe/refund-utils';
-import { createRefund, releaseCommittedInventory } from '@/lib/inventory/services/order-service';
-import { sendOrderCancellationEmail } from '@/lib/email/email-service';
-import { sendRefundProcessedEmail } from '@/lib/email/email-service';
-import { generateOrderCancellationEmail } from '@/lib/email/templates/order-cancellation';
+import {
+  cancelOrder,
+  previewCancellationEmail,
+  type CancelFailureCode,
+} from '@/lib/orders/cancel-order';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
+}
+
+/** Preserves the status codes this route returned before the logic was extracted. */
+function statusForCode(code: CancelFailureCode): number {
+  switch (code) {
+    case 'NOT_FOUND':
+      return 404;
+    case 'ALREADY_TERMINAL':
+    case 'NO_PAYMENT':
+    case 'ALREADY_REFUNDED':
+    case 'STRIPE_ERROR':
+      return 400;
+    default:
+      return 500;
+  }
 }
 
 export async function POST(
@@ -34,191 +50,32 @@ export async function POST(
       issueRefund?: boolean;
     };
 
-    const order = await prisma.order.findUnique({
-      where: { id },
-      include: {
-        items: {
-          include: {
-            product: true,
-          },
-        },
-        refunds: true,
-      },
-    });
-
-    if (!order) {
-      return NextResponse.json(
-        { success: false, error: 'Order not found' },
-        { status: 404 }
-      );
-    }
-
-    const emailData = {
-      customerName: order.customerName,
-      orderNumber: order.orderNumber,
-      total: Number(order.total),
-      customNote,
-      refundIssued: issueRefund,
-      refundAmount: Number(order.total),
-      items: order.items.map(item => ({
-        title: item.title,
-        quantity: item.quantity,
-        price: Number(item.price),
-      })),
-      deliveryDate: order.deliveryDate
-        ? new Date(order.deliveryDate).toLocaleDateString('en-US', {
-            weekday: 'long',
-            month: 'long',
-            day: 'numeric',
-            year: 'numeric',
-            timeZone: 'UTC',
-          })
-        : undefined,
-    };
-
     // Preview mode: return HTML without changing anything
     if (preview) {
-      const html = generateOrderCancellationEmail(emailData);
-      return NextResponse.json({ success: true, html });
+      const previewResult = await previewCancellationEmail(id, { customNote, issueRefund });
+      if (!previewResult.ok) {
+        return NextResponse.json(
+          { success: false, error: previewResult.error },
+          { status: 404 }
+        );
+      }
+      return NextResponse.json({ success: true, html: previewResult.html });
     }
 
-    // Validate order can be cancelled
-    if (['CANCELLED', 'REFUNDED'].includes(order.status)) {
+    const result = await cancelOrder(id, { customNote, issueRefund, actorRole: auth.role });
+
+    if (!result.ok) {
       return NextResponse.json(
-        { success: false, error: `Order is already ${order.status.toLowerCase()}` },
-        { status: 400 }
+        { success: false, error: result.error },
+        { status: statusForCode(result.code) }
       );
-    }
-
-    let refundResult = null;
-
-    // Process refund if requested
-    if (issueRefund) {
-      if (!order.stripePaymentIntentId) {
-        return NextResponse.json(
-          { success: false, error: 'No Stripe payment found for this order. Cannot process refund.' },
-          { status: 400 }
-        );
-      }
-
-      // Refund whatever Stripe still has — not what order.total says,
-      // since order.total gets rewritten by OrderAmendment when items change.
-      const totalPriorRefunds = order.refunds.reduce(
-        (sum, r) => sum + Number(r.amount),
-        0
-      );
-      const refundAmount = await getMaxRefundable(order.stripePaymentIntentId, totalPriorRefunds);
-
-      if (refundAmount <= 0) {
-        return NextResponse.json(
-          { success: false, error: 'Order has already been fully refunded' },
-          { status: 400 }
-        );
-      }
-
-      // Process Stripe refund.
-      // Idempotency key is derived from the order id + amount: a cancel is a
-      // one-shot terminal action, so if this request is retried after the Stripe
-      // refund succeeded but the DB write failed, Stripe replays the SAME refund
-      // instead of issuing a second one. The amount is included so that if the
-      // order is amended between a failed attempt and the retry (changing the
-      // computed refund), the retry gets a fresh key rather than colliding with
-      // the old amount and locking Stripe for 24h. Belt-and-suspenders with the
-      // Stripe-aware cap above (which already blocks re-refunding a refunded order).
-      const refundAmountCents = Math.round(refundAmount * 100);
-      const stripeRefund = await stripe.refunds.create(
-        {
-          payment_intent: order.stripePaymentIntentId,
-          amount: refundAmountCents,
-          reason: 'requested_by_customer',
-          metadata: {
-            orderId: id,
-            orderNumber: String(order.orderNumber),
-            reason: 'Order cancelled',
-          },
-        },
-        { idempotencyKey: `order-cancel-refund-${id}-${refundAmountCents}` }
-      );
-
-      // Create refund record in DB and stamp it with the Stripe refund id.
-      // createRefund returns the new row's id so we stamp THAT row — looking it
-      // up afterward with findFirst(desc) could grab a different row if the
-      // charge.refunded webhook inserts one for this order in between.
-      const refundRowId = await createRefund(id, refundAmount, 'Order cancelled');
-      await prisma.refund.update({
-        where: { id: refundRowId },
-        data: {
-          stripeRefundId: stripeRefund.id,
-          processedBy: 'admin',
-          processedAt: new Date(),
-        },
-      });
-
-      refundResult = {
-        stripeRefundId: stripeRefund.id,
-        amount: refundAmount,
-        status: stripeRefund.status,
-      };
-
-      // Update financial status
-      await prisma.order.update({
-        where: { id },
-        data: {
-          status: 'CANCELLED',
-          financialStatus: 'REFUNDED',
-        },
-      });
-    } else {
-      // Just cancel without refund
-      await prisma.order.update({
-        where: { id },
-        data: {
-          status: 'CANCELLED',
-        },
-      });
-    }
-
-    // Release committed inventory (fixes bug: cancel previously left stock decremented)
-    try {
-      if (order.fulfillmentStatus === 'DELIVERED') {
-        // Already fulfilled: inventoryQuantity was already decremented by fulfillment,
-        // committedQuantity is already 0. Restoring stock is handled by the return flow.
-        // No inventory action needed here — the physical goods were delivered.
-      } else {
-        // Not yet fulfilled: release the committed quantity back to available
-        await releaseCommittedInventory(id);
-      }
-    } catch (inventoryError) {
-      console.error('[Cancel API] Failed to release committed inventory:', inventoryError);
-    }
-
-    // Send cancellation email
-    try {
-      await sendOrderCancellationEmail(order.customerEmail, emailData);
-    } catch (emailError) {
-      console.error('[Cancel API] Failed to send cancellation email:', emailError);
-    }
-
-    // Also send refund email if refund was issued
-    if (issueRefund && refundResult) {
-      try {
-        await sendRefundProcessedEmail(
-          order.customerEmail,
-          order.customerName,
-          order.orderNumber,
-          refundResult.amount,
-          'Order cancelled'
-        );
-      } catch (emailError) {
-        console.error('[Cancel API] Failed to send refund email:', emailError);
-      }
     }
 
     return NextResponse.json({
       success: true,
       data: {
         status: 'CANCELLED',
-        refund: refundResult,
+        refund: result.refund,
       },
     });
   } catch (error) {

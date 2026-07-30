@@ -16,6 +16,7 @@ export default function BulkActionBar({
   onShortage,
   onReviews,
   showReviews,
+  onCancel,
   onClear,
 }: {
   count: number;
@@ -25,6 +26,7 @@ export default function BulkActionBar({
   onShortage: () => void;
   onReviews: () => void;
   showReviews: boolean;
+  onCancel: () => void;
   onClear: () => void;
 }): ReactElement | null {
   if (count === 0) return null;
@@ -91,10 +93,23 @@ export default function BulkActionBar({
               <span className="hidden sm:inline">Reviews</span>
             </button>
           )}
+          {/* Destructive: pushed to the far side, away from the everyday
+              actions. The confirm dialog is where the real gate lives. */}
+          <button
+            type="button"
+            onClick={onCancel}
+            className="ml-auto min-h-[44px] px-3 bg-white border border-red-300 text-red-700 text-sm font-semibold rounded-lg hover:bg-red-50 flex items-center gap-1.5 touch-manipulation"
+            title="Cancel and refund the selected orders"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="hidden sm:inline">Cancel</span>
+          </button>
           <button
             type="button"
             onClick={onClear}
-            className="ml-auto min-h-[44px] px-3 text-sm font-medium text-gray-500 hover:text-gray-800 rounded-lg touch-manipulation"
+            className="min-h-[44px] px-3 text-sm font-medium text-gray-500 hover:text-gray-800 rounded-lg touch-manipulation"
           >
             Clear
           </button>
