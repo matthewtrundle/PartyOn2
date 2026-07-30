@@ -220,7 +220,37 @@ export const HERO = {
 export const LOCATION = {
   name: 'Anderson Mill Marina',
   address: '13993 FM 2769, Leander, TX 78641',
+  /**
+   * Marina gate code — goes out in the confirmation SMS only (Allan's call
+   * 2026-07-30), NOT on the public page. Update here if the marina rotates it.
+   */
+  gateCode: '7561#',
 };
+
+/**
+ * Confirmation SMS for a ticket purchase, relayed to GHL as the `smsMessage`
+ * payload field (the GHL workflow's Event-ticket branch sends it verbatim).
+ * Copy is Allan's, word for word (2026-07-30); the name, venue, date, time,
+ * and gate code interpolate from event config so a reschedule updates the
+ * text with zero GHL edits.
+ */
+export function fullMoonTicketSms(firstName: string): string {
+  // Neutralize line breaks — the name is buyer-typed and this is a one-line SMS.
+  const name = (firstName || 'there').replace(/[\r\n]+/g, ' ').trim();
+  const d = new Date(`${EVENT.isoDate}T12:00:00Z`);
+  const weekday = d.toLocaleDateString('en-US', { weekday: 'long', timeZone: 'UTC' });
+  const month = d.toLocaleDateString('en-US', { month: 'long', timeZone: 'UTC' });
+  const day = d.getUTCDate();
+  const suffix =
+    day % 10 === 1 && day !== 11 ? 'st' : day % 10 === 2 && day !== 12 ? 'nd' : day % 10 === 3 && day !== 13 ? 'rd' : 'th';
+  // '7:00 PM' → '7pm' (a '7:30 PM' cast-off would render '7:30pm').
+  const time = EVENT.castOff.replace(':00', '').replace(/\s+/g, '').toLowerCase();
+  return (
+    `Hey ${name}, your ticket to the full moon party is confirmed! ` +
+    `Boat leaves from ${LOCATION.name} on ${weekday}, ${month} ${day}${suffix} at ${time} sharp! ` +
+    `Gate code is ${LOCATION.gateCode}. Questions? Call or text this number. PARTY ON!`
+  );
+}
 
 /** Datestamp cells (3-cell visual hierarchy). */
 export const DATESTAMP: { key: string; value: string; suffix?: string }[] = [

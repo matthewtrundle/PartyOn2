@@ -18,7 +18,7 @@ import {
   sendFullMoonSaleAlert,
 } from '@/lib/email';
 import { getFullMoonRoster } from '@/lib/full-moon/roster';
-import { EVENT as FULL_MOON_EVENT, LOCATION as FULL_MOON_LOCATION } from '@/components/full-moon/event';
+import { EVENT as FULL_MOON_EVENT, fullMoonTicketSms } from '@/components/full-moon/event';
 import { notifyNewOrder, buildGhlPayload } from '@/lib/webhooks/ghl';
 import { syncStageFromConversion } from '@/lib/leads/pipeline';
 import { recordDiscountUsage } from '@/lib/discounts/discount-engine';
@@ -356,11 +356,9 @@ async function handleDraftOrderPayment(
     if (isEventTicketSession(session.metadata)) {
       ghlPayload.eventTicket = true;
       ghlPayload.eventName = 'Lake Travis Full Moon Party';
-      ghlPayload.smsMessage =
-        `Thanks for grabbing your Full Moon Party ticket (#${order.orderNumber})! ` +
-        `${FULL_MOON_EVENT.dateLabel}, cast off ${FULL_MOON_EVENT.castOff} at ${FULL_MOON_LOCATION.name} - ` +
-        `exact dock + pin drop by text 2 days before, arrive 15 min early. ` +
-        `Questions? Just text this number. PARTY ON!`;
+      // Copy lives in event.ts (fullMoonTicketSms) — edit it there, deploy,
+      // done. No GHL workflow change needed for copy edits.
+      ghlPayload.smsMessage = fullMoonTicketSms(order.customerName.trim().split(/\s+/)[0] || '');
     }
     await notifyNewOrder(ghlPayload);
 
