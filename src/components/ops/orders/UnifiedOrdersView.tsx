@@ -2,6 +2,7 @@
 
 import { ReactElement, useCallback, useEffect, useMemo, useState } from 'react';
 import BulkActionBar from './BulkActionBar';
+import BulkCancelModal from './BulkCancelModal';
 import DaySectionHeader from './DaySectionHeader';
 import DayTiles from './DayTiles';
 import FilterSheet from './FilterSheet';
@@ -59,6 +60,9 @@ export default function UnifiedOrdersView({
   const [sendingReviews, setSendingReviews] = useState(false);
   const [shortageList, setShortageList] = useState<ShortageRow[] | null>(null);
   const [shortageCount, setShortageCount] = useState(0);
+  // Orders staged for a bulk cancel — snapshotted on open so a background
+  // refresh can't change what the operator is about to confirm.
+  const [cancelOrders, setCancelOrders] = useState<OrdersViewOrder[] | null>(null);
   // Day/overdue sections collapse to a compact tile overview. Keys present
   // here are EXPANDED; empty set = all collapsed (the default landing state).
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
@@ -250,6 +254,28 @@ export default function UnifiedOrdersView({
     );
     setShortageList(buildShortageList(snapshot, loadCachedChecks));
   }, [selectedOrders]);
+
+  const handleOpenCancel = useCallback(() => {
+    if (selectedOrders.length === 0) return;
+    setCancelOrders([...selectedOrders]);
+  }, [selectedOrders]);
+
+  /**
+   * What the operator believes they're cancelling. When the selection is one
+   * cooler, name it — a bulk cancel confirmed against "12 orders" with no idea
+   * whose is exactly the mistake this dialog exists to prevent.
+   */
+  const cancelContextLabel = useMemo(() => {
+    if (!cancelOrders) return undefined;
+    const ids = new Set(cancelOrders.map((o) => o.id));
+    const cards = view.allCards.filter((c) => c.orders.some((o) => ids.has(o.id)));
+    if (cards.length === 1) {
+      return `${cards[0].displayName} · ${fmtDateLong(cards[0].deliveryDate)}${
+        cards[0].deliveryTime ? ` · ${cards[0].deliveryTime}` : ''
+      }`;
+    }
+    return `${cancelOrders.length} orders across ${cards.length} coolers`;
+  }, [cancelOrders, view.allCards]);
 
   const handleExportCsv = useCallback(() => {
     const all = view.allCards.flatMap((c) => c.orders);
@@ -504,8 +530,27 @@ export default function UnifiedOrdersView({
         onShortage={() => void handleShortage()}
         onReviews={handleOpenReviewModal}
         showReviews={view.filters.reviewSent === 'unsent'}
+        onCancel={handleOpenCancel}
         onClear={view.clearSelection}
       />
+
+      {cancelOrders && (
+        <BulkCancelModal
+          orders={cancelOrders.map((o) => ({
+            id: o.id,
+            orderNumber: o.orderNumber,
+            customerName: o.customerName,
+            total: o.total,
+          }))}
+          contextLabel={cancelContextLabel}
+          onClose={() => setCancelOrders(null)}
+          onDone={() => {
+            setCancelOrders(null);
+            view.clearSelection();
+            view.refresh();
+          }}
+        />
+      )}
 
       {reviewModalOrders && (
         <ReviewRequestModal

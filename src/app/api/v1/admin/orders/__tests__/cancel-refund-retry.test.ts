@@ -33,7 +33,9 @@ vi.mock('@/lib/auth/ops-session', () => ({
 // --- Prisma ---
 const mockOrderFindUnique = vi.fn();
 const mockOrderUpdate = vi.fn().mockResolvedValue({});
-const mockRefundFindFirst = vi.fn().mockResolvedValue({ id: 'rf_db_1' });
+// No DB row yet for the Stripe refund id — the normal case. The route's
+// duplicate guard only short-circuits when a row already carries that id.
+const mockRefundFindFirst = vi.fn().mockResolvedValue(null);
 const mockRefundUpdate = vi.fn().mockResolvedValue({});
 
 vi.mock('@/lib/database/client', () => ({
@@ -100,7 +102,7 @@ describe('POST /cancel — refund retry safety', () => {
     vi.clearAllMocks();
     mockOrderFindUnique.mockResolvedValue(baseOrder());
     mockOrderUpdate.mockResolvedValue({});
-    mockRefundFindFirst.mockResolvedValue({ id: 'rf_db_1' });
+    mockRefundFindFirst.mockResolvedValue(null);
     mockRefundUpdate.mockResolvedValue({});
     mockPiRetrieve.mockResolvedValue({ amount_received: 15000 }); // $150 captured
   });
