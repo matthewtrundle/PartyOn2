@@ -8,6 +8,7 @@
 
 import { useState, type ReactElement } from 'react';
 import ProspectEnrichmentPanel from '@/components/admin/ProspectEnrichmentPanel';
+import ProspectCampaignPanel from './ProspectCampaignPanel';
 import ProspectStatusChip from './ProspectStatusChip';
 import ProspectDraftEditor from './ProspectDraftEditor';
 import type { ProspectActionApi } from './useProspectActions';
@@ -139,6 +140,11 @@ export default function ProspectDrawer({
             </p>
           )}
         </div>
+
+        {/* Campaign touch timeline — only once the prospect is in the campaign */}
+        {state && state.campaign !== 'none' && (
+          <ProspectCampaignPanel prospectId={prospect.id} leadId={state.leadId} />
+        )}
 
         {/* Dossier */}
         {prospect.enrichment ? (

@@ -17,6 +17,7 @@ import { Webhook } from 'svix';
 import { prisma } from '@/lib/database/client';
 import { EmailStatus } from '@prisma/client';
 import { suppress } from '@/lib/followups/suppression';
+import { formatBounceReason, type ResendBounceInfo } from '@/lib/email/bounce-reason';
 
 interface ResendWebhookData {
   created_at: string;
@@ -24,6 +25,8 @@ interface ResendWebhookData {
   from: string;
   to: string[];
   subject: string;
+  /** Present on email.bounced — why the receiving server rejected it. */
+  bounce?: ResendBounceInfo;
 }
 
 const EVENT_STATUS_MAP: Record<string, EmailStatus> = {
@@ -97,11 +100,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const timestampField = EVENT_TIMESTAMP_FIELD[type];
 
     if (newStatus && timestampField) {
+      // Bounce reason → errorMessage so the ops UIs can say WHY it bounced.
+      // (Resend also emits `email.failed` with a reason; that event is not
+      // handled here yet — see EVENT_STATUS_MAP.)
+      const bounceReason = type === 'email.bounced' ? formatBounceReason(data.bounce) : null;
       await prisma.emailLog.update({
         where: { id: emailLog.id },
         data: {
           status: newStatus,
           [timestampField]: new Date(data.created_at),
+          ...(bounceReason ? { errorMessage: bounceReason } : {}),
         },
       });
 
@@ -114,8 +122,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       if (type === 'email.bounced' || type === 'email.complained') {
         const reason = type === 'email.bounced' ? 'bounce' : 'complaint';
         const result = await suppress(emailLog.to, reason, 'resend-webhook', `resendId=${resendId}`);
+        // Log the row id, not the address — recipient emails are PII and
+        // stay out of INFO-level production logs (security review 2026-07-31).
         console.log(
-          '[Resend Webhook] Suppressed', emailLog.to, `(${reason});`,
+          '[Resend Webhook] Suppressed recipient of emailLog', emailLog.id, `(${reason});`,
           'canceled', result.canceledJobs, 'scheduled follow-up job(s)'
         );
       }

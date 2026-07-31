@@ -350,7 +350,11 @@ export const JOURNEYS: JourneyDef[] = [
       if (lead.pipelineStage === 'WON') return 'lead-won';
       if (lead.pipelineStage === 'LOST') return 'lead-lost';
       if (lead.tags.includes('partner-active')) return 'already-active-partner';
-      // They replied — a human owns the thread now.
+      // They replied — a human owns the thread now. Deliberately ANY inbound
+      // ever, NOT the campaign-scoped rule the UI/metrics use
+      // (src/lib/partners/campaign-status.ts): this is a send-safety guard,
+      // and over-canceling (skipping an automated touch because the prospect
+      // once emailed us about something else) is the safe direction.
       const reply = await prisma.inboundEmail.findFirst({
         where: { leadId: job.leadId },
         select: { id: true },
