@@ -26,6 +26,7 @@ import {
   TAG_PARTNER_ACTIVE,
   PARTNER_VERTICAL_TAGS,
 } from '@/lib/leads/partner-tags';
+import { deriveCampaignState, firstSentAtByLead } from '@/lib/partners/campaign-status';
 import { listProspects } from '@/lib/partners/prospect-store';
 
 /** Admin hub path each vertical's prospects live under (Lead.sourcePage). */
@@ -176,6 +177,10 @@ export async function POST(): Promise<NextResponse> {
 /**
  * Current website → lead + campaign state for the prospect tables:
  * { leadId, tags, campaign: 'none'|'enrolled'|'sent'|'replied' }.
+ *
+ * 'replied' is CAMPAIGN-SCOPED (deriveCampaignState): only inbound email
+ * received at-or-after the lead's first campaign send counts — a prospect
+ * who mailed info@ last year but was never contacted stays un-replied.
  */
 export async function GET(): Promise<NextResponse> {
   const auth = await requireOpsAuth();
@@ -188,7 +193,11 @@ export async function GET(): Promise<NextResponse> {
         email: true,
         tags: true,
         metadata: true,
-        inboundEmails: { select: { id: true }, take: 1 },
+        inboundEmails: {
+          select: { receivedAt: true },
+          orderBy: { receivedAt: 'desc' },
+          take: 1,
+        },
       },
     });
     // Suppressed addresses (unsubscribe/bounce/complaint) — the workbench
@@ -203,13 +212,14 @@ export async function GET(): Promise<NextResponse> {
     const suppressedEmails = new Set(suppressions.map((s) => s.email));
     const jobs = await prisma.followUpJob.findMany({
       where: { journeyKey: 'partner-outreach', leadId: { in: leads.map((l) => l.id) } },
-      select: { leadId: true, status: true },
+      select: { leadId: true, status: true, sentAt: true },
     });
     const jobsByLead = new Map<string, string[]>();
     for (const j of jobs) {
       if (!j.leadId) continue;
       jobsByLead.set(j.leadId, [...(jobsByLead.get(j.leadId) ?? []), j.status]);
     }
+    const firstSent = firstSentAtByLead(jobs);
 
     const map: Record<
       string,
@@ -221,14 +231,11 @@ export async function GET(): Promise<NextResponse> {
           ? (l.metadata as Record<string, unknown>).websiteKey
           : null;
       if (typeof wKey !== 'string') continue;
-      const statuses = jobsByLead.get(l.id) ?? [];
-      const campaign = l.inboundEmails.length
-        ? 'replied'
-        : statuses.includes('sent')
-          ? 'sent'
-          : statuses.length
-            ? 'enrolled'
-            : 'none';
+      const campaign = deriveCampaignState({
+        jobStatuses: jobsByLead.get(l.id) ?? [],
+        latestInboundAt: l.inboundEmails[0]?.receivedAt ?? null,
+        firstSentAt: firstSent.get(l.id),
+      });
       map[wKey] = {
         leadId: l.id,
         tags: l.tags,

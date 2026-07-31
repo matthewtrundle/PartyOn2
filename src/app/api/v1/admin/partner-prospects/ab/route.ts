@@ -5,9 +5,10 @@
  * rate (the win metric) + open rate (secondary), with the shared
  * two-proportion z-test on reply rate. Unit is the PROSPECT — a prospect is
  * "sent" once it has ≥1 sent partner-outreach job, "replied" if an
- * InboundEmail exists on its lead, "opened" if any of its sends' EmailLog rows
- * has openedAt. Reply attribution mirrors the metrics route (any inbound on
- * the lead counts as a reply).
+ * InboundEmail arrived at-or-after the lead's first campaign send
+ * (campaign-scoped — mirrors the metrics route via campaign-status.ts; a
+ * prospect's pre-campaign email history never counts as a reply), "opened"
+ * if any of its sends' EmailLog rows has openedAt.
  *
  * Optional ?experiment=<key> restricts to prospects tagged with that
  * experimentKey; otherwise every prospect carrying an arm label is included.
@@ -19,6 +20,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireOpsAuth } from '@/lib/auth/ops-session';
 import { prisma } from '@/lib/database/client';
 import { computeOutreachAbResults, type OutreachArmKey } from '@/lib/partners/ab-results';
+import { firstSentAtByLead, isCampaignReply } from '@/lib/partners/campaign-status';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -56,9 +58,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     // the EmailLog ids to check opens against.
     const jobs = await prisma.followUpJob.findMany({
       where: { journeyKey: 'partner-outreach', status: 'sent', leadId: { in: leadIds } },
-      select: { leadId: true, emailLogId: true },
+      select: { leadId: true, status: true, sentAt: true, emailLogId: true },
     });
     const sentLeadIds = new Set(jobs.map((j) => j.leadId).filter((id): id is string => id !== null));
+    const firstSent = firstSentAtByLead(jobs);
 
     const logIds = jobs.map((j) => j.emailLogId).filter((id): id is string => id !== null);
     const openedLogs = logIds.length
@@ -77,10 +80,13 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     const repliedRows = await prisma.inboundEmail.findMany({
       where: { leadId: { in: Array.from(sentLeadIds) } },
-      select: { leadId: true },
+      select: { leadId: true, receivedAt: true },
     });
     const repliedLeadIds = new Set(
-      repliedRows.map((r) => r.leadId).filter((id): id is string => id !== null),
+      repliedRows
+        .filter((r) => r.leadId !== null && isCampaignReply(r.receivedAt, firstSent.get(r.leadId)))
+        .map((r) => r.leadId)
+        .filter((id): id is string => id !== null),
     );
 
     // One record per SENT prospect (dedupe leads defensively).

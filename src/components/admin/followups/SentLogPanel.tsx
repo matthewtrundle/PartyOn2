@@ -18,7 +18,8 @@ interface LogRow {
   createdAt: string;
 }
 
-const STATUS_CHIP: Record<string, string> = {
+/** EmailStatus → chip classes; shared with the prospect campaign panel. */
+export const STATUS_CHIP: Record<string, string> = {
   SENT: 'bg-blue-50 text-blue-700 border-blue-200',
   DELIVERED: 'bg-green-50 text-green-700 border-green-200',
   OPENED: 'bg-emerald-50 text-emerald-800 border-emerald-200',
