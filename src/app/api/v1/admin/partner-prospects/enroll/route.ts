@@ -78,6 +78,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       continue;
     }
 
+    // Back-link the prospect to its Lead (idempotent — mirrors the sync
+    // POST). Enroll just resolved the lead anyway, and without the stored
+    // link the campaign panel's prospect joins (leadId-keyed) show this
+    // prospect as a bare email until the next Sync click.
+    if (prospect.leadId !== lead.id) {
+      await prisma.partnerProspect.update({
+        where: { id: prospect.id },
+        data: { leadId: lead.id },
+      });
+    }
+
     // Safety net: if the drafting session didn't label an arm, bucket this
     // prospect deterministically so it's never unattributed in A/B results.
     // (No-op when abArm is already set — the normal path.)
