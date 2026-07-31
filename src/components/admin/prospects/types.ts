@@ -102,6 +102,17 @@ export async function drainQueue<T>(
   return done;
 }
 
+/**
+ * Workbench page path per vertical — used by the campaign panel's
+ * drill-through to open a prospect on another vertical's page
+ * (`?prospect=<websiteKey>`). Mirrors the sync route's source pages.
+ */
+export const VERTICAL_PATHS: Record<string, string> = {
+  str: '/admin/affiliates/prospects/str',
+  bartender: '/admin/affiliates/prospects/bartending',
+  venue: '/admin/affiliates/prospects/venues',
+};
+
 export interface VerticalUiConfig {
   title: string;
   intro: string;
