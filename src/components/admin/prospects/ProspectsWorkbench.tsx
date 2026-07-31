@@ -2,20 +2,29 @@
 
 /**
  * Prospects workbench orchestrator — one per vertical page. Fetches the
- * prospect list (partner_prospects), the campaign map (GET sync), and the
- * metrics; derives pipeline chips; owns selection, search, status filter,
- * and the drawer.
+ * prospect list (partner_prospects), the campaign map (GET sync), the
+ * metrics, A/B results, and the campaign-funnel overview; derives pipeline
+ * chips; owns selection, search, status filter, the drawer, and the
+ * campaign panel's cross-vertical drill (?prospect= deep link).
  */
 
-import { useCallback, useEffect, useMemo, useState, type ReactElement } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from 'react';
+import { useRouter } from 'next/navigation';
 import ProspectsFilterBar from './ProspectsFilterBar';
 import ProspectsMetricsStrip, { type ProspectMetrics } from './ProspectsMetricsStrip';
-import ProspectsAbPanel, { type AbResults } from './ProspectsAbPanel';
+import { type AbResults } from './ProspectsAbPanel';
+import ProspectsCampaignPanel, { type CampaignOverviewData } from './ProspectsCampaignPanel';
 import ProspectsTable from './ProspectsTable';
 import ProspectDrawer from './ProspectDrawer';
 import ResearchQueueBanner from './ResearchQueueBanner';
 import { useProspectActions } from './useProspectActions';
-import { deriveStatus, VERTICAL_UI, type LeadState, type ProspectRow } from './types';
+import {
+  deriveStatus,
+  VERTICAL_PATHS,
+  VERTICAL_UI,
+  type LeadState,
+  type ProspectRow,
+} from './types';
 
 function csvEscape(v: string): string {
   return /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
@@ -23,41 +32,74 @@ function csvEscape(v: string): string {
 
 export default function ProspectsWorkbench({ vertical }: { vertical: string }): ReactElement {
   const config = VERTICAL_UI[vertical] ?? VERTICAL_UI.str;
+  const router = useRouter();
   const [prospects, setProspects] = useState<ProspectRow[]>([]);
   const [leadMap, setLeadMap] = useState<Record<string, LeadState>>({});
   const [metrics, setMetrics] = useState<ProspectMetrics | null>(null);
   const [ab, setAb] = useState<AbResults | null>(null);
+  const [campaign, setCampaign] = useState<CampaignOverviewData | null>(null);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [openId, setOpenId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [csvCopied, setCsvCopied] = useState(false);
+  // ?prospect=<websiteKey> deep link (campaign-panel drill from another
+  // vertical) — handled once, after the list has loaded. Reads
+  // window.location directly: useSearchParams would force a Suspense
+  // boundary around the whole page (Next 15), overkill for a one-shot read.
+  const deepLinkHandled = useRef(false);
 
   const refresh = useCallback(async (): Promise<void> => {
-    const [listRes, mapRes, metricsRes, abRes] = await Promise.all([
+    const [listRes, mapRes, metricsRes, abRes, campaignRes] = await Promise.all([
       fetch(`/api/v1/admin/partner-prospects?vertical=${encodeURIComponent(vertical)}`),
       fetch('/api/v1/admin/partner-prospects/sync'),
       fetch('/api/v1/admin/partner-prospects/metrics'),
       fetch('/api/v1/admin/partner-prospects/ab'),
+      fetch('/api/v1/admin/partner-prospects/campaign'),
     ]);
-    const [list, map, m, a] = await Promise.all([
+    const [list, map, m, a, c] = await Promise.all([
       listRes.json(),
       mapRes.json(),
       metricsRes.json(),
       abRes.json(),
+      campaignRes.json(),
     ]);
     if (list.success) setProspects(list.data.prospects);
     if (map.success) setLeadMap(map.data.leads);
     if (m.success) setMetrics(m.data);
     if (a.success) setAb(a.data);
+    if (c.success) setCampaign(c.data);
   }, [vertical]);
 
   useEffect(() => {
     void refresh();
   }, [refresh]);
 
+  useEffect(() => {
+    if (deepLinkHandled.current || prospects.length === 0) return;
+    deepLinkHandled.current = true;
+    const key = new URLSearchParams(window.location.search).get('prospect');
+    if (!key) return;
+    const row = prospects.find((p) => p.websiteKey === key);
+    if (row) setOpenId(row.id);
+  }, [prospects]);
+
   const actions = useProspectActions(setNotice, refresh);
+
+  /** Campaign-panel drill: same vertical opens the drawer, others navigate. */
+  const handleDrill = useCallback(
+    (websiteKey: string, targetVertical: string): void => {
+      if (targetVertical === vertical) {
+        const row = prospects.find((p) => p.websiteKey === websiteKey);
+        if (row) setOpenId(row.id);
+        return;
+      }
+      const path = VERTICAL_PATHS[targetVertical] ?? VERTICAL_PATHS.str;
+      router.push(`${path}?prospect=${encodeURIComponent(websiteKey)}`);
+    },
+    [vertical, prospects, router],
+  );
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -143,7 +185,7 @@ export default function ProspectsWorkbench({ vertical }: { vertical: string }): 
       </div>
 
       <ProspectsMetricsStrip metrics={metrics} />
-      <ProspectsAbPanel data={ab} />
+      <ProspectsCampaignPanel data={campaign} ab={ab} onDrill={handleDrill} />
       <ResearchQueueBanner metrics={metrics} />
       <ProspectsFilterBar
         search={search}

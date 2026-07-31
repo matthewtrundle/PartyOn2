@@ -13,11 +13,21 @@ export interface ProspectMetrics {
   queue: { researchPending: number; awaitingDraft: number; redoRequested: number };
 }
 
-function Stat({ label, value }: { label: string; value: string }): ReactElement {
+/** Small stat tile; shared with the campaign panel's funnel tiles. */
+export function Stat({
+  label,
+  value,
+  sub,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+}): ReactElement {
   return (
     <div className="rounded-lg border border-gray-200 bg-white px-3 py-2">
       <div className="text-xs uppercase tracking-wider text-gray-500">{label}</div>
       <div className="text-lg font-bold text-gray-900">{value}</div>
+      {sub && <div className="text-sm text-gray-500">{sub}</div>}
     </div>
   );
 }
