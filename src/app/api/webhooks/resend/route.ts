@@ -122,8 +122,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       if (type === 'email.bounced' || type === 'email.complained') {
         const reason = type === 'email.bounced' ? 'bounce' : 'complaint';
         const result = await suppress(emailLog.to, reason, 'resend-webhook', `resendId=${resendId}`);
+        // Log the row id, not the address — recipient emails are PII and
+        // stay out of INFO-level production logs (security review 2026-07-31).
         console.log(
-          '[Resend Webhook] Suppressed', emailLog.to, `(${reason});`,
+          '[Resend Webhook] Suppressed recipient of emailLog', emailLog.id, `(${reason});`,
           'canceled', result.canceledJobs, 'scheduled follow-up job(s)'
         );
       }
