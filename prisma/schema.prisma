@@ -2011,13 +2011,15 @@ model SubOrder {
   groupOrderId   String         @map("group_order_id")
   name           String
   position       Int            @default(0)
-  deliveryDate   DateTime       @map("delivery_date")
+  /// Null = customer hasn't chosen a date yet (self-serve dashboards are born
+  /// dateless; checkout is gated until one is set — 2026-08-01 wrong-date fix).
+  deliveryDate   DateTime?      @map("delivery_date")
   deliveryDateConfirmed Boolean @default(false) @map("delivery_date_confirmed")
   deliveryTime   String         @map("delivery_time")
   deliveryAddress Json          @map("delivery_address")
   deliveryPhone  String?        @map("delivery_phone")
   deliveryNotes  String?        @map("delivery_notes") @db.Text
-  orderDeadline  DateTime       @map("order_deadline")
+  orderDeadline  DateTime?      @map("order_deadline")
   deliveryFee    Decimal        @default(0) @map("delivery_fee") @db.Decimal(10, 2)
   deliveryFeeWaived Boolean     @default(false) @map("delivery_fee_waived")
   orderType           String?             @map("order_type")

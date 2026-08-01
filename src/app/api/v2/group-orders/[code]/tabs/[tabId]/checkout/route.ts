@@ -40,6 +40,20 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ success: false, error: 'Tab not found' }, { status: 404 });
     }
 
+    // Never charge against an unchosen date. Self-serve dashboards are born
+    // dateless (and legacy ones carry an unconfirmed placeholder) — the
+    // customer must pick a delivery date before any money moves.
+    if (!tab.deliveryDate || !tab.deliveryDateConfirmed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Please add your delivery date before checking out.',
+          code: 'DELIVERY_DATE_REQUIRED',
+        },
+        { status: 400 }
+      );
+    }
+
     // Get participant
     const participant = await getParticipantById(participantId);
     if (!participant) {

@@ -6,6 +6,7 @@ import {
   checkoutParticipantV2,
   checkoutAllV2,
   validateGroupDiscount,
+  GroupOrdersApiError,
 } from '@/lib/group-orders-v2/api-client';
 import SmsConsentCheckbox from '@/components/consent/SmsConsentCheckbox';
 
@@ -78,6 +79,10 @@ export default function DashboardCheckoutModal({
 
   const isPickup = tab.deliveryAddress?.isPickup === true;
   const hasAddress = !!tab.deliveryAddress?.address1?.trim();
+  // Partner-seeded dashboards have an address from birth but no chosen date —
+  // checkout must not proceed until the customer confirms one (the server
+  // enforces the same rule with DELIVERY_DATE_REQUIRED).
+  const hasConfirmedDate = !!(tab.deliveryDate && tab.deliveryDate !== 'TBD' && tab.deliveryDateConfirmed);
 
   const subtotal = items.reduce((sum, i) => sum + i.price * i.quantity, 0);
   const discountAmount = discountApplied?.amount || 0;
@@ -110,6 +115,11 @@ export default function DashboardCheckoutModal({
 
     if (!hasAddress) {
       setError(isPickup ? 'Pickup details are required' : 'Delivery address is required');
+      return;
+    }
+
+    if (!hasConfirmedDate) {
+      setError('Please add your delivery date first');
       return;
     }
 
@@ -157,6 +167,14 @@ export default function DashboardCheckoutModal({
         window.location.href = result.checkoutUrl;
       }
     } catch (err) {
+      // Server-side date gate: send the customer straight to the date picker
+      // instead of leaving them on a dead error message.
+      if (err instanceof GroupOrdersApiError && err.code === 'DELIVERY_DATE_REQUIRED') {
+        setLoading(false);
+        onClose();
+        onOpenDeliveryDetails();
+        return;
+      }
       setError(err instanceof Error ? err.message : 'Checkout failed');
       setLoading(false);
     }
@@ -343,7 +361,7 @@ export default function DashboardCheckoutModal({
           </div>
 
           {/* Delivery / Pickup details section */}
-          {hasAddress ? (
+          {hasAddress && (
             <div className="bg-gray-50 rounded-lg px-4 py-3 space-y-1.5">
               <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
                 {isPickup ? 'Pickup' : 'Delivery'}
@@ -359,10 +377,15 @@ export default function DashboardCheckoutModal({
                 </p>
               )}
             </div>
-          ) : (
+          )}
+          {(!hasAddress || !hasConfirmedDate) && (
             <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
               <p className="text-sm text-amber-800 mb-2">
-                Please fill out delivery details before checking out.
+                {!hasAddress && !hasConfirmedDate
+                  ? 'Please add your delivery date and address before checking out.'
+                  : !hasConfirmedDate
+                    ? 'Please add your delivery date before checking out.'
+                    : 'Please fill out delivery details before checking out.'}
               </p>
               <button
                 type="button"
@@ -372,7 +395,7 @@ export default function DashboardCheckoutModal({
                 }}
                 className="text-sm font-semibold text-brand-blue hover:text-blue-700 transition-colors"
               >
-                Fill out delivery details
+                {!hasConfirmedDate && hasAddress ? 'Add delivery date' : 'Fill out delivery details'}
               </button>
             </div>
           )}
@@ -480,7 +503,7 @@ export default function DashboardCheckoutModal({
 
           <button
             type="submit"
-            disabled={loading || items.length === 0 || !hasAddress || !acceptanceConfirmed}
+            disabled={loading || items.length === 0 || !hasAddress || !hasConfirmedDate || !acceptanceConfirmed}
             className="w-full py-3 bg-brand-blue text-white font-semibold tracking-[0.08em] rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? (

@@ -97,4 +97,40 @@ describe('addDraftItem availability guard', () => {
     await expect(addDraftItem('tab-1', ITEM_INPUT)).rejects.toBeInstanceOf(ProductNotPurchasableError);
     expect(mockDraftCartItemCreate).not.toHaveBeenCalled();
   });
+
+  // Dateless tabs (delivery-date fix 2026-08-01): orderDeadline is NULL until
+  // the customer picks a date. A bare `new Date() > null` compare coerces null
+  // to 0 and would reject EVERY add on a dateless tab — pin the guard.
+  it('adds items to a dateless tab (null orderDeadline = no deadline to miss)', async () => {
+    mockSubOrderFindUnique.mockResolvedValue({ id: 'tab-1', status: 'OPEN', orderDeadline: null });
+    mockProductVariantFindMany.mockResolvedValue([
+      { id: 'v1', availableForSale: true, product: { id: 'p1', status: 'ACTIVE', title: 'Beer' } },
+    ]);
+    mockDraftCartItemFindUnique.mockResolvedValue(null);
+    mockDraftCartItemCreate.mockResolvedValue({
+      id: 'draft-2',
+      productId: 'p1',
+      variantId: 'v1',
+      title: 'Beer',
+      variantTitle: null,
+      price: 10,
+      imageUrl: null,
+      quantity: 2,
+      addedBy: { id: 'part-1', guestName: 'Host', isHost: true },
+      product: { handle: 'beer' },
+    });
+
+    const result = await addDraftItem('tab-1', ITEM_INPUT);
+    expect(result.id).toBe('draft-2');
+  });
+
+  it('still rejects when a real deadline has passed', async () => {
+    mockSubOrderFindUnique.mockResolvedValue({
+      id: 'tab-1',
+      status: 'OPEN',
+      orderDeadline: new Date('2020-01-01'),
+    });
+    await expect(addDraftItem('tab-1', ITEM_INPUT)).rejects.toThrow(/deadline has passed/);
+    expect(mockDraftCartItemCreate).not.toHaveBeenCalled();
+  });
 });

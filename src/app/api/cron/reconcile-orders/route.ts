@@ -205,6 +205,15 @@ export async function GET(request: NextRequest) {
           continue;
         }
 
+        // Order.deliveryDate is NOT NULL — a dateless tab can't be reconciled
+        // into an Order. Skip (don't kill the loop); ops sets the date and the
+        // next run picks it up.
+        if (!subOrder.deliveryDate) {
+          errors.push(`Group V2 payment ${payment.id}: subOrder has no delivery date — skipped until one is set`);
+          continue;
+        }
+        const subOrderDeliveryDate = subOrder.deliveryDate;
+
         const purchasedItems = await prisma.purchasedItem.findMany({
           where: { paymentId: payment.id },
         });
@@ -312,7 +321,7 @@ export async function GET(request: NextRequest) {
             discountCode: payment.discountCode,
             discountAmount: payment.discountAmount,
             total: payment.total,
-            deliveryDate: subOrder.deliveryDate,
+            deliveryDate: subOrderDeliveryDate,
             deliveryTime: subOrder.deliveryTime,
             deliveryAddress: subOrder.deliveryAddress || {},
             deliveryPhone: subOrder.deliveryPhone || '',
@@ -386,7 +395,7 @@ export async function GET(request: NextRequest) {
           await prisma.deliveryTask.create({
             data: {
               orderId: order.id,
-              scheduledDate: subOrder.deliveryDate,
+              scheduledDate: subOrderDeliveryDate,
               scheduledTime: subOrder.deliveryTime,
               status: 'PENDING',
             },

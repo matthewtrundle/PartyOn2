@@ -163,13 +163,13 @@ function serializeTab(tab: any): SubOrderFull {
     orderType: tab.orderType ?? null,
     partyType: tab.partyType ?? null,
     deliveryContextType: tab.deliveryContextType ?? 'HOUSE',
-    deliveryDate: tab.deliveryDate.toISOString(),
+    deliveryDate: tab.deliveryDate ? tab.deliveryDate.toISOString() : null,
     deliveryDateConfirmed: tab.deliveryDateConfirmed ?? false,
     deliveryTime: tab.deliveryTime,
     deliveryAddress: tab.deliveryAddress as any,
     deliveryPhone: tab.deliveryPhone,
     deliveryNotes: tab.deliveryNotes,
-    orderDeadline: tab.orderDeadline.toISOString(),
+    orderDeadline: tab.orderDeadline ? tab.orderDeadline.toISOString() : null,
     deliveryFee: fee,
     deliveryFeeWaived: tab.deliveryFeeWaived,
     draftItems,
@@ -187,10 +187,14 @@ function serializeGroup(group: Record<string, any>): GroupOrderV2Full {
 
   const deadlines = tabs
     .filter((t: SubOrderFull) => t.status === 'OPEN')
-    .map((t: SubOrderFull) => new Date(t.orderDeadline));
+    .map((t: SubOrderFull) => t.orderDeadline)
+    .filter((d: string | null): d is string => !!d)
+    .map((d: string) => new Date(d));
   const deliveries = tabs
     .filter((t: SubOrderFull) => t.status !== 'CANCELLED')
-    .map((t: SubOrderFull) => new Date(t.deliveryDate));
+    .map((t: SubOrderFull) => t.deliveryDate)
+    .filter((d: string | null): d is string => !!d)
+    .map((d: string) => new Date(d));
 
   const earliestDeadline = findEarliestDeadline(deadlines);
   const earliestDelivery = findEarliestDelivery(deliveries);
@@ -259,7 +263,8 @@ export async function createGroupOrder(
       expiresAt: defaultExpiresAt(tabDeliveryDates),
       tabs: {
         create: input.tabs.map((tab, idx) => {
-          const deliveryDate = new Date(tab.deliveryDate ?? '');
+          const parsed = tab.deliveryDate ? new Date(tab.deliveryDate) : null;
+          const deliveryDate = parsed && !isNaN(parsed.getTime()) ? parsed : null;
           const zip = tab.deliveryAddress?.zip ?? '';
           const feeResult = calculateDeliveryFee(zip, 0, false);
           return {
@@ -267,11 +272,12 @@ export async function createGroupOrder(
             position: idx,
             orderType: tab.orderType ?? null,
             deliveryDate,
+            deliveryDateConfirmed: !!deliveryDate,
             deliveryTime: tab.deliveryTime ?? '',
             deliveryAddress: tab.deliveryAddress as unknown as Record<string, string>,
             deliveryPhone: tab.deliveryPhone || null,
             deliveryNotes: tab.deliveryNotes || null,
-            orderDeadline: computeOrderDeadline(deliveryDate),
+            orderDeadline: deliveryDate ? computeOrderDeadline(deliveryDate) : null,
             deliveryFee: feeResult.originalFee,
           };
         }),
@@ -445,17 +451,14 @@ export async function createTab(
   });
   const nextPos = (maxPos._max.position ?? -1) + 1;
 
-  // Default delivery date: 7 days from now (skip Sunday)
-  let deliveryDate: Date;
+  // No default date: a tab with no caller-supplied date is born dateless and
+  // the customer must pick one before checkout (wrong-date fix 2026-08-01).
+  let deliveryDate: Date | null = null;
   if (input.deliveryDate) {
     deliveryDate = new Date(input.deliveryDate);
-  } else {
-    deliveryDate = new Date();
-    deliveryDate.setDate(deliveryDate.getDate() + 7);
-    if (deliveryDate.getDay() === 0) deliveryDate.setDate(deliveryDate.getDate() + 1);
+    // Normalize to noon UTC to avoid timezone boundary issues
+    deliveryDate.setUTCHours(12, 0, 0, 0);
   }
-  // Normalize to noon UTC to avoid timezone boundary issues
-  deliveryDate.setUTCHours(12, 0, 0, 0);
 
   const zip = input.deliveryAddress?.zip || '';
   const feeResult = calculateDeliveryFee(zip, 0, false);
@@ -468,11 +471,12 @@ export async function createTab(
       orderType: input.orderType ?? null,
       partyType: input.partyType ?? null,
       deliveryDate,
+      deliveryDateConfirmed: !!deliveryDate,
       deliveryTime: input.deliveryTime || 'TBD',
       deliveryAddress: (input.deliveryAddress || { address1: '', city: '', province: 'TX', zip: '', country: 'US' }) as unknown as Record<string, string>,
       deliveryPhone: input.deliveryPhone || null,
       deliveryNotes: input.deliveryNotes || null,
-      orderDeadline: computeOrderDeadline(deliveryDate),
+      orderDeadline: deliveryDate ? computeOrderDeadline(deliveryDate) : null,
       deliveryFee: feeResult.originalFee,
     },
     include: {
@@ -651,8 +655,9 @@ export async function addDraftItem(
   if (!tab) throw new Error('Tab not found');
   if (tab.status !== 'OPEN') throw new Error('Tab is locked or closed');
 
-  // Check deadline
-  if (new Date() > tab.orderDeadline) {
+  // Check deadline (null deadline = no date chosen yet — no deadline to miss;
+  // an unguarded compare would coerce null to 0 and reject every add)
+  if (tab.orderDeadline && new Date() > tab.orderDeadline) {
     throw new Error('Order deadline has passed');
   }
 
@@ -997,19 +1002,16 @@ export async function createDashboardOrder(
     attempts++;
   }
 
-  // Delivery date: use provided date or default to 7 days from now
-  let deliveryDate: Date;
+  // Delivery date: only when the caller supplies one (event presets, quote
+  // flow, portal). Self-serve dashboards are born dateless and the customer
+  // must pick a date before checkout (wrong-date fix 2026-08-01 — the old
+  // "+7 days" default silently became real orders' delivery dates).
+  let deliveryDate: Date | null = null;
   if (input.deliveryDate) {
     deliveryDate = new Date(input.deliveryDate);
-  } else {
-    deliveryDate = new Date();
-    deliveryDate.setDate(deliveryDate.getDate() + 7);
-    if (deliveryDate.getDay() === 0) {
-      deliveryDate.setDate(deliveryDate.getDate() + 1);
-    }
+    // Normalize to noon UTC to avoid timezone boundary issues
+    deliveryDate.setUTCHours(12, 0, 0, 0);
   }
-  // Normalize to noon UTC to avoid timezone boundary issues
-  deliveryDate.setUTCHours(12, 0, 0, 0);
 
   const deliveryAddress = input.deliveryAddress
     ? { ...input.deliveryAddress, province: input.deliveryAddress.province || 'TX', country: input.deliveryAddress.country || 'US' }
@@ -1036,15 +1038,16 @@ export async function createDashboardOrder(
       utmTerm: input.attribution?.utmTerm || null,
       utmContent: input.attribution?.utmContent || null,
       referrer: input.attribution?.referrer || null,
-      expiresAt: defaultExpiresAt(deliveryDate),
+      expiresAt: defaultExpiresAt(deliveryDate ?? undefined),
       tabs: {
         create: {
           name: input.tabName || 'Location 1',
           position: 0,
           deliveryDate,
-          deliveryTime: input.deliveryTime || '12:00 PM - 2:00 PM',
+          deliveryDateConfirmed: !!deliveryDate,
+          deliveryTime: input.deliveryTime || (deliveryDate ? '12:00 PM - 2:00 PM' : 'TBD'),
           deliveryAddress: deliveryAddress as unknown as Record<string, string>,
-          orderDeadline: computeOrderDeadline(deliveryDate),
+          orderDeadline: deliveryDate ? computeOrderDeadline(deliveryDate) : null,
           deliveryFee: deliveryAddress.zip
             ? calculateDeliveryFee(deliveryAddress.zip, 0, false).originalFee
             : 40,
@@ -1148,6 +1151,9 @@ export async function createMultiTabDashboardOrder(
             name: tab.name,
             position: idx,
             deliveryDate,
+            // Caller-supplied real date (webhook cruise date / portal form) —
+            // confirmed at birth so the UI shows it and checkout isn't gated.
+            deliveryDateConfirmed: true,
             deliveryTime: tab.deliveryTime || input.deliveryTime,
             deliveryAddress: address as unknown as Record<string, string>,
             orderDeadline: computeOrderDeadline(deliveryDate),

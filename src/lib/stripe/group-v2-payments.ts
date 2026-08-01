@@ -517,6 +517,15 @@ export async function handleGroupV2PaymentCompleted(
     throw new Error(`[Group V2 Payment] Participant or SubOrder not found: participant=${participantId} subOrder=${subOrderId}`);
   }
 
+  // Checkout is gated on a confirmed date, so this should be unreachable —
+  // but Order.deliveryDate/DeliveryTask.scheduledDate are NOT NULL, and a
+  // dateless order must never be written. Throwing lets Stripe retry after
+  // ops sets the date.
+  if (!subOrder.deliveryDate) {
+    throw new Error(`[Group V2 Payment] SubOrder ${subOrderId} has no delivery date — cannot create Order until one is set`);
+  }
+  const subOrderDeliveryDate = subOrder.deliveryDate;
+
   // Fetch the group once: its host first-touch attribution is inherited by this Order
   // (so the per-landing-page analytics hub attributes group revenue/conversion to the
   // page that drove the party), and its affiliate is the fallback for commission linking
@@ -654,7 +663,7 @@ export async function handleGroupV2PaymentCompleted(
       discountAmount: payment.discountAmount,
       tipAmount: payment.tipAmount,
       total: payment.total,
-      deliveryDate: subOrder.deliveryDate,
+      deliveryDate: subOrderDeliveryDate,
       deliveryTime: subOrder.deliveryTime,
       deliveryAddress: subOrder.deliveryAddress || {},
       deliveryPhone: subOrder.deliveryPhone || customerPhone || '',
@@ -784,7 +793,7 @@ export async function handleGroupV2PaymentCompleted(
     await prisma.deliveryTask.create({
       data: {
         orderId: order.id,
-        scheduledDate: subOrder.deliveryDate,
+        scheduledDate: subOrderDeliveryDate,
         scheduledTime: subOrder.deliveryTime,
         status: 'PENDING',
       },

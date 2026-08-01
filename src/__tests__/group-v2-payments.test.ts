@@ -199,6 +199,24 @@ describe('handleGroupV2PaymentCompleted', () => {
     mockPrismaGroupOrderV2FindUnique.mockResolvedValue(null);
   });
 
+  describe('dateless sub-order guard (delivery-date fix 2026-08-01)', () => {
+    it('throws (so Stripe retries) and writes no Order when the tab has no delivery date', async () => {
+      mockPrismaGroupParticipantV2FindUnique.mockResolvedValue({
+        id: 'participant-id-1',
+        groupOrderId: 'group-order-id-1',
+        customerId: 'existing-customer-id',
+        guestName: 'Party Host',
+        guestEmail: 'host@example.com',
+        guestPhone: null,
+      });
+      mockPrismaSubOrderFindUnique.mockResolvedValue({ ...baseSubOrder, deliveryDate: null });
+
+      await expect(handleGroupV2PaymentCompleted(makeSession())).rejects.toThrow(/no delivery date/);
+      expect(mockPrismaOrderCreate).not.toHaveBeenCalled();
+      expect(mockPrismaDeliveryTaskCreate).not.toHaveBeenCalled();
+    });
+  });
+
   describe('customer resolution from Stripe session (no email on participant)', () => {
     it('should create customer using Stripe session email when participant has no email', async () => {
       // Participant has no email, no customerId -- the bug scenario
