@@ -27,7 +27,19 @@ interface ApiResponse<T> {
   success: boolean;
   data?: T;
   error?: string;
+  code?: string;
   details?: unknown;
+}
+
+/** Error from the v2 API carrying the server's machine-readable `code`
+ *  (e.g. DELIVERY_DATE_REQUIRED) so callers can react beyond the message. */
+export class GroupOrdersApiError extends Error {
+  code?: string;
+  constructor(message: string, code?: string) {
+    super(message);
+    this.name = 'GroupOrdersApiError';
+    this.code = code;
+  }
 }
 
 async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
@@ -37,13 +49,15 @@ async function apiFetch<T>(url: string, options?: RequestInit): Promise<T> {
   });
   if (!res.ok) {
     let message = `Server error: ${res.status}`;
+    let code: string | undefined;
     try {
       const errJson = await res.json();
       if (errJson.error) message = errJson.error;
+      if (typeof errJson.code === 'string') code = errJson.code;
     } catch {
       // Response wasn't JSON (e.g. 502 HTML page)
     }
-    throw new Error(message);
+    throw new GroupOrdersApiError(message, code);
   }
   const json: ApiResponse<T> = await res.json();
   if (!json.success) {

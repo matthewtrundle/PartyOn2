@@ -22,7 +22,11 @@ function formatDeliveryDate(date: Date): string {
 
 export default function DashboardCustomHero({ groupOrder, theme }: Props): ReactElement {
   const firstTab = groupOrder.tabs[0];
-  const deliveryDate = firstTab ? formatDeliveryDate(new Date(firstTab.deliveryDate)) : null;
+  // Only a customer-confirmed date is real — unconfirmed/absent dates must
+  // never render (this hero used to leak the +7d placeholder).
+  const deliveryDate = firstTab?.deliveryDate && firstTab.deliveryDateConfirmed
+    ? formatDeliveryDate(new Date(firstTab.deliveryDate))
+    : null;
   const deliveryTime = firstTab?.deliveryTime ?? null;
   const cityState = firstTab
     ? `${firstTab.deliveryAddress.city}, ${firstTab.deliveryAddress.province}`

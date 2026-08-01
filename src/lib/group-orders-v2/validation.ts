@@ -68,7 +68,6 @@ export const UpdateTabSchema = z.object({
   partyType: partyTypeSchema,
   status: z.enum(['OPEN', 'LOCKED']).optional(),
   deliveryDate: deliveryDateSchema.optional(),
-  deliveryDateConfirmed: z.boolean().optional(),
   deliveryTime: z.string().optional(),
   deliveryAddress: DeliveryAddressSchema.optional(),
   deliveryPhone: z.string().optional(),

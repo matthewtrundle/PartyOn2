@@ -35,12 +35,16 @@ export default function EditTabModal({
   useEffect(() => {
     if (isOpen) {
       setName(tab.name);
-      // Convert ISO date to YYYY-MM-DD for input
-      const d = new Date(tab.deliveryDate);
-      const yyyy = d.getUTCFullYear();
-      const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
-      const dd = String(d.getUTCDate()).padStart(2, '0');
-      setDeliveryDate(`${yyyy}-${mm}-${dd}`);
+      // Convert ISO date to YYYY-MM-DD for input (blank when no date chosen yet)
+      if (tab.deliveryDate) {
+        const d = new Date(tab.deliveryDate);
+        const yyyy = d.getUTCFullYear();
+        const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+        const dd = String(d.getUTCDate()).padStart(2, '0');
+        setDeliveryDate(`${yyyy}-${mm}-${dd}`);
+      } else {
+        setDeliveryDate('');
+      }
       setDeliveryTime(tab.deliveryTime);
       setAddress1(tab.deliveryAddress?.address1 ?? '');
       setCity(tab.deliveryAddress?.city ?? '');

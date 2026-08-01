@@ -79,13 +79,14 @@ export interface SubOrderFull {
   orderType: string | null;
   partyType: PartyType | null;
   deliveryContextType: DeliveryContextType;
-  deliveryDate: string;
+  /** Null until the customer (or a real-date creation path) sets a date. */
+  deliveryDate: string | null;
   deliveryDateConfirmed: boolean;
   deliveryTime: string;
   deliveryAddress: DeliveryAddressV2;
   deliveryPhone: string | null;
   deliveryNotes: string | null;
-  orderDeadline: string;
+  orderDeadline: string | null;
   deliveryFee: number;
   deliveryFeeWaived: boolean;
   draftItems: DraftCartItemView[];
@@ -184,7 +185,6 @@ export interface UpdateTabInput {
   partyType?: PartyType;
   status?: 'OPEN' | 'LOCKED';
   deliveryDate?: string;
-  deliveryDateConfirmed?: boolean;
   deliveryTime?: string;
   deliveryAddress?: DeliveryAddressV2;
   deliveryPhone?: string;

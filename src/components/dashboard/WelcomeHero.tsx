@@ -62,7 +62,7 @@ function smartSubtitleFor(
   tab: SubOrderFull,
   partyType: PartyType | null
 ): string {
-  if (tab.deliveryDateConfirmed && tab.deliveryAddress?.city) {
+  if (tab.deliveryDate && tab.deliveryDateConfirmed && tab.deliveryAddress?.city) {
     try {
       const d = new Date(tab.deliveryDate);
       if (!isNaN(d.getTime())) {

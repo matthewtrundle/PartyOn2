@@ -61,8 +61,11 @@ export default function DeliveryFeeInvoice({
   };
 
   const now = new Date();
-  const deliveryDate = new Date(tab.deliveryDate);
-  const hoursUntilDelivery = (deliveryDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+  const deliveryDate = tab.deliveryDate ? new Date(tab.deliveryDate) : null;
+  // No date chosen yet → treat as far-future: not urgent, not past due.
+  const hoursUntilDelivery = deliveryDate
+    ? (deliveryDate.getTime() - now.getTime()) / (1000 * 60 * 60)
+    : Infinity;
   const isUrgent = hoursUntilDelivery <= 24 && hoursUntilDelivery > 0;
   const isPastDue = hoursUntilDelivery <= 0;
 

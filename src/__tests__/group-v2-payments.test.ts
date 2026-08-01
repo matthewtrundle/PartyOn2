@@ -22,6 +22,7 @@ const mockPrismaProductVariantFindUnique = vi.fn();
 const mockPrismaProductVariantFindMany = vi.fn();
 const mockPrismaGroupOrderV2FindUnique = vi.fn();
 const mockPrismaParticipantPaymentCreate = vi.fn();
+const mockPrismaParticipantPaymentUpdateMany = vi.fn();
 const mockStripeCheckoutSessionsCreate = vi.fn();
 const mockValidateDiscountCode = vi.fn();
 
@@ -30,6 +31,7 @@ vi.mock('@/lib/database/client', () => ({
     participantPayment: {
       findFirst: (...args: unknown[]) => mockPrismaParticipantPaymentFindFirst(...args),
       update: (...args: unknown[]) => mockPrismaParticipantPaymentUpdate(...args),
+      updateMany: (...args: unknown[]) => mockPrismaParticipantPaymentUpdateMany(...args),
       create: (...args: unknown[]) => mockPrismaParticipantPaymentCreate(...args),
     },
     groupParticipantV2: {
@@ -191,12 +193,31 @@ describe('handleGroupV2PaymentCompleted', () => {
     // Default: payment exists, not yet processed
     mockPrismaParticipantPaymentFindFirst.mockResolvedValue({ ...basePayment });
     mockPrismaParticipantPaymentUpdate.mockResolvedValue({});
+    mockPrismaParticipantPaymentUpdateMany.mockResolvedValue({ count: 1 });
     mockPrismaSubOrderFindUnique.mockResolvedValue({ ...baseSubOrder });
     mockPrismaPurchasedItemFindMany.mockResolvedValue([{ ...basePurchasedItem }]);
     mockPrismaOrderCreate.mockResolvedValue({ ...createdOrder });
     mockPrismaDeliveryTaskCreate.mockResolvedValue({});
     mockPrismaProductVariantFindUnique.mockResolvedValue({ costPerUnit: null });
     mockPrismaGroupOrderV2FindUnique.mockResolvedValue(null);
+  });
+
+  describe('dateless sub-order guard (delivery-date fix 2026-08-01)', () => {
+    it('throws (so Stripe retries) and writes no Order when the tab has no delivery date', async () => {
+      mockPrismaGroupParticipantV2FindUnique.mockResolvedValue({
+        id: 'participant-id-1',
+        groupOrderId: 'group-order-id-1',
+        customerId: 'existing-customer-id',
+        guestName: 'Party Host',
+        guestEmail: 'host@example.com',
+        guestPhone: null,
+      });
+      mockPrismaSubOrderFindUnique.mockResolvedValue({ ...baseSubOrder, deliveryDate: null });
+
+      await expect(handleGroupV2PaymentCompleted(makeSession())).rejects.toThrow(/no delivery date/);
+      expect(mockPrismaOrderCreate).not.toHaveBeenCalled();
+      expect(mockPrismaDeliveryTaskCreate).not.toHaveBeenCalled();
+    });
   });
 
   describe('customer resolution from Stripe session (no email on participant)', () => {
@@ -488,8 +509,10 @@ describe('handleGroupV2PaymentCompleted', () => {
 
       await handleGroupV2PaymentCompleted(makeSession());
 
-      expect(mockPrismaParticipantPaymentUpdate).toHaveBeenCalledWith({
-        where: { id: 'payment-id-1' },
+      // Conditional claim (orderId: null in the WHERE) so a concurrent Stripe
+      // retry and the reconcile cron can never both link an Order.
+      expect(mockPrismaParticipantPaymentUpdateMany).toHaveBeenCalledWith({
+        where: { id: 'payment-id-1', orderId: null },
         data: { orderId: 'order-id-1' },
       });
     });

@@ -205,6 +205,15 @@ export async function GET(request: NextRequest) {
           continue;
         }
 
+        // Order.deliveryDate is NOT NULL — a dateless tab can't be reconciled
+        // into an Order. Skip (don't kill the loop); ops sets the date and the
+        // next run picks it up.
+        if (!subOrder.deliveryDate) {
+          errors.push(`Group V2 payment ${payment.id}: subOrder has no delivery date — skipped until one is set`);
+          continue;
+        }
+        const subOrderDeliveryDate = subOrder.deliveryDate;
+
         const purchasedItems = await prisma.purchasedItem.findMany({
           where: { paymentId: payment.id },
         });
@@ -312,7 +321,7 @@ export async function GET(request: NextRequest) {
             discountCode: payment.discountCode,
             discountAmount: payment.discountAmount,
             total: payment.total,
-            deliveryDate: subOrder.deliveryDate,
+            deliveryDate: subOrderDeliveryDate,
             deliveryTime: subOrder.deliveryTime,
             deliveryAddress: subOrder.deliveryAddress || {},
             deliveryPhone: subOrder.deliveryPhone || '',
@@ -338,11 +347,17 @@ export async function GET(request: NextRequest) {
           },
         });
 
-        // Link order to payment
-        await prisma.participantPayment.update({
-          where: { id: payment.id },
+        // Link order to payment — conditional claim so a concurrent Stripe
+        // webhook retry and this cron can't both link (see group-v2-payments).
+        const claimed = await prisma.participantPayment.updateMany({
+          where: { id: payment.id, orderId: null },
           data: { orderId: order.id },
         });
+        if (claimed.count === 0) {
+          errors.push(
+            `Group V2 payment ${payment.id}: already linked by a concurrent writer — order ${order.id} (#${order.orderNumber}) is a duplicate needing manual removal`
+          );
+        }
 
         console.log(`[Reconcile] Recovered Group V2 order ${order.orderNumber} for payment ${payment.id}`);
         recovered.push(`GV2-${order.orderNumber}`);
@@ -386,7 +401,7 @@ export async function GET(request: NextRequest) {
           await prisma.deliveryTask.create({
             data: {
               orderId: order.id,
-              scheduledDate: subOrder.deliveryDate,
+              scheduledDate: subOrderDeliveryDate,
               scheduledTime: subOrder.deliveryTime,
               status: 'PENDING',
             },

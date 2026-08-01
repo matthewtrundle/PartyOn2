@@ -517,6 +517,15 @@ export async function handleGroupV2PaymentCompleted(
     throw new Error(`[Group V2 Payment] Participant or SubOrder not found: participant=${participantId} subOrder=${subOrderId}`);
   }
 
+  // Checkout is gated on a confirmed date, so this should be unreachable —
+  // but Order.deliveryDate/DeliveryTask.scheduledDate are NOT NULL, and a
+  // dateless order must never be written. Throwing lets Stripe retry after
+  // ops sets the date.
+  if (!subOrder.deliveryDate) {
+    throw new Error(`[Group V2 Payment] SubOrder ${subOrderId} has no delivery date — cannot create Order until one is set`);
+  }
+  const subOrderDeliveryDate = subOrder.deliveryDate;
+
   // Fetch the group once: its host first-touch attribution is inherited by this Order
   // (so the per-landing-page analytics hub attributes group revenue/conversion to the
   // page that drove the party), and its affiliate is the fallback for commission linking
@@ -654,7 +663,7 @@ export async function handleGroupV2PaymentCompleted(
       discountAmount: payment.discountAmount,
       tipAmount: payment.tipAmount,
       total: payment.total,
-      deliveryDate: subOrder.deliveryDate,
+      deliveryDate: subOrderDeliveryDate,
       deliveryTime: subOrder.deliveryTime,
       deliveryAddress: subOrder.deliveryAddress || {},
       deliveryPhone: subOrder.deliveryPhone || customerPhone || '',
@@ -694,11 +703,20 @@ export async function handleGroupV2PaymentCompleted(
     },
   });
 
-  // Link order to payment (acts as idempotency marker for retries)
-  await prisma.participantPayment.update({
-    where: { id: payment.id },
+  // Link order to payment (acts as idempotency marker for retries). Claim
+  // conditionally: a payment can now sit PAID-but-unlinked for a long time
+  // (dateless tab awaiting a date), so a Stripe retry and the reconcile cron
+  // could both reach here — only one writer may win, and a lost claim means
+  // this Order is a duplicate that ops must remove.
+  const claimed = await prisma.participantPayment.updateMany({
+    where: { id: payment.id, orderId: null },
     data: { orderId: order.id },
   });
+  if (claimed.count === 0) {
+    console.error(
+      `[Group V2 Payment] DUPLICATE ORDER: payment ${payment.id} was already linked by a concurrent writer — order ${order.id} (#${order.orderNumber}) is an orphan and needs manual removal`
+    );
+  }
 
   // If delivery fee was bundled OR waived by an affiliate perk, mark the tab as waived
   // so the separate host-invoice flow won't charge it later.
@@ -784,7 +802,7 @@ export async function handleGroupV2PaymentCompleted(
     await prisma.deliveryTask.create({
       data: {
         orderId: order.id,
-        scheduledDate: subOrder.deliveryDate,
+        scheduledDate: subOrderDeliveryDate,
         scheduledTime: subOrder.deliveryTime,
         status: 'PENDING',
       },

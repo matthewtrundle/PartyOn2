@@ -18,14 +18,18 @@ export default function TabDeliveryInfo({ tab, isHost, onEdit }: Props): ReactEl
       <div className="space-y-2">
         <div className="flex items-center gap-3 flex-wrap">
           <span className="text-lg font-semibold text-gray-900">
-            {new Date(tab.deliveryDate).toLocaleDateString('en-US', {
-              weekday: 'long',
-              month: 'long',
-              day: 'numeric',
-              timeZone: 'UTC',
-            })}
+            {tab.deliveryDate
+              ? new Date(tab.deliveryDate).toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  month: 'long',
+                  day: 'numeric',
+                  timeZone: 'UTC',
+                })
+              : 'Date TBD'}
           </span>
-          <span className="text-lg text-gray-500">at {tab.deliveryTime}</span>
+          {tab.deliveryTime && tab.deliveryTime !== 'TBD' && (
+            <span className="text-lg text-gray-500">at {tab.deliveryTime}</span>
+          )}
           {isPastDeadline && (
             <span className="text-sm font-semibold px-3 py-1 rounded-full bg-red-100 text-red-700">
               Past Deadline

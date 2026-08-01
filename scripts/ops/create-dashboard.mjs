@@ -167,7 +167,7 @@ async function findPossibleDuplicates({ customer_name, customer_email, cruise_da
   if (cruise_date) {
     const target = cruise_date.slice(0, 10);
     const dateMatches = candidates.filter((c) =>
-      c.tabs.some((t) => t.deliveryDate.toISOString().slice(0, 10) === target)
+      c.tabs.some((t) => t.deliveryDate?.toISOString().slice(0, 10) === target)
     );
     if (dateMatches.length > 0) return dateMatches;
   }
@@ -235,6 +235,7 @@ async function createDashboard({ customer, affiliate, skipGhl }) {
             name: cruiseTabName,
             position: 0,
             deliveryDate,
+            deliveryDateConfirmed: true,
             deliveryTime,
             deliveryAddress: marinaAddr,
             orderDeadline,
@@ -245,6 +246,7 @@ async function createDashboard({ customer, affiliate, skipGhl }) {
             name: LODGING_TAB_NAME,
             position: 1,
             deliveryDate,
+            deliveryDateConfirmed: true,
             deliveryTime,
             deliveryAddress: lodgingAddr,
             orderDeadline,

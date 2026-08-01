@@ -105,13 +105,15 @@ export default function CheckoutSummaryModal({
         <div className="bg-whiteSoft rounded-lg p-3 mb-4 text-sm text-gray-500">
           <p className="font-medium text-gray-900">{tab.name}</p>
           <p>
-            {new Date(tab.deliveryDate).toLocaleDateString('en-US', {
-              weekday: 'short',
-              month: 'short',
-              day: 'numeric',
-              timeZone: 'UTC',
-            })}{' '}
-            at {tab.deliveryTime}
+            {tab.deliveryDate
+              ? new Date(tab.deliveryDate).toLocaleDateString('en-US', {
+                  weekday: 'short',
+                  month: 'short',
+                  day: 'numeric',
+                  timeZone: 'UTC',
+                })
+              : 'Date TBD'}
+            {tab.deliveryTime && tab.deliveryTime !== 'TBD' ? ` at ${tab.deliveryTime}` : ''}
           </p>
           <p>
             {addr?.address1 ?? ''}{addr?.city ? `, ${addr.city}` : ''}{addr?.province ? `, ${addr.province}` : ''} {addr?.zip ?? ''}

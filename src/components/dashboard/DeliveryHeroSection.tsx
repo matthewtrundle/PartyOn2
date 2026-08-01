@@ -20,7 +20,7 @@ interface Props {
   onVibePickerOpen: () => void;
 }
 
-function formatDeliveryDate(dateStr: string): string {
+function formatDeliveryDate(dateStr: string | null): string {
   if (!dateStr || dateStr === 'TBD') return '';
   try {
     const d = new Date(dateStr);
@@ -287,34 +287,50 @@ export default function DeliveryHeroSection({
             (right below this section) already covers the "I don't know what
             to buy" path more clearly. */}
         <div data-tour="delivery-details" className="mt-3 mx-0 md:mx-2 bg-white shadow-warm-md rounded-2xl overflow-hidden">
+          {/* Collapsed row. With a confirmed date it summarizes + toggles the
+              accordion; without one it becomes the always-visible "Add your
+              delivery date" CTA that opens the date modal directly \u2014 the old
+              buried-in-accordion prompt is how wrong-date orders slipped
+              through (2026-08-01 fix). */}
           <button
-            onClick={() => setDetailsOpen(!detailsOpen)}
+            onClick={() => (dateConfirmed ? setDetailsOpen(!detailsOpen) : onEditDelivery())}
             className="w-full flex items-center justify-between px-5 py-3 hover:bg-cream transition-colors"
           >
             <span className="text-sm text-gray-700 flex items-center gap-2 min-w-0">
-              {hasDetails ? (
-                <>
-                  <svg className="w-4 h-4 text-gold flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  <span className="truncate">
-                    {deliveryDate}
-                    {deliveryTime ? ` at ${deliveryTime}` : ''}
-                    {addr?.address1 ? `${deliveryDate ? ' \u2022 ' : ''}${addr.address1}${addr.city ? ', ' + addr.city : ''}` : ''}
-                  </span>
-                </>
+              <svg className={`w-4 h-4 flex-shrink-0 ${dateConfirmed ? 'text-gold' : 'text-brand-blue'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              {dateConfirmed ? (
+                <span className="truncate">
+                  {deliveryDate}
+                  {deliveryTime ? ` at ${deliveryTime}` : ''}
+                  {addr?.address1 ? ` \u2022 ${addr.address1}${addr.city ? ', ' + addr.city : ''}` : ''}
+                </span>
               ) : (
-                <span className="text-gray-500">Order details</span>
+                <span className="min-w-0 flex items-center gap-2">
+                  <span className="text-brand-blue font-semibold whitespace-nowrap">Add your delivery date</span>
+                  {addr?.address1 && (
+                    <span className="truncate text-gray-500">
+                      {'\u2022'} {addr.address1}{addr.city ? `, ${addr.city}` : ''}
+                    </span>
+                  )}
+                </span>
               )}
             </span>
-            <svg
-              className={`w-5 h-5 text-gray-500 transition-transform duration-200 flex-shrink-0 ml-2 ${detailsOpen ? 'rotate-180' : ''}`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
-            </svg>
+            {dateConfirmed ? (
+              <svg
+                className={`w-5 h-5 text-gray-500 transition-transform duration-200 flex-shrink-0 ml-2 ${detailsOpen ? 'rotate-180' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+              </svg>
+            ) : (
+              <svg className="w-5 h-5 text-brand-blue flex-shrink-0 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+              </svg>
+            )}
           </button>
 
           {/* Expandable details panel */}

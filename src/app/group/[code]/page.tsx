@@ -130,8 +130,10 @@ export default function JoinGroupPage(): ReactElement {
             >
               <span className="text-gray-700">{tab.name}</span>
               <span className="text-gray-500">
-                {new Date(tab.deliveryDate).toLocaleDateString('en-US', { timeZone: 'UTC' })} at{' '}
-                {tab.deliveryTime}
+                {tab.deliveryDate
+                  ? new Date(tab.deliveryDate).toLocaleDateString('en-US', { timeZone: 'UTC' })
+                  : 'Date TBD'}
+                {tab.deliveryTime && tab.deliveryTime !== 'TBD' ? ` at ${tab.deliveryTime}` : ''}
               </span>
             </div>
           ))}
