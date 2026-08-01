@@ -24,6 +24,21 @@
  *            delivery invoices → delivery_date = NULL, order_deadline = NULL.
  *            ONLY AFTER THE NEW CODE IS LIVE — old serializers crash on NULL.
  *
+ *   audit    Read-only list of unconfirmed fake-pattern tabs WITH money
+ *            attached (purchases / pending or paid payments / paid delivery
+ *            invoice). These are the bug's actual victims — phases above
+ *            deliberately never touch them; ops reviews this list by hand.
+ *
+ * DEPLOY RUNBOOK (order matters):
+ *   1. `--phase confirm --apply` (optional pre-deploy — safe under old code)
+ *   2. Deploy the new code.
+ *   3. `--phase confirm --apply` AGAIN — the old code kept creating
+ *      unconfirmed-real-date rows (webhook/quote/portal) until the moment it
+ *      was replaced; without this re-run those customers get re-prompted for
+ *      a date they already gave, and a real date sitting +7-8d out would be
+ *      WIPED by phase null.
+ *   4. `--phase null` dry-run → review the FULL list → `--apply`.
+ *
  * Report-only by default; `--apply` performs the update.
  *
  * Usage:
@@ -31,6 +46,7 @@
  *   node scripts/ops/backfill-suborder-delivery-dates.mjs --phase confirm --apply
  *   node scripts/ops/backfill-suborder-delivery-dates.mjs --phase null
  *   node scripts/ops/backfill-suborder-delivery-dates.mjs --phase null --apply
+ *   node scripts/ops/backfill-suborder-delivery-dates.mjs --phase audit
  * Load env first: set -a && source .env.local && set +a
  */
 import { PrismaClient } from '@prisma/client';
@@ -45,21 +61,28 @@ const PHASE = phaseIdx === -1
     ? argv[phaseIdx].split('=')[1]
     : argv[phaseIdx + 1];
 
-if (PHASE !== 'confirm' && PHASE !== 'null') {
-  console.error('Usage: backfill-suborder-delivery-dates.mjs --phase confirm|null [--apply]');
+if (PHASE !== 'confirm' && PHASE !== 'null' && PHASE !== 'audit') {
+  console.error('Usage: backfill-suborder-delivery-dates.mjs --phase confirm|null|audit [--apply]');
   process.exit(1);
 }
 
 // The fake default was always createdAt+7d (Sunday-bumped to +8), forced to
-// noon UTC. Any PATCHed date is already confirmed=true, so an unconfirmed
-// date matching this pattern is the placeholder; one that doesn't is a real
-// caller-supplied date.
+// noon UTC. Heuristic, not proof: dates PATCHed before deliveryDateConfirmed
+// existed (pre 2026-05-05) are unconfirmed too, and several real-date paths
+// also store noon UTC — a real date that happens to sit exactly 7-8 days from
+// creation is a false positive. That's why phase null additionally requires
+// OPEN + zero purchases/payments/invoices (worst case: a live prospect is
+// re-asked for their date), and why the full list gets reviewed pre-apply.
 const FAKE_PATTERN = `
   s.delivery_date IS NOT NULL
   AND s.delivery_date::time = '12:00:00'
   AND (s.delivery_date::date - s.created_at::date) BETWEEN 7 AND 8
 `;
 
+// SAFETY INVARIANT for the $queryRawUnsafe/$executeRawUnsafe calls below:
+// every SQL fragment is a fixed string constant — no variable (CLI arg, env,
+// row value) is ever interpolated. Keep it that way; interpolating anything
+// here would open SQL injection.
 const SELECT_COLS = `
   SELECT g.share_code AS "shareCode", g.name AS "groupName", g.source::text AS source,
          s.name AS "tabName", s.status::text AS "tabStatus",
@@ -67,18 +90,18 @@ const SELECT_COLS = `
   FROM sub_orders s JOIN group_orders_v2 g ON g.id = s.group_order_id
 `;
 
-async function report(label, whereSql) {
+async function report(label, whereSql, sampleLimit = 10) {
   const rows = await prisma.$queryRawUnsafe(`${SELECT_COLS} WHERE ${whereSql} ORDER BY s.created_at DESC`);
   const bySource = {};
   for (const r of rows) bySource[r.source] = (bySource[r.source] || 0) + 1;
   console.log(`\n${label}: ${rows.length} tab(s)  ${JSON.stringify(bySource)}`);
-  for (const r of rows.slice(0, 10)) {
+  for (const r of rows.slice(0, sampleLimit)) {
     console.log(
       `  ${r.shareCode}  [${r.source}/${r.tabStatus}]  "${r.tabName}" of "${r.groupName}"  ` +
       `created ${r.createdAt.toISOString().slice(0, 10)}  date ${r.deliveryDate ? r.deliveryDate.toISOString().slice(0, 10) : 'NULL'}`
     );
   }
-  if (rows.length > 10) console.log(`  … and ${rows.length - 10} more`);
+  if (rows.length > sampleLimit) console.log(`  … and ${rows.length - sampleLimit} more`);
   return rows.length;
 }
 
@@ -123,9 +146,11 @@ async function main() {
       AND NOT EXISTS (SELECT 1 FROM participant_payments pp
                       WHERE pp.sub_order_id = s.id AND pp.status IN ('PENDING', 'PAID'))
       AND NOT EXISTS (SELECT 1 FROM group_delivery_invoices gi
-                      WHERE gi.sub_order_id = s.id AND gi.status = 'PAID')
+                      WHERE gi.sub_order_id = s.id AND gi.status IN ('PENDING', 'PAID'))
     `;
-    const n = await report('NULL — fake-pattern placeholder dates on open, unpaid, non-webhook tabs', whereNull);
+    // Full list, not a sample — the fake-pattern heuristic can false-positive
+    // (real date exactly +7-8d out); a human scans every row before --apply.
+    const n = await report('NULL — fake-pattern placeholder dates on open, unpaid, non-webhook tabs', whereNull, Infinity);
 
     if (APPLY) {
       const u = await prisma.$executeRawUnsafe(
@@ -134,6 +159,26 @@ async function main() {
       );
       console.log(`\nAPPLIED: cleared ${u} row(s) (expected ${n}).`);
     }
+  }
+
+  if (PHASE === 'audit') {
+    const whereAudit = `
+      g.source <> 'WEBHOOK'
+      AND s.delivery_date_confirmed = false
+      AND ${FAKE_PATTERN}
+      AND (
+        EXISTS (SELECT 1 FROM purchased_items pi WHERE pi.sub_order_id = s.id)
+        OR EXISTS (SELECT 1 FROM participant_payments pp
+                   WHERE pp.sub_order_id = s.id AND pp.status IN ('PENDING', 'PAID'))
+        OR EXISTS (SELECT 1 FROM group_delivery_invoices gi
+                   WHERE gi.sub_order_id = s.id AND gi.status = 'PAID')
+      )
+    `;
+    await report(
+      'AUDIT (read-only) — fake-pattern tabs WITH money attached: these orders may have shipped on the placeholder date; review by hand',
+      whereAudit,
+      Infinity
+    );
   }
 
   if (!APPLY) console.log('\nDry run only — nothing written.');

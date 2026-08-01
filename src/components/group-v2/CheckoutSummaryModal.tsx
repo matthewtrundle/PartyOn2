@@ -112,8 +112,8 @@ export default function CheckoutSummaryModal({
                   day: 'numeric',
                   timeZone: 'UTC',
                 })
-              : 'Date TBD'}{' '}
-            at {tab.deliveryTime}
+              : 'Date TBD'}
+            {tab.deliveryTime && tab.deliveryTime !== 'TBD' ? ` at ${tab.deliveryTime}` : ''}
           </p>
           <p>
             {addr?.address1 ?? ''}{addr?.city ? `, ${addr.city}` : ''}{addr?.province ? `, ${addr.province}` : ''} {addr?.zip ?? ''}

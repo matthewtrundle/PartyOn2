@@ -518,15 +518,15 @@ export async function updateTab(
   if (input.deliveryPhone !== undefined) data.deliveryPhone = input.deliveryPhone || null;
   if (input.deliveryNotes !== undefined) data.deliveryNotes = input.deliveryNotes || null;
   if (input.deliveryContextType) data.deliveryContextType = input.deliveryContextType;
+  // Setting a date is the ONLY way confirmed flips true — it means "a human
+  // chose this date." A bare confirmed:true PATCH would bless legacy fake
+  // placeholder dates, re-creating the wrong-date bug via the API.
   if (input.deliveryDate) {
     const deliveryDate = new Date(input.deliveryDate);
     deliveryDate.setUTCHours(12, 0, 0, 0);
     data.deliveryDate = deliveryDate;
     data.orderDeadline = computeOrderDeadline(deliveryDate);
     data.deliveryDateConfirmed = true;
-  }
-  if (input.deliveryDateConfirmed !== undefined) {
-    data.deliveryDateConfirmed = input.deliveryDateConfirmed;
   }
 
   const tab = await prisma.subOrder.update({

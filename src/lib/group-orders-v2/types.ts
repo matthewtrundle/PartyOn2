@@ -185,7 +185,6 @@ export interface UpdateTabInput {
   partyType?: PartyType;
   status?: 'OPEN' | 'LOCKED';
   deliveryDate?: string;
-  deliveryDateConfirmed?: boolean;
   deliveryTime?: string;
   deliveryAddress?: DeliveryAddressV2;
   deliveryPhone?: string;

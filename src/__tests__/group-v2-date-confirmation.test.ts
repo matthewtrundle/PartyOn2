@@ -213,4 +213,19 @@ describe('updateTab delivery date', () => {
     expect(data.deliveryDate).toBeUndefined();
     expect(data.deliveryDateConfirmed).toBeUndefined();
   });
+
+  // Security pin: confirmed means "a human chose this date" and the ONLY way
+  // to flip it is to supply a date. A bare confirmed:true (API-only call —
+  // any share-code guest can PATCH tabs) must be stripped by validation and
+  // ignored by the service, else legacy fake placeholder dates become
+  // chargeable and the wrong-date bug returns.
+  it('a bare deliveryDateConfirmed:true cannot flip the flag (schema strips it, service ignores it)', async () => {
+    const { UpdateTabSchema } = await import('@/lib/group-orders-v2/validation');
+    const parsed = UpdateTabSchema.parse({ deliveryDateConfirmed: true });
+    expect(parsed).not.toHaveProperty('deliveryDateConfirmed');
+
+    await updateTab('tab-1', { deliveryDateConfirmed: true } as never);
+    const data = mockSubOrderUpdate.mock.calls[0][0].data;
+    expect(data.deliveryDateConfirmed).toBeUndefined();
+  });
 });

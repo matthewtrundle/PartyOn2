@@ -27,7 +27,9 @@ export default function TabDeliveryInfo({ tab, isHost, onEdit }: Props): ReactEl
                 })
               : 'Date TBD'}
           </span>
-          <span className="text-lg text-gray-500">at {tab.deliveryTime}</span>
+          {tab.deliveryTime && tab.deliveryTime !== 'TBD' && (
+            <span className="text-lg text-gray-500">at {tab.deliveryTime}</span>
+          )}
           {isPastDeadline && (
             <span className="text-sm font-semibold px-3 py-1 rounded-full bg-red-100 text-red-700">
               Past Deadline

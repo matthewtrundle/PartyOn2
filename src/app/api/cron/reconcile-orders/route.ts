@@ -347,11 +347,17 @@ export async function GET(request: NextRequest) {
           },
         });
 
-        // Link order to payment
-        await prisma.participantPayment.update({
-          where: { id: payment.id },
+        // Link order to payment — conditional claim so a concurrent Stripe
+        // webhook retry and this cron can't both link (see group-v2-payments).
+        const claimed = await prisma.participantPayment.updateMany({
+          where: { id: payment.id, orderId: null },
           data: { orderId: order.id },
         });
+        if (claimed.count === 0) {
+          errors.push(
+            `Group V2 payment ${payment.id}: already linked by a concurrent writer — order ${order.id} (#${order.orderNumber}) is a duplicate needing manual removal`
+          );
+        }
 
         console.log(`[Reconcile] Recovered Group V2 order ${order.orderNumber} for payment ${payment.id}`);
         recovered.push(`GV2-${order.orderNumber}`);
