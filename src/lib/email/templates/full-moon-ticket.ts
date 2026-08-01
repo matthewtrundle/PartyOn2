@@ -73,7 +73,7 @@ export function generateFullMoonTicketEmail(data: FullMoonTicketData): string {
   const name = firstName(data.customerName);
   const qty = Math.max(1, Math.floor(data.quantity));
   const ratePct = `${(TICKET_TAX_RATE * 100).toFixed(2).replace(/\.?0+$/, '')}%`;
-  const drinksUrl = `${BASE}/order?utm_source=email&utm_medium=transactional&utm_campaign=full-moon-aug28`;
+  const drinksUrl = `${BASE}/full-moon-drinks?utm_source=email&utm_medium=transactional&utm_campaign=full-moon-aug28`;
   const shareUrl = `${EVENT.shareUrl}?utm_source=email&utm_medium=transactional&utm_campaign=full-moon-aug28-share`;
 
   return `<!DOCTYPE html>

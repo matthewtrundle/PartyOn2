@@ -307,7 +307,9 @@ export const LANDING_PAGES: LandingPageDef[] = [
     // moved. Both /full-moon and the retired /full-moon-aug1 301 here and stay
     // as aliases, so the Aug 1 traffic still rolls into this page's numbers.
     canonicalPath: '/full-moon-aug28',
-    aliasPaths: ['/full-moon', '/full-moon-aug1'],
+    // /full-moon-drinks is the ticket-holder drink-ordering lander — its
+    // traffic and CTA clicks roll into this tab.
+    aliasPaths: ['/full-moon', '/full-moon-aug1', '/full-moon-drinks'],
     // Instrumented as of the Aug 28 rebuild — the Aug 1 run had no
     // trackCTAClick calls at all, so an empty CTA table was indistinguishable
     // from a page nobody clicked.
