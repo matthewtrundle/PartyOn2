@@ -245,7 +245,10 @@ function OrderRedirectInner(): ReactElement {
         affiliateId,
         source,
         name: eventPreset?.name ?? (nameParam ? `${nameParam}'s Order` : undefined),
-        deliveryAddress: presets?.address,
+        // Event preset address wins (POD-owned events carry their own venue,
+        // no affiliate ref/attribution needed); affiliate preset is the
+        // partner-lander path.
+        deliveryAddress: eventPreset?.address ?? presets?.address,
         tabName: eventPreset?.tabName ?? presets?.tabName,
         deliveryDate: eventPreset?.deliveryDate,
         deliveryTime: eventPreset?.deliveryTime,

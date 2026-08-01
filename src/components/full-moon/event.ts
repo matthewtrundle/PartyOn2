@@ -136,8 +136,16 @@ export const EVENT: FullMoonEvent = {
   minimum: 32,
   deadlineDays: 7,
   shareUrl: 'https://partyondelivery.com/full-moon-aug28',
-  ordersUrl: '/order',
+  ordersUrl: '/full-moon-drinks',
 };
+
+/**
+ * Where the drinks lander's CTA sends buyers: /order in event-preset mode.
+ * Each ticket holder gets their OWN order (per Allan — no shared dashboard),
+ * pre-filled with the marina address, Aug 28, and the dock-handoff window via
+ * the 'full-moon' entry in src/lib/events/event-presets.ts.
+ */
+export const DRINKS_ORDER_PATH = '/order?event=full-moon&p=boat&d=boat';
 
 /**
  * Sales tax on tickets — TAX-INCLUDED pricing (Allan's call 2026-07-29,

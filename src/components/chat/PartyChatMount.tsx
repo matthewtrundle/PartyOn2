@@ -42,6 +42,7 @@ const HIDE_PATTERNS: RegExp[] = [
   // Full Moon Party lander — has its own share FAB; keep it distraction-free.
   /^\/full-moon-aug28(\/|$)/,
   /^\/full-moon-thanks(\/|$)/,
+  /^\/full-moon-drinks(\/|$)/,
   // Premier Concierge landers — own questionnaire modal; no drink-planner bubble.
   /^\/austin-bachelor-concierge(\/|$)/,
   /^\/austin-bachelorette-concierge(\/|$)/,

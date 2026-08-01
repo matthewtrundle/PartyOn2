@@ -83,7 +83,7 @@ export default function FullMoonThanksPage(): ReactElement {
             them <strong className="text-white">iced in a cooler waiting at the dock</strong>, loaded at cast off.
           </p>
           <Link
-            href="/order?utm_source=thanks&utm_medium=web&utm_campaign=full-moon-aug28"
+            href="/full-moon-drinks?utm_source=thanks&utm_medium=web&utm_campaign=full-moon-aug28"
             className="inline-block rounded-lg bg-brand-yellow px-6 py-3 text-sm font-semibold tracking-[0.08em] uppercase text-gray-900 no-underline hover:opacity-90"
           >
             Order your drinks
