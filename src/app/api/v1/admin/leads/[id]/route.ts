@@ -242,6 +242,8 @@ const patchSchema = z
     notes: z.string().max(10_000).nullable().optional(),
     owner: z.string().max(40).nullable().optional(),
     snoozedUntil: z.string().datetime().nullable().optional(),
+    /** Where the snooze came from — recorded on the audit event. */
+    source: z.enum(['drawer', 'queue']).optional(),
   })
   .refine(
     (v) => v.notes !== undefined || v.owner !== undefined || v.snoozedUntil !== undefined,
@@ -264,18 +266,39 @@ export async function PATCH(
   }
 
   try {
-    const lead = await prisma.lead.update({
-      where: { id },
-      data: {
-        notes: body.notes === undefined ? undefined : body.notes,
-        owner: body.owner === undefined ? undefined : body.owner,
-        snoozedUntil:
-          body.snoozedUntil === undefined
-            ? undefined
-            : body.snoozedUntil === null
-              ? null
-              : new Date(body.snoozedUntil),
-      },
+    // Snooze hides a card from the board, so it needs a trail — without one,
+    // "why did 40 leads vanish?" has no answer. Written in the same transaction
+    // as the snooze itself: a crash between the two must not leave a hidden
+    // lead with no event explaining it (the invariant transitionStage holds
+    // for stage changes).
+    const lead = await prisma.$transaction(async (tx) => {
+      const updated = await tx.lead.update({
+        where: { id },
+        data: {
+          notes: body.notes === undefined ? undefined : body.notes,
+          owner: body.owner === undefined ? undefined : body.owner,
+          snoozedUntil:
+            body.snoozedUntil === undefined
+              ? undefined
+              : body.snoozedUntil === null
+                ? null
+                : new Date(body.snoozedUntil),
+        },
+      });
+      if (body.snoozedUntil !== undefined) {
+        await tx.leadEvent.create({
+          data: {
+            leadId: id,
+            type: 'CUSTOM',
+            metadata: {
+              kind: 'lead.snoozed',
+              until: body.snoozedUntil,
+              source: body.source ?? 'drawer',
+            } as never,
+          },
+        });
+      }
+      return updated;
     });
     return NextResponse.json({ success: true, data: { lead } });
   } catch {

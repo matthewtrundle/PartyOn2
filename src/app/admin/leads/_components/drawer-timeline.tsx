@@ -29,6 +29,9 @@ function eventLabel(e: LeadDetail['events'][number]): string {
     return `Stage: ${meta.from ?? 'off board'} → ${meta.to} (${meta.via})`;
   }
   if (meta.kind === 'email.reply') return `Replied by email: "${meta.subject}"`;
+  if (meta.kind === 'lead.snoozed') {
+    return meta.until ? `Snoozed until ${meta.until}` : 'Un-snoozed';
+  }
   if (meta.kind === 'outreach.logged') {
     return `Logged ${meta.channel === 'call' ? 'a call' : meta.channel === 'text' ? 'a text' : 'outreach'}`;
   }
