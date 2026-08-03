@@ -751,7 +751,14 @@ describe('LeadQueue — double-fire guard', () => {
     await atCard('1 / 3');
 
     press('c');
-    await screen.findByText('Saving…');
+    // Anchor on the dispatched mutation, not on the "Saving…" label. The label
+    // is a transient render, and waiting for it was this test's only real
+    // dependency on scheduling latency — it timed out on a contended CI runner
+    // even though the guard itself was working. The call count IS the contract.
+    await waitFor(() => expect(logTouch).toHaveBeenCalledTimes(1));
+    // The bar still has to show the write is in flight — kept as coverage, but
+    // retried instead of raced.
+    await waitFor(() => expect(screen.getByText('Saving…')).toBeInTheDocument());
 
     // Same key again, then a different write key, then all the way down the
     // Lost path — X only opens the reason row, so the digit is what would
