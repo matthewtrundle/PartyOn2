@@ -7,15 +7,21 @@
  * any customer's profile image (or fill the bucket) with no account at all,
  * and GET could read any customer's image back.
  *
+ * Storage goes through the SERVICE ROLE client, not the anon client. Our
+ * customer session is a `jose` JWT cookie, not Supabase Auth, so storage RLS
+ * has no `auth.uid()` to key on — checking the session in this handler while
+ * writing with the anon key would leave the bucket reachable directly with a
+ * key that is non-secret by design, reproducing the original bug.
+ *
  * The upload is also constrained to real images: the stored content type is
- * chosen from an allow-list rather than echoed from the request, and the
- * extension is derived from that type rather than from the client's filename.
- * Both files are served from a public Supabase URL, so an attacker-chosen
- * content type is a stored-XSS vector.
+ * chosen from an allow-list rather than echoed from the request, the extension
+ * is derived from that type rather than the client's filename, and the bytes
+ * must actually begin with that format's signature. Objects are served from a
+ * public URL, so an attacker-chosen content type would be a stored-XSS vector.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase/client';
+import { getSupabaseServerClient } from '@/lib/supabase/server-client';
 import { getSession } from '@/lib/auth/session';
 
 /** Content types we will store, mapped to the extension we save them under. */
@@ -27,6 +33,28 @@ const ALLOWED_IMAGE_TYPES: Record<string, string> = {
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB
 
+/** Does the byte stream actually start like the type it claims to be? */
+function hasMatchingSignature(type: string, bytes: Uint8Array): boolean {
+  if (bytes.length < 12) return false;
+  switch (type) {
+    case 'image/jpeg':
+      return bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+    case 'image/png':
+      return (
+        bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47 &&
+        bytes[4] === 0x0d && bytes[5] === 0x0a && bytes[6] === 0x1a && bytes[7] === 0x0a
+      );
+    case 'image/webp': {
+      const ascii = (i: number) => String.fromCharCode(bytes[i]);
+      const riff = ascii(0) + ascii(1) + ascii(2) + ascii(3);
+      const webp = ascii(8) + ascii(9) + ascii(10) + ascii(11);
+      return riff === 'RIFF' && webp === 'WEBP';
+    }
+    default:
+      return false;
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const session = await getSession();
@@ -34,6 +62,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Sign in to upload a profile image' }, { status: 401 });
     }
     const customerId = session.customerId;
+
+    // Reject oversized bodies BEFORE formData() buffers the whole upload into
+    // memory. The post-parse size check below still stands as the real gate —
+    // this only avoids doing the parse at all for an obviously-too-large body.
+    const declaredLength = Number(request.headers.get('content-length') ?? 0);
+    if (declaredLength > MAX_IMAGE_BYTES) {
+      return NextResponse.json({ error: 'Image must be 5 MB or smaller' }, { status: 413 });
+    }
 
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
@@ -53,51 +89,45 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Image must be 5 MB or smaller' }, { status: 400 });
     }
 
-    // If Supabase is not configured, use base64 fallback
-    if (!supabase) {
-      const bytes = await file.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-      const base64 = `data:${file.type};base64,${buffer.toString('base64')}`;
-
-      return NextResponse.json({
-        url: base64,
-        storage: 'localStorage'
-      });
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    if (!hasMatchingSignature(file.type, bytes)) {
+      return NextResponse.json(
+        { error: "That file doesn't look like a real image" },
+        { status: 400 }
+      );
     }
 
-    // Upload to Supabase Storage. Path and content type both come from values
-    // we control — never from the filename or the declared type.
+    const supabase = getSupabaseServerClient();
+
+    // If Supabase is not configured, use base64 fallback
+    if (!supabase) {
+      const base64 = `data:${file.type};base64,${Buffer.from(bytes).toString('base64')}`;
+      return NextResponse.json({ url: base64, storage: 'localStorage' });
+    }
+
+    // Path, content type and extension all come from values we control —
+    // never from the filename or the declared type alone.
     const fileName = `${customerId}/profile.${extension}`;
 
     const { data, error } = await supabase.storage
       .from('profile-images')
-      .upload(fileName, file, {
+      .upload(fileName, bytes, {
         upsert: true,
-        contentType: file.type
+        contentType: file.type,
       });
 
     if (error) {
       console.error('Supabase upload error:', error);
       // Fallback to base64 if Supabase fails
-      const bytes = await file.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-      const base64 = `data:${file.type};base64,${buffer.toString('base64')}`;
-
-      return NextResponse.json({
-        url: base64,
-        storage: 'localStorage'
-      });
+      const base64 = `data:${file.type};base64,${Buffer.from(bytes).toString('base64')}`;
+      return NextResponse.json({ url: base64, storage: 'localStorage' });
     }
 
-    // Get public URL
     const { data: { publicUrl } } = supabase.storage
       .from('profile-images')
       .getPublicUrl(data.path);
 
-    return NextResponse.json({
-      url: publicUrl,
-      storage: 'supabase'
-    });
+    return NextResponse.json({ url: publicUrl, storage: 'supabase' });
 
   } catch (error) {
     console.error('Upload error:', error);
@@ -115,13 +145,12 @@ export async function GET() {
   }
   const customerId = session.customerId;
 
-  // If Supabase is not configured, return null
+  const supabase = getSupabaseServerClient();
   if (!supabase) {
     return NextResponse.json({ url: null });
   }
 
   try {
-    // List files for this customer
     const { data, error } = await supabase.storage
       .from('profile-images')
       .list(customerId);
@@ -130,7 +159,6 @@ export async function GET() {
       return NextResponse.json({ url: null });
     }
 
-    // Get public URL for the profile image
     const { data: { publicUrl } } = supabase.storage
       .from('profile-images')
       .getPublicUrl(`${customerId}/${data[0].name}`);

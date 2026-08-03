@@ -227,7 +227,6 @@ v1 `/api/group-orders/*` and v2 `/api/v2/group-orders/*` are **both live** — v
 | `/api/v2/group-orders/validate-promo` | `.../validate-promo/route.ts` | POST | Validate promo. | No |
 | `/api/v2/group-orders/[code]` | `.../[code]/route.ts` | GET/PATCH | Group detail. | Soft |
 | `/api/v2/group-orders/[code]/claim-host` | `.../claim-host/route.ts` | POST | Claim host via token. | Token |
-| `/api/v2/group-orders/[code]/host-claim-token` | `.../host-claim-token/route.ts` | POST | Mint claim token. | Yes |
 | `/api/v2/group-orders/[code]/join` | `.../join/route.ts` | POST | Guest joins. | No |
 | `/api/v2/group-orders/[code]/participants/[pid]` | `.../participants/[pid]/route.ts` | PATCH/DELETE | Manage participant. | Host |
 | `/api/v2/group-orders/[code]/recommendations` | `.../recommendations/route.ts` | GET | AI recs. | Soft |
