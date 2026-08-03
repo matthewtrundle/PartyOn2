@@ -42,6 +42,27 @@ function makeRequest(body: Record<string, unknown> = {}): NextRequest {
 
 const PARAMS = { params: Promise.resolve({ code: 'ABC123', tabId: 'tab-1' }) };
 
+/**
+ * Dates are computed relative to Austin's today, never hardcoded — the
+ * past-date gate compares against todayCT(), so a literal like
+ * '2026-08-22' would silently start failing the day it goes stale.
+ */
+const ctDay = (offsetDays: number): string => {
+  const d = new Date();
+  d.setUTCDate(d.getUTCDate() + offsetDays);
+  const day = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Chicago',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(d);
+  return `${day}T12:00:00.000Z`;
+};
+
+const FUTURE_DATE = ctDay(30);
+const TODAY_DATE = ctDay(0);
+const PAST_DATE = ctDay(-1);
+
 function group(tabOverrides: Record<string, unknown> = {}) {
   return {
     id: 'g1',
@@ -51,7 +72,7 @@ function group(tabOverrides: Record<string, unknown> = {}) {
         id: 'tab-1',
         name: 'Boat Order',
         status: 'OPEN',
-        deliveryDate: '2026-08-22T12:00:00.000Z',
+        deliveryDate: FUTURE_DATE,
         deliveryDateConfirmed: true,
         deliveryTime: '12:00 PM - 2:00 PM',
         deliveryAddress: { address1: '16405 Clara Van St', city: 'Austin', zip: '78734' },
@@ -122,6 +143,98 @@ for (const [label, post] of [
 
       expect(res.status).toBe(200);
       expect(json.success).toBe(true);
+      expect(paymentsMock.createGroupV2CheckoutSession).toHaveBeenCalledOnce();
+    });
+
+    it('rejects a delivery date that has already passed', async () => {
+      serviceMock.getGroupOrderByCode.mockResolvedValue(group({ deliveryDate: PAST_DATE }));
+
+      const res = await post(makeRequest(), PARAMS);
+      const json = await res.json();
+
+      expect(res.status).toBe(400);
+      expect(json.code).toBe('DELIVERY_DATE_PAST');
+      expect(paymentsMock.createGroupV2CheckoutSession).not.toHaveBeenCalled();
+    });
+
+    // The trap the past-date gate must not fall into: deliveryDate is stored at
+    // noon UTC (7am CT), so an instant comparison would reject same-day orders
+    // for the rest of the day. Same-day is the highest-intent flow.
+    it("allows TODAY's date at any hour (same-day delivery must keep working)", async () => {
+      serviceMock.getGroupOrderByCode.mockResolvedValue(group({ deliveryDate: TODAY_DATE }));
+
+      const res = await post(makeRequest(), PARAMS);
+
+      expect(res.status).toBe(200);
+      expect(paymentsMock.createGroupV2CheckoutSession).toHaveBeenCalledOnce();
+    });
+
+    // LOCKED must stay payable: the lock stops new items, not payment for
+    // items already in the cart, and every same-day tab auto-locks at ~3am CT.
+    it('still allows checkout on a LOCKED tab with a valid date', async () => {
+      serviceMock.getGroupOrderByCode.mockResolvedValue(group({ status: 'LOCKED' }));
+
+      const res = await post(makeRequest(), PARAMS);
+
+      expect(res.status).toBe(200);
+      expect(paymentsMock.createGroupV2CheckoutSession).toHaveBeenCalledOnce();
+    });
+
+    it('refuses a CANCELLED tab', async () => {
+      serviceMock.getGroupOrderByCode.mockResolvedValue(group({ status: 'CANCELLED' }));
+
+      const res = await post(makeRequest(), PARAMS);
+      const json = await res.json();
+
+      expect(res.status).toBe(409);
+      expect(json.code).toBe('TAB_CANCELLED');
+      expect(paymentsMock.createGroupV2CheckoutSession).not.toHaveBeenCalled();
+    });
+  });
+
+  describe(`POST ${label} body validation`, () => {
+    beforeEach(() => {
+      serviceMock.getGroupOrderByCode.mockResolvedValue(group());
+    });
+
+    it('rejects a negative tip before it can reach Stripe', async () => {
+      const res = await post(makeRequest({ tipAmount: -50 }), PARAMS);
+
+      expect(res.status).toBe(400);
+      expect(paymentsMock.createGroupV2CheckoutSession).not.toHaveBeenCalled();
+    });
+
+    it('rejects a non-numeric tip', async () => {
+      const res = await post(makeRequest({ tipAmount: 'lots' }), PARAMS);
+
+      expect(res.status).toBe(400);
+      expect(paymentsMock.createGroupV2CheckoutSession).not.toHaveBeenCalled();
+    });
+
+    it('rejects a missing participantId', async () => {
+      const res = await post(
+        new Request('http://localhost/x', { method: 'POST', body: JSON.stringify({}) }) as never,
+        PARAMS
+      );
+
+      expect(res.status).toBe(400);
+      expect(paymentsMock.createGroupV2CheckoutSession).not.toHaveBeenCalled();
+    });
+
+    it('rejects a non-boolean smsConsent (A2P consent must never be coerced)', async () => {
+      const res = await post(makeRequest({ smsConsent: 'yes' }), PARAMS);
+
+      expect(res.status).toBe(400);
+      expect(paymentsMock.createGroupV2CheckoutSession).not.toHaveBeenCalled();
+    });
+
+    it('accepts the exact body the real client sends', async () => {
+      const res = await post(
+        makeRequest({ discountCode: 'SAVE10', tipAmount: 12.5, phone: '512-555-1234', smsConsent: true }),
+        PARAMS
+      );
+
+      expect(res.status).toBe(200);
       expect(paymentsMock.createGroupV2CheckoutSession).toHaveBeenCalledOnce();
     });
   });

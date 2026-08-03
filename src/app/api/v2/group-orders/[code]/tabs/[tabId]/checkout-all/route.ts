@@ -12,6 +12,8 @@ import {
 } from '@/lib/group-orders-v2/service';
 import { createGroupV2CheckoutSession, DiscountNotApplicableError } from '@/lib/stripe/group-v2-payments';
 import { ProductNotPurchasableError } from '@/lib/products/availability';
+import { CheckoutTabSchema } from '@/lib/group-orders-v2/validation';
+import { todayCT } from '@/lib/ops/cooler-grouping';
 
 interface RouteParams {
   params: Promise<{ code: string; tabId: string }>;
@@ -21,14 +23,17 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     const { code, tabId } = await params;
     const body = await request.json();
-    const { participantId, discountCode, tipAmount, email, phone, smsConsent } = body;
 
-    if (!participantId) {
+    // Untrusted input on a charge path — validate before anything reaches
+    // Stripe, the discount engine, or the participant record.
+    const parsed = CheckoutTabSchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json(
-        { success: false, error: 'participantId is required' },
+        { success: false, error: 'Validation failed', details: parsed.error.flatten() },
         { status: 400 }
       );
     }
+    const { participantId, discountCode, tipAmount, email, phone, smsConsent } = parsed.data;
 
     // Verify group + tab
     const group = await getGroupOrderByCode(code);
@@ -51,6 +56,36 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           code: 'DELIVERY_DATE_REQUIRED',
         },
         { status: 400 }
+      );
+    }
+
+    // A date that has already come and gone must not take money either.
+    // Compare CALENDAR DAYS in Austin time: deliveryDate is stored at noon UTC
+    // (= 7am CT), so an instant comparison would reject every legitimate
+    // same-day order placed after 7am CT.
+    if (tab.deliveryDate.slice(0, 10) < todayCT()) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'This delivery date has already passed. Please choose a new date before checking out.',
+          code: 'DELIVERY_DATE_PAST',
+        },
+        { status: 400 }
+      );
+    }
+
+    // Terminal states never take money. LOCKED is deliberately NOT here: the
+    // lock stops new ITEMS, not payment for items already in the cart, and
+    // because orderDeadline lands at ~3am CT on the delivery day, every
+    // same-day order is auto-locked within hours of being placed.
+    if (tab.status === 'CANCELLED') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'This delivery was cancelled and can no longer be paid for.',
+          code: 'TAB_CANCELLED',
+        },
+        { status: 409 }
       );
     }
 

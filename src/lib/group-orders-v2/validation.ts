@@ -3,6 +3,8 @@
  */
 
 import { z } from 'zod';
+// Pure helper (no Prisma/fetch); this module is imported only by API routes.
+import { todayCT } from '@/lib/ops/cooler-grouping';
 
 /** Delivery address schema */
 const DeliveryAddressSchema = z.object({
@@ -23,10 +25,11 @@ const deliveryDateSchema = z.string().refine(
   'Invalid delivery date'
 ).refine(
   (val) => {
-    // Simple string comparison of YYYY-MM-DD to avoid timezone issues
+    // Compare calendar days in AUSTIN time, not UTC. UTC midnight is 7pm CT,
+    // so a UTC "today" rejected the customer's actual today every evening —
+    // same-day delivery could not be booked after 7pm.
     const dateStr = val.split('T')[0];
-    const today = new Date().toISOString().split('T')[0];
-    return dateStr >= today;
+    return dateStr >= todayCT();
   },
   'Delivery date cannot be in the past'
 ).refine(
@@ -180,6 +183,30 @@ export const CreateDashboardSchema = z.object({
     .optional(),
   deliveryTime: z.string().max(100).optional(),
   attribution: DashboardAttributionSchema,
+});
+
+/**
+ * Body for BOTH tab checkout routes:
+ *   POST /api/v2/group-orders/[code]/tabs/[tabId]/checkout      (payer's own items)
+ *   POST /api/v2/group-orders/[code]/tabs/[tabId]/checkout-all  (all remaining items)
+ * They accept the identical body and differ only in which items they charge.
+ *
+ * This is untrusted input on the charge path. Each bound exists because of
+ * where the value lands, not for tidiness:
+ *  - tipAmount    becomes a Stripe line item at Math.round(tip * 100) cents and
+ *                 a Decimal(10,2) column — a negative or absurd tip must not reach either.
+ *  - email        is persisted to GroupParticipantV2.guestEmail and sent to Stripe.
+ *  - discountCode is passed to validateDiscountCode(), which calls .toUpperCase().
+ *  - smsConsent   is the A2P 10DLC express marketing opt-in — accept a real
+ *                 boolean or nothing, never a coerced truthy value.
+ */
+export const CheckoutTabSchema = z.object({
+  participantId: z.string().min(1, 'participantId is required'),
+  discountCode: z.string().max(64).optional(),
+  tipAmount: z.number().min(0, 'Tip cannot be negative').max(10000).optional(),
+  email: z.string().email('Invalid email').max(200).optional().or(z.literal('')),
+  phone: z.string().max(100).optional(),
+  smsConsent: z.boolean().optional(),
 });
 
 export {
