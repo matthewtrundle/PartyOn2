@@ -38,12 +38,24 @@ export default function CorporateEventCalculator() {
     }
   };
 
-  // Calculate bottle quantities
+  // Calculate bottle quantities.
+  // Servings-per-750ml canon: wine = 5 (5oz pours), spirits = 17 (1.5oz pours),
+  // champagne = 5. These match the two real recommendation engines —
+  // src/lib/drinkPlannerLogic.ts (SERVINGS_PER_UNIT) and
+  // src/lib/wedding-packages/tier-config.ts. This calculator previously used
+  // 4 and 12, which quoted ~25% more wine and ~40% more liquor than the rest
+  // of the site for the same party.
+  const WINE_SERVINGS_PER_BOTTLE = 5;
+  const LIQUOR_SERVINGS_PER_BOTTLE = 17;
+  const CHAMPAGNE_SERVINGS_PER_BOTTLE = 5;
+
   const totalDrinks = getTotalDrinks();
-  const wineBottles = Math.ceil((totalDrinks * winePercent / 100) / 4);
-  const liquorBottles = Math.ceil((totalDrinks * liquorPercent / 100) / 12);
+  const wineBottles = Math.ceil((totalDrinks * winePercent / 100) / WINE_SERVINGS_PER_BOTTLE);
+  const liquorBottles = Math.ceil((totalDrinks * liquorPercent / 100) / LIQUOR_SERVINGS_PER_BOTTLE);
   const beers = Math.ceil(totalDrinks * beerPercent / 100);
-  const champagneBottles = champagneToast ? Math.ceil(guests / 5) : 0;
+  const champagneBottles = champagneToast
+    ? Math.ceil(guests / CHAMPAGNE_SERVINGS_PER_BOTTLE)
+    : 0;
 
   // Handle slider changes with locking mechanism
   const handleLiquorChange = (value: number) => {
@@ -399,7 +411,7 @@ export default function CorporateEventCalculator() {
                 <tr>
                   <td className="py-2 px-3">
                     <div className="font-medium text-gray-900">Wine Bottles</div>
-                    <div className="text-xs text-gray-500">750ml each (4 glasses per bottle)</div>
+                    <div className="text-xs text-gray-500">750ml each (5 glasses per bottle)</div>
                   </td>
                   <td className="text-center py-2 px-3">
                     <span className="text-xl font-semibold text-gray-900">{wineBottles}</span>
@@ -408,7 +420,7 @@ export default function CorporateEventCalculator() {
                 <tr>
                   <td className="py-2 px-3">
                     <div className="font-medium text-gray-900">Liquor Bottles</div>
-                    <div className="text-xs text-gray-500">750ml each (12 drinks per bottle)</div>
+                    <div className="text-xs text-gray-500">750ml each (17 drinks per bottle)</div>
                   </td>
                   <td className="text-center py-2 px-3">
                     <span className="text-xl font-semibold text-gray-900">{liquorBottles}</span>
@@ -449,7 +461,7 @@ export default function CorporateEventCalculator() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600 mb-1">Wine Bottles</p>
-                  <p className="text-xs text-gray-500">750ml each (4 glasses per bottle)</p>
+                  <p className="text-xs text-gray-500">750ml each (5 glasses per bottle)</p>
                 </div>
                 <p className="text-4xl font-semibold text-gray-900">{wineBottles}</p>
               </div>
@@ -465,7 +477,7 @@ export default function CorporateEventCalculator() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600 mb-1">Liquor Bottles</p>
-                  <p className="text-xs text-gray-500">750ml each (12 drinks per bottle)</p>
+                  <p className="text-xs text-gray-500">750ml each (17 drinks per bottle)</p>
                 </div>
                 <p className="text-4xl font-semibold text-gray-900">{liquorBottles}</p>
               </div>

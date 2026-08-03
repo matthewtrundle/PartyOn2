@@ -14,7 +14,8 @@ import PackageCard from './sections/PackageCard';
 import { PhoneIcon, ChatIcon, CheckIcon } from './sections/icons';
 import type { LandingConfig, Catalog, Package } from './types';
 import type { UpsellProducts } from '@/lib/landing/getUpsellProducts';
-import { generateFAQSchema } from '@/lib/seo/schemas';
+import YouTubeEmbed from '@/components/YouTubeEmbed';
+import { generateFAQSchema, generateVideoSchema } from '@/lib/seo/schemas';
 import { trackContactClick, trackCTAClick } from '@/lib/analytics/ga4-events';
 import { experimentsForPath, type BachelorHeroPayload, type CtaCopyPayload } from '@/lib/experiments/registry';
 import { useVariant } from '@/lib/experiments/clientAssign';
@@ -53,6 +54,18 @@ const ALL_AUSTIN_LANDING_PAGES = [
       'Welcome reception, rehearsal dinner, reception bar, and after-party — coordinated.',
   },
 ];
+
+/** Seconds → "m:ss" (or "h:mm:ss" past an hour) for the video chapter list. */
+function formatChapterTime(totalSeconds: number): string {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = Math.floor(totalSeconds % 60);
+  const paddedSeconds = String(seconds).padStart(2, '0');
+
+  return hours > 0
+    ? `${hours}:${String(minutes).padStart(2, '0')}:${paddedSeconds}`
+    : `${minutes}:${paddedSeconds}`;
+}
 
 type Props = {
   config: LandingConfig;
@@ -217,6 +230,24 @@ export default function LandingPageTemplate({
     (p) => p.slug !== config.slug
   );
 
+  // VideoObject schema — only when this lander actually has a video. Built
+  // from the same config the section renders from, so the chapter list on the
+  // page and the "key moments" in the SERP can't drift apart.
+  const videoSchema = config.video
+    ? generateVideoSchema(
+        {
+          videoId: config.video.videoId,
+          title: config.video.title,
+          description: config.video.description ?? config.video.blurb ?? config.video.title,
+          uploadDate: config.video.uploadDate,
+          duration: config.video.duration,
+          thumbnailUrl: config.video.thumbnailUrl,
+          chapters: config.video.chapters,
+        },
+        `https://partyondelivery.com/${config.slug}`,
+      )
+    : null;
+
   return (
     <main className="bg-white text-gray-900">
       {/* FAQ schema — server-rendered into initial HTML so search crawlers see it */}
@@ -224,6 +255,14 @@ export default function LandingPageTemplate({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
       />
+
+      {/* VideoObject schema — only emitted when this lander has a video. */}
+      {videoSchema && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(videoSchema) }}
+        />
+      )}
 
       {/* Slim header */}
       <header
@@ -715,6 +754,56 @@ export default function LandingPageTemplate({
           </div>
         </div>
       </section>
+
+      {/* VIDEO — optional. Sits directly above the FAQ because the video is a
+          Q&A listicle: it reads as the spoken version of the written Q&A
+          below it. Renders nothing when the config has no video. */}
+      {config.video && (
+        <section className="py-20 bg-white">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6">
+            <div className="text-center mb-10">
+              <h2
+                className="font-heading text-4xl md:text-5xl font-bold mb-4"
+                style={{ color: T.navy }}
+              >
+                {config.video.heading}
+              </h2>
+              {config.video.blurb && (
+                <p className="text-lg text-gray-700 max-w-2xl mx-auto">
+                  {config.video.blurb}
+                </p>
+              )}
+            </div>
+
+            <YouTubeEmbed
+              videoId={config.video.videoId}
+              title={config.video.title}
+            />
+
+            {/* Chapter list — the same questions the schema declares as key
+                moments. Keeps the keyword text on the page, not only in
+                JSON-LD, and gives a skimmer the contents without playing. */}
+            {config.video.chapters && config.video.chapters.length > 0 && (
+              <ul className="mt-8 space-y-2">
+                {config.video.chapters.map((chapter) => (
+                  <li
+                    key={chapter.name}
+                    className="flex gap-4 text-base text-gray-700"
+                  >
+                    <span
+                      className="font-semibold tabular-nums shrink-0"
+                      style={{ color: T.blue }}
+                    >
+                      {formatChapterTime(chapter.startOffsetSeconds)}
+                    </span>
+                    <span>{chapter.name}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* FAQ */}
       <section className="py-20" style={{ background: T.cream }}>

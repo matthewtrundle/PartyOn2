@@ -387,8 +387,13 @@ function scaleToBudget(rec: Recommendation, budgetDollars: number): Recommendati
 
 /**
  * Rough servings-per-unit by category — used to update the displayed
- * total-drinks count after budget scaling. Numbers mirror the
- * drink-planner's SERVINGS_PER_UNIT table without re-importing it.
+ * total-drinks count after budget scaling.
+ *
+ * These are category-level averages of the per-product SERVINGS_PER_UNIT table
+ * in src/lib/drinkPlannerLogic.ts. They must stay consistent with it: spirits
+ * previously said 25 here (1.25oz pours) against the engine's 17 (1.5oz pours),
+ * which inflated the drink count this endpoint reported by ~47% for any
+ * spirits-heavy plan.
  */
 function estimateServingsPer(item: RecommendedItem): number {
   switch (item.category) {
@@ -398,7 +403,7 @@ function estimateServingsPer(item: RecommendedItem): number {
     case 'wine':
       return 5; // 5oz pours per 750ml
     case 'spirits':
-      return 25; // 1.25oz pours per 750ml
+      return 17; // 1.5oz pours per 750ml — matches SERVINGS_PER_UNIT
     case 'cocktail-kits':
       return 16; // batched cocktail serves ~16
     default:

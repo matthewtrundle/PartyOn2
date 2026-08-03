@@ -1,5 +1,11 @@
 # Corporate Video Production Brief — Q&A Listicle (drafted 2026-07-14, produce FALL 2026 for holiday season)
 
+> **Script written 2026-08-03:** the word-for-word shoot script is at
+> [corporate-video-script-2026-08.md](./corporate-video-script-2026-08.md). Shoot-ready except for
+> **3 claims awaiting Allan's sign-off** — the tax-deductibility wording, the n=11 product claim,
+> and remote-employee kit shipping (Q10 is written two ways because the capability doesn't appear
+> to exist).
+
 Same format as [bach-video-brief-2026-07.md](./bach-video-brief-2026-07.md). Timing: **shoot September, publish by early October** — corporate holiday-party planning search starts rising in October, venues book by early November.
 
 Evidence: `data/seo/semrush/2026-07-09/keyword-magic-corporate-event-ideas.txt`, `data/seo/semrush/2026-07-14/keyword-magic-QUESTIONS-office-party.txt` + `keyword-magic-QUESTIONS-holiday-party.txt`, `data/seo/serp-paa/2026-07-14-wedding-corporate.md`, `data/seo/internal-data-wedding-corporate-2026-07-14.md`.
@@ -40,7 +46,13 @@ Bonus short-only: **"What are the 5 C's of event planning?"** (PAA verbatim — 
 
 ## Fixes BEFORE shooting (surfaced by this research)
 
-- **Two corporate calculators disagree with each other and with the wedding engine** (wine 4 vs 5 glasses/bottle; liquor 12 vs 17 drinks). Align on one canon before the video quotes any formula — small PR.
+- ✅ **RESOLVED 2026-08-03** — canon is **wine 5 / spirits 17 per 750ml**. `CorporateEventCalculator.tsx`
+  (the MDX one) was the outlier at 4 and 12, in both its math and its on-screen copy, and is fixed;
+  `CorporateEventCalculatorLanding.tsx` was already correct. `api/v1/ai-party-planner` was also
+  drifted (spirits 25) and is fixed. Every calculator on the site now agrees, so the video can quote
+  per-bottle numbers safely. Note the two corporate calculators still model *drink volume* differently
+  (`guests × (hours + 0.5)` vs a 0.8/1.0/1.25 multiplier) — that's a modelling choice, not a
+  servings conflict, and the script's Q6 example is computed against the live holiday-party calculator.
 - **Corporate link-graph gap**: no cluster post links to `/austin-corporate-event-delivery` or `/corporate/holiday-party` (only the pillar → old `/corporate`). Fix alongside the embed PR — the video's blog destinations need the lander links anyway.
 - Confirm remote-employee kit shipping (Q10) and whether the "100% buyback on unopened bottles" claim (corporate MDX calculator) is current policy.
 
