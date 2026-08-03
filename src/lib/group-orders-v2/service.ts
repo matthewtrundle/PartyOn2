@@ -375,6 +375,16 @@ export async function cancelGroupOrder(
   if (!group || group.participants.length === 0) {
     throw new Error('Only the host can cancel a group order');
   }
+
+  // Never cancel an order that has taken money — cancelling blocks every tab's
+  // checkout, so this is a remote kill-switch on a live order. The affiliate
+  // cancellation path already enforces exactly this rule; match it.
+  const paid = await prisma.participantPayment.findFirst({
+    where: { subOrder: { groupOrder: { shareCode } }, status: 'PAID' },
+    select: { id: true },
+  });
+  if (paid) throw new Error('HAS_PAID_PAYMENT');
+
   await prisma.groupOrderV2.update({
     where: { shareCode },
     data: { status: 'CANCELLED' },
@@ -570,8 +580,63 @@ export async function recomputeGroupLastMinute(groupId: string): Promise<void> {
   });
 }
 
+/** Thrown when a destructive action would take money records with it. */
+export class TabHasMoneyError extends Error {
+  constructor() {
+    super('TAB_HAS_MONEY');
+    this.name = 'TabHasMoneyError';
+  }
+}
+
+/**
+ * A PENDING ParticipantPayment only means "a Stripe session was opened". There
+ * is no expiry sweep for v2 payments (EXPIRED/FAILED are only ever written for
+ * the v1 GroupPayment model), so PENDING is terminal in practice — 178 rows,
+ * none newer than a day, the oldest from January. Blocking on PENDING outright
+ * would weld ~50 tabs in place permanently with no way to remove them. A
+ * Stripe Checkout session cannot outlive 24h, so anything older is abandoned.
+ */
+const PENDING_PAYMENT_GRACE_MS = 24 * 60 * 60 * 1000;
+
 export async function deleteTab(tabId: string): Promise<void> {
-  await prisma.subOrder.delete({ where: { id: tabId } });
+  // SubOrder cascades to PurchasedItem, ParticipantPayment and
+  // GroupDeliveryInvoice, so a delete here can erase the record of money
+  // already collected while the Stripe charge stands. This holds regardless of
+  // WHO called: it removes the damage rather than relying on correctly
+  // identifying the caller.
+  const exists = await prisma.subOrder.findUnique({
+    where: { id: tabId },
+    select: { id: true },
+  });
+  if (!exists) throw new Error('Tab not found');
+
+  // The money test lives INSIDE the delete, not in a preceding read.
+  // createGroupV2CheckoutSession opens the Stripe session first and writes its
+  // PENDING payment row a moment later, so a check-then-delete could pass its
+  // check and then cascade away a payment row belonging to a live session —
+  // leaving a real charge with nothing to attach it to.
+  const liveSessionCutoff = new Date(Date.now() - PENDING_PAYMENT_GRACE_MS);
+  const deleted = await prisma.subOrder.deleteMany({
+    where: {
+      id: tabId,
+      purchasedItems: { none: {} },
+      payments: {
+        none: {
+          OR: [
+            { status: 'PAID' },
+            // Only a live session — an abandoned one must not block forever.
+            { status: 'PENDING', createdAt: { gt: liveSessionCutoff } },
+          ],
+        },
+      },
+      OR: [
+        { deliveryInvoice: { is: null } },
+        { deliveryInvoice: { status: { not: 'PAID' } } },
+      ],
+    },
+  });
+
+  if (deleted.count === 0) throw new TabHasMoneyError();
 }
 
 // ==========================================
@@ -630,6 +695,14 @@ export async function removeParticipant(
   groupOrderId: string,
   participantId: string
 ): Promise<void> {
+  // Someone who has already paid is part of this order — evicting them (and
+  // binning their cart) is not a host's call to make.
+  const paid = await prisma.participantPayment.findFirst({
+    where: { participantId, status: 'PAID', subOrder: { groupOrderId } },
+    select: { id: true },
+  });
+  if (paid) throw new Error('HAS_PAID_PAYMENT');
+
   // Every write is scoped to groupOrderId. This function received the group id
   // from the start but ignored it, so a host of ANY group could wipe a
   // participant's drafts across EVERY group they belonged to and evict them.
@@ -1299,6 +1372,18 @@ export async function updateGroupOrderFields(
     select: { id: true },
   });
   if (!participant) throw new NotHostError();
+
+  // Cancelling via PATCH reaches the same end state as DELETE /[code] — it
+  // blocks checkout on every tab — so it must obey the same money rule. One
+  // guard on one door is worthless when there are two doors.
+  if (data.status === 'CANCELLED') {
+    const paid = await prisma.participantPayment.findFirst({
+      where: { subOrder: { groupOrder: { shareCode } }, status: 'PAID' },
+      select: { id: true },
+    });
+    if (paid) throw new Error('HAS_PAID_PAYMENT');
+  }
+
   const updateData: Record<string, unknown> = {};
   if (data.name) updateData.name = data.name;
   if (data.status) updateData.status = data.status;

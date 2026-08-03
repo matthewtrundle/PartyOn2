@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { JoinGroupOrderSchema } from '@/lib/group-orders-v2/validation';
 import { joinGroupOrder } from '@/lib/group-orders-v2/service';
+import { getSession } from '@/lib/auth/session';
 
 interface RouteParams {
   params: Promise<{ code: string }>;
@@ -22,7 +23,16 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const participant = await joinGroupOrder(code, parsed.data);
+    // A customer link is only ever established from the session. Trusting a
+    // body-supplied customerId let anyone staple a group order onto another
+    // customer's account, where it then surfaced in that customer's
+    // (correctly session-authenticated) order history. Guests simply join
+    // without a customer link, exactly as before.
+    const session = await getSession();
+    const participant = await joinGroupOrder(code, {
+      ...parsed.data,
+      customerId: session?.customerId,
+    });
 
     return NextResponse.json(
       { success: true, data: participant },

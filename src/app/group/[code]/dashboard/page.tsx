@@ -73,6 +73,7 @@ export default function DashboardPage(): ReactElement {
       refresh();
     } catch (err) {
       console.error('Failed to remove participant:', err);
+      alert(err instanceof Error ? err.message : 'Could not remove this person.');
     }
   };
 

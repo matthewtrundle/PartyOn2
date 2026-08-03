@@ -62,6 +62,7 @@ export default function ParticipantPanel({
       onRefresh();
     } catch (err) {
       console.error('Failed to remove participant:', err);
+      alert(err instanceof Error ? err.message : 'Could not remove this person.');
     } finally {
       setRemovingId(null);
     }

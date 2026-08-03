@@ -65,7 +65,9 @@ export async function createSessionToken(customer: SafeCustomer): Promise<string
  */
 export async function verifySessionToken(token: string): Promise<SessionPayload | null> {
   try {
-    const { payload } = await jwtVerify(token, getJwtSecret());
+    // Pin the algorithm so a future swap to a KeyLike/JWK can't silently
+    // widen what is accepted.
+    const { payload } = await jwtVerify(token, getJwtSecret(), { algorithms: ['HS256'] });
     return payload as unknown as SessionPayload;
   } catch {
     return null;

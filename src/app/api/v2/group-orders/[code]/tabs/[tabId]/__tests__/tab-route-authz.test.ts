@@ -19,7 +19,18 @@ const serviceMock = vi.hoisted(() => ({
   isActiveParticipant: vi.fn(),
 }));
 
-vi.mock('@/lib/group-orders-v2/service', () => serviceMock);
+// The route imports TabHasMoneyError; a mock factory without it makes any
+// future deleteTab.mockRejectedValue blow up with a confusing module error.
+// Declared inside the factory — vi.mock is hoisted above top-level consts.
+vi.mock('@/lib/group-orders-v2/service', () => ({
+  ...serviceMock,
+  TabHasMoneyError: class TabHasMoneyError extends Error {
+    constructor() {
+      super('TAB_HAS_MONEY');
+      this.name = 'TabHasMoneyError';
+    }
+  },
+}));
 
 import { PATCH, DELETE } from '../route';
 
