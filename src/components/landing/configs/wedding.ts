@@ -184,7 +184,7 @@ export const weddingConfig: LandingConfig = {
     },
     {
       q: 'What about leftovers?',
-      a: "We can either take back unopened cases for partial refund (depending on volume) or leave everything. Your call.",
+      a: "100% refund on up to 25% of your order. Drop the unopened cases back at our store and we refund up to a quarter of the total, same day — no restocking fees. Anything beyond that quarter is yours to keep.",
     },
   ],
 

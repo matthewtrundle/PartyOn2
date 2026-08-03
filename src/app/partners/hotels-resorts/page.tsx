@@ -193,7 +193,7 @@ export default function HotelsResortsPartnerPage() {
               <h3 className="font-medium text-gray-900 mb-3 tracking-[0.1em]">BUILT FOR GROUPS</h3>
               <p className="text-sm text-gray-600">
                 Split-pay group ordering for wedding blocks, bach parties, and corporate
-                stays — plus returns on unopened bottles.
+                stays — plus a full refund on up to 25% returned unopened.
               </p>
             </div>
           </div>
@@ -567,7 +567,7 @@ export default function HotelsResortsPartnerPage() {
               <div className="border-l-4 border-brand-yellow pl-6">
                 <p className="text-gray-700">
                   We are a TABC-licensed Austin retailer, not a marketplace — the same team packs,
-                  ices, and delivers every order, and handles returns on unopened bottles.
+                  ices, and delivers every order, and refunds up to 25% returned unopened.
                 </p>
               </div>
             </div>

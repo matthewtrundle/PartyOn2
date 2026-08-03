@@ -7,7 +7,7 @@ export const corporateConfig: LandingConfig = {
   // Title trimmed to <60 chars so it doesn't truncate in SERPs.
   metaTitle: 'Austin Corporate Event Alcohol Delivery | Party On Delivery',
   metaDescription:
-    'White-glove premium spirits, wine, and bar setups for Austin corporate offsites, client dinners, and team events. TABC-licensed. $1M insured. Invoices on request. Free returns.',
+    'White-glove premium spirits, wine, and bar setups for Austin corporate offsites, client dinners, and team events. TABC-licensed. $1M insured. Invoices on request. Refunds on up to 25% unopened.',
   ogImage: '/images/products/premium-spirits-boutique.webp',
 
   theme: {
@@ -28,7 +28,7 @@ export const corporateConfig: LandingConfig = {
     "Top-shelf spirits, sommelier-curated wines, and full bar setups for offsites, client dinners, holiday parties, and SXSW activations. Invoiced. Insured. Discreetly delivered.",
   heroBullets: [
     'Top-shelf spirits + sommelier-curated wines',
-    'TABC-licensed · $1M insured · free returns on unopened',
+    'TABC-licensed · $1M insured · 100% refund on up to 25% unopened',
     'Invoices on request · corporate cards / ACH / wire',
     'White-glove delivery — coordinated with your venue',
   ],
@@ -205,7 +205,7 @@ export const corporateConfig: LandingConfig = {
     },
     {
       q: 'Do you accept returns?',
-      a: 'Yes — free returns on any unopened product. If your event ends with full bottles untouched, send them back.',
+      a: 'Yes — 100% refund on up to 25% of your order. Drop the unopened cases back at our store and we refund up to a quarter of the total, no restocking fees. Order a little heavy so you don\'t run short; anything past that quarter is yours to keep.',
     },
   ],
 
