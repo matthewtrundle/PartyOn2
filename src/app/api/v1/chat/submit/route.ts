@@ -2,7 +2,9 @@
  * POST /api/v1/chat/submit
  *
  * Chatbot equivalent of /api/v1/event-quiz/submit. Same job — creates
- * a Lead, sends the welcome email, returns a redirect URL. Differs in:
+ * a Lead and returns a redirect URL. Unlike the quiz it does NOT email:
+ * the chat's second request (/api/v1/quote/start) owns that, or the two
+ * would double-send. See the note at the send site below. Differs in:
  *
  *   1. Captures headcount + delivery date as first-class fields (the
  *      quiz didn't ask either)
@@ -16,8 +18,6 @@
  */
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
-import { sendEmail } from '@/lib/email/resend-client';
-import { eventQuizWelcomeEmail } from '@/lib/email/templates/event-quiz-welcome';
 import { upsertLead, recordEvent } from '@/lib/leads/leadCapture';
 import { attributionSchema, compactAttribution } from '@/lib/leads/attribution-schema';
 import { targetUrlFor } from '@/lib/eventQuiz/routing';
@@ -25,7 +25,6 @@ import { recommendForChat } from '@/lib/chat/recommendation';
 import { isLastMinuteDate } from '@/lib/lastMinute/dates';
 import { mirrorLeadToSheet } from '@/lib/premier/pod-leads-sheet';
 import { mirrorLeadToCrm } from '@/lib/leads/crm-mirror';
-import { EmailType } from '@prisma/client';
 import { prisma } from '@/lib/database/client';
 
 export const runtime = 'nodejs';
@@ -68,7 +67,6 @@ export async function POST(req: NextRequest) {
   }
 
   const resumePath = targetUrlFor(body.partyType);
-  const resumeUrlAbs = `https://partyondelivery.com${resumePath}&date=${body.deliveryDate}&people=${body.headcount}`;
 
   // Lead upsert + status promote.
   let leadId: string | null = null;
@@ -152,36 +150,20 @@ export async function POST(req: NextRequest) {
     console.error('[chat/submit] lead upsert failed', err);
   }
 
-  // Welcome email — reuses the event-quiz template (same value prop).
-  try {
-    const tpl = eventQuizWelcomeEmail({
-      firstName: body.firstName,
-      partyType: body.partyType,
-      timing: 'future',
-      needs: [],
-      resumeUrl: resumeUrlAbs,
-    });
-    await sendEmail({
-      to: body.email,
-      subject: tpl.subject,
-      html: tpl.html,
-      text: tpl.text,
-      type: EmailType.WELCOME,
-      metadata: {
-        flow: 'chat',
-        partyType: body.partyType,
-        headcount: body.headcount,
-        deliveryDate: body.deliveryDate,
-        leadId,
-      },
-      tags: [
-        { name: 'flow', value: 'chat' },
-        { name: 'party_type', value: body.partyType },
-      ],
-    });
-  } catch (err) {
-    console.error('[chat/submit] email send failed', err);
-  }
+  // NO welcome email here, deliberately. The chat is a TWO-request flow: this
+  // route (contact step), then POST /api/v1/quote/start when they click through
+  // to their order. Both used to send the same eventQuizWelcomeEmail with the
+  // same subject, so anyone who finished the chat got two identical emails
+  // seconds apart — 4 real customers did, the closest pair 22s (audit
+  // 2026-08-03). Package Builder and Event Quiz each hit only one endpoint,
+  // which is why the bug was chat-only.
+  //
+  // quote/start keeps its send because its link goes to the customer's actual
+  // dashboard, where this one only pointed back at the landing page. Someone
+  // who leaves contact details and never clicks through now gets no instant
+  // mail — they land on /admin/leads as an unanswered lead instead, which is
+  // what the work queue is for. If that trade stops being right, enqueue a
+  // flag-gated journey here rather than restoring a second instant send.
 
   // Build the recommendation — what should we suggest they order?
   let recommendation = null;
