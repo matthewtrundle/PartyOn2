@@ -218,11 +218,21 @@ function mountQueue(size: number): Harness {
  * write keys. Painting is not enough: the bar keeps its actions disabled (and
  * says so) until the fetch for this exact lead resolves.
  */
-async function waitUntilArmed(): Promise<void> {
+async function waitUntilArmed(leadId?: string): Promise<void> {
   await waitFor(() => {
+    // Both conditions inside the SAME waitFor. The loading check used to sit
+    // after it as a one-shot assert, which made this helper able to return on a
+    // stale render: right after an advance the previous card's enabled button
+    // can still be on screen for a tick, so "a Log call button is enabled" was
+    // not proof that THIS card had armed. Passing leadId pins it to the card we
+    // are about to act on — its address only renders once its own fetch lands,
+    // which is the same fetch that flips the confirmation gate.
+    if (leadId) {
+      expect(screen.getByRole('link', { name: `${leadId}@example.com` })).toBeInTheDocument();
+    }
+    expect(screen.queryByText(/Loading this lead/)).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: /^Log call/ })).toBeEnabled();
   });
-  expect(screen.queryByText(/Loading this lead/)).not.toBeInTheDocument();
 }
 
 /** Render focus mode over an 8-card queue and wait for the first card to arm. */
@@ -404,13 +414,13 @@ describe('LeadQueue typing guard', () => {
     expect(await screen.findByText(`2 / ${QUEUE_SIZE}`)).toBeInTheDocument();
 
     // T — logs a text against the next lead, then advances.
-    await waitUntilArmed();
+    await waitUntilArmed('lead-2');
     fireEvent.keyDown(document, { key: 't' });
     await waitFor(() => expect(h.logTouch).toHaveBeenCalledWith('lead-2', 'text'));
     expect(await screen.findByText(`3 / ${QUEUE_SIZE}`)).toBeInTheDocument();
 
     // Z — snoozes, then advances.
-    await waitUntilArmed();
+    await waitUntilArmed('lead-3');
     fireEvent.keyDown(document, { key: 'z' });
     await waitFor(() =>
       expect(h.patchLead).toHaveBeenCalledWith('lead-3', {
@@ -421,7 +431,7 @@ describe('LeadQueue typing guard', () => {
     expect(await screen.findByText(`4 / ${QUEUE_SIZE}`)).toBeInTheDocument();
 
     // X — opens the reason row. It writes nothing on its own and holds position.
-    await waitUntilArmed();
+    await waitUntilArmed('lead-4');
     fireEvent.keyDown(document, { key: 'x' });
     expect(await screen.findByText('Why was it lost?')).toBeInTheDocument();
     expect(h.moveStage).not.toHaveBeenCalled();
