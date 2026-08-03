@@ -14,6 +14,7 @@ const mockUpdate = vi.fn();
 const mockDelete = vi.fn();
 const mockDeleteMany = vi.fn();
 const mockParticipantUpdateMany = vi.fn();
+const mockPaymentFindFirst = vi.fn();
 
 vi.mock('@/lib/database/client', () => ({
   prisma: {
@@ -25,6 +26,9 @@ vi.mock('@/lib/database/client', () => ({
     },
     groupParticipantV2: {
       updateMany: (...a: unknown[]) => mockParticipantUpdateMany(...a),
+    },
+    participantPayment: {
+      findFirst: (...a: unknown[]) => mockPaymentFindFirst(...a),
     },
   },
 }));
@@ -58,6 +62,7 @@ beforeEach(() => {
   mockDelete.mockResolvedValue({});
   mockDeleteMany.mockResolvedValue({ count: 0 });
   mockParticipantUpdateMany.mockResolvedValue({ count: 1 });
+  mockPaymentFindFirst.mockResolvedValue(null); // no paid payment blocking removal
 });
 
 describe('updateDraftItem scoping', () => {

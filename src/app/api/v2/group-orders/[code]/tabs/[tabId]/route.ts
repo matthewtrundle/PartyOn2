@@ -13,6 +13,7 @@ import {
   deleteTab,
   isParticipantHost,
   isActiveParticipant,
+  TabHasMoneyError,
 } from '@/lib/group-orders-v2/service';
 
 interface RouteParams {
@@ -114,9 +115,24 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       );
     }
 
+    // Host actions are destructive and are authorized only by a participant id
+    // that the public GET exposes — log them so abuse is visible.
+    console.warn(
+      `[Group V2] tab delete: code=${code} tab=${tabId} by=${hostParticipantId}`
+    );
     await deleteTab(tabId);
     return NextResponse.json({ success: true, message: 'Tab deleted' });
   } catch (error) {
+    if (error instanceof TabHasMoneyError) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'This delivery has payments on it and can no longer be deleted.',
+          code: 'TAB_HAS_MONEY',
+        },
+        { status: 409 }
+      );
+    }
     console.error('[Group V2] Delete tab error:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to delete tab' },

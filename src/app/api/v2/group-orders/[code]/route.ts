@@ -80,10 +80,23 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       );
     }
 
+    // Cancelling blocks checkout on every tab, so it is effectively a remote
+    // kill-switch — and it is authorized by an id the public GET exposes.
+    console.warn(`[Group V2] group cancel: code=${code} by=${hostParticipantId}`);
     await cancelGroupOrder(code, hostParticipantId);
     return NextResponse.json({ success: true, message: 'Group order cancelled' });
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Failed to cancel';
+    if (msg === 'HAS_PAID_PAYMENT') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'This order already has payments on it and can no longer be cancelled here.',
+          code: 'HAS_PAID_PAYMENT',
+        },
+        { status: 409 }
+      );
+    }
     return NextResponse.json({ success: false, error: msg }, { status: 403 });
   }
 }

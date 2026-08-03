@@ -169,10 +169,23 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       );
     }
 
+    console.warn(
+      `[Group V2] participant remove: code=${code} target=${pid} by=${hostParticipantId}`
+    );
     await removeParticipant(group.id, pid);
 
     return NextResponse.json({ success: true, message: 'Participant removed' });
   } catch (error) {
+    if (error instanceof Error && error.message === 'HAS_PAID_PAYMENT') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'This person has already paid and cannot be removed from the order.',
+          code: 'HAS_PAID_PAYMENT',
+        },
+        { status: 409 }
+      );
+    }
     console.error('[Group V2] Remove participant error:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to remove participant' },

@@ -375,6 +375,16 @@ export async function cancelGroupOrder(
   if (!group || group.participants.length === 0) {
     throw new Error('Only the host can cancel a group order');
   }
+
+  // Never cancel an order that has taken money — cancelling blocks every tab's
+  // checkout, so this is a remote kill-switch on a live order. The affiliate
+  // cancellation path already enforces exactly this rule; match it.
+  const paid = await prisma.participantPayment.findFirst({
+    where: { subOrder: { groupOrder: { shareCode } }, status: 'PAID' },
+    select: { id: true },
+  });
+  if (paid) throw new Error('HAS_PAID_PAYMENT');
+
   await prisma.groupOrderV2.update({
     where: { shareCode },
     data: { status: 'CANCELLED' },
@@ -570,7 +580,38 @@ export async function recomputeGroupLastMinute(groupId: string): Promise<void> {
   });
 }
 
+/** Thrown when a destructive action would take money records with it. */
+export class TabHasMoneyError extends Error {
+  constructor() {
+    super('HAS_MONEY');
+    this.name = 'TabHasMoneyError';
+  }
+}
+
 export async function deleteTab(tabId: string): Promise<void> {
+  // SubOrder cascades to PurchasedItem, ParticipantPayment and
+  // GroupDeliveryInvoice, so a delete here can erase the record of money
+  // already collected while the Stripe charge stands. Refuse whenever any
+  // money is attached — PENDING included, because a pending payment means a
+  // Stripe session is live and its webhook still needs this tab to exist.
+  // This holds regardless of WHO called: it removes the damage rather than
+  // relying on correctly identifying the caller.
+  const money = await prisma.subOrder.findUnique({
+    where: { id: tabId },
+    select: {
+      _count: { select: { purchasedItems: true } },
+      payments: { where: { status: { in: ['PAID', 'PENDING'] } }, select: { id: true } },
+      deliveryInvoice: { select: { status: true } },
+    },
+  });
+  if (!money) throw new Error('Tab not found');
+
+  const hasMoney =
+    money._count.purchasedItems > 0 ||
+    money.payments.length > 0 ||
+    money.deliveryInvoice?.status === 'PAID';
+  if (hasMoney) throw new TabHasMoneyError();
+
   await prisma.subOrder.delete({ where: { id: tabId } });
 }
 
@@ -630,6 +671,14 @@ export async function removeParticipant(
   groupOrderId: string,
   participantId: string
 ): Promise<void> {
+  // Someone who has already paid is part of this order — evicting them (and
+  // binning their cart) is not a host's call to make.
+  const paid = await prisma.participantPayment.findFirst({
+    where: { participantId, status: 'PAID', subOrder: { groupOrderId } },
+    select: { id: true },
+  });
+  if (paid) throw new Error('HAS_PAID_PAYMENT');
+
   // Every write is scoped to groupOrderId. This function received the group id
   // from the start but ignored it, so a host of ANY group could wipe a
   // participant's drafts across EVERY group they belonged to and evict them.

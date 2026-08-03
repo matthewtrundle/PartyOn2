@@ -1,17 +1,37 @@
+/**
+ * GET /api/group-orders/my-orders - List the SIGNED-IN customer's group orders
+ *
+ * Identity comes from the session cookie, never from the request. This used to
+ * read `?customerId=` and trust it, exposing any customer's order history to
+ * anyone who obtained their id.
+ */
+
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getSession } from '@/lib/auth/session'
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const customerId = searchParams.get('customerId')
-
-    if (!customerId) {
+    const session = await getSession()
+    if (!session) {
       return NextResponse.json(
-        { error: 'Customer ID is required' },
-        { status: 400 }
+        { error: 'Sign in to view your orders' },
+        { status: 401 }
       )
     }
+
+    // Accepted for backward compatibility with existing callers, but only used
+    // to reject a mismatch — the session is the sole source of identity.
+    const { searchParams } = new URL(request.url)
+    const requested = searchParams.get('customerId')
+    if (requested && requested !== session.customerId) {
+      return NextResponse.json(
+        { error: 'You can only view your own orders' },
+        { status: 403 }
+      )
+    }
+
+    const customerId = session.customerId
 
     const groupOrders = await prisma.groupOrder.findMany({
       where: {
