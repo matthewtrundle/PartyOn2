@@ -73,3 +73,9 @@ obsidian-vault
 
 # Local dev-server config for the Browser preview pane
 .claude/launch.json
+
+# Local data exports — CUSTOMER PII, never commit.
+# Holds the email-consolidation output (contact lists, geo splits, campaign
+# segments, the consolidated .xlsx). Untracked-but-not-ignored meant a single
+# `git add -A` would have staged ~48 files of customer emails and names.
+/data/
