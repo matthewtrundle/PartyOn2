@@ -1012,31 +1012,13 @@ export async function transferHost(
   });
 }
 
-/**
- * Generate a one-time host claim token
- */
-export async function generateHostClaimToken(
-  shareCode: string,
-  hostParticipantId: string
-): Promise<string> {
-  const group = await prisma.groupOrderV2.findUnique({
-    where: { shareCode },
-    include: { participants: { where: { id: hostParticipantId, isHost: true } } },
-  });
-  if (!group || group.participants.length === 0) {
-    throw new Error('Only the host can generate a claim token');
-  }
-
-  const { randomBytes } = await import('crypto');
-  const token = randomBytes(24).toString('hex'); // 48 chars
-
-  await prisma.groupOrderV2.update({
-    where: { shareCode },
-    data: { hostClaimToken: token },
-  });
-
-  return token;
-}
+// generateHostClaimToken was REMOVED 2026-08-03 along with its route.
+// It minted a reusable "whoever holds this link is the host" credential and
+// OVERWROTE any existing token, silently invalidating claim links already
+// emailed to customers — and it authorized on a hostParticipantId that the
+// unauthenticated dashboard GET publishes. Claim tokens are now minted only
+// at dashboard creation (createMultiTabDashboardOrder). Do not reintroduce a
+// mint entry point without ops auth and a story for the overwrite.
 
 /**
  * Claim host role using a claim token

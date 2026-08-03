@@ -3,7 +3,7 @@ title: Admin Features
 project: PartyOn2
 doc_type: codebase-reference
 section: admin
-last_generated: 2026-05-20
+last_generated: 2026-08-03
 tags: [partyondelivery, codebase, admin, ops, affiliate, cron, webhooks]
 ---
 

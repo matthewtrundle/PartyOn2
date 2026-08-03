@@ -3,7 +3,7 @@ title: Tech Stack and Architecture
 project: PartyOn2
 doc_type: codebase-reference
 section: architecture
-last_generated: 2026-05-20
+last_generated: 2026-08-03
 tags: [partyondelivery, codebase, architecture, stack, env]
 ---
 
@@ -48,7 +48,7 @@ tags: [partyondelivery, codebase, architecture, stack, env]
 
 ```text
 src/
-├── app/                        # Next.js App Router — 157 page.tsx, 241 route.ts
+├── app/                        # Next.js App Router — 191 page.tsx, 330 route.ts
 │   ├── (main)/                 # Route group for marketing pages (areas, press, tabc…)
 │   ├── api/
 │   │   ├── v1/                 # Primary API: auth, products, orders, cart, inventory, admin, affiliate, invoice
@@ -342,7 +342,9 @@ Added 2026-05 alongside the Finance Director pipeline (Phase 0+).
 | `npm run lint` | Next.js ESLint wrapper. |
 | `npm run lint:tokens` | Custom design-token linter (`scripts/lint-design-tokens.js`). |
 | `npm run test` / `test:run` / `test:coverage` | Vitest. |
-| `npm run db:migrate` / `db:push` / `db:studio` / `db:generate` | Prisma CLI wrappers. |
+| `npm run db:studio` / `db:generate` | Prisma CLI wrappers (inspection + client generation). |
+| `npm run db:migrate:manual` / `db:migrate:check` / `db:verify-schema` | The real migration path — apply/inspect hand-written SQL in `prisma/migrations/manual/` via the `_manual_migrations` ledger. |
+| ~~`db:migrate`~~ / ~~`db:push`~~ | **Do not run.** The schema is intentionally drifted from production; these would drop columns that still hold data. A PreToolUse hook blocks them. See ADR-0008 and the `db-migration` skill. |
 | `npm run generate-blog` / `generate-daily` | AI blog generation via `tsx scripts/automated-daily-blog.ts`. |
 | `npm run generate-blog-images` | Gemini image generation for blog posts. |
 | `npm run deploy` / `deploy:staging` / `*:windows` | Wraps Vercel deploy + sitemap ping. |

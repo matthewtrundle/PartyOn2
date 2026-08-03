@@ -352,17 +352,6 @@ export async function transferHostV2(
   });
 }
 
-/** Generate a host claim token (returns sharable link token) */
-export async function generateHostClaimTokenV2(
-  code: string,
-  hostParticipantId: string
-): Promise<{ token: string }> {
-  return apiFetch(`${API_BASE}/${code}/host-claim-token`, {
-    method: 'POST',
-    body: JSON.stringify({ hostParticipantId }),
-  });
-}
-
 /** Validate a promo code (discount or affiliate) */
 export async function validatePromoCode(
   code: string,

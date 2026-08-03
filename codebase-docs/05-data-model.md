@@ -3,13 +3,15 @@ title: Data Model
 project: PartyOn2
 doc_type: codebase-reference
 section: data-model
-last_generated: 2026-05-20
+last_generated: 2026-08-03
 tags: [partyondelivery, codebase, prisma, data-model, schema]
 ---
 
 # Data Model
 
-Source of truth: `prisma/schema.prisma`. Datasource is PostgreSQL (`POSTGRES_URL`, `POSTGRES_URL_NON_POOLING`). **89 models, 46 enums** (up from 77 / 43 at the 2026-05-03 sync — added: 4 Finance Director models, 2 Operations Director models, 3 Plaid models, 1 cart-share-link model, and the 3-table Lead/Visitor capture system). Migrations live under `prisma/migrations/` (managed by Prisma CLI via `npm run db:migrate` / `db:push`).
+Source of truth: `prisma/schema.prisma`. Datasource is PostgreSQL (`POSTGRES_URL`, `POSTGRES_URL_NON_POOLING`). **109 models, 46 enums** (up from 89 / 46 at the 2026-05-20 sync — added since: the QuickBooks + Stripe + Plaid-sync finance tables, the Shopify order archive and monthly rollup, partner-outreach prospects, the follow-up job/suppression pair, Premiere credit grants, Wayne chat transcripts, inbound email, SEO and GBP snapshots, strategy initiatives, event RSVPs and first-party analytics events).
+
+> **Migrations do NOT go through the Prisma CLI here.** They are hand-written additive SQL under `prisma/migrations/manual/`, applied exactly once via the `_manual_migrations` ledger during the production build. `prisma migrate dev` and `prisma db push` are **forbidden** — the schema is intentionally drifted from production and those commands would drop columns that still hold data. See ADR-0008 and the `db-migration` skill.
 
 > _`DeliveryZone` and `TaxRate` were removed 2026-04-23. Runtime uses hardcoded TS tables in `src/lib/delivery/rates.ts` and `src/lib/tax/rates.ts`. Postgres tables `delivery_zones` and `tax_rates` remain — drop in future migration._
 >
@@ -17,38 +19,47 @@ Source of truth: `prisma/schema.prisma`. Datasource is PostgreSQL (`POSTGRES_URL
 
 > This document groups models into domain clusters and mirrors the schema verbatim — when fields are listed, they are present in `schema.prisma`. For any model, consult the line numbers below to read the definitive definition.
 
-## Model line index (for grepping in `prisma/schema.prisma`)
+## Model line index — all 109 models (for grepping in `prisma/schema.prisma`)
 
 | Line | Model | Line | Model | Line | Model |
 |---:|---|---:|---|---:|---|
-| 13 | PartnerInquiry | 753 | Order | 1702 | GroupOrderV2 |
-| 34 | AnalyticsSnapshot | 837 | OrderItem | 1736 | SubOrder |
-| 66 | Experiment | 865 | Fulfillment | 1768 | GroupParticipantV2 |
-| 95 | ExperimentVariant | 893 | Refund | 1793 | DraftCartItem |
-| 116 | GroupOrderItem | 948 | OrderAmendment | 1819 | PurchasedItem |
-| 136 | GroupOrder | 972 | OrderItemPickState | 1846 | ParticipantPayment |
-| 173 | GroupParticipant | 1002 | AIInventoryCount | 1878 | EmailTemplateContent |
-| 203 | OrderAnalytics | 1029 | AIInventoryQuery | 1893 | InventoryNote |
-| 253 | GroupOrderPayment | 1043 | InventoryPrediction | 1911 | ReceivingInvoice |
-| 288 | Product | 1076 | FeatureFlag | 1932 | ReceivingInvoiceLine |
-| 342 | ProductVariant | 1091 | ShopifySync | 1953 | DistributorSkuMap |
-| 396 | ProductImage | 1126 | DeliveryTask | 1971 | GroupDeliveryInvoice |
-| 417 | Category | 1165 | EmailLog | 1993 | WebhookEvent |
-| 440 | ProductCategory | 1241 | Discount | 2045 | PartnerApplication |
-| 452 | BundleComponent | 1295 | DiscountUsage | 2070 | Affiliate |
-| 479 | InventoryLocation | 1311 | ReferralCode | 2111 | DashboardTemplate |
-| 495 | InventoryItem | 1329 | AutomaticDiscount | 2137 | AffiliateWebhookLog |
-| 527 | InventoryMovement | 1378 | LoyaltyTier | 2156 | DashboardView |
-| 556 | LowStockAlert | 1397 | CustomerLoyalty | 2167 | AffiliateCommission |
-| 597 | Customer | 1417 | PointsTransaction | 2196 | AffiliatePayout |
-| 645 | CustomerAddress | 1446 | VercelAnalyticsEvent | 2217 | PayoutLineItem |
-| 676 | Cart | 1503 | DrinkCalculatorLead | 2230 | MagicLinkToken |
-| 722 | CartItem | 1526 | DraftOrder | 2249 | AgentConversation |
-| | | | | 2273 | AgentProposal |
-| | | | | 2291 | McpRequestLog |
-| | | | | 2313 | BoatSchedule |
-| | | | | 2351 | ScheduleOrderMatch |
-| | | | | 2371 | SyncLog |
+| 13 | PartnerInquiry | 1287 | DeliveryTask | 2540 | AgentConversation |
+| 38 | EventRsvp | 1326 | EmailLog | 2564 | AgentProposal |
+| 53 | AnalyticsSnapshot | 1404 | FollowUpJob | 2582 | McpRequestLog |
+| 97 | AnalyticsEvent | 1448 | EmailSuppression | 2604 | BoatSchedule |
+| 138 | GbpReview | 1466 | Discount | 2642 | ScheduleOrderMatch |
+| 158 | Experiment | 1528 | PremiereCreditGrant | 2667 | RecommendationItem |
+| 188 | ExperimentVariant | 1568 | DiscountUsage | 2703 | OperationsRecommendation |
+| 212 | GroupOrderItem | 1584 | ReferralCode | 2732 | OperationsSnapshot |
+| 232 | GroupOrder | 1602 | AutomaticDiscount | 2754 | FinanceRecommendation |
+| 269 | GroupParticipant | 1651 | LoyaltyTier | 2783 | FinanceSnapshot |
+| 299 | OrderAnalytics | 1670 | CustomerLoyalty | 2799 | StrategyInitiative |
+| 349 | GroupOrderPayment | 1690 | PointsTransaction | 2826 | IntuitOAuthState |
+| 384 | Product | 1719 | VercelAnalyticsEvent | 2844 | PlaidItem |
+| 438 | ProductVariant | 1776 | DrinkCalculatorLead | 2864 | PlaidAccount |
+| 492 | ProductImage | 1799 | DraftOrder | 2887 | PlaidTransaction |
+| 513 | Category | 1949 | GroupOrderV2 | 2935 | PlaidSyncCursor |
+| 536 | ProductCategory | 2009 | SubOrder | 2950 | QbAccount |
+| 548 | BundleComponent | 2044 | GroupParticipantV2 | 2977 | QbExpense |
+| 575 | InventoryLocation | 2069 | DraftCartItem | 3013 | ShopifyOrderArchive |
+| 591 | InventoryItem | 2095 | PurchasedItem | 3052 | ShopifyArchiveSyncState |
+| 623 | InventoryMovement | 2122 | ParticipantPayment | 3068 | FinanceMonthlyRollup |
+| 652 | LowStockAlert | 2157 | EmailTemplateContent | 3097 | QbJournalEntry |
+| 693 | Customer | 2172 | InventoryNote | 3135 | QbJournalConfig |
+| 741 | CustomerAddress | 2190 | ReceivingInvoice | 3160 | StripePayout |
+| 772 | Cart | 2211 | ReceivingInvoiceLine | 3189 | StripeBalance |
+| 823 | CartItem | 2234 | DistributorSkuMap | 3205 | ChargeDispute |
+| 854 | Order | 2252 | GroupDeliveryInvoice | 3228 | SyncLog |
+| 973 | OrderItem | 2274 | WebhookEvent | 3248 | CartShareLink |
+| 1011 | OrderItemPickState | 2326 | PartnerApplication | 3274 | SeoSnapshot |
+| 1026 | Fulfillment | 2351 | Affiliate | 3311 | VisitorSession |
+| 1054 | Refund | 2398 | DashboardTemplate | 3404 | Lead |
+| 1109 | OrderAmendment | 2424 | AffiliateWebhookLog | 3490 | InboundEmail |
+| 1163 | AIInventoryCount | 2443 | DashboardView | 3518 | ChatConversation |
+| 1190 | AIInventoryQuery | 2458 | AffiliateCommission | 3564 | LeadEvent |
+| 1204 | InventoryPrediction | 2487 | AffiliatePayout | 3595 | PartnerProspect |
+| 1237 | FeatureFlag | 2508 | PayoutLineItem |  |  |
+| 1252 | ShopifySync | 2521 | MagicLinkToken |  |  |
 
 
 ## Enums (all 46)
@@ -349,6 +360,24 @@ Phase 0 scaffolding for the Finance Director pipeline — see `docs/FINANCE-DIRE
 - Key fields: unique `transactionId`, `plaidItemId` (FK), `accountId`, `date Date`, `authorizedDate? Date`, `amount Decimal(15,2)` (positive = outflow per Plaid), `name`, `merchantName?`, `pending`, `paymentChannel?`, `category String[]`, `personalFinanceCategoryPrimary?`, `personalFinanceCategoryDetailed?`, `matchedStripePayoutId?`, `matchedReceivingInvoiceId?`, `qbTransactionId?`, `qbCategoryAssigned?`, `reconciledAt?`.
 - Indexed by `plaidItemId`, `date`, `(accountId, date)`, `reconciledAt`.
 
+### PlaidSyncCursor (2935)
+- Per-Item cursor for Plaid's incremental `/transactions/sync` (added/modified/removed since the stored cursor). One row per `PlaidItem`.
+
+### QbAccount (2950) / QbExpense (2977)
+- QuickBooks Chart-of-Accounts cache and cached expense transactions (QB Purchase + Bill), pulled by `/api/cron/finance-qb-pull`. Upsert key `qbTransactionId`, so re-pulls are idempotent.
+
+### QbJournalEntry (3097) / QbJournalConfig (3135)
+- Per-day sales journals posted PartyOn → QuickBooks. Drafted by the daily cron; posting **requires operator approval**. `QbJournalConfig` is the single-row operator-edited mapping from revenue/expense concepts to QB account ids (edited at `/admin/finance/journals/settings`, deliberately in the DB rather than env vars).
+
+### StripePayout (3160) / StripeBalance (3189) / ChargeDispute (3205)
+- Stripe payouts to the bank (reconciled against Plaid deposits), daily balance snapshots ("how much is in Stripe vs the bank?"), and one row per dispute lifecycle updated on every `charge.dispute.*` webhook.
+
+### ShopifyOrderArchive (3013) / ShopifyArchiveSyncState (3052)
+- Thin financial snapshot of every Shopify order ever processed, powering multi-year rollups. **Not** a replacement for `Order` — `Order` remains the system of record for the current era. `ShopifyArchiveSyncState` is the single-row backfill/incremental tracker.
+
+### FinanceMonthlyRollup (3068)
+- Pre-computed monthly trajectory, one row per (year, month). **UNIONs the two revenue eras** — `ShopifyOrderArchive` (≤2025-12) + `Order` (≥2026-01), deduped — and layers QB OpEx where available. Anything reading revenue across both eras must go through this, not either table alone.
+
 ```mermaid
 erDiagram
   PlaidItem ||--o{ PlaidAccount : has
@@ -401,18 +430,68 @@ erDiagram
 ### DraftOrder — new field
 - `upsellVariantId String?` — landing-page pre-checkout upsell A/B tracking. Records which arrangement of the overlay was shown. Per-item upsell attribution lives in the items JSON (each item may carry `{ ..., viaUpsell: true }`). Index on `upsellVariantId`.
 
-### SubOrder — new field
-- `deliveryDateConfirmed Boolean @default(false)` — flags that the host has manually confirmed the date on the universal dashboard.
+### SubOrder — delivery date (changed 2026-08-01, PR #348)
+- `deliveryDate DateTime?` and `orderDeadline DateTime?` are **nullable**. NULL means *the customer has not chosen a date yet* — self-serve dashboards are now born dateless. They used to be NOT NULL, so the service invented a "creation + 7 days" placeholder that silently became the real delivery date on orders.
+- `deliveryDateConfirmed Boolean @default(false)` — true only when a human chose the date. Creation paths that receive a real date (Premier booking webhook, event presets, quote flow, affiliate portal) set it at creation; a date PATCH is the only other way it flips true.
+- Both group checkout routes refuse (`DELIVERY_DATE_REQUIRED`) unless the tab has a date **and** the flag, and refuse a past date (`DELIVERY_DATE_PAST`).
+- `deliveryDate` is stored at **noon UTC**. Compare it as a calendar day in `America/Chicago` (`todayCT()`), never as an instant — noon UTC is 7am CT, so an instant comparison rejects every same-day order placed after breakfast.
+- A NULL `orderDeadline` never matches the auto-lock cron's `lt: now`, so dateless tabs stay OPEN rather than locking against an invented deadline.
 
 ## Domain: Boat schedule
 
 - **BoatSchedule** (2313), **ScheduleOrderMatch** (2351) — pairs orders with boat trips (surfaces at `/ops/boat-schedule`, `/premier-boat-schedule`, `/api/*/boat-schedule/*`).
 
+## Domain: Partner outreach 2.0 (added 2026-07)
+
+### PartnerProspect (3595)
+- One row per prospect company, deduped globally by `websiteKey` (host+path). Replaces the old static JSON prospect lists. The research dossier lives in `enrichment`; drafted outreach copy and A/B arm live alongside it. Surfaced at `/admin/affiliates/prospects/*`.
+
+## Domain: Follow-up email system (added 2026-07)
+
+### FollowUpJob (1404)
+- One scheduled follow-up send per journey step per entity. `dedupeKey` makes re-enqueues free. Table created by `prisma/migrations/manual/2026-07-06-followups-phase-0.sql`.
+
+### EmailSuppression (1448)
+- Global do-not-email list for follow-up sends. **Transactional email bypasses it** — order confirmations still go out.
+
+## Domain: Premiere credits (added 2026-07)
+
+### PremiereCreditGrant (1528)
+- One row per credit sourced from the Premiere "POD Credits" sheet. Each grant mints a **single-use FIXED_AMOUNT `Discount`** and delivers the code by email + SMS. Billing rule: invoice Premiere only for *redeemed* codes (`usageCount ≥ 1`).
+
+## Domain: SEO & reputation
+
+### SeoSnapshot (3274)
+- One row per (surface × capture run) from the SEMrush scrape job.
+
+### GbpReview (138)
+- Google Business Profile reviews, including our reply text.
+
+## Domain: Conversational + inbound capture
+
+### ChatConversation (3518)
+- One row per Wayne (AI concierge) conversation, keyed by a client-generated `conversationId`; `/api/chat` upserts the full message history each turn. Linked to its `Lead` once contact details are captured.
+
+### InboundEmail (3490)
+- Customer email received at info@partyondelivery.com, pulled by the Gmail poller and linked to its `Lead` so the board drawer can show what people are emailing in. One row per Gmail message.
+
+### AnalyticsEvent (97)
+- First-party analytics events (name + `occurredAt` + payload), independent of GA4.
+
+## Domain: Admin strategy & events
+
+### StrategyInitiative (2799)
+- Human-authored strategic initiatives for the `/admin/strategy` living document. Deliberately distinct from the machine-detected recommendation queues: these are owned, prioritized and hand-tracked.
+
+### EventRsvp (38)
+- RSVPs for one-off events (e.g. `/dads-gone-wild`). Written by a one-shot script, **not** the auto-apply migration ledger; listed at `/ops/rsvps`.
+
 ## Migrations & seed data
 
-- Migrations directory: `prisma/migrations/` (managed with `prisma migrate dev` / `db:push`).
+- Migrations are **hand-written additive SQL** under `prisma/migrations/manual/`, applied exactly once via the `_manual_migrations` ledger (`scripts/db/apply-manual-migrations.mjs`, run at the front of the production build). See `prisma/migrations/manual/README.md` and ADR-0008.
+- **`prisma migrate dev` and `prisma db push` are FORBIDDEN against this database** — a PreToolUse hook blocks them. `prisma/schema.prisma` is intentionally drifted from production (some removed columns still hold data), so those commands would drop real data. Use the `db-migration` skill.
 - Backups present in repo: `prisma/schema-backup.prisma`, `prisma/schema-original.prisma` — historical only.
-- Seed data: _No explicit `prisma/seed.ts` referenced in `package.json`._ Blog posts are filesystem-based under `content/blog/posts/` (133 files) and do not live in Prisma.
+- Seed data: _No explicit `prisma/seed.ts` referenced in `package.json`._ Blog posts are filesystem-based under `content/blog/posts/` (123 `.mdx` files) and do not live in Prisma.
 - Product seed: catalog is populated via Shopify Admin API sync (`src/lib/shopify/`, `src/lib/sync/`) rather than Prisma seeds.
 
 ## See also
