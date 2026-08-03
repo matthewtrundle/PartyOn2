@@ -1,4 +1,4 @@
-# Wedding Video — Plain-Language Script (v1.0, 2026-08-03 — SHOOT-READY PENDING 4 SIGN-OFFS)
+# Wedding Video — Plain-Language Script (v1.0, 2026-08-03 — SHOOT-READY PENDING 3 SIGN-OFFS)
 
 Companion to [wedding-video-brief-2026-07.md](./wedding-video-brief-2026-07.md). Same format as the approved bach script: **~90% voiceover over b-roll; Allan on camera 3 times only** (hook, the open-bar-math moment, CTA — under 10% of runtime). Venues and partners named.
 
