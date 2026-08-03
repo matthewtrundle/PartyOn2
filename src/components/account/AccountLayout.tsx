@@ -134,9 +134,9 @@ export default function AccountLayout({ children, title }: AccountLayoutProps) {
     const file = e.target.files?.[0]
     if (file && customer) {
       try {
+        // customerId is no longer sent — the server takes it from the session.
         const formData = new FormData()
         formData.append('file', file)
-        formData.append('customerId', customer.id)
 
         const response = await fetch('/api/profile/upload-image', {
           method: 'POST',
