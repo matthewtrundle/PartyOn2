@@ -43,6 +43,20 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
+/**
+ * These are full render-to-mutation integration tests: each one walks a card
+ * through several sequential async UI waits (arm → press → advance → assert),
+ * so they legitimately cost more wall-clock than a unit test. Vitest's default
+ * 5s budget is not enough on a contended CI runner — TWO different tests here
+ * have now timed out at ~5.00s while passing locally and in isolation (see also
+ * the sibling de-flake in #351, which anchored on the mutation instead of a
+ * transient label).
+ *
+ * This raises only the CLOCK. Every assertion, gate, and invariant below is
+ * unchanged — a genuine hang still fails, just at 20s instead of 5s.
+ */
+vi.setConfig({ testTimeout: 20_000 });
 import type { Mock } from 'vitest';
 import type { ReactElement } from 'react';
 import { render, screen, fireEvent, waitFor, act, cleanup } from '@testing-library/react';
