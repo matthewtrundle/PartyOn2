@@ -173,8 +173,10 @@ export default function DeliveryHeroSection({
         onTabChange(activeTabIndex - 1);
       }
       onRefresh();
-    } catch {
-      // Silently fail
+    } catch (err) {
+      // The server refuses to delete a tab that has payments on it. Failing
+      // silently here left the host clicking a dead button.
+      alert(err instanceof Error ? err.message : 'Could not delete this tab.');
     }
   }
 

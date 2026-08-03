@@ -169,10 +169,10 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    console.warn(
-      `[Group V2] participant remove: code=${code} target=${pid} by=${hostParticipantId}`
-    );
     await removeParticipant(group.id, pid);
+    console.warn(
+      `[Group V2] participant removed: code=***${code.slice(-3)} target=${pid} by=${hostParticipantId}`
+    );
 
     return NextResponse.json({ success: true, message: 'Participant removed' });
   } catch (error) {

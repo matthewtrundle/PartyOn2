@@ -61,6 +61,7 @@ export default function HostControlBar({
       onRefresh();
     } catch (err) {
       console.error('Failed to cancel group:', err);
+      alert(err instanceof Error ? err.message : 'Could not cancel this order.');
     } finally {
       setLoading('');
     }
@@ -96,6 +97,7 @@ export default function HostControlBar({
       onRefresh();
     } catch (err) {
       console.error('Failed to delete tab:', err);
+      alert(err instanceof Error ? err.message : 'Could not delete this tab.');
     } finally {
       setLoading('');
     }

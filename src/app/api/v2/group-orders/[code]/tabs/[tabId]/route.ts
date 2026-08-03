@@ -115,12 +115,13 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Host actions are destructive and are authorized only by a participant id
-    // that the public GET exposes — log them so abuse is visible.
-    console.warn(
-      `[Group V2] tab delete: code=${code} tab=${tabId} by=${hostParticipantId}`
-    );
     await deleteTab(tabId);
+    // Logged AFTER success — host actions are destructive and are authorized
+    // only by a participant id the public GET exposes, so the log needs to
+    // record what actually happened, not what was attempted.
+    console.warn(
+      `[Group V2] tab deleted: code=***${code.slice(-3)} tab=${tabId} by=${hostParticipantId}`
+    );
     return NextResponse.json({ success: true, message: 'Tab deleted' });
   } catch (error) {
     if (error instanceof TabHasMoneyError) {

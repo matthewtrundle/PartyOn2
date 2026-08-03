@@ -85,6 +85,8 @@ export const JoinGroupOrderSchema = z.object({
   ageVerified: z.boolean().refine((val) => val === true, {
     message: 'Age verification is required',
   }),
+  // Accepted for backward compatibility but IGNORED — the route overwrites it
+  // from the session, so a caller cannot attach someone else's customer id.
   customerId: z.string().optional(),
 });
 

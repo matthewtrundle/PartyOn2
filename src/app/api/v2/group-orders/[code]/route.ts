@@ -61,6 +61,16 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         { status: 403 }
       );
     }
+    if (error instanceof Error && error.message === 'HAS_PAID_PAYMENT') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'This order already has payments on it and can no longer be cancelled here.',
+          code: 'HAS_PAID_PAYMENT',
+        },
+        { status: 409 }
+      );
+    }
     console.error('[Group V2] Update error:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to update group order' },
@@ -80,10 +90,10 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Cancelling blocks checkout on every tab, so it is effectively a remote
-    // kill-switch — and it is authorized by an id the public GET exposes.
-    console.warn(`[Group V2] group cancel: code=${code} by=${hostParticipantId}`);
     await cancelGroupOrder(code, hostParticipantId);
+    // After success: cancelling blocks checkout on every tab, so it is
+    // effectively a remote kill-switch authorized by a public id.
+    console.warn(`[Group V2] group cancelled: code=***${code.slice(-3)} by=${hostParticipantId}`);
     return NextResponse.json({ success: true, message: 'Group order cancelled' });
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Failed to cancel';
