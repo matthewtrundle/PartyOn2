@@ -12,6 +12,8 @@ import {
 } from '@/lib/group-orders-v2/service';
 import { createGroupV2CheckoutSession, DiscountNotApplicableError } from '@/lib/stripe/group-v2-payments';
 import { ProductNotPurchasableError } from '@/lib/products/availability';
+import { CheckoutTabSchema } from '@/lib/group-orders-v2/validation';
+import { todayCT } from '@/lib/ops/cooler-grouping';
 
 interface RouteParams {
   params: Promise<{ code: string; tabId: string }>;
@@ -21,14 +23,17 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     const { code, tabId } = await params;
     const body = await request.json();
-    const { participantId, discountCode, tipAmount, email, phone, smsConsent } = body;
 
-    if (!participantId) {
+    // Untrusted input on a charge path — validate before anything reaches
+    // Stripe, the discount engine, or the participant record.
+    const parsed = CheckoutTabSchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json(
-        { success: false, error: 'participantId is required' },
+        { success: false, error: 'Validation failed', details: parsed.error.flatten() },
         { status: 400 }
       );
     }
+    const { participantId, discountCode, tipAmount, email, phone, smsConsent } = parsed.data;
 
     // Verify group + tab
     const group = await getGroupOrderByCode(code);
@@ -38,6 +43,37 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const tab = group.tabs.find((t) => t.id === tabId);
     if (!tab) {
       return NextResponse.json({ success: false, error: 'Tab not found' }, { status: 404 });
+    }
+
+    // Terminal states never take money, and they must run BEFORE the date
+    // gates — telling someone to pick a new date for a cancelled order sends
+    // them round a loop. Cancellation is recorded on the GROUP row
+    // (cancelGroupOrder / cancelGroupOrderByAffiliate); nothing writes
+    // SubOrder.status = 'CANCELLED' today, so group.status is the check that
+    // actually fires. Cancelling refuses once any payment is PAID, so a
+    // CANCELLED order is by definition one where no money has moved.
+    // LOCKED is deliberately absent: the lock stops new ITEMS, not payment for
+    // items already in the cart, and orderDeadline lands ~3am CT on the
+    // delivery day, so every same-day tab auto-locks within hours.
+    if (group.status === 'CANCELLED' || tab.status === 'CANCELLED') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'This order was cancelled and can no longer be paid for.',
+          code: 'ORDER_CANCELLED',
+        },
+        { status: 409 }
+      );
+    }
+    if (tab.status === 'FULFILLED') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'This delivery has already been fulfilled.',
+          code: 'TAB_FULFILLED',
+        },
+        { status: 409 }
+      );
     }
 
     // Never charge against an unchosen date. Self-serve dashboards are born
@@ -53,6 +89,22 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         { status: 400 }
       );
     }
+
+    // A date that has already come and gone must not take money either.
+    // Compare CALENDAR DAYS in Austin time: deliveryDate is stored at noon UTC
+    // (= 7am CT), so an instant comparison would reject every legitimate
+    // same-day order placed after 7am CT.
+    if (tab.deliveryDate.slice(0, 10) < todayCT()) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'This delivery date has already passed. Please choose a new date before checking out.',
+          code: 'DELIVERY_DATE_PAST',
+        },
+        { status: 400 }
+      );
+    }
+
 
     // Get participant
     const participant = await getParticipantById(participantId);

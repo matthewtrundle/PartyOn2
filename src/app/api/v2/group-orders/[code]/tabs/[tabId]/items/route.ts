@@ -46,12 +46,20 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const item = await addDraftItem(tabId, parsed.data);
 
     // Auto-promote to host: first person to add an item becomes host
-    // if no host exists yet (e.g. webhook-created dashboards)
+    // if no host exists yet (e.g. webhook-created dashboards).
+    //
+    // The promoted participant MUST belong to this group. `hasHost` is
+    // evaluated on the group in the URL, so without the scope check a guest
+    // could post an item to any hostless dashboard (324 exist — every
+    // webhook-created link starts that way) and have their own participant
+    // row, in a different group, promoted to host there. Host grants tab
+    // delete, which cascades purchased items and payment records.
     if (parsed.data.participantId) {
       const hasHost = group.participants.some((p) => p.isHost);
-      if (!hasHost) {
-        await prisma.groupParticipantV2.update({
-          where: { id: parsed.data.participantId },
+      const isMember = group.participants.some((p) => p.id === parsed.data.participantId);
+      if (!hasHost && isMember) {
+        await prisma.groupParticipantV2.updateMany({
+          where: { id: parsed.data.participantId, groupOrderId: group.id },
           data: { isHost: true },
         });
       }

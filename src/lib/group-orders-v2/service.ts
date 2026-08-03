@@ -630,14 +630,18 @@ export async function removeParticipant(
   groupOrderId: string,
   participantId: string
 ): Promise<void> {
-  // Delete their draft items across all tabs
+  // Every write is scoped to groupOrderId. This function received the group id
+  // from the start but ignored it, so a host of ANY group could wipe a
+  // participant's drafts across EVERY group they belonged to and evict them.
+  // "Across all tabs" means all tabs OF THIS GROUP.
   await prisma.draftCartItem.deleteMany({
-    where: { addedByParticipantId: participantId },
+    where: { addedByParticipantId: participantId, subOrder: { groupOrderId } },
   });
 
-  // Set status to REMOVED (purchased items remain)
-  await prisma.groupParticipantV2.update({
-    where: { id: participantId },
+  // Set status to REMOVED (purchased items remain). updateMany, not update:
+  // a participant id from another group matches nothing instead of throwing.
+  await prisma.groupParticipantV2.updateMany({
+    where: { id: participantId, groupOrderId },
     data: { status: 'REMOVED' },
   });
 }
@@ -718,14 +722,27 @@ export async function addDraftItem(
   };
 }
 
+/**
+ * Where a draft item must live for a caller to touch it. Required (not
+ * optional) so the type checker forces every call site to prove which group
+ * and tab it is acting on.
+ */
+export interface DraftItemScope {
+  groupOrderId: string;
+  subOrderId: string;
+}
+
 export async function updateDraftItem(
   itemId: string,
   participantId: string,
   quantity: number,
-  isHost: boolean
+  isHost: boolean,
+  scope: DraftItemScope
 ): Promise<DraftCartItemView> {
-  const item = await prisma.draftCartItem.findUnique({
-    where: { id: itemId },
+  // Scope is REQUIRED: `isHost` is computed against the caller's own group, so
+  // without it a host of any group could edit any item anywhere.
+  const item = await prisma.draftCartItem.findFirst({
+    where: { id: itemId, subOrderId: scope.subOrderId, subOrder: { groupOrderId: scope.groupOrderId } },
     include: { addedBy: true, subOrder: true },
   });
   if (!item) throw new Error('Item not found');
@@ -758,10 +775,12 @@ export async function updateDraftItem(
 export async function removeDraftItem(
   itemId: string,
   participantId: string,
-  isHost: boolean
+  isHost: boolean,
+  scope: DraftItemScope
 ): Promise<void> {
-  const item = await prisma.draftCartItem.findUnique({
-    where: { id: itemId },
+  // See updateDraftItem — scope is required for the same reason.
+  const item = await prisma.draftCartItem.findFirst({
+    where: { id: itemId, subOrderId: scope.subOrderId, subOrder: { groupOrderId: scope.groupOrderId } },
     include: { subOrder: true },
   });
   if (!item) throw new Error('Item not found');

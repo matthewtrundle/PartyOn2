@@ -70,3 +70,6 @@ obsidian-vault
 /purchase-plan.html
 /order-list.html
 /boat-callsheet.html
+
+# Local dev-server config for the Browser preview pane
+.claude/launch.json

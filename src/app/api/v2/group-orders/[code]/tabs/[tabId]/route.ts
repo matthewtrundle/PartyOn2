@@ -38,6 +38,14 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ success: false, error: 'Group not found' }, { status: 404 });
     }
 
+    // The tab must belong to THIS group. Without this, participation in any
+    // one group (a share code is all it takes to join) would authorize
+    // editing any tab in any other group by id — including its delivery date.
+    const existingTab = group.tabs.find((t) => t.id === tabId);
+    if (!existingTab) {
+      return NextResponse.json({ success: false, error: 'Tab not found' }, { status: 404 });
+    }
+
     // Status changes (lock/unlock) are host-only
     if (body.status) {
       const isHost = await isParticipantHost(participantId, group.id);
@@ -88,6 +96,14 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const group = await getGroupOrderByCode(code);
     if (!group) {
       return NextResponse.json({ success: false, error: 'Group not found' }, { status: 404 });
+    }
+
+    // Scope the tab to THIS group before the host check — otherwise being host
+    // of your own group authorizes deleting any other group's tab by id, and
+    // the delete cascades that tab's items and payment records.
+    const existingTab = group.tabs.find((t) => t.id === tabId);
+    if (!existingTab) {
+      return NextResponse.json({ success: false, error: 'Tab not found' }, { status: 404 });
     }
 
     const isHost = await isParticipantHost(hostParticipantId, group.id);

@@ -167,9 +167,14 @@ export default function DashboardCheckoutModal({
         window.location.href = result.checkoutUrl;
       }
     } catch (err) {
-      // Server-side date gate: send the customer straight to the date picker
-      // instead of leaving them on a dead error message.
-      if (err instanceof GroupOrdersApiError && err.code === 'DELIVERY_DATE_REQUIRED') {
+      // Server-side date gates: send the customer straight to the date picker
+      // instead of leaving them on a dead error message. DELIVERY_DATE_PAST
+      // is the stale-dashboard case (a date that has since gone by) and is
+      // fixed the same way — by picking a new date.
+      if (
+        err instanceof GroupOrdersApiError &&
+        (err.code === 'DELIVERY_DATE_REQUIRED' || err.code === 'DELIVERY_DATE_PAST')
+      ) {
         setLoading(false);
         onClose();
         onOpenDeliveryDetails();

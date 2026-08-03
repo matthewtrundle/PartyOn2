@@ -150,6 +150,17 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       );
     }
 
+    // Scope the participant to THIS group, as the PATCH handler above already
+    // does — without it, being host of your own group authorized removing a
+    // participant from someone else's.
+    const target = group.participants.find((p) => p.id === pid);
+    if (!target) {
+      return NextResponse.json(
+        { success: false, error: 'Participant not found' },
+        { status: 404 }
+      );
+    }
+
     const isHost = await isParticipantHost(hostParticipantId, group.id);
     if (!isHost) {
       return NextResponse.json(
