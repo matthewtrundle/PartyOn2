@@ -82,9 +82,11 @@ Evidence sources: [internal-data-wedding-corporate-2026-07-14.md](../../data/seo
 
 **The opinion: buy from someone who'll take the unopened cases back — and know the cap before you over-order.**
 
-> "Buy from a licensed retailer who delivers cold, on your timeline, to the venue — not from wherever's cheapest by the bottle. The thing that actually decides this is the leftovers policy, so get it in plain language before you order. Ours is: **you can return up to a quarter of your order unopened, and you get a hundred percent of your money back on what you return.** So build in a cushion — but build in a twenty percent cushion, not a fifty percent one, because past a quarter of the order you own it. That's the whole reason you can afford to over-order a little instead of running dry at nine-thirty. Running out at a wedding is the one mistake you can't fix from the parking lot."
+> "Buy from a licensed retailer who delivers cold, on your timeline, to the venue — not from wherever's cheapest by the bottle. The thing that actually decides this is the leftovers policy, so get it in plain language before you order. Ours is: **drop the unopened cases back at our store the day after, and we refund a hundred percent of up to a quarter of your order — same day, no restocking fee.** So build in a cushion, but build in a twenty percent cushion, not a fifty percent one, because past that quarter it's yours. That's the whole reason you can afford to over-order a little instead of running dry at nine-thirty. Running out at a wedding is the one mistake you can't fix from the parking lot."
 
-*On-screen:* "Return up to **25%** of your order, unopened → **100% refunded**" then "Cushion by ~20%, not 50%." · *B-roll:* NEED — unopened cases being loaded back into a van (the proof shot for this chapter). · *Policy confirmed by Allan 2026-08-03.*
+*On-screen:* "Bring back up to **25%** unopened → **100% refunded, same day**" then "Cushion by ~20%, not 50%." · *B-roll:* NEED — someone carrying unopened cases into the store counter (**not** a van pickup — the customer brings them back; see note). · *Policy confirmed by Allan 2026-08-03; mechanic per the live copy in `wedding-drink-calculator/sections/WhyYouNeedUs.tsx`.*
+
+> ⚠ **Editor's note — do not shoot this as a pickup.** An earlier draft implied we collect the leftovers. We don't: the customer drops unopened cases back at the store the day after, and the refund is same-day with no restocking fee. Getting this wrong on camera would create an expectation ops has to eat.
 
 ## Q9 — "Do you need a bartender, a license, or insurance?" · 3:50–4:10
 
@@ -136,7 +138,7 @@ Suggested single line to standardize on, everywhere: **"Return up to 25% of your
 
 ## Master shot list (NEED — one shoot day, ideally piggybacked on a real wedding delivery)
 
-1. **Unopened cases going back into the van** (Q8 proof shot — gated on claim #2)
+1. **Unopened cases carried into the store counter** (Q8 proof shot — the customer brings them back; do NOT stage this as a van pickup)
 2. **Venue bar in service** — bartender pouring, guests at the rail (Q3/Q4; ask a partner venue, tag them)
 3. **Reception wide shot** in full swing (Q1)
 4. **Champagne toast / tower** (Q7)
