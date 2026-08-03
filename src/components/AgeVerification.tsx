@@ -14,7 +14,7 @@ import AgeVerificationModal from './AgeVerificationModal'
  * QuickBuyModal), and the legal control remains carding at the door.
  * Every other route keeps the standard first-visit gate.
  */
-const AGE_GATE_EXEMPT_PATHS = [
+export const AGE_GATE_EXEMPT_PATHS = [
   '/austin-bachelor-party-delivery',
   '/austin-bachelor-party-delivery-ai-test',
   '/austin-bachelorette-party-delivery',
@@ -28,6 +28,18 @@ const AGE_GATE_EXEMPT_PATHS = [
   '/austin-bachelorette-concierge',
   '/austin-concierge',
   '/concierge-quote',
+  // Full Moon Party event funnel. Same posture as the paid landers above:
+  // traffic arrives from texted/shared links straight onto the page, and a
+  // full-screen DOB form before a single word is read kills it. Measured
+  // 2026-08-03: 34 visitors from Allan's weekend outreach, ZERO CTA clicks
+  // and zero checkout starts, because `page_view` fires while the gate is up
+  // — every one of them was counted as a "visit" without seeing the page.
+  //
+  // Age compliance is NOT weakened: the ticket modal keeps its required
+  // "I'm 25 or older" attestation, /order checkout keeps the required 21+
+  // TABC confirmation, and ID is checked at the dock on handoff.
+  '/full-moon-aug28',
+  '/full-moon-drinks',
   // Legal text linked from the Full Moon ticket modal and the confirmation
   // email — no purchase on the page, and a buyer following the terms link
   // from their email must be able to read it without an entrance gate.
