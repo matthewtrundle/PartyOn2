@@ -15,18 +15,25 @@ const serviceMock = vi.hoisted(() => ({
   updateDraftItem: vi.fn(),
   removeDraftItem: vi.fn(),
   removeParticipant: vi.fn(),
+  addDraftItem: vi.fn(),
   isParticipantHost: vi.fn(),
   isActiveParticipant: vi.fn(),
   updateParticipant: vi.fn(),
 }));
 
+const prismaMock = vi.hoisted(() => ({
+  groupParticipantV2: { updateMany: vi.fn(), update: vi.fn() },
+}));
+
 vi.mock('@/lib/group-orders-v2/service', () => serviceMock);
+vi.mock('@/lib/prisma', () => ({ prisma: prismaMock }));
 
 import {
   PATCH as itemPatch,
   DELETE as itemDelete,
 } from '../tabs/[tabId]/items/[itemId]/route';
 import { DELETE as participantDelete } from '../participants/[pid]/route';
+import { POST as addItem } from '../tabs/[tabId]/items/route';
 
 const OWN_TAB = 'tab-own';
 const FOREIGN_TAB = 'tab-foreign';
@@ -112,6 +119,57 @@ describe('draft item routes — tab must belong to the group', () => {
     expect(serviceMock.removeDraftItem.mock.calls[0][3]).toEqual({
       groupOrderId: 'group-1',
       subOrderId: OWN_TAB,
+    });
+  });
+});
+
+describe('add-item host auto-promotion — privilege escalation guard', () => {
+  const HOSTLESS = {
+    id: 'group-hostless',
+    shareCode: 'HOSTLESS',
+    // No participant here is a host — this is the state every webhook-created
+    // dashboard starts in (324 such groups existed in production).
+    participants: [{ id: 'someone-else', isHost: false }],
+    tabs: [{ id: 'tab-hostless', name: 'Marina Delivery', status: 'OPEN' }],
+  };
+
+  const itemBody = {
+    participantId: FOREIGN_PID,
+    productId: 'p1',
+    variantId: 'v1',
+    title: 'Beer',
+    price: 10,
+    quantity: 1,
+  };
+
+  beforeEach(() => {
+    serviceMock.getGroupOrderByCode.mockResolvedValue(HOSTLESS);
+    serviceMock.addDraftItem.mockResolvedValue({ id: 'item-new' });
+    prismaMock.groupParticipantV2.updateMany.mockResolvedValue({ count: 1 });
+  });
+
+  it('does NOT promote a participant who belongs to a different group', async () => {
+    const res = await addItem(jsonRequest(itemBody) as never, {
+      params: Promise.resolve({ code: 'HOSTLESS', tabId: 'tab-hostless' }),
+    } as never);
+
+    expect(res.status).toBe(201);
+    // The item may be added, but no host promotion may occur — being promoted
+    // to host grants tab deletion, which cascades payments.
+    expect(prismaMock.groupParticipantV2.updateMany).not.toHaveBeenCalled();
+    expect(prismaMock.groupParticipantV2.update).not.toHaveBeenCalled();
+  });
+
+  it('still promotes a real member of the hostless group, scoped by group id', async () => {
+    const res = await addItem(
+      jsonRequest({ ...itemBody, participantId: 'someone-else' }) as never,
+      { params: Promise.resolve({ code: 'HOSTLESS', tabId: 'tab-hostless' }) } as never
+    );
+
+    expect(res.status).toBe(201);
+    expect(prismaMock.groupParticipantV2.updateMany).toHaveBeenCalledWith({
+      where: { id: 'someone-else', groupOrderId: 'group-hostless' },
+      data: { isHost: true },
     });
   });
 });

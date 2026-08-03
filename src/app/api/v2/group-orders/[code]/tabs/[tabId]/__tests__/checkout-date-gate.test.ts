@@ -63,10 +63,12 @@ const FUTURE_DATE = ctDay(30);
 const TODAY_DATE = ctDay(0);
 const PAST_DATE = ctDay(-1);
 
-function group(tabOverrides: Record<string, unknown> = {}) {
+function group(tabOverrides: Record<string, unknown> = {}, groupOverrides: Record<string, unknown> = {}) {
   return {
     id: 'g1',
     shareCode: 'ABC123',
+    status: 'ACTIVE',
+    ...groupOverrides,
     tabs: [
       {
         id: 'tab-1',
@@ -180,6 +182,21 @@ for (const [label, post] of [
       expect(paymentsMock.createGroupV2CheckoutSession).toHaveBeenCalledOnce();
     });
 
+    // Cancellation is recorded on the GROUP, never the tab — sub_orders has
+    // never held a CANCELLED row in production. A guard that only checked
+    // tab.status was unreachable while real cancelled dashboards (with open
+    // tabs and items in cart) stayed chargeable.
+    it('refuses a CANCELLED group even when its tab looks perfectly OPEN', async () => {
+      serviceMock.getGroupOrderByCode.mockResolvedValue(group({}, { status: 'CANCELLED' }));
+
+      const res = await post(makeRequest(), PARAMS);
+      const json = await res.json();
+
+      expect(res.status).toBe(409);
+      expect(json.code).toBe('ORDER_CANCELLED');
+      expect(paymentsMock.createGroupV2CheckoutSession).not.toHaveBeenCalled();
+    });
+
     it('refuses a CANCELLED tab', async () => {
       serviceMock.getGroupOrderByCode.mockResolvedValue(group({ status: 'CANCELLED' }));
 
@@ -187,8 +204,32 @@ for (const [label, post] of [
       const json = await res.json();
 
       expect(res.status).toBe(409);
-      expect(json.code).toBe('TAB_CANCELLED');
+      expect(json.code).toBe('ORDER_CANCELLED');
       expect(paymentsMock.createGroupV2CheckoutSession).not.toHaveBeenCalled();
+    });
+
+    it('refuses a FULFILLED tab', async () => {
+      serviceMock.getGroupOrderByCode.mockResolvedValue(group({ status: 'FULFILLED' }));
+
+      const res = await post(makeRequest(), PARAMS);
+      const json = await res.json();
+
+      expect(res.status).toBe(409);
+      expect(json.code).toBe('TAB_FULFILLED');
+      expect(paymentsMock.createGroupV2CheckoutSession).not.toHaveBeenCalled();
+    });
+
+    // Cancelled short-circuits the date errors: telling someone to pick a new
+    // date for a cancelled order sends them round a loop.
+    it('reports cancellation, not the date, when a cancelled order also has a stale date', async () => {
+      serviceMock.getGroupOrderByCode.mockResolvedValue(
+        group({ deliveryDate: PAST_DATE }, { status: 'CANCELLED' })
+      );
+
+      const res = await post(makeRequest(), PARAMS);
+      const json = await res.json();
+
+      expect(json.code).toBe('ORDER_CANCELLED');
     });
   });
 

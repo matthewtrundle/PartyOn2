@@ -45,6 +45,37 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ success: false, error: 'Tab not found' }, { status: 404 });
     }
 
+    // Terminal states never take money, and they must run BEFORE the date
+    // gates — telling someone to pick a new date for a cancelled order sends
+    // them round a loop. Cancellation is recorded on the GROUP row
+    // (cancelGroupOrder / cancelGroupOrderByAffiliate); nothing writes
+    // SubOrder.status = 'CANCELLED' today, so group.status is the check that
+    // actually fires. Cancelling refuses once any payment is PAID, so a
+    // CANCELLED order is by definition one where no money has moved.
+    // LOCKED is deliberately absent: the lock stops new ITEMS, not payment for
+    // items already in the cart, and orderDeadline lands ~3am CT on the
+    // delivery day, so every same-day tab auto-locks within hours.
+    if (group.status === 'CANCELLED' || tab.status === 'CANCELLED') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'This order was cancelled and can no longer be paid for.',
+          code: 'ORDER_CANCELLED',
+        },
+        { status: 409 }
+      );
+    }
+    if (tab.status === 'FULFILLED') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'This delivery has already been fulfilled.',
+          code: 'TAB_FULFILLED',
+        },
+        { status: 409 }
+      );
+    }
+
     // Never charge against an unchosen date. Self-serve dashboards are born
     // dateless (and legacy ones carry an unconfirmed placeholder) — the
     // customer must pick a delivery date before any money moves.
@@ -74,20 +105,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Terminal states never take money. LOCKED is deliberately NOT here: the
-    // lock stops new ITEMS, not payment for items already in the cart, and
-    // because orderDeadline lands at ~3am CT on the delivery day, every
-    // same-day order is auto-locked within hours of being placed.
-    if (tab.status === 'CANCELLED') {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'This delivery was cancelled and can no longer be paid for.',
-          code: 'TAB_CANCELLED',
-        },
-        { status: 409 }
-      );
-    }
 
     // Get participant
     const participant = await getParticipantById(participantId);
