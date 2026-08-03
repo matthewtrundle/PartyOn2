@@ -3,7 +3,7 @@ title: Business Overview
 project: PartyOn2
 doc_type: codebase-reference
 section: overview
-last_generated: 2026-05-20
+last_generated: 2026-08-03
 tags: [partyondelivery, codebase, overview, business]
 ---
 

@@ -3,7 +3,7 @@ title: Routes and Pages
 project: PartyOn2
 doc_type: codebase-reference
 section: routes
-last_generated: 2026-05-20
+last_generated: 2026-08-03
 tags: [partyondelivery, codebase, routes, api, pages]
 ---
 
@@ -472,6 +472,1067 @@ These are **parallel namespaces, not a migration** — neither supersedes the ot
 - **Root layout** — `src/app/layout.tsx` wraps every page with HTML shell, `ClientLayoutWrapper`, GA + Meta Pixel components.
 - **Section layouts** (non-exhaustive): `about/`, `admin/`, `affiliate/`, `aperol-spritz/`, `austin-byob-venues/`, `austin-partners/`, `bach-parties/`, `bach-parties/products/`, `bach-parties/packages/[tier]/`, `blog/`, `blog/[slug]/`, `blog/category/[category]/`, `boat-parties/`, `boat-parties/products/`, `boat-parties/packages/[tier]/`, `book-now/`, `cart/shared/`, `cart/shared/[id]/`, `checkout/`, `checkout/success/`, `cocktail-kits/`, `contact/`, `corporate/`, `corporate/products/`, `corporate-events-guide/`, `custom-package/`, `delivery/[location]/`, `delivery-areas/`, `faqs/`, `gin-martini/`, `holiday-runner-up/`, `negroni/`, `old-fashioned/`, `ops/`, `order/`, `partners/`, `partners/*/` (per named partner), `payment/`, `plan-event/`, `products/`, `search/`, `services/`, `venues/[slug]/`, `weddings/`, `weddings/order/`, `weddings/products/`, `weddings/packages/[tier]/`.
 - **Partner layouts** exist per partner to allow iframe-embeddable CSP — see `next.config.ts` header rules for `/partners/:path*`.
+
+## Complete inventory (generated — regenerate when it drifts)
+
+The curated sections above explain *what things do*; this section exists so the doc is genuinely exhaustive, which the rest of the reference assumes. Regenerate with:
+
+```bash
+find src/app -name 'page.tsx' | sed 's|^src/app||; s|/page.tsx$||'
+find src/app -name 'route.ts' | sed 's|^src/app||; s|/route.ts$||'
+```
+
+### All pages (191)
+
+**/ (root)** — 1
+
+`/`
+
+**/(main)/ai-party-planner** — 1
+
+`/(main)/ai-party-planner`
+
+**/(main)/areas** — 4
+
+`/(main)/areas/downtown`, `/(main)/areas/east-austin`, `/(main)/areas/lake-travis`, `/(main)/areas/south-congress`
+
+**/(main)/book-now** — 1
+
+`/(main)/book-now`
+
+**/(main)/fast-delivery** — 1
+
+`/(main)/fast-delivery`
+
+**/(main)/order-now** — 1
+
+`/(main)/order-now`
+
+**/(main)/press** — 1
+
+`/(main)/press`
+
+**/(main)/tabc** — 1
+
+`/(main)/tabc`
+
+**/(main)/team** — 1
+
+`/(main)/team`
+
+**/[storeId]/invoices** — 1
+
+`/[storeId]/invoices/[...slug]`
+
+**/about** — 1
+
+`/about`
+
+**/account** — 1
+
+`/account`
+
+**/account/addresses** — 1
+
+`/account/addresses`
+
+**/account/group-orders** — 1
+
+`/account/group-orders`
+
+**/account/orders** — 1
+
+`/account/orders`
+
+**/account/preferences** — 1
+
+`/account/preferences`
+
+**/admin** — 1
+
+`/admin`
+
+**/admin/affiliates** — 12
+
+`/admin/affiliates`, `/admin/affiliates/[id]`, `/admin/affiliates/[id]/dashboard`, `/admin/affiliates/bulk-import`, `/admin/affiliates/commissions`, `/admin/affiliates/dashboards`, `/admin/affiliates/embed-generator`, `/admin/affiliates/payouts`, `/admin/affiliates/prospects/bartending`, `/admin/affiliates/prospects/playbook`, `/admin/affiliates/prospects/str`, `/admin/affiliates/prospects/venues`
+
+**/admin/ai-assistant** — 1
+
+`/admin/ai-assistant`
+
+**/admin/analytics** — 2
+
+`/admin/analytics`, `/admin/analytics/recommendations`
+
+**/admin/brians-stuff** — 1
+
+`/admin/brians-stuff`
+
+**/admin/customers** — 2
+
+`/admin/customers`, `/admin/customers/[id]`
+
+**/admin/dashboard** — 1
+
+`/admin/dashboard`
+
+**/admin/email-signups** — 1
+
+`/admin/email-signups`
+
+**/admin/emails** — 2
+
+`/admin/emails`, `/admin/emails/followups`
+
+**/admin/experiments** — 1
+
+`/admin/experiments`
+
+**/admin/features** — 1
+
+`/admin/features`
+
+**/admin/finance** — 6
+
+`/admin/finance`, `/admin/finance/connect-bank`, `/admin/finance/connect-quickbooks`, `/admin/finance/journals`, `/admin/finance/journals/settings`, `/admin/finance/plaid`
+
+**/admin/leads** — 1
+
+`/admin/leads`
+
+**/admin/operations** — 1
+
+`/admin/operations`
+
+**/admin/premiere-credits** — 1
+
+`/admin/premiere-credits`
+
+**/admin/promotions** — 3
+
+`/admin/promotions`, `/admin/promotions/[id]`, `/admin/promotions/new`
+
+**/admin/recommendations** — 1
+
+`/admin/recommendations`
+
+**/admin/reports** — 4
+
+`/admin/reports`, `/admin/reports/customers`, `/admin/reports/inventory`, `/admin/reports/sales`
+
+**/admin/settings** — 1
+
+`/admin/settings`
+
+**/admin/strategy** — 1
+
+`/admin/strategy`
+
+**/admin/sync** — 1
+
+`/admin/sync`
+
+**/admin/upsell-tracker** — 1
+
+`/admin/upsell-tracker`
+
+**/affiliate/apply** — 1
+
+`/affiliate/apply`
+
+**/affiliate/dashboard** — 4
+
+`/affiliate/dashboard`, `/affiliate/dashboard/create-dashboard`, `/affiliate/dashboard/create-order`, `/affiliate/dashboard/orders`
+
+**/affiliate/login** — 1
+
+`/affiliate/login`
+
+**/affiliate/verify** — 1
+
+`/affiliate/verify`
+
+**/atx-delivery-info** — 1
+
+`/atx-delivery-info`
+
+**/austin-4th-of-july-delivery** — 1
+
+`/austin-4th-of-july-delivery`
+
+**/austin-bachelor-concierge** — 1
+
+`/austin-bachelor-concierge`
+
+**/austin-bachelor-party-delivery** — 1
+
+`/austin-bachelor-party-delivery`
+
+**/austin-bachelor-party-delivery-ai-test** — 1
+
+`/austin-bachelor-party-delivery-ai-test`
+
+**/austin-bachelorette-concierge** — 1
+
+`/austin-bachelorette-concierge`
+
+**/austin-bachelorette-party-delivery** — 1
+
+`/austin-bachelorette-party-delivery`
+
+**/austin-byob-venues** — 1
+
+`/austin-byob-venues`
+
+**/austin-concierge** — 1
+
+`/austin-concierge`
+
+**/austin-corporate-event-delivery** — 1
+
+`/austin-corporate-event-delivery`
+
+**/austin-partners** — 1
+
+`/austin-partners`
+
+**/austin-wedding-venue-boats** — 1
+
+`/austin-wedding-venue-boats`
+
+**/austin-wedding-weekend-delivery** — 1
+
+`/austin-wedding-weekend-delivery`
+
+**/blog** — 1
+
+`/blog`
+
+**/blog/[slug]** — 1
+
+`/blog/[slug]`
+
+**/blog/category** — 1
+
+`/blog/category/[category]`
+
+**/boat-parties** — 1
+
+`/boat-parties`
+
+**/boat-parties/packages** — 1
+
+`/boat-parties/packages/[tier]`
+
+**/buckarodeo** — 1
+
+`/buckarodeo`
+
+**/cart/shared** — 2
+
+`/cart/shared`, `/cart/shared/[id]`
+
+**/checkout** — 1
+
+`/checkout`
+
+**/checkout/success** — 1
+
+`/checkout/success`
+
+**/cocktail-kits** — 1
+
+`/cocktail-kits`
+
+**/community/affiliate** — 1
+
+`/community/affiliate/signup`
+
+**/concierge-quote/[leadId]** — 2
+
+`/concierge-quote/[leadId]`, `/concierge-quote/[leadId]/success`
+
+**/contact** — 1
+
+`/contact`
+
+**/corporate-events-guide** — 1
+
+`/corporate-events-guide`
+
+**/corporate/holiday-party** — 1
+
+`/corporate/holiday-party`
+
+**/corporate/products** — 1
+
+`/corporate/products`
+
+**/custom-package** — 1
+
+`/custom-package`
+
+**/dads-gone-wild** — 1
+
+`/dads-gone-wild`
+
+**/dashboard/[code]** — 2
+
+`/dashboard/[code]`, `/dashboard/[code]/success`
+
+**/delivery-areas** — 1
+
+`/delivery-areas`
+
+**/delivery/[location]** — 1
+
+`/delivery/[location]`
+
+**/design-example** — 1
+
+`/design-example`
+
+**/email/preferences** — 1
+
+`/email/preferences`
+
+**/event-quiz** — 1
+
+`/event-quiz`
+
+**/events/4th-of-july-disco-cruise** — 1
+
+`/events/4th-of-july-disco-cruise`
+
+**/events/[slug]** — 1
+
+`/events/[slug]`
+
+**/faqs** — 1
+
+`/faqs`
+
+**/flyer** — 1
+
+`/flyer`
+
+**/full-moon-aug28** — 1
+
+`/full-moon-aug28`
+
+**/full-moon-drinks** — 1
+
+`/full-moon-drinks`
+
+**/full-moon-terms** — 1
+
+`/full-moon-terms`
+
+**/full-moon-thanks** — 1
+
+`/full-moon-thanks`
+
+**/gifts/cocktail-kits** — 1
+
+`/gifts/cocktail-kits`
+
+**/group/[code]** — 2
+
+`/group/[code]`, `/group/[code]/dashboard`
+
+**/group/checkout** — 1
+
+`/group/checkout/success`
+
+**/group/create** — 1
+
+`/group/create`
+
+**/holiday-runner-up** — 1
+
+`/holiday-runner-up`
+
+**/invoice/[token]** — 1
+
+`/invoice/[token]`
+
+**/invoices/[...slug]** — 1
+
+`/invoices/[...slug]`
+
+**/kegs** — 1
+
+`/kegs`
+
+**/landing-page-playbook** — 1
+
+`/landing-page-playbook`
+
+**/landing-pages** — 1
+
+`/landing-pages`
+
+**/newsletter/confirmed** — 1
+
+`/newsletter/confirmed`
+
+**/offline** — 1
+
+`/offline`
+
+**/ops** — 1
+
+`/ops`
+
+**/ops/agent** — 1
+
+`/ops/agent`
+
+**/ops/boat-schedule** — 1
+
+`/ops/boat-schedule`
+
+**/ops/collections** — 2
+
+`/ops/collections`, `/ops/collections/[id]`
+
+**/ops/events** — 1
+
+`/ops/events`
+
+**/ops/full-moon** — 1
+
+`/ops/full-moon`
+
+**/ops/group-orders** — 2
+
+`/ops/group-orders`, `/ops/group-orders/[id]`
+
+**/ops/inventory** — 5
+
+`/ops/inventory`, `/ops/inventory/count`, `/ops/inventory/predictions`, `/ops/inventory/receiving/[id]`, `/ops/inventory/receiving/new`
+
+**/ops/orders** — 4
+
+`/ops/orders`, `/ops/orders/[id]`, `/ops/orders/[id]/edit`, `/ops/orders/create`
+
+**/ops/products** — 3
+
+`/ops/products`, `/ops/products/[id]`, `/ops/products/create`
+
+**/ops/rsvps** — 1
+
+`/ops/rsvps`
+
+**/ops/today** — 1
+
+`/ops/today`
+
+**/order** — 1
+
+`/order`
+
+**/order/last-minute** — 1
+
+`/order/last-minute`
+
+**/partners** — 1
+
+`/partners`
+
+**/partners/[slug]** — 1
+
+`/partners/[slug]`
+
+**/partners/anderson-mill-marina-boat-club** — 1
+
+`/partners/anderson-mill-marina-boat-club`
+
+**/partners/austin-wedding-dj** — 1
+
+`/partners/austin-wedding-dj`
+
+**/partners/boat-babes** — 1
+
+`/partners/boat-babes`
+
+**/partners/cocktail-cowboys** — 1
+
+`/partners/cocktail-cowboys`
+
+**/partners/connected-austin** — 1
+
+`/partners/connected-austin`
+
+**/partners/hotels-resorts** — 1
+
+`/partners/hotels-resorts`
+
+**/partners/inn-cahoots** — 1
+
+`/partners/inn-cahoots`
+
+**/partners/lake-travis-yacht-rentals** — 1
+
+`/partners/lake-travis-yacht-rentals`
+
+**/partners/mobile-bartenders** — 1
+
+`/partners/mobile-bartenders`
+
+**/partners/pitch** — 1
+
+`/partners/pitch`
+
+**/partners/premier-party-cruises** — 1
+
+`/partners/premier-party-cruises`
+
+**/partners/property-management** — 1
+
+`/partners/property-management`
+
+**/partners/vacation-rentals** — 1
+
+`/partners/vacation-rentals`
+
+**/payment** — 1
+
+`/payment`
+
+**/plan-event** — 1
+
+`/plan-event`
+
+**/premier-boat-schedule** — 1
+
+`/premier-boat-schedule`
+
+**/privacy** — 1
+
+`/privacy`
+
+**/products** — 1
+
+`/products`
+
+**/products/[handle]** — 1
+
+`/products/[handle]`
+
+**/rentals** — 1
+
+`/rentals`
+
+**/rentals/chair-rentals-austin** — 1
+
+`/rentals/chair-rentals-austin`
+
+**/rentals/cocktail-table-rentals-austin** — 1
+
+`/rentals/cocktail-table-rentals-austin`
+
+**/rentals/cooler-rentals-austin** — 1
+
+`/rentals/cooler-rentals-austin`
+
+**/services** — 1
+
+`/services`
+
+**/terms** — 1
+
+`/terms`
+
+**/venues/[slug]** — 1
+
+`/venues/[slug]`
+
+**/wedding-drink-calculator** — 1
+
+`/wedding-drink-calculator`
+
+**/weddings** — 1
+
+`/weddings`
+
+**/weddings/order** — 1
+
+`/weddings/order`
+
+**/weddings/packages** — 1
+
+`/weddings/packages/[tier]`
+
+**/weddings/products** — 1
+
+`/weddings/products`
+
+### All API routes (330)
+
+**/.well-known/oauth-authorization-server** — 1
+
+`/.well-known/oauth-authorization-server`
+
+**/.well-known/oauth-protected-resource** — 1
+
+`/.well-known/oauth-protected-resource`
+
+**/api/admin/affiliates** — 19
+
+`/api/admin/affiliates`, `/api/admin/affiliates/[id]`, `/api/admin/affiliates/[id]/dashboard`, `/api/admin/affiliates/[id]/impersonate`, `/api/admin/affiliates/[id]/link-order`, `/api/admin/affiliates/[id]/send-welcome`, `/api/admin/affiliates/applications`, `/api/admin/affiliates/applications/[id]/approve`, `/api/admin/affiliates/applications/[id]/reject`, `/api/admin/affiliates/bulk-import`, `/api/admin/affiliates/commissions`, `/api/admin/affiliates/commissions/[id]`, `/api/admin/affiliates/create-and-send`, `/api/admin/affiliates/create-and-send/preview`, `/api/admin/affiliates/lookup`, `/api/admin/affiliates/payouts`, `/api/admin/affiliates/payouts/[id]`, `/api/admin/affiliates/payouts/generate`, `/api/admin/affiliates/stop-impersonating`
+
+**/api/admin/analytics** — 8
+
+`/api/admin/analytics`, `/api/admin/analytics/experiments`, `/api/admin/analytics/ga4`, `/api/admin/analytics/gbp`, `/api/admin/analytics/internal`, `/api/admin/analytics/landing-page`, `/api/admin/analytics/recommendations`, `/api/admin/analytics/vercel`
+
+**/api/admin/events** — 1
+
+`/api/admin/events`
+
+**/api/admin/experiments** — 3
+
+`/api/admin/experiments`, `/api/admin/experiments/[id]`, `/api/admin/experiments/funnel`
+
+**/api/admin/finance** — 18
+
+`/api/admin/finance/journals`, `/api/admin/finance/journals/[id]/approve`, `/api/admin/finance/journals/[id]/reject`, `/api/admin/finance/journals/[id]/reverse`, `/api/admin/finance/journals/config`, `/api/admin/finance/opex`, `/api/admin/finance/plaid`, `/api/admin/finance/plaid/backfill-webhooks`, `/api/admin/finance/plaid/cutover`, `/api/admin/finance/plaid/exchange`, `/api/admin/finance/plaid/health`, `/api/admin/finance/plaid/link-token`, `/api/admin/finance/plaid/purge-non-prod`, `/api/admin/finance/plaid/sync`, `/api/admin/finance/qb/callback`, `/api/admin/finance/qb/connect`, `/api/admin/finance/qb/health`, `/api/admin/finance/snapshot`
+
+**/api/admin/full-moon** — 1
+
+`/api/admin/full-moon/roster`
+
+**/api/admin/inventory** — 1
+
+`/api/admin/inventory/receiving/reocr`
+
+**/api/admin/operations** — 1
+
+`/api/admin/operations/snapshot`
+
+**/api/admin/orders** — 1
+
+`/api/admin/orders`
+
+**/api/admin/recommendations** — 4
+
+`/api/admin/recommendations`, `/api/admin/recommendations/[id]/dismiss`, `/api/admin/recommendations/[id]/execute`, `/api/admin/recommendations/[id]/snooze`
+
+**/api/admin/seo** — 2
+
+`/api/admin/seo/latest-snapshot`, `/api/admin/seo/trigger-scrape`
+
+**/api/admin/strategy** — 3
+
+`/api/admin/strategy`, `/api/admin/strategy/[id]`, `/api/admin/strategy/[id]/updates`
+
+**/api/admin/sync** — 1
+
+`/api/admin/sync`
+
+**/api/admin/verify** — 1
+
+`/api/admin/verify`
+
+**/api/analytics-ingest** — 1
+
+`/api/analytics-ingest`
+
+**/api/cart/share** — 2
+
+`/api/cart/share`, `/api/cart/share/[id]`
+
+**/api/chat** — 1
+
+`/api/chat`
+
+**/api/contact** — 1
+
+`/api/contact`
+
+**/api/cron/affiliate-commissions** — 1
+
+`/api/cron/affiliate-commissions`
+
+**/api/cron/affiliate-payouts** — 1
+
+`/api/cron/affiliate-payouts`
+
+**/api/cron/analytics-snapshot** — 1
+
+`/api/cron/analytics-snapshot`
+
+**/api/cron/boat-schedule-sync** — 1
+
+`/api/cron/boat-schedule-sync`
+
+**/api/cron/event-abandoned-rsvps** — 1
+
+`/api/cron/event-abandoned-rsvps`
+
+**/api/cron/finance-monthly-close** — 1
+
+`/api/cron/finance-monthly-close`
+
+**/api/cron/finance-monthly-rollup** — 1
+
+`/api/cron/finance-monthly-rollup`
+
+**/api/cron/finance-plaid-sync** — 1
+
+`/api/cron/finance-plaid-sync`
+
+**/api/cron/finance-qb-post-sales** — 1
+
+`/api/cron/finance-qb-post-sales`
+
+**/api/cron/finance-qb-pull** — 1
+
+`/api/cron/finance-qb-pull`
+
+**/api/cron/finance-shopify-archive-sync** — 1
+
+`/api/cron/finance-shopify-archive-sync`
+
+**/api/cron/finance-snapshot** — 1
+
+`/api/cron/finance-snapshot`
+
+**/api/cron/finance-stripe-sync** — 1
+
+`/api/cron/finance-stripe-sync`
+
+**/api/cron/finance-weekly-briefing** — 1
+
+`/api/cron/finance-weekly-briefing`
+
+**/api/cron/follow-up-engine** — 1
+
+`/api/cron/follow-up-engine`
+
+**/api/cron/full-moon-deadline** — 1
+
+`/api/cron/full-moon-deadline`
+
+**/api/cron/generate-blog** — 1
+
+`/api/cron/generate-blog`
+
+**/api/cron/group-orders-v2** — 1
+
+`/api/cron/group-orders-v2`
+
+**/api/cron/inbound-email** — 1
+
+`/api/cron/inbound-email`
+
+**/api/cron/lead-hot-alert** — 1
+
+`/api/cron/lead-hot-alert`
+
+**/api/cron/lead-pipeline** — 1
+
+`/api/cron/lead-pipeline`
+
+**/api/cron/measure-operations-recommendations** — 1
+
+`/api/cron/measure-operations-recommendations`
+
+**/api/cron/measure-recommendations** — 1
+
+`/api/cron/measure-recommendations`
+
+**/api/cron/operations-briefing** — 1
+
+`/api/cron/operations-briefing`
+
+**/api/cron/operations-drift-hourly** — 1
+
+`/api/cron/operations-drift-hourly`
+
+**/api/cron/operations-snapshot** — 1
+
+`/api/cron/operations-snapshot`
+
+**/api/cron/premier-embed-health** — 1
+
+`/api/cron/premier-embed-health`
+
+**/api/cron/premiere-credits** — 1
+
+`/api/cron/premiere-credits`
+
+**/api/cron/reconcile-orders** — 1
+
+`/api/cron/reconcile-orders`
+
+**/api/cron/weekly-briefing** — 1
+
+`/api/cron/weekly-briefing`
+
+**/api/cron/weekly-purchase-plan** — 1
+
+`/api/cron/weekly-purchase-plan`
+
+**/api/email/unsubscribe** — 1
+
+`/api/email/unsubscribe`
+
+**/api/events/rsvp** — 1
+
+`/api/events/rsvp`
+
+**/api/experiments/assign** — 1
+
+`/api/experiments/assign`
+
+**/api/experiments/track** — 1
+
+`/api/experiments/track`
+
+**/api/group-orders/[code]** — 10
+
+`/api/group-orders/[code]`, `/api/group-orders/[code]/create-checkout`, `/api/group-orders/[code]/enable-multi-payment`, `/api/group-orders/[code]/host-decision`, `/api/group-orders/[code]/items`, `/api/group-orders/[code]/lock-order`, `/api/group-orders/[code]/participant-checkout`, `/api/group-orders/[code]/payment-status`, `/api/group-orders/[code]/remove-participant`, `/api/group-orders/[code]/update-cart`
+
+**/api/group-orders/create** — 1
+
+`/api/group-orders/create`
+
+**/api/group-orders/id** — 1
+
+`/api/group-orders/id/[id]/join`
+
+**/api/group-orders/my-orders** — 1
+
+`/api/group-orders/my-orders`
+
+**/api/mcp** — 1
+
+`/api/mcp`
+
+**/api/newsletter** — 1
+
+`/api/newsletter`
+
+**/api/newsletter/confirm** — 1
+
+`/api/newsletter/confirm`
+
+**/api/ops/boat-schedule** — 3
+
+`/api/ops/boat-schedule`, `/api/ops/boat-schedule/order/[orderNumber]`, `/api/ops/boat-schedule/sync`
+
+**/api/ops/email-preview** — 2
+
+`/api/ops/email-preview`, `/api/ops/email-preview/send`
+
+**/api/ops/email-template-content** — 1
+
+`/api/ops/email-template-content`
+
+**/api/ops/event-rsvps** — 1
+
+`/api/ops/event-rsvps`
+
+**/api/ops/followups** — 7
+
+`/api/ops/followups/copy`, `/api/ops/followups/flags`, `/api/ops/followups/log`, `/api/ops/followups/queue`, `/api/ops/followups/stats`, `/api/ops/followups/suppressions`, `/api/ops/followups/test-send`
+
+**/api/ops/logout** — 1
+
+`/api/ops/logout`
+
+**/api/ops/nav-badges** — 1
+
+`/api/ops/nav-badges`
+
+**/api/ops/orders** — 2
+
+`/api/ops/orders/[id]/picks`, `/api/ops/orders/cruise-type`
+
+**/api/ops/orders-view** — 1
+
+`/api/ops/orders-view`
+
+**/api/ops/session** — 1
+
+`/api/ops/session`
+
+**/api/ops/today** — 1
+
+`/api/ops/today`
+
+**/api/orders/[orderNumber]** — 1
+
+`/api/orders/[orderNumber]`
+
+**/api/partners/inquiry** — 1
+
+`/api/partners/inquiry`
+
+**/api/products** — 1
+
+`/api/products`
+
+**/api/products/[handle]** — 1
+
+`/api/products/[handle]`
+
+**/api/products/counts** — 1
+
+`/api/products/counts`
+
+**/api/profile/upload-image** — 1
+
+`/api/profile/upload-image`
+
+**/api/public/boat-schedule** — 2
+
+`/api/public/boat-schedule`, `/api/public/boat-schedule/order/[orderNumber]`
+
+**/api/v1/admin** — 64
+
+`/api/v1/admin/collections`, `/api/v1/admin/collections/[id]`, `/api/v1/admin/collections/[id]/products`, `/api/v1/admin/customers`, `/api/v1/admin/customers/[id]`, `/api/v1/admin/dashboard`, `/api/v1/admin/discounts`, `/api/v1/admin/discounts/[id]`, `/api/v1/admin/discounts/automatic`, `/api/v1/admin/discounts/validate`, `/api/v1/admin/draft-orders`, `/api/v1/admin/draft-orders/[id]`, `/api/v1/admin/draft-orders/[id]/email-events`, `/api/v1/admin/draft-orders/[id]/preview`, `/api/v1/admin/draft-orders/[id]/send`, `/api/v1/admin/features`, `/api/v1/admin/group-orders`, `/api/v1/admin/group-orders/[id]`, `/api/v1/admin/leads/[id]`, `/api/v1/admin/leads/[id]/email/[emailId]`, `/api/v1/admin/leads/[id]/reply`, `/api/v1/admin/leads/[id]/stage`, `/api/v1/admin/leads/[id]/touch`, `/api/v1/admin/leads/board`, `/api/v1/admin/orders`, `/api/v1/admin/orders/[id]`, `/api/v1/admin/orders/[id]/amend`, `/api/v1/admin/orders/[id]/cancel`, `/api/v1/admin/orders/[id]/refund`, `/api/v1/admin/orders/[id]/return`, `/api/v1/admin/orders/[id]/send-amendment`, `/api/v1/admin/orders/[id]/send-receipt`, `/api/v1/admin/orders/bulk-cancel`, `/api/v1/admin/orders/bulk-fulfill`, `/api/v1/admin/orders/send-review-requests`, `/api/v1/admin/partner-dashboards`, `/api/v1/admin/partner-prospects`, `/api/v1/admin/partner-prospects/[id]`, `/api/v1/admin/partner-prospects/[id]/campaign`, `/api/v1/admin/partner-prospects/ab`, `/api/v1/admin/partner-prospects/campaign`, `/api/v1/admin/partner-prospects/enroll`, `/api/v1/admin/partner-prospects/metrics`, `/api/v1/admin/partner-prospects/sync`, `/api/v1/admin/partner-prospects/test-send`, `/api/v1/admin/partner-prospects/verify`, `/api/v1/admin/premiere-credits`, `/api/v1/admin/premiere-credits/[id]/approve`, `/api/v1/admin/premiere-credits/[id]/cancel`, `/api/v1/admin/premiere-credits/[id]/contact`, `/api/v1/admin/premiere-credits/[id]/resend`, `/api/v1/admin/products`, `/api/v1/admin/products/[id]`, `/api/v1/admin/products/[id]/images/reorder`, `/api/v1/admin/products/[id]/variants/[variantId]`, `/api/v1/admin/products/images`, `/api/v1/admin/products/images/[imageId]`, `/api/v1/admin/reports`, `/api/v1/admin/reports/customers`, `/api/v1/admin/reports/inventory`, `/api/v1/admin/reports/sales`, `/api/v1/admin/shortage-list/email`, `/api/v1/admin/sync`, `/api/v1/admin/unpaid-carts`
+
+**/api/v1/affiliate** — 17
+
+`/api/v1/affiliate/apply`, `/api/v1/affiliate/attribution`, `/api/v1/affiliate/create-dashboard`, `/api/v1/affiliate/create-order`, `/api/v1/affiliate/dashboard-orders`, `/api/v1/affiliate/dev-login`, `/api/v1/affiliate/login`, `/api/v1/affiliate/logout`, `/api/v1/affiliate/magic-link`, `/api/v1/affiliate/me`, `/api/v1/affiliate/me/client-orders`, `/api/v1/affiliate/me/client-orders/[id]/cancel`, `/api/v1/affiliate/me/orders`, `/api/v1/affiliate/me/payouts`, `/api/v1/affiliate/set-password`, `/api/v1/affiliate/templates`, `/api/v1/affiliate/verify`
+
+**/api/v1/agent** — 4
+
+`/api/v1/agent/approve`, `/api/v1/agent/chat`, `/api/v1/agent/conversations`, `/api/v1/agent/reject`
+
+**/api/v1/ai** — 4
+
+`/api/v1/ai/inventory/count`, `/api/v1/ai/inventory/count/[id]/apply`, `/api/v1/ai/inventory/predictions`, `/api/v1/ai/inventory/query`
+
+**/api/v1/ai-party-planner** — 1
+
+`/api/v1/ai-party-planner`
+
+**/api/v1/auth** — 7
+
+`/api/v1/auth/age-verify`, `/api/v1/auth/login`, `/api/v1/auth/logout`, `/api/v1/auth/me`, `/api/v1/auth/password`, `/api/v1/auth/register`, `/api/v1/auth/verify`
+
+**/api/v1/cart** — 3
+
+`/api/v1/cart`, `/api/v1/cart/delivery`, `/api/v1/cart/discount`
+
+**/api/v1/chat** — 1
+
+`/api/v1/chat/submit`
+
+**/api/v1/checkout** — 1
+
+`/api/v1/checkout`
+
+**/api/v1/collections** — 2
+
+`/api/v1/collections`, `/api/v1/collections/[handle]`
+
+**/api/v1/concierge** — 3
+
+`/api/v1/concierge/lead`, `/api/v1/concierge/quote/[leadId]`, `/api/v1/concierge/quote/[leadId]/checkout`
+
+**/api/v1/crm** — 1
+
+`/api/v1/crm/lookup`
+
+**/api/v1/event-quiz** — 1
+
+`/api/v1/event-quiz/submit`
+
+**/api/v1/events** — 2
+
+`/api/v1/events/abandon-nudge`, `/api/v1/events/track`
+
+**/api/v1/features** — 1
+
+`/api/v1/features`
+
+**/api/v1/full-moon** — 3
+
+`/api/v1/full-moon/count`, `/api/v1/full-moon/guests`, `/api/v1/full-moon/ticket`
+
+**/api/v1/inventory** — 11
+
+`/api/v1/inventory`, `/api/v1/inventory/alerts`, `/api/v1/inventory/locations`, `/api/v1/inventory/notes`, `/api/v1/inventory/notes/[id]/apply`, `/api/v1/inventory/notes/[id]/process`, `/api/v1/inventory/receiving`, `/api/v1/inventory/receiving/[id]`, `/api/v1/inventory/receiving/[id]/apply`, `/api/v1/inventory/receiving/[id]/lines/[lineId]`, `/api/v1/inventory/variants/[id]`
+
+**/api/v1/invoice** — 4
+
+`/api/v1/invoice/[token]`, `/api/v1/invoice/[token]/checkout`, `/api/v1/invoice/[token]/discount`, `/api/v1/invoice/[token]/items`
+
+**/api/v1/landing** — 3
+
+`/api/v1/landing/lead-event`, `/api/v1/landing/quote`, `/api/v1/landing/visitor-pixel`
+
+**/api/v1/lead-magnet** — 1
+
+`/api/v1/lead-magnet`
+
+**/api/v1/orders** — 2
+
+`/api/v1/orders`, `/api/v1/orders/[id]`
+
+**/api/v1/partner** — 1
+
+`/api/v1/partner/lead`
+
+**/api/v1/products** — 7
+
+`/api/v1/products`, `/api/v1/products/[id]`, `/api/v1/products/[id]/inventory`, `/api/v1/products/[id]/variants`, `/api/v1/products/catalog`, `/api/v1/products/search`, `/api/v1/products/variant/[variantId]`
+
+**/api/v1/quote** — 1
+
+`/api/v1/quote/start`
+
+**/api/v1/variants** — 1
+
+`/api/v1/variants/[id]`
+
+**/api/v2/group-orders** — 22
+
+`/api/v2/group-orders`, `/api/v2/group-orders/[code]`, `/api/v2/group-orders/[code]/claim-host`, `/api/v2/group-orders/[code]/heartbeat`, `/api/v2/group-orders/[code]/join`, `/api/v2/group-orders/[code]/participants/[pid]`, `/api/v2/group-orders/[code]/recommendations`, `/api/v2/group-orders/[code]/send-link`, `/api/v2/group-orders/[code]/tabs`, `/api/v2/group-orders/[code]/tabs/[tabId]`, `/api/v2/group-orders/[code]/tabs/[tabId]/checkout`, `/api/v2/group-orders/[code]/tabs/[tabId]/checkout-all`, `/api/v2/group-orders/[code]/tabs/[tabId]/delivery-invoice`, `/api/v2/group-orders/[code]/tabs/[tabId]/free-shipping-check`, `/api/v2/group-orders/[code]/tabs/[tabId]/items`, `/api/v2/group-orders/[code]/tabs/[tabId]/items/[itemId]`, `/api/v2/group-orders/[code]/track-view`, `/api/v2/group-orders/[code]/transfer-host`, `/api/v2/group-orders/dashboard`, `/api/v2/group-orders/my-orders`, `/api/v2/group-orders/validate-discount`, `/api/v2/group-orders/validate-promo`
+
+**/api/webhooks/create-dashboard** — 1
+
+`/api/webhooks/create-dashboard`
+
+**/api/webhooks/plaid** — 1
+
+`/api/webhooks/plaid`
+
+**/api/webhooks/resend** — 1
+
+`/api/webhooks/resend`
+
+**/api/webhooks/shopify** — 2
+
+`/api/webhooks/shopify`, `/api/webhooks/shopify/list`
+
+**/api/webhooks/stripe** — 1
+
+`/api/webhooks/stripe`
+
+**/oauth/authorize** — 1
+
+`/oauth/authorize`
+
+**/oauth/register** — 1
+
+`/oauth/register`
+
+**/oauth/token** — 1
+
+`/oauth/token`
+
+**/partners-embed/premier-quote** — 1
+
+`/partners-embed/premier-quote`
+
+**/s/[slug]** — 1
+
+`/s/[slug]`
 
 ## See also
 
