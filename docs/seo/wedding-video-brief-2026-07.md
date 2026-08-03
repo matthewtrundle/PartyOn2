@@ -53,13 +53,14 @@ Bonus short-only: **"Do wedding venues water down alcohol?"** (20/mo, maximally 
   the engine. Both fixed. `drinkPlannerLogic.ts`, `wedding-packages/tier-config.ts` and
   `CorporateEventCalculatorLanding.tsx` were already correct. Videos can now quote per-bottle
   numbers that match every calculator on the site.
-- 🚫 **STILL OPEN — the refund/leftovers policy is stated three different ways on our own site**,
-  and it is a blocker for Q8. Homepage FAQ: *"100% refund policy."* Homepage feature card:
-  *"Weddings: 100% refund on unopened."* `/wedding-drink-calculator` FAQ: *"partial refund
-  (depending on volume)."* Corporate lander: *"free returns on unopened."* A customer testimonial
-  on `/partners/inn-cahoots` confirms unopened wedding cases were in fact refunded. Allan needs to
-  state the real policy; the script's Q8 line is deliberately blank until he does, and the
-  contradicting pages should be fixed in the same pass.
+- ✅ **RESOLVED 2026-08-03 — the real policy is: return up to 25% of the total order unopened, and
+  that portion is refunded 100%.** The cap is on *how much* comes back, not on the refund rate.
+  Q8 of the wedding script is written and shootable. **But the site still describes this wrongly in
+  four places** — the homepage overstates it twice ("100% refund policy" / "Weddings: 100% refund on
+  unopened", no cap mentioned), `/wedding-drink-calculator` understates it ("partial refund
+  depending on volume" — it isn't partial), and the corporate lander says "free returns on unopened"
+  with no cap. Standardize on: **"Return up to 25% of your order unopened for a full refund."**
+  Open sub-question: does the 25% cap apply to corporate/bach too, or is it wedding-specific?
 - ⚠ **Unrelated drift spotted during the same audit (not fixed, out of scope):** ice quantities
   disagree — `drinkPlannerLogic.ts` recommends 1 bag per 10 guests (≈0.7 lb/guest), the partner
   `DrinkCalculator.tsx` recommends 1 bag per 4 guests, and `CorporateEventCalculatorLanding.tsx`

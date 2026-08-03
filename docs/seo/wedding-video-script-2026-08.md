@@ -4,7 +4,7 @@ Companion to [wedding-video-brief-2026-07.md](./wedding-video-brief-2026-07.md).
 
 **Runtime target: ~4:30.** VO is ~680 words at a relaxed 150 wpm. Every chapter title is the search phrase — say it out loud as written and put it on screen.
 
-> **Status: 4 claims need Allan's sign-off before the shoot** (table at the bottom). One of them — the leftover/refund policy — is a **blocker**, because the site currently states it three different ways. Everything else in this script is verified against live code or published pages.
+> **Status: 3 claims still need Allan's sign-off before the shoot** (table at the bottom). The refund-policy blocker was **cleared 2026-08-03** — the real policy is *return up to 25% of the order unopened, refunded 100%* — but three live pages still describe it wrongly and must be corrected before the video sends anyone to them (see "Site copy that contradicts the script"). Everything else here is verified against live code or published pages.
 
 Evidence sources: [internal-data-wedding-corporate-2026-07-14.md](../../data/seo/internal-data-wedding-corporate-2026-07-14.md) (real orders), `src/lib/wedding-packages/calculations.ts` + `tier-config.ts` (the formula and servings canon), `src/app/weddings/page.tsx` (published per-person tiers), SERP/PAA research in `data/seo/serp-paa/2026-07-14-wedding-corporate.md`.
 
@@ -78,13 +78,13 @@ Evidence sources: [internal-data-wedding-corporate-2026-07-14.md](../../data/seo
 
 *On-screen:* "1 pour per guest · 5 pours per bottle · 100 guests = 20 bottles". · *B-roll:* NEED — champagne tower or toast moment; bottle pour close-up.
 
-## Q8 — "Where do you buy wedding alcohol in bulk — and what happens to the leftovers?" · 3:24–3:50
+## Q8 — "Where do you buy wedding alcohol in bulk — and what happens to the leftovers?" · 3:24–3:52
 
-**The opinion: buy from someone who'll take the unopened cases back. That policy is worth more than a discount.**
+**The opinion: buy from someone who'll take the unopened cases back — and know the cap before you over-order.**
 
-> "Buy from a licensed retailer who delivers cold, on your timeline, to the venue — not from wherever's cheapest by the bottle. The number that actually decides this is the leftovers policy. Order for the crowd you hope shows up, and send back what nobody opened. **[POLICY LINE — see claims table]** That's the whole reason you can afford to over-order slightly instead of running dry at nine-thirty. Running out at a wedding is the one mistake you can't fix from the parking lot."
+> "Buy from a licensed retailer who delivers cold, on your timeline, to the venue — not from wherever's cheapest by the bottle. The thing that actually decides this is the leftovers policy, so get it in plain language before you order. Ours is: **you can return up to a quarter of your order unopened, and you get a hundred percent of your money back on what you return.** So build in a cushion — but build in a twenty percent cushion, not a fifty percent one, because past a quarter of the order you own it. That's the whole reason you can afford to over-order a little instead of running dry at nine-thirty. Running out at a wedding is the one mistake you can't fix from the parking lot."
 
-*On-screen:* "Order for the crowd you hope for. Return what's unopened." · *B-roll:* NEED — unopened cases being loaded back into a van (the proof shot for this chapter). · **⚠ Do not shoot this chapter until the refund policy claim is settled — see claim #2.**
+*On-screen:* "Return up to **25%** of your order, unopened → **100% refunded**" then "Cushion by ~20%, not 50%." · *B-roll:* NEED — unopened cases being loaded back into a van (the proof shot for this chapter). · *Policy confirmed by Allan 2026-08-03.*
 
 ## Q9 — "Do you need a bartender, a license, or insurance?" · 3:50–4:10
 
@@ -115,11 +115,24 @@ Evidence sources: [internal-data-wedding-corporate-2026-07-14.md](../../data/seo
 | # | Claim as scripted | What's behind it | Status |
 |---|---|---|---|
 | 1 | "Twenty-five to forty-five dollars a head" for a venue open bar | External sources only (Zola / Curated / EventWorks industry ranges, full range $15–90). We have no first-party venue pricing. | ⚠ **APPROVE OR SOFTEN** — suggest "typically twenty-five to forty-five" and cite "industry averages" on screen, or replace with 2–3 real Austin venue quotes if you have them |
-| 2 | Q8 leftovers/refund policy — **line deliberately left blank** | **The site says three different things today:** homepage FAQ says *"100% refund policy"* for weddings; homepage feature card says *"Weddings: 100% refund on unopened"*; `/wedding-drink-calculator` FAQ says *"partial refund (depending on volume)"*; the corporate lander says *"free returns on unopened."* A real customer testimonial on `/partners/inn-cahoots` confirms unopened wedding cases were refunded. | 🚫 **BLOCKER** — tell me the actual policy and I'll write the line + fix the pages that contradict it. Do not shoot Q8 until this is settled |
+| 2 | Q8 — "return up to a quarter of your order unopened, 100% of your money back on what you return" | **RESOLVED by Allan 2026-08-03: the cap is on volume, not on the refund rate — up to 25% of the total order can come back, and that 25% is refunded in full.** ⚠ One assumption I made and you should correct if wrong: that **unopened** is a condition of the return. | ✅ **CLEARED — Q8 is shootable.** But see below: three pages on the site still describe this policy wrongly and need fixing before the video points people at them |
 | 3 | "The top ten things Austin weddings order are led by prosecco, sauvignon blanc, pinot noir and cabernet" | Internal pull, **n=15 paid wedding orders, 2026 only** — directional, not statistically solid. Top items: Amor Di Amanti Prosecco (25), Dos Equis 12pk (24), Bogle Pinot Noir (22), Espolon 1.75L (21), Chandon Brut (20). | ⚠ **APPROVE** — accurate as stated but thin; safe because it's phrased as what people order from *us*, not a market claim |
 | 4 | "Our own median wedding order comes in ten days ahead" | Internal median lead time = 10 days (n=15). Same sample caveat. | ⚠ **APPROVE** — same pattern as the bach script's approved 48-hour stat |
 
 **Verified, no sign-off needed:** the formula `guests × (hours + 1)`; the 30/40/30 and 55/45 splits; wine 5 / spirits 17 / champagne 5 per bottle; the 100/150/200 worked examples (recomputed for this script); the published `$13–$26/person` tiers; TABC-licensed + $1M insured + TABC-certified drivers + carding on delivery.
+
+## ⚠ Site copy that contradicts the script (fix before the video goes live)
+
+The real policy is **return up to 25% of the order unopened → 100% refund on that portion**. Three live surfaces overstate or muddle it, and two of them promise more than we deliver:
+
+| Where | Says today | Problem |
+|---|---|---|
+| `src/app/page.tsx:31` (homepage FAQ) | "100% refund policy—we want your day perfect, not wasteful." | **Overstates.** Reads as "refund the whole order." No 25% cap mentioned |
+| `src/app/page.tsx:159` (homepage card) | "Weddings: 100% refund on unopened" | **Overstates.** Same problem — implies any unopened bottle comes back |
+| `src/app/wedding-drink-calculator/page.tsx:61` | "partial refund (depending on volume)" | **Understates and is vague.** The refund isn't partial — it's 100% on up to a quarter. "Depending on volume" is the cap, said unclearly |
+| `src/components/landing/configs/corporate.ts:31` | "free returns on unopened" | Needs the same cap language if the policy applies to corporate too — **confirm whether 25% is company-wide or wedding-specific** |
+
+Suggested single line to standardize on, everywhere: **"Return up to 25% of your order unopened for a full refund."**
 
 ## Master shot list (NEED — one shoot day, ideally piggybacked on a real wedding delivery)
 
