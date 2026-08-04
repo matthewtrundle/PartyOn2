@@ -6,6 +6,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import Navigation from "@/components/Navigation"
 import Footer from '@/components/Footer'
+import { getAttribution } from '@/lib/analytics/attribution'
 
 export default function HotelsResortsPartnerPage() {
   const [activeTab, setActiveTab] = useState('overview')
@@ -59,6 +60,7 @@ export default function HotelsResortsPartnerPage() {
           partnerType: 'Hotels & Resorts',
           source: 'hotels-resorts-page',
           submittedAt: new Date().toISOString(),
+          attribution: getAttribution(),
           _formLoadedAt: formLoadedAt.current,
           // Honeypot: always-empty trap, unified non-autofill name (see @/lib/forms/honeypot).
           ...blankHoneypotFields(),

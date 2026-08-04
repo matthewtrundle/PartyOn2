@@ -8,6 +8,7 @@ import Navigation from "@/components/Navigation";
 import Footer from '@/components/Footer';
 import LuxuryCard from '@/components/LuxuryCard';
 import ScrollRevealCSS from '@/components/ui/ScrollRevealCSS';
+import { getAttribution } from '@/lib/analytics/attribution';
 
 export default function PartnersPage() {
   const [formData, setFormData] = useState({
@@ -63,6 +64,7 @@ export default function PartnersPage() {
           partnerType: 'General Partnership',
           source: 'partners-main-page',
           submittedAt: new Date().toISOString(),
+          attribution: getAttribution(),
           _formLoadedAt: formLoadedAt.current,
           // Honeypot: always-empty trap, unified non-autofill name (see @/lib/forms/honeypot).
           ...blankHoneypotFields(),

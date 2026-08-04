@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createPartnerApplication } from '@/lib/affiliates/affiliate-service';
 import { enqueueJourney } from '@/lib/followups/enqueue';
 import { markLeadStatus, upsertLead } from '@/lib/leads/leadCapture';
+import { attributionSchema } from '@/lib/leads/attribution-schema';
 import { enrollLeadIfEligible } from '@/lib/leads/pipeline';
 import { prisma } from '@/lib/database/client';
 import { AffiliateCategory } from '@prisma/client';
@@ -67,6 +68,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // zod — must not gain reopen power). Never throws.
     try {
       const [aFirst, ...aRest] = String(contactName).split(/\s+/);
+      // Parsed defensively (this route is hand-validated, not zod) so a
+      // malformed or stale client payload can never 400 an application.
+      const attribution = attributionSchema.safeParse(body.attribution).data ?? null;
       const lead = await upsertLead(
         {
           email,
@@ -74,7 +78,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           firstName: aFirst || null,
           lastName: aRest.join(' ') || null,
         },
-        { sourcePage: '/affiliate/apply', sourceWidget: 'PARTNER_INQUIRY' }
+        {
+          sourcePage: '/affiliate/apply',
+          sourceWidget: 'PARTNER_INQUIRY',
+          utmSource: attribution?.utmSource,
+          utmMedium: attribution?.utmMedium,
+          utmCampaign: attribution?.utmCampaign,
+          utmContent: attribution?.utmContent,
+          utmTerm: attribution?.utmTerm,
+          gclid: attribution?.gclid,
+          gbraid: attribution?.gbraid,
+          wbraid: attribution?.wbraid,
+          fbclid: attribution?.fbclid,
+          msclkid: attribution?.msclkid,
+        }
       );
       if (lead) {
         const prevMeta = (lead.metadata as Record<string, unknown> | null) ?? {};

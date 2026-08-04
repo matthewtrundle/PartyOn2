@@ -15,6 +15,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { sendLeadEvent } from '@/lib/leads/client';
+import { getAttribution } from '@/lib/analytics/attribution';
 import SmsConsentCheckbox from '@/components/consent/SmsConsentCheckbox';
 import type { LeadMagnet } from '@/lib/leadMagnet/config';
 
@@ -114,6 +115,7 @@ export default function LeadMagnetModal({ magnet, open, onClose, modeBadge }: Pr
           magnetTitle: magnet.title,
           rewardUrl: magnet.rewardUrl,
           rewardCta: magnet.cta,
+          attribution: getAttribution(),
         }),
       });
     } catch (err) {

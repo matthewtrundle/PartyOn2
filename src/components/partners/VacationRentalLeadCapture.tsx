@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { HONEYPOT_FIELD } from '@/lib/forms/honeypot';
+import { getAttribution } from '@/lib/analytics/attribution';
 
 interface VacationRentalLeadCaptureProps {
   /**
@@ -73,6 +74,7 @@ export default function VacationRentalLeadCapture({
           source,
           signupQrId: signupQrId || undefined,
           submittedAt: new Date().toISOString(),
+          attribution: getAttribution(),
           _formLoadedAt: formLoadedAt.current,
           [HONEYPOT_FIELD]: honeypot,
         }),

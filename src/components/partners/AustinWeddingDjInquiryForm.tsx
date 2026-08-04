@@ -2,6 +2,7 @@
 
 import { useState, useRef, type FormEvent, type ReactElement } from 'react';
 import { HONEYPOT_FIELD } from '@/lib/forms/honeypot';
+import { getAttribution } from '@/lib/analytics/attribution';
 
 /**
  * Inquiry form for the Austin Wedding DJ partner landing page (WS3).
@@ -42,6 +43,7 @@ export default function AustinWeddingDjInquiryForm({ refCode }: Props): ReactEle
       // honeypot — must stay empty; name carries no browser-autofill mapping
       // so a real visitor is never trapped (see @/lib/forms/honeypot).
       [HONEYPOT_FIELD]: String(formData.get(HONEYPOT_FIELD) || ''),
+      attribution: getAttribution(),
       _formLoadedAt: formLoadedAtRef.current,
       submittedAt: new Date().toISOString(),
     };

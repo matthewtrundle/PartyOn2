@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Section from '@/components/Section'
 import VideoHero from '@/components/VideoHero'
+import { getAttribution } from '@/lib/analytics/attribution'
 
 function BookNowContent() {
   const searchParams = useSearchParams()
@@ -68,6 +69,8 @@ function BookNowContent() {
           eventDate: formData.date,
           guestCount: formData.guests,
           message: [...details.filter(Boolean), formData.notes].filter(Boolean).join('\n'),
+          source: 'book-now',
+          attribution: getAttribution(),
         }),
       })
       const json = await res.json()

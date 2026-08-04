@@ -2,6 +2,7 @@
 
 import { useState, ReactElement } from 'react';
 import Link from 'next/link';
+import { getAttribution } from '@/lib/analytics/attribution';
 
 const CATEGORIES = [
   { value: 'BARTENDER', label: 'Mobile Bartender' },
@@ -37,7 +38,7 @@ export default function AffiliateApplyPage(): ReactElement {
       const res = await fetch('/api/v1/affiliate/apply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, attribution: getAttribution() }),
       });
       const data = await res.json();
       if (data.success) {

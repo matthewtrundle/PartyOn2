@@ -8,6 +8,7 @@ import CorporateEventCalculatorLanding from '@/components/CorporateEventCalculat
 import ScrollRevealCSS from '@/components/ui/ScrollRevealCSS';
 import { trackMetaEvent } from '@/components/MetaPixel';
 import { trackPageView, ANALYTICS_EVENTS } from '@/lib/analytics/track';
+import { getAttribution } from '@/lib/analytics/attribution';
 
 export default function CorporateHolidayPartyPage() {
   const [formData, setFormData] = useState({
@@ -91,6 +92,7 @@ export default function CorporateHolidayPartyPage() {
         utm_medium: sessionStorage.getItem('utm_medium') || '',
         utm_campaign: sessionStorage.getItem('utm_campaign') || '',
         utm_content: sessionStorage.getItem('utm_content') || '',
+        attribution: getAttribution(),
         _formLoadedAt: formLoadedAt.current,
         // Honeypot: always-empty trap, unified non-autofill name (see @/lib/forms/honeypot).
         ...blankHoneypotFields(),

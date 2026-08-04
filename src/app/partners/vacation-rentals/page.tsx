@@ -10,6 +10,7 @@ import VacationRentalLeadCapture from '@/components/partners/VacationRentalLeadC
 import HorizontalImageCarousel from '@/components/partners/HorizontalImageCarousel';
 import PartnerDashboardMock from '@/components/partners/PartnerDashboardMock';
 import { vacationRentalHeroMedia } from '@/generated/vacation-rental-hero-media';
+import { getAttribution } from '@/lib/analytics/attribution';
 
 // Auto-loaded from public/images/partners/vacation-rental-hero/ — drop or delete
 // images in that folder, then `npm run hero:refresh` (build does it automatically).
@@ -270,6 +271,7 @@ UTM Campaign: ${formData.utm_campaign || 'none'}`,
           utm_content: formData.utm_content,
           source: 'vacation-rental-partners-page',
           submittedAt: new Date().toISOString(),
+          attribution: getAttribution(),
           _formLoadedAt: formLoadedAt.current,
           // Honeypot: always-empty trap, unified non-autofill name (see @/lib/forms/honeypot).
           ...blankHoneypotFields(),
