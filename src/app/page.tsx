@@ -29,7 +29,7 @@ export default function HomePage() {
     },
     {
       question: "Refunds on unopened items for weddings?",
-      answer: "100% refund policy—we want your day perfect, not wasteful."
+      answer: "100% refund on up to 25% of your order. Drop the unopened cases back at our store and we refund up to a quarter of the total, same day — no restocking fees."
     },
     {
       question: "Are you licensed and insured?",
@@ -156,7 +156,7 @@ export default function HomePage() {
               },
               {
                 title: "No overbuy anxiety",
-                description: "Weddings: 100% refund on unopened",
+                description: "Weddings: 100% refund on up to 25% of your order",
                 gradient: "from-rose-50 to-gray-50",
                 icon: (
                   <svg className="w-14 h-14 mx-auto text-brand-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24">

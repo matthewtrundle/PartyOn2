@@ -58,7 +58,7 @@ const FAQS = [
   {
     q: 'Can I return bottles we didn\'t open?',
     a:
-      'Yes — we can take back unopened cases for a partial refund (depending on volume) or leave everything with you. Your call. Decision made at delivery.',
+      'Yes — 100% refund on up to 25% of your order. Drop the unopened cases back at our store and we refund up to a quarter of the total, same day, with no restocking fees. Anything past that quarter is yours to keep.',
   },
   {
     q: 'Do you set up the bar or just deliver?',
