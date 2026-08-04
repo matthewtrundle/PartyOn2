@@ -62,17 +62,17 @@ _(not captured)_
 
 ```json
 {
-  "orders": 65,
-  "revenue": 13338.14,
+  "orders": 67,
+  "revenue": 14001.42,
   "segments": [
     {
       "margin": 240.3,
-      "orders": 56,
-      "revenue": 11251.98,
+      "orders": 58,
+      "revenue": 11915.26,
       "segment": "general",
-      "averageMarginPct": 2.1,
-      "averageOrderValue": 200.93,
-      "marginCoveragePct": 8.1
+      "averageMarginPct": 2,
+      "averageOrderValue": 205.44,
+      "marginCoveragePct": 7.6
     },
     {
       "margin": 152.74,
@@ -84,19 +84,19 @@ _(not captured)_
       "marginCoveragePct": 27.9
     }
   ],
-  "capturedAt": "2026-08-03T08:00:19.452Z",
+  "capturedAt": "2026-08-04T08:00:12.614Z",
   "affiliateRoi": [
     {
       "code": "PREMIER",
       "margin": 218.08,
-      "orders": 41,
-      "roiPct": 49.1,
-      "revenue": 5889.08,
-      "netMargin": 71.86,
+      "orders": 43,
+      "roiPct": 11.7,
+      "revenue": 6552.36,
+      "netMargin": 22.85,
       "affiliateId": "d21bac1a-3f99-489c-89fd-e1980c264a8d",
       "businessName": "Premier Party Cruises",
-      "commissionPaid": 146.22,
-      "marginCoveragePct": 13.7
+      "commissionPaid": 195.23,
+      "marginCoveragePct": 12.3
     },
     {
       "code": "POUR24",
@@ -147,15 +147,15 @@ _(not captured)_
       "marginCoveragePct": 0
     }
   ],
-  "snapshotDate": "2026-08-03",
-  "averageOrderValue": 205.2021538461538,
+  "snapshotDate": "2026-08-04",
+  "averageOrderValue": 208.9764179104478,
   "marginCoveragePct": null
 }
 ```
 ## Updates
 
 - 2026-05-05 — Created with status `executed` from source `director`.
-- 2026-08-03 — Status shipped → shipped (cron:measure-recommendations). Notes: Auto-captured 14-day measurement
+- 2026-08-04 — Status shipped → shipped (cron:measure-recommendations). Notes: Auto-captured 14-day measurement
 
 ---
 _Mirror file. Edited automatically by the triage queue when status changes. Source of truth is the database (id: `4fe8e34e-83cb-4ee7-9576-4a60386400dc`). Slug: `premier-86-of-group-dashboards-never-convert-diagnose-the-ac`._
