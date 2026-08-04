@@ -151,6 +151,129 @@ describe('upsertLead — name sanitization at intake', () => {
   });
 });
 
+describe('upsertLead — contactability guard', () => {
+  it('refuses a name-only capture without creating a row', async () => {
+    // findLead only matches on email/phone, so a name-only row could never
+    // be joined to anything — it only ever created orphan junk.
+    prismaMock.lead.findFirst.mockResolvedValue(null);
+    const lead = await upsertLead(
+      { firstName: 'Anzola', lastName: 'Hathorne' },
+      { sourceWidget: 'DRINK_CALCULATOR' },
+    );
+    expect(lead).toBeNull();
+    expect(prismaMock.lead.create).not.toHaveBeenCalled();
+    expect(prismaMock.lead.update).not.toHaveBeenCalled();
+  });
+
+  it('still creates from an email alone', async () => {
+    prismaMock.lead.findFirst.mockResolvedValue(null);
+    prismaMock.lead.create.mockImplementation(async ({ data }) => ({
+      ...existingLead(),
+      ...data,
+    }));
+    const lead = await upsertLead(
+      { email: 'someone@example.com' },
+      { sourceWidget: 'CONTACT_FORM' },
+    );
+    expect(lead).not.toBeNull();
+    expect(prismaMock.lead.create).toHaveBeenCalledTimes(1);
+  });
+
+  it('still creates from a phone alone', async () => {
+    prismaMock.lead.findFirst.mockResolvedValue(null);
+    prismaMock.lead.create.mockImplementation(async ({ data }) => ({
+      ...existingLead(),
+      ...data,
+    }));
+    const lead = await upsertLead(
+      { phone: '512-555-0134', firstName: 'Sam' },
+      { sourceWidget: 'CONTACT_FORM' },
+    );
+    expect(lead).not.toBeNull();
+    expect(prismaMock.lead.create).toHaveBeenCalledTimes(1);
+  });
+
+  it('refuses a capture with neither email nor phone even when both names are set', async () => {
+    prismaMock.lead.findFirst.mockResolvedValue(null);
+    expect(
+      await upsertLead({ firstName: 'A', lastName: 'B' }, {}),
+    ).toBeNull();
+    expect(prismaMock.lead.create).not.toHaveBeenCalled();
+  });
+});
+
+describe('upsertLead — originWidget provenance stamp', () => {
+  it('records the first strong widget when a later route takes over', async () => {
+    prismaMock.lead.findFirst.mockResolvedValue(
+      existingLead({ sourceWidget: 'DRINK_CALCULATOR' }),
+    );
+    await upsertLead(
+      { email: 'guest@example.com' },
+      { sourceWidget: 'CONTACT_FORM' },
+    );
+    const data = prismaMock.lead.update.mock.calls[0][0].data;
+    expect(data.metadata.originWidget).toBe('DRINK_CALCULATOR');
+    // The sticky-widget rule is untouched: a real widget is never replaced.
+    expect(data.sourceWidget).toBe('DRINK_CALCULATOR');
+  });
+
+  it('writes the stamp even when there are no click ids', async () => {
+    prismaMock.lead.findFirst.mockResolvedValue(
+      existingLead({ sourceWidget: 'PACKAGE_BUILDER' }),
+    );
+    await upsertLead({ email: 'guest@example.com' }, {});
+    expect(
+      prismaMock.lead.update.mock.calls[0][0].data.metadata.originWidget,
+    ).toBe('PACKAGE_BUILDER');
+  });
+
+  it('is set once and never overwritten', async () => {
+    prismaMock.lead.findFirst.mockResolvedValue(
+      existingLead({
+        sourceWidget: 'QUICK_BUY',
+        metadata: { originWidget: 'DRINK_CALCULATOR' },
+      }),
+    );
+    await upsertLead({ email: 'guest@example.com' }, { sourceWidget: 'CONTACT_FORM' });
+    const data = prismaMock.lead.update.mock.calls[0][0].data;
+    // No metadata write at all is also acceptable; what must not happen is
+    // the original being replaced.
+    if (data.metadata) expect(data.metadata.originWidget).toBe('DRINK_CALCULATOR');
+  });
+
+  it('does not stamp OTHER — a placeholder is not provenance', async () => {
+    prismaMock.lead.findFirst.mockResolvedValue(existingLead({ sourceWidget: 'OTHER' }));
+    await upsertLead({ email: 'guest@example.com' }, { sourceWidget: 'CONTACT_FORM' });
+    const data = prismaMock.lead.update.mock.calls[0][0].data;
+    expect(data.metadata?.originWidget).toBeUndefined();
+  });
+
+  it('does not stamp on create — there is no prior owner', async () => {
+    prismaMock.lead.findFirst.mockResolvedValue(null);
+    prismaMock.lead.create.mockImplementation(async ({ data }) => ({
+      ...existingLead(),
+      ...data,
+    }));
+    await upsertLead({ email: 'new@example.com' }, { sourceWidget: 'CONTACT_FORM' });
+    const data = prismaMock.lead.create.mock.calls[0][0].data;
+    expect(data.metadata?.originWidget).toBeUndefined();
+  });
+
+  it('preserves existing metadata alongside the stamp', async () => {
+    prismaMock.lead.findFirst.mockResolvedValue(
+      existingLead({
+        sourceWidget: 'DRINK_CALCULATOR',
+        metadata: { contactForm: { source: 'contact' } },
+      }),
+    );
+    await upsertLead({ email: 'guest@example.com' }, { gclid: 'abc123' });
+    const meta = prismaMock.lead.update.mock.calls[0][0].data.metadata;
+    expect(meta.originWidget).toBe('DRINK_CALCULATOR');
+    expect(meta.contactForm).toEqual({ source: 'contact' });
+    expect(meta.attribution).toEqual({ gclid: 'abc123' });
+  });
+});
+
 describe('upsertLead — affiliate stamp is fill-blank only', () => {
   it('stamps affiliateId on create', async () => {
     prismaMock.lead.findFirst.mockResolvedValue(null);
