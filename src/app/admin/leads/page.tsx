@@ -19,6 +19,7 @@ import type { BoardData, BoardFilters } from '@/lib/leads/board-types';
 import type { PipelineStage } from '@/lib/leads/pipeline-types';
 import { buildWorkQueue, queueCounts, type QueueLane } from '@/lib/leads/work-queue';
 import KpiStrip from './_components/kpi-strip';
+import SourcesPanel from './_components/sources-panel';
 import BoardFiltersBar from './_components/board-filters';
 import LeadsBoard from './_components/leads-board';
 import LeadDrawer from './_components/lead-drawer';
@@ -182,6 +183,10 @@ function LeadsPageInner(): ReactElement {
         {data ? (
           <>
             <KpiStrip kpis={data.kpis} />
+            <SourcesPanel
+              activeForm={filters.form}
+              onPickForm={(form) => setFilters({ ...filters, form })}
+            />
             <LeadsBoard
               data={data}
               onOpen={openDrawer}
