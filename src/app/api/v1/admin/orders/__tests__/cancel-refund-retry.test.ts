@@ -111,7 +111,11 @@ describe('POST /cancel — refund retry safety', () => {
 
   it('REGRESSION: Stripe already refunded but DB empty → retry does NOT create a second refund', async () => {
     // Stripe already shows the full refund (the DB write that should have
-    // recorded it never landed).
+    // recorded it never landed). Note the refund carries NO metadata, so it is a
+    // refund of unknown origin — cancelOrder cannot prove one of its own cancels
+    // issued it, and correctly refuses to cancel the order off the back of it.
+    // (A refund stamped `type: 'cancel'` DOES complete the cancel instead; that
+    // is covered in src/lib/orders/__tests__/cancel-order-recovery.test.ts.)
     mockRefundsList.mockReturnValue(listOf([{ amount: 15000, status: 'succeeded' }]));
 
     const { POST } = await import('@/app/api/v1/admin/orders/[id]/cancel/route');
@@ -143,5 +147,9 @@ describe('POST /cancel — refund retry safety', () => {
     // Key includes the amount so an amended retry gets a fresh key instead of
     // colliding with the old amount and locking Stripe for 24h.
     expect(options).toEqual({ idempotencyKey: 'order-cancel-refund-order-1-15000' });
+    // The cancel marker is what lets a retry finish a cancel that died before the
+    // status write. Dropping it silently would not fail anything else, so pin it
+    // here — along with the orderId the recovery lookup matches on.
+    expect(params.metadata).toMatchObject({ type: 'cancel', orderId: 'order-1' });
   });
 });
