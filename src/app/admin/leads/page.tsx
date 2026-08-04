@@ -41,6 +41,8 @@ function filtersToQuery(f: BoardFilters): string {
   if (f.temp) params.set('temp', f.temp);
   if (f.occasion) params.set('occasion', f.occasion);
   if (f.source) params.set('source', f.source);
+  if (f.channel) params.set('channel', f.channel);
+  if (f.form) params.set('form', f.form);
   if (f.q) params.set('q', f.q);
   if (f.showSnoozed) params.set('showSnoozed', 'true');
   if (f.includePartial) params.set('includePartial', 'true');

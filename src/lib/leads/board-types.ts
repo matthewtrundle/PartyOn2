@@ -6,6 +6,7 @@
 import type { Temperature } from './scoring';
 import type { PipelineStage } from './pipeline-types';
 import type { NextAction } from './next-action';
+import type { LeadChannel } from './source-taxonomy';
 
 export interface BoardLead {
   id: string;
@@ -26,6 +27,11 @@ export interface BoardLead {
   sourceKey: string;
   /** Display label — splits CONTACT_FORM into Quote Request / Chat / Event Quiz / Contact Form. */
   sourceLabel: string;
+  /** How they reached us — paid / partner / organic / … (see source-taxonomy). */
+  channel: LeadChannel;
+  /** Which form was submitted; null when nothing recorded one. */
+  formKey: string | null;
+  formLabel: string | null;
   sourcePage: string | null;
   /**
    * A business reached out, not a customer. Derived server-side because
@@ -86,6 +92,10 @@ export interface BoardFilters {
   temp?: Temperature;
   occasion?: string;
   source?: string;
+  /** How they reached us. Set instead of `source`, never alongside it. */
+  channel?: LeadChannel;
+  /** Exact formKey — set by clicking a row in the Sources panel. */
+  form?: string;
   q?: string;
   showSnoozed?: boolean;
   includePartial?: boolean;

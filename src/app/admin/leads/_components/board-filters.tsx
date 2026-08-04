@@ -3,30 +3,30 @@
 import { ReactElement, useEffect, useRef, useState } from 'react';
 import SegmentedControl from '@/components/backend/kit/SegmentedControl';
 import type { BoardFilters } from '@/lib/leads/board-types';
+import {
+  SOURCE_FILTER_OPTIONS,
+  type LeadChannel,
+} from '@/lib/leads/source-taxonomy';
 
-const SOURCE_OPTIONS = [
-  ['', 'All sources'],
-  ['CONSUMER', 'Consumers only'],
-  ['PARTNER', '🤝 Partner Prospects'],
-  ['GROUP_DASHBOARD', 'Party Dashboard'],
-  ['PARTNER_LANDING_PAGE', 'Concierge'],
-  ['CONTACT_FORM:quote', 'Quote Request'],
-  ['CONTACT_FORM:chat', 'Chat'],
-  ['CONTACT_FORM:quiz', 'Event Quiz'],
-  ['CONTACT_FORM:contact', 'Contact Form'],
-  ['PARTNER_INQUIRY', 'B2B / Partner'],
-  ['OPS_INVOICE', 'Ops Invoice'],
-  ['INBOUND_EMAIL', 'Inbound Email'],
-  ['QUICK_BUY', 'Quick Buy'],
-  ['PACKAGE_BUILDER', 'Package Builder'],
-  ['A_LA_CARTE', 'A La Carte'],
-  ['CALL_BOOKING', 'Call Booking'],
-  ['DRINK_CALCULATOR', 'Calculator'],
-  ['LEAD_MAGNET', 'Lead Magnet'],
-  ['WAYNE_CHAT', 'Wayne Chat'],
-  ['EMAIL_SIGNUP', 'Email Signup'],
-  ['OTHER', 'Site'],
-] as const;
+const GROUP_LABELS: Record<'audience' | 'channel' | 'source', string> = {
+  audience: 'Audience',
+  channel: 'How they reached us',
+  source: 'Source',
+};
+const GROUP_ORDER = ['audience', 'channel', 'source'] as const;
+
+/**
+ * One select drives two different filters. A `channel:` prefix sets
+ * `filters.channel`; anything else sets `filters.source`. Exactly one is ever
+ * active, so picking a channel clears a source and vice versa.
+ */
+function parseSelection(value: string): Pick<BoardFilters, 'source' | 'channel'> {
+  if (!value) return { source: undefined, channel: undefined };
+  if (value.startsWith('channel:')) {
+    return { source: undefined, channel: value.slice('channel:'.length) as LeadChannel };
+  }
+  return { source: value, channel: undefined };
+}
 
 /** Temperature segments + source select + search + tray/snooze toggles. */
 export default function BoardFilters({
@@ -66,17 +66,35 @@ export default function BoardFilters({
       />
       <div className="flex flex-1 items-center gap-2">
         <select
-          value={filters.source ?? ''}
-          onChange={(e) => onChange({ ...filters, source: e.target.value || undefined })}
-          className="min-h-[44px] rounded-lg border border-white/20 bg-white/10 text-white text-sm px-2 [&>option]:text-gray-900"
+          value={filters.channel ? `channel:${filters.channel}` : (filters.source ?? '')}
+          onChange={(e) => onChange({ ...filters, ...parseSelection(e.target.value) })}
+          className="min-h-[44px] rounded-lg border border-white/20 bg-white/10 text-white text-sm px-2 [&>option]:text-gray-900 [&>optgroup]:text-gray-900"
           aria-label="Filter by source"
         >
-          {SOURCE_OPTIONS.map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
+          <option value="">All sources</option>
+          {GROUP_ORDER.map((group) => (
+            <optgroup key={group} label={GROUP_LABELS[group]}>
+              {SOURCE_FILTER_OPTIONS.filter((o) => o.group === group).map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </optgroup>
           ))}
         </select>
+        {filters.form && (
+          <button
+            type="button"
+            onClick={() => onChange({ ...filters, form: undefined })}
+            className="min-h-[36px] shrink-0 rounded-lg border border-brand-yellow/50 bg-brand-yellow/15 text-white text-sm px-2.5 flex items-center gap-1.5"
+            aria-label={`Clear form filter ${filters.form}`}
+          >
+            <span className="truncate max-w-[160px]">{filters.form}</span>
+            <svg viewBox="0 0 20 20" fill="currentColor" className="w-3.5 h-3.5 shrink-0">
+              <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+            </svg>
+          </button>
+        )}
         <input
           type="search"
           value={qDraft}
