@@ -40,6 +40,11 @@ import { mirrorLeadToCrm } from '@/lib/leads/crm-mirror';
 import { prisma } from '@/lib/database/client';
 import { EmailType } from '@prisma/client';
 import type { PartyType as DashboardPartyType, DeliveryContextType } from '@/lib/group-orders-v2/types';
+import {
+  allowLeadCaptureEmail,
+  allowLeadCaptureIp,
+  LEAD_CAPTURE_THROTTLED,
+} from '@/lib/security/lead-capture-throttle';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -103,6 +108,12 @@ const PARTY_TO_DELIVERY: Record<string, DeliveryContextType | undefined> = {
 };
 
 export async function POST(req: NextRequest) {
+  // Volumetric guard first, before we even read the body: this route is public
+  // and unauthenticated, so a flood should cost as little as possible.
+  if (!(await allowLeadCaptureIp(req))) {
+    return NextResponse.json(LEAD_CAPTURE_THROTTLED, { status: 429 });
+  }
+
   let body: z.infer<typeof schema>;
   try {
     body = schema.parse(await req.json());
@@ -111,6 +122,13 @@ export async function POST(req: NextRequest) {
       { ok: false, error: 'invalid_body', detail: String(err) },
       { status: 400 },
     );
+  }
+
+  // The limit that actually matters: the abuse here is mailing one victim over
+  // and over, which a rotating-IP attacker does without tripping the check
+  // above. Shared across the sibling capture routes so cycling them buys nothing.
+  if (!(await allowLeadCaptureEmail(body.email))) {
+    return NextResponse.json(LEAD_CAPTURE_THROTTLED, { status: 429 });
   }
 
   // ─── Last-minute decision ──────────────────────────────────────────
