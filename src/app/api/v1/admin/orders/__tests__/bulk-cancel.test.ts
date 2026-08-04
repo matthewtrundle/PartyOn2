@@ -34,7 +34,9 @@ vi.mock('@/lib/auth/ops-session', () => ({
 
 const mockOrderFindUnique = vi.fn();
 const mockOrderFindMany = vi.fn();
-const mockOrderUpdate = vi.fn().mockResolvedValue({});
+// The terminal-status write is a compare-and-set (updateMany + status notIn) so
+// two overlapping cancels can't both reach the emails. count: 1 = claim won.
+const mockOrderUpdateMany = vi.fn().mockResolvedValue({ count: 1 });
 const mockRefundFindFirst = vi.fn().mockResolvedValue(null);
 const mockRefundUpdate = vi.fn().mockResolvedValue({});
 const mockCreateRefund = vi.fn().mockResolvedValue('rf_db_1');
@@ -44,7 +46,7 @@ vi.mock('@/lib/database/client', () => ({
     order: {
       findUnique: (...a: unknown[]) => mockOrderFindUnique(...a),
       findMany: (...a: unknown[]) => mockOrderFindMany(...a),
-      update: (...a: unknown[]) => mockOrderUpdate(...a),
+      updateMany: (...a: unknown[]) => mockOrderUpdateMany(...a),
     },
     refund: {
       findFirst: (...a: unknown[]) => mockRefundFindFirst(...a),
@@ -110,7 +112,7 @@ describe('POST /bulk-cancel', () => {
     mockPiRetrieve.mockResolvedValue({ amount_received: 5660 });
     mockRefundsList.mockReturnValue(listOf([]));
     mockRefundsCreate.mockResolvedValue({ id: 're_1', status: 'succeeded' });
-    mockOrderUpdate.mockResolvedValue({});
+    mockOrderUpdateMany.mockResolvedValue({ count: 1 });
     mockRefundFindFirst.mockResolvedValue(null);
     mockRefundUpdate.mockResolvedValue({});
     mockCreateRefund.mockResolvedValue('rf_db_1');
@@ -196,7 +198,7 @@ describe('POST /bulk-cancel', () => {
     const { data } = await post({ orderIds: ['a', 'b'], preview: true });
 
     expect(mockRefundsCreate).not.toHaveBeenCalled();
-    expect(mockOrderUpdate).not.toHaveBeenCalled();
+    expect(mockOrderUpdateMany).not.toHaveBeenCalled();
     expect(data.data.orders[0]).toMatchObject({ orderId: 'a', refundable: 56.6, alreadyTerminal: false });
     // Already-cancelled rows are shown as skipped with nothing to refund.
     expect(data.data.orders[1]).toMatchObject({ orderId: 'b', refundable: 0, alreadyTerminal: true });
@@ -219,7 +221,7 @@ describe('POST /bulk-cancel', () => {
 
     expect(res.status).toBe(403);
     expect(mockRefundsCreate).not.toHaveBeenCalled();
-    expect(mockOrderUpdate).not.toHaveBeenCalled();
+    expect(mockOrderUpdateMany).not.toHaveBeenCalled();
   });
 
   it('does not write a second DB refund row when Stripe replays an existing refund', async () => {

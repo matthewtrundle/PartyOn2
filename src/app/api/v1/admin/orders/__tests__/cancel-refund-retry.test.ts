@@ -32,7 +32,9 @@ vi.mock('@/lib/auth/ops-session', () => ({
 
 // --- Prisma ---
 const mockOrderFindUnique = vi.fn();
-const mockOrderUpdate = vi.fn().mockResolvedValue({});
+// The terminal-status write is a compare-and-set (updateMany + status notIn),
+// so that concurrent cancels can't both run the emails. count: 1 = claim won.
+const mockOrderUpdateMany = vi.fn().mockResolvedValue({ count: 1 });
 // No DB row yet for the Stripe refund id — the normal case. The route's
 // duplicate guard only short-circuits when a row already carries that id.
 const mockRefundFindFirst = vi.fn().mockResolvedValue(null);
@@ -42,7 +44,7 @@ vi.mock('@/lib/database/client', () => ({
   prisma: {
     order: {
       findUnique: (...a: unknown[]) => mockOrderFindUnique(...a),
-      update: (...a: unknown[]) => mockOrderUpdate(...a),
+      updateMany: (...a: unknown[]) => mockOrderUpdateMany(...a),
     },
     refund: {
       findFirst: (...a: unknown[]) => mockRefundFindFirst(...a),
@@ -101,7 +103,7 @@ describe('POST /cancel — refund retry safety', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockOrderFindUnique.mockResolvedValue(baseOrder());
-    mockOrderUpdate.mockResolvedValue({});
+    mockOrderUpdateMany.mockResolvedValue({ count: 1 });
     mockRefundFindFirst.mockResolvedValue(null);
     mockRefundUpdate.mockResolvedValue({});
     mockPiRetrieve.mockResolvedValue({ amount_received: 15000 }); // $150 captured
