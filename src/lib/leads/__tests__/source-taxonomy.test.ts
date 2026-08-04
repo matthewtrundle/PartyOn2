@@ -15,6 +15,7 @@ import {
   SOURCE_FILTER_OPTIONS,
   classifyLeadSource,
   isAdsLead,
+  labelFor,
   refineSource,
   type LeadChannel,
 } from '../source-taxonomy';
@@ -283,6 +284,27 @@ describe('classifyLeadSource — which form was submitted', () => {
       expect(classify('CONTACT_FORM', { [surface]: {} }).formKey, surface).not.toBeNull();
     }
   });
+});
+
+describe('labelFor — own-property lookup', () => {
+  const table = { WAYNE_CHAT: 'Wayne Chat' };
+
+  it('returns a real entry', () => {
+    expect(labelFor(table, 'WAYNE_CHAT')).toBe('Wayne Chat');
+  });
+
+  it('returns null for a missing key', () => {
+    expect(labelFor(table, 'NOPE')).toBeNull();
+  });
+
+  it.each(['constructor', '__proto__', 'toString', 'valueOf', 'hasOwnProperty'])(
+    'returns null for the inherited property %s',
+    (key) => {
+      // A plain `table[key]` yields a function here, which the drawer would
+      // then hand to React as a child.
+      expect(labelFor(table, key)).toBeNull();
+    },
+  );
 });
 
 describe('isAdsLead', () => {

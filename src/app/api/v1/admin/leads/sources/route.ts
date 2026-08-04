@@ -22,6 +22,9 @@ import {
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
+/** Ceiling on rows read in one report — see the `take` below. */
+const MAX_REPORT_LEADS = 20_000;
+
 const querySchema = z.object({
   /** Absent = all time. Capped at two years. */
   days: z.coerce.number().int().min(1).max(730).optional(),
@@ -44,6 +47,12 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     const [leads, buyerRows] = await Promise.all([
       prisma.lead.findMany({
         where: since ? { createdAt: { gte: since } } : undefined,
+        // Unbounded in principle, and the collapse is quadratic in distinct
+        // addresses, so keep a ceiling well above the real table (~700 rows)
+        // rather than none at all. Newest first so a truncated report is the
+        // recent picture, not an arbitrary slice.
+        take: MAX_REPORT_LEADS,
+        orderBy: { createdAt: 'desc' },
         select: {
           id: true,
           email: true,
@@ -75,11 +84,11 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
       firstPaidAt: new Date(b.first_paid_at),
     }));
 
-    const report = buildSourcesReport(
-      leads as unknown as SourceReportLead[],
-      buyers,
-      days,
-    );
+    // No `as unknown as` — a plain widening assignment still type-checks the
+    // selected shape against the DTO, so a schema change that drops a field
+    // this report depends on fails the build instead of failing at runtime.
+    const rows: SourceReportLead[] = leads;
+    const report = buildSourcesReport(rows, buyers, days);
     return NextResponse.json({ success: true, data: report });
   } catch (error) {
     console.error('[admin/leads/sources] failed:', error);

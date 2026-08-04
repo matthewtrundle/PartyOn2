@@ -91,11 +91,16 @@ describe('GET /api/v1/admin/leads/sources', () => {
     expect(prismaMock.$transaction).not.toHaveBeenCalled();
   });
 
-  it('reads every lead — no score cap, unlike the board', async () => {
+  it('is not the board\'s score-ranked slice', async () => {
+    // The board reads the top 500 BY SCORE, which is why its counts are not
+    // totals. This route keeps only a safety ceiling far above the real table
+    // and orders by recency, so a truncated report is the recent picture
+    // rather than an arbitrary one.
     await GET(req());
     const args = prismaMock.lead.findMany.mock.calls[0][0];
-    expect(args.take).toBeUndefined();
-    expect(args.orderBy).toBeUndefined();
+    expect(args.take).toBeGreaterThanOrEqual(20_000);
+    expect(args.orderBy).toEqual({ createdAt: 'desc' });
+    expect(JSON.stringify(args.orderBy)).not.toContain('leadScore');
   });
 
   it('scopes to a window when days is supplied', async () => {

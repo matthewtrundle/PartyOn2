@@ -7,6 +7,7 @@ import {
   asRecord,
   CHANNEL_LABELS,
   classifyLeadSource,
+  labelFor,
   type LeadChannel,
 } from '@/lib/leads/source-taxonomy';
 import HqBadge, { type HqBadgeVariant } from '@/components/backend/kit/Badge';
@@ -87,7 +88,7 @@ export default function DrawerFacts({ detail }: { detail: LeadDetail }): ReactEl
         />
         {source.formLabel && <Fact label="Form" value={source.formLabel} />}
         {originWidget && originWidget !== lead.sourceWidget && (
-          <Fact label="Started as" value={SOURCE_LABELS[originWidget] ?? originWidget} />
+          <Fact label="Started as" value={labelFor(SOURCE_LABELS, originWidget) ?? originWidget} />
         )}
         {detail.affiliate && (
           <Fact label="Affiliate" value={`${detail.affiliate.name} (${detail.affiliate.code})`} />

@@ -143,8 +143,16 @@ export function asRecord(v: unknown): Record<string, unknown> | null {
  * a function reaching a React child is a render crash.
  */
 function safeLabel(table: Record<string, string>, key: string): string {
+  return labelFor(table, key) ?? 'Site';
+}
+
+/**
+ * Own-property label lookup, or null. Exported because the drawer renders
+ * widget labels too, and a function reaching a React child is a render crash.
+ */
+export function labelFor(table: Record<string, string>, key: string): string | null {
   const value = Object.prototype.hasOwnProperty.call(table, key) ? table[key] : undefined;
-  return typeof value === 'string' ? value : 'Site';
+  return typeof value === 'string' ? value : null;
 }
 
 function str(v: unknown): string | null {

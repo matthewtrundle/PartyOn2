@@ -257,3 +257,33 @@ describe('buildSourcesReport', () => {
     expect(totals).toEqual({ won: 1, lost: 1, open: 1 });
   });
 });
+
+describe('collapseToPeople — pathological input', () => {
+  it('treats an over-length address as unreachable, not as a person', () => {
+    // Not every capture route caps the email field, and collapse compares
+    // every pair of addresses, so an unbounded string is quadratic cost. The
+    // clamp is at the RFC ceiling (254), past which an address cannot be
+    // delivered to anyway — so such a row is honestly unreachable rather than
+    // a person we could contact.
+    const huge = `${'a'.repeat(5000)}@example.com`;
+    const { people, unreachable } = collapseToPeople([lead({ email: huge })]);
+    expect(people).toHaveLength(0);
+    expect(unreachable).toHaveLength(1);
+  });
+
+  it('still accepts a long but legal address', () => {
+    const legal = `${'a'.repeat(200)}@example.com`;
+    expect(collapseToPeople([lead({ email: legal })]).people).toHaveLength(1);
+  });
+
+  it('stays linear-ish on many unrelated addresses', () => {
+    const rows = Array.from({ length: 400 }, (_, i) =>
+      lead({ email: `person${i}@example.com` }),
+    );
+    const started = process.hrtime.bigint();
+    const { people } = collapseToPeople(rows);
+    const ms = Number(process.hrtime.bigint() - started) / 1e6;
+    expect(people).toHaveLength(400);
+    expect(ms).toBeLessThan(2000);
+  });
+});

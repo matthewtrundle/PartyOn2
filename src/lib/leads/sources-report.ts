@@ -27,6 +27,14 @@ import { classifyLeadSource, type LeadChannel } from './source-taxonomy';
 const MIN_FRAGMENT_LEN = 6;
 const COMPLETE_EMAIL = /^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i;
 
+/**
+ * Collapse compares every pair of addresses, so cost is quadratic in the
+ * number of DISTINCT emails. Most capture routes cap the field at 200 chars
+ * but not all do, so clamp here too — the comparison only needs the prefix,
+ * and an address this long is not a real one anyone is typing.
+ */
+const MAX_EMAIL_KEY_LEN = 254;
+
 /** One lead row, projected to just what the rollup needs. */
 export interface SourceReportLead {
   id: string;
@@ -84,7 +92,7 @@ export interface SourcesReport {
 }
 
 export function normalizeEmailForReport(email: string | null): string | null {
-  const s = (email ?? '').trim().toLowerCase();
+  const s = (email ?? '').trim().toLowerCase().slice(0, MAX_EMAIL_KEY_LEN);
   return s && COMPLETE_EMAIL.test(s) ? s : null;
 }
 
