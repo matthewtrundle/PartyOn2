@@ -17,14 +17,25 @@ const leadCaptureMock = vi.hoisted(() => ({
 vi.mock('@/lib/leads/leadCapture', () => leadCaptureMock);
 
 const prismaMock = vi.hoisted(() => ({ lead: { update: vi.fn(), findFirst: vi.fn() } }));
-vi.mock('@/lib/database/client', () => ({ prisma: prismaMock }));
+vi.mock('@/lib/database/client', () => ({
+  prisma: prismaMock,
+  kv: {},
+  isKVConfigured: () => false,
+}));
 
 import { POST } from '../route';
 
+// The throttle keys on IP, so vary it per request or the suite trips its own
+// limit partway through.
+let ipCounter = 0;
 function makeRequest(body: unknown): NextRequest {
+  ipCounter += 1;
   return new NextRequest('http://localhost/api/v1/events/abandon-nudge', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'x-vercel-forwarded-for': `10.7.0.${ipCounter % 250}`,
+    },
     body: JSON.stringify(body),
   });
 }
@@ -135,5 +146,25 @@ describe('POST /api/v1/events/abandon-nudge', () => {
     const res = await POST(makeRequest({ ...validBody, email: 'nope' }));
     expect(res.status).toBe(400);
     expect(leadCaptureMock.upsertLead).not.toHaveBeenCalled();
+  });
+
+  it('throttles a caller hammering it from one address', async () => {
+    // Unauthenticated, and every call now runs a fragment-merge scan, so an
+    // unthrottled loop is real DB cost. Same IP each time, unlike makeRequest.
+    const sameIp = (): NextRequest =>
+      new NextRequest('http://localhost/api/v1/events/abandon-nudge', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-vercel-forwarded-for': '203.0.113.9',
+        },
+        body: JSON.stringify(validBody),
+      });
+
+    const statuses: number[] = [];
+    for (let i = 0; i < 20; i += 1) statuses.push((await POST(sameIp())).status);
+    expect(statuses).toContain(429);
+    // The throttle runs before the body is parsed, so blocked calls cost nothing.
+    expect(leadCaptureMock.upsertLead.mock.calls.length).toBeLessThan(20);
   });
 });

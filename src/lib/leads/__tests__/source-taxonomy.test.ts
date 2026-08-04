@@ -180,6 +180,35 @@ describe('classifyLeadSource — channel precedence', () => {
     expect(channelOf(null, {})).toBe('direct');
   });
 
+  it.each(['constructor', '__proto__', 'toString', 'valueOf', 'hasOwnProperty'])(
+    'returns a plain string label for a stored source of %s',
+    (evil) => {
+      // These strings resolve to Object.prototype members on a plain-object
+      // lookup, so a label could come back as a FUNCTION — which React throws
+      // on ("Functions are not valid as a React child"), taking the drawer
+      // down for that card. Every metadata-keyed table is a Map.
+      for (const meta of [
+        { contactForm: { source: evil } },
+        { unifiedQuote: { source: evil } },
+        { groupDashboard: { source: evil } },
+        { quickBuy: { occasion: evil } },
+        { partnerInquiry: { source: evil } },
+      ]) {
+        const result = classify('CONTACT_FORM', meta);
+        expect(typeof result.label).toBe('string');
+        expect(typeof result.key).toBe('string');
+        if (result.formLabel !== null) expect(typeof result.formLabel).toBe('string');
+        if (result.formKey !== null) expect(typeof result.formKey).toBe('string');
+      }
+    },
+  );
+
+  it('returns a plain string label for a prototype-named widget', () => {
+    for (const evil of ['constructor', 'toString', '__proto__']) {
+      expect(typeof refineSource(evil, null).label).toBe('string');
+    }
+  });
+
   it('never throws on malformed metadata', () => {
     for (const bad of [null, undefined, 'a string', 42, [], [{ a: 1 }]]) {
       expect(() => classify('OTHER', bad)).not.toThrow();

@@ -82,13 +82,20 @@ const CONTACT_FORM_SURFACES: ReadonlyArray<{ meta: string; key: string; label: s
   { meta: 'contactForm', key: 'CONTACT_FORM:contact', label: 'Contact Form' },
 ];
 
-/** unifiedQuote.source (quote/start zod enum) → sub-flow display label. */
-const QUOTE_FLOW_LABELS: Record<string, string> = {
-  chat: 'Quote · Chat',
-  'package-builder': 'Quote · Builder',
-  'event-quiz': 'Quote · Quiz',
-  'landing-quote': 'Quote · Landing',
-};
+/**
+ * unifiedQuote.source (quote/start zod enum) → sub-flow display label.
+ *
+ * Every lookup table keyed on stored metadata is a Map, never an object
+ * literal: `{}['constructor']` returns a function rather than undefined, so a
+ * plain-object lookup silently defeats an `?? fallback` and can put a function
+ * where a string belongs — which React then throws on when it renders.
+ */
+const QUOTE_FLOW_LABELS = new Map<string, string>([
+  ['chat', 'Quote · Chat'],
+  ['package-builder', 'Quote · Builder'],
+  ['event-quiz', 'Quote · Quiz'],
+  ['landing-quote', 'Quote · Landing'],
+]);
 
 /**
  * groupDashboard.source (DashboardSource enum) → CARD label. DIRECT and
@@ -96,29 +103,29 @@ const QUOTE_FLOW_LABELS: Record<string, string> = {
  * base label the operator already reads. They are still separated for
  * analytics — see DASHBOARD_FORM_LABELS.
  */
-const DASHBOARD_SOURCE_LABELS: Record<string, string> = {
-  WEBHOOK: 'Dashboard · Boat Webhook',
-  PARTNER_PAGE: 'Dashboard · Partner',
-};
+const DASHBOARD_SOURCE_LABELS = new Map<string, string>([
+  ['WEBHOOK', 'Dashboard · Boat Webhook'],
+  ['PARTNER_PAGE', 'Dashboard · Partner'],
+]);
 
 /**
  * The same four sources as FORM labels. Self-serve dashboards convert at a
  * fraction of the partner ones, so the Sources panel has to tell them apart
  * even though the card doesn't.
  */
-const DASHBOARD_FORM_LABELS: Record<string, string> = {
-  WEBHOOK: 'Dashboard · Boat Webhook',
-  PARTNER_PAGE: 'Dashboard · Partner Page',
-  INTERNAL: 'Dashboard · Staff Created',
-  DIRECT: 'Dashboard · Self-serve',
-};
+const DASHBOARD_FORM_LABELS = new Map<string, string>([
+  ['WEBHOOK', 'Dashboard · Boat Webhook'],
+  ['PARTNER_PAGE', 'Dashboard · Partner Page'],
+  ['INTERNAL', 'Dashboard · Staff Created'],
+  ['DIRECT', 'Dashboard · Self-serve'],
+]);
 
 /** The three pages that all post to /api/contact. */
-const CONTACT_FORM_LABELS: Record<string, string> = {
-  contact: 'Contact Form',
-  'plan-event-page': 'Contact · Plan Event',
-  'book-now': 'Contact · Book Now',
-};
+const CONTACT_FORM_LABELS = new Map<string, string>([
+  ['contact', 'Contact Form'],
+  ['plan-event-page', 'Contact · Plan Event'],
+  ['book-now', 'Contact · Book Now'],
+]);
 
 export const CLICK_ID_KEYS = ['gclid', 'gbraid', 'wbraid', 'fbclid', 'msclkid'] as const;
 const PAID_MEDIUMS = new Set(['cpc', 'ppc', 'paid', 'paidsearch', 'paid_search']);
@@ -128,6 +135,16 @@ const OWN_HOST = 'partyondelivery.com';
 
 export function asRecord(v: unknown): Record<string, unknown> | null {
   return v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : null;
+}
+
+/**
+ * Read a label out of a plain-object table without inheriting from the
+ * prototype. `SOURCE_LABELS['constructor']` is a function, not undefined, and
+ * a function reaching a React child is a render crash.
+ */
+function safeLabel(table: Record<string, string>, key: string): string {
+  const value = Object.prototype.hasOwnProperty.call(table, key) ? table[key] : undefined;
+  return typeof value === 'string' ? value : 'Site';
 }
 
 function str(v: unknown): string | null {
@@ -172,13 +189,13 @@ export function refineSource(
         if (m[s.meta] == null) continue;
         if (s.meta === 'unifiedQuote') {
           const flow = asRecord(m.unifiedQuote)?.source;
-          const flowLabel = typeof flow === 'string' ? QUOTE_FLOW_LABELS[flow] : undefined;
+          const flowLabel = typeof flow === 'string' ? QUOTE_FLOW_LABELS.get(flow) : undefined;
           return { key: s.key, label: flowLabel ?? s.label };
         }
         if (s.meta === 'contactForm') {
           // Three separate pages post to /api/contact — show which one.
           const formSource = str(asRecord(m.contactForm)?.source);
-          const label = formSource ? CONTACT_FORM_LABELS[formSource] : undefined;
+          const label = formSource ? CONTACT_FORM_LABELS.get(formSource) : undefined;
           return { key: s.key, label: label ?? s.label };
         }
         return { key: s.key, label: s.label };
@@ -203,7 +220,7 @@ export function refineSource(
     }
     if (widget === 'GROUP_DASHBOARD') {
       const src = asRecord(m.groupDashboard)?.source;
-      const label = typeof src === 'string' ? DASHBOARD_SOURCE_LABELS[src] : undefined;
+      const label = typeof src === 'string' ? DASHBOARD_SOURCE_LABELS.get(src) : undefined;
       if (label) return { key: widget, label };
     }
     if (widget === 'PARTNER_INQUIRY') {
@@ -216,7 +233,7 @@ export function refineSource(
       }
     }
   }
-  return { key: widget, label: SOURCE_LABELS[widget] ?? 'Site' };
+  return { key: widget, label: safeLabel(SOURCE_LABELS, widget) };
 }
 
 /**
@@ -307,7 +324,10 @@ function formFor(
   const quote = asRecord(m.unifiedQuote);
   if (quote) {
     const src = str(quote.source) ?? 'unknown';
-    return { formKey: `quote:${src}`, formLabel: QUOTE_FLOW_LABELS[src] ?? `Quote · ${titleCaseSlug(src)}` };
+    return {
+      formKey: `quote:${src}`,
+      formLabel: QUOTE_FLOW_LABELS.get(src) ?? `Quote · ${titleCaseSlug(src)}`,
+    };
   }
   if (m.chatQuiz != null) return { formKey: 'chat-quiz', formLabel: 'Chat Quiz' };
   if (m.eventQuiz != null) return { formKey: 'event-quiz', formLabel: 'Event Quiz' };
@@ -317,7 +337,7 @@ function formFor(
     const src = str(contact.source) ?? 'contact';
     return {
       formKey: `contact:${src}`,
-      formLabel: CONTACT_FORM_LABELS[src] ?? `Contact · ${titleCaseSlug(src)}`,
+      formLabel: CONTACT_FORM_LABELS.get(src) ?? `Contact · ${titleCaseSlug(src)}`,
     };
   }
   const quickBuy = asRecord(m.quickBuy);
@@ -346,7 +366,7 @@ function formFor(
     const src = str(dashboard.source) ?? 'DIRECT';
     return {
       formKey: `dashboard:${src.toLowerCase()}`,
-      formLabel: DASHBOARD_FORM_LABELS[src] ?? `Dashboard · ${titleCaseSlug(src)}`,
+      formLabel: DASHBOARD_FORM_LABELS.get(src) ?? `Dashboard · ${titleCaseSlug(src)}`,
     };
   }
   if (m.abandonedCart != null) {

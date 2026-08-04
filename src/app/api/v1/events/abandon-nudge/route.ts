@@ -19,6 +19,8 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/database/client';
 import { sanitizeName, upsertLead } from '@/lib/leads/leadCapture';
+import { checkRateLimit } from '@/lib/security/rate-limit';
+import { clientIpFrom } from '@/lib/group-orders-v2/client-ip';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -36,6 +38,17 @@ const schema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  // Unauthenticated and now several DB round trips per call (the shared writer
+  // runs a fragment-merge scan), so throttle before parsing the body. Uses the
+  // audited resolver, which prefers platform-set headers over the forgeable
+  // x-forwarded-for.
+  if (!(await checkRateLimit('abandon-nudge', clientIpFrom(req), 15, 60))) {
+    return NextResponse.json(
+      { ok: false, error: 'Too many requests. Please try again shortly.' },
+      { status: 429 },
+    );
+  }
+
   let body: z.infer<typeof schema>;
   try {
     body = schema.parse(await req.json());

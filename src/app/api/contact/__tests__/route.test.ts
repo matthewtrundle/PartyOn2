@@ -145,6 +145,28 @@ describe('POST /api/contact — which form sent it', () => {
     expect(prismaMock.lead.update.mock.calls[0][0].data.sourcePage).toBe('/contact');
   });
 
+  it.each(['constructor', '__proto__', 'toString', 'valueOf', 'hasOwnProperty'])(
+    'resolves %s to a plain string, not an inherited property',
+    async (source) => {
+      // A plain-object lookup returns Object.prototype members instead of
+      // undefined, so `?? fallback` never fires and a FUNCTION lands where a
+      // string belongs — which Prisma refuses to serialize, silently losing
+      // the whole submission, and which React throws on when the drawer
+      // renders it. The tables are Maps for exactly this reason.
+      await POST(makeRequest({ ...validBody, source }));
+
+      const ctx = leadCaptureMock.upsertLead.mock.calls[0][1];
+      expect(typeof ctx.sourcePage).toBe('string');
+      expect(ctx.sourcePage).toBe('/contact');
+
+      const data = prismaMock.lead.update.mock.calls[0][0].data;
+      expect(typeof data.sourcePage).toBe('string');
+      expect(data.sourcePage).toBe('/contact');
+      // Only a recognised form id is ever persisted.
+      expect(data.metadata.contactForm.source).toBe('contact');
+    },
+  );
+
   it('carries the form id onto the FORM_SUBMIT event page', async () => {
     await POST(makeRequest({ ...validBody, source: 'plan-event-page' }));
     expect(leadCaptureMock.recordEvent).toHaveBeenCalledWith(

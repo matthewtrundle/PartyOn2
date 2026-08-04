@@ -44,12 +44,16 @@ const bodySchema = z.object({
  * Form id → the page it actually lives on. Mapped rather than interpolated:
  * `sourcePage` is rendered on the admin board, so a caller-supplied string
  * must never reach it. Unknown values fall back to the historical `/contact`.
+ *
+ * A Map, not an object literal: `{}['constructor']` returns a function rather
+ * than undefined, so a plain-object lookup keyed on caller input silently
+ * defeats an `?? fallback` and yields a function where a string is expected.
  */
-const CONTACT_SOURCE_PAGES: Readonly<Record<string, string>> = {
-  contact: '/contact',
-  'plan-event-page': '/plan-event',
-  'book-now': '/book-now',
-};
+const CONTACT_SOURCE_PAGES = new Map<string, string>([
+  ['contact', '/contact'],
+  ['plan-event-page', '/plan-event'],
+  ['book-now', '/book-now'],
+]);
 
 export async function POST(request: NextRequest) {
   try {
@@ -75,8 +79,12 @@ export async function POST(request: NextRequest) {
     const body = parsed.data;
     const submittedAt = new Date().toISOString();
     const [firstName, ...restName] = body.name.split(/\s+/);
-    const formSource = body.source ?? 'contact';
-    const sourcePage = CONTACT_SOURCE_PAGES[formSource] ?? '/contact';
+    // Only a recognised form id is ever stored — an unknown one is discarded
+    // rather than persisted, so nothing downstream has to trust it.
+    const formSource = CONTACT_SOURCE_PAGES.has(body.source ?? '')
+      ? (body.source as string)
+      : 'contact';
+    const sourcePage = CONTACT_SOURCE_PAGES.get(formSource) ?? '/contact';
 
     // 1. Store the submission — this is the system of record now; Zapier is
     // a best-effort mirror.
