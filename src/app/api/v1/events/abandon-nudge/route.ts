@@ -18,7 +18,9 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/database/client';
-import { sanitizeName } from '@/lib/leads/leadCapture';
+import { sanitizeName, upsertLead } from '@/lib/leads/leadCapture';
+import { checkRateLimit } from '@/lib/security/rate-limit';
+import { clientIpFrom } from '@/lib/group-orders-v2/client-ip';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -36,6 +38,17 @@ const schema = z.object({
 });
 
 export async function POST(req: NextRequest) {
+  // Unauthenticated and now several DB round trips per call (the shared writer
+  // runs a fragment-merge scan), so throttle before parsing the body. Uses the
+  // audited resolver, which prefers platform-set headers over the forgeable
+  // x-forwarded-for.
+  if (!(await checkRateLimit('abandon-nudge', clientIpFrom(req), 15, 60))) {
+    return NextResponse.json(
+      { ok: false, error: 'Too many requests. Please try again shortly.' },
+      { status: 429 },
+    );
+  }
+
   let body: z.infer<typeof schema>;
   try {
     body = schema.parse(await req.json());
@@ -50,13 +63,29 @@ export async function POST(req: NextRequest) {
   const firstName = sanitizeName(body.firstName);
   const lastName = sanitizeName(body.lastName);
 
-  // Find or upsert the Lead row. We don't fire a lead-event here — the
-  // EventInvitePage already fires CONTACT_FORM events for the RSVP. This
-  // endpoint just decorates the Lead with abandoned-cart metadata.
-  const existing = await prisma.lead.findFirst({
-    where: { email: body.email.toLowerCase() },
-    orderBy: { createdAt: 'desc' },
-  });
+  // Find or create the Lead through the shared writer rather than a local
+  // findFirst + create. That buys email normalization (this route used to
+  // match on a raw lowercased string, so a lead stored via any other path
+  // could be missed and duplicated), phone matching, and the keystroke
+  // fragment merge. We don't fire a lead-event here — the EventInvitePage
+  // already fires CONTACT_FORM events for the RSVP. This endpoint just
+  // decorates the Lead with abandoned-cart metadata.
+  const eventPage = `/events/${body.eventSlug}`;
+  const lead = await upsertLead(
+    {
+      email: body.email,
+      phone: body.phone ?? null,
+      firstName,
+      lastName,
+    },
+    { sourcePage: eventPage, sourceWidget: 'A_LA_CARTE' },
+  );
+  if (!lead) {
+    return NextResponse.json(
+      { ok: false, error: 'Could not resolve a lead for this address' },
+      { status: 400 },
+    );
+  }
 
   // 30-minute soft delay before the cron picks it up.
   const nudgeAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
@@ -72,45 +101,23 @@ export async function POST(req: NextRequest) {
     nudgeSentAt: null as string | null,
   };
 
-  if (existing) {
-    const prevMeta = (existing.metadata as Record<string, unknown> | null) ?? {};
-    // Don't reschedule if we've already sent a nudge for this exact event.
-    const prevAbandon = prevMeta.abandonedCart as
-      | typeof abandonMeta
-      | undefined;
-    if (
-      prevAbandon &&
-      prevAbandon.eventSlug === body.eventSlug &&
-      prevAbandon.nudgeSentAt
-    ) {
-      return NextResponse.json({ ok: true, status: 'already-nudged' });
-    }
-    await prisma.lead.update({
-      where: { id: existing.id },
-      data: {
-        firstName: existing.firstName ?? firstName,
-        lastName: existing.lastName ?? lastName,
-        phone: existing.phone ?? body.phone ?? null,
-        metadata: { ...prevMeta, abandonedCart: abandonMeta },
-        resumeCart: { itemCount: body.itemCount, cartTotal: body.cartTotal },
-      },
-    });
-    return NextResponse.json({ ok: true, status: 'scheduled', leadId: existing.id });
+  const prevMeta = (lead.metadata as Record<string, unknown> | null) ?? {};
+  // Don't reschedule if we've already sent a nudge for this exact event.
+  const prevAbandon = prevMeta.abandonedCart as typeof abandonMeta | undefined;
+  if (
+    prevAbandon &&
+    prevAbandon.eventSlug === body.eventSlug &&
+    prevAbandon.nudgeSentAt
+  ) {
+    return NextResponse.json({ ok: true, status: 'already-nudged' });
   }
 
-  const created = await prisma.lead.create({
+  await prisma.lead.update({
+    where: { id: lead.id },
     data: {
-      email: body.email.toLowerCase(),
-      phone: body.phone ?? null,
-      firstName,
-      lastName,
-      status: 'PARTIAL',
-      sourcePage: `/events/${body.eventSlug}`,
-      sourceWidget: 'A_LA_CARTE',
-      lastPage: `/events/${body.eventSlug}`,
-      metadata: { abandonedCart: abandonMeta },
+      metadata: { ...prevMeta, abandonedCart: abandonMeta },
       resumeCart: { itemCount: body.itemCount, cartTotal: body.cartTotal },
     },
   });
-  return NextResponse.json({ ok: true, status: 'scheduled', leadId: created.id });
+  return NextResponse.json({ ok: true, status: 'scheduled', leadId: lead.id });
 }

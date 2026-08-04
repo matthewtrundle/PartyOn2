@@ -127,6 +127,7 @@ vi.mock('../pipeline', async (importOriginal) => {
 });
 
 import {
+  applyFilters,
   compareBoardCards,
   getBoardData,
   isAdsLead,
@@ -689,5 +690,51 @@ describe('getBoardData — Won/Lost 30-day window vs all-time closed counts', ()
     expect(data.kpis.lost30d).toBe(0);
     // Column headers show the true totals.
     expect(data.closedCounts).toEqual({ won: 2, lost: 1 });
+  });
+});
+
+describe('applyFilters — channel and form axes', () => {
+  const now = new Date();
+  const cardFor = (lead: Partial<MockLead>) =>
+    toBoardLead(makeLead(lead) as never, { hasFollowUp: false, isDuplicate: false, now });
+
+  const paidQuote = () =>
+    cardFor({
+      sourceWidget: 'CONTACT_FORM',
+      metadata: { unifiedQuote: { source: 'chat' }, attribution: { gclid: 'g1' } },
+    });
+  const partnerDashboard = () =>
+    cardFor({
+      sourceWidget: 'GROUP_DASHBOARD',
+      metadata: { groupDashboard: { source: 'WEBHOOK' } },
+    });
+
+  it('filters by channel', () => {
+    const cards = [paidQuote(), partnerDashboard()];
+    expect(applyFilters(cards, { channel: 'paid' }, now).map((c) => c.channel)).toEqual(['paid']);
+    expect(applyFilters(cards, { channel: 'partner' }, now).map((c) => c.channel)).toEqual([
+      'partner',
+    ]);
+  });
+
+  it('filters by formKey, never by the human label', () => {
+    const cards = [paidQuote(), partnerDashboard()];
+    expect(applyFilters(cards, { form: 'quote:chat' }, now)).toHaveLength(1);
+    // The label must not match — keys are the stable contract.
+    expect(applyFilters(cards, { form: 'Quote · Chat' }, now)).toHaveLength(0);
+  });
+
+  it('ANDs the axes rather than short-circuiting on the first match', () => {
+    const cards = [paidQuote(), partnerDashboard()];
+    expect(
+      applyFilters(cards, { channel: 'paid', source: 'GROUP_DASHBOARD' }, now),
+    ).toHaveLength(0);
+    expect(
+      applyFilters(cards, { channel: 'paid', source: 'CONTACT_FORM:quote' }, now),
+    ).toHaveLength(1);
+  });
+
+  it('returns everything when neither axis is set', () => {
+    expect(applyFilters([paidQuote(), partnerDashboard()], {}, now)).toHaveLength(2);
   });
 });

@@ -13,12 +13,15 @@ import { prisma } from '@/lib/database/client';
 import { dateStrCT, extractLeadFacts, temperatureFor, SCORE_THRESHOLDS } from './scoring';
 import { isNewsletterOnly, sweepEnrollSubmitted } from './pipeline';
 import { ACTIVE_STAGES, PIPELINE_STAGES, type PipelineStage } from './pipeline-types';
-import { compareBoardCards, SOURCE_LABELS } from './board-types';
+import { compareBoardCards } from './board-types';
 import type { BoardData, BoardFilters, BoardKpis, BoardLead } from './board-types';
 import { SOURCE_FILTER_CONSUMER, SOURCE_FILTER_PARTNER } from './board-types';
+import { asRecord, classifyLeadSource, isAdsLead, refineSource } from './source-taxonomy';
 
-// Re-exported so existing importers (and its test) keep their board-data path.
-export { compareBoardCards };
+// Re-exported so existing importers (and their tests) keep their board-data
+// path. The provenance logic itself now lives in source-taxonomy.ts, which is
+// Prisma-free so the drawer can share it — see that module's header.
+export { compareBoardCards, refineSource, isAdsLead };
 import { isB2bBusinessType, isPartnerLead } from './partner-tags';
 import { loadBoardJoins } from './board-joins';
 import { nextActionFor } from './next-action';
@@ -39,105 +42,6 @@ function displayName(lead: Lead): string {
   return name || lead.email || lead.phone || 'Unknown lead';
 }
 
-/**
- * CONTACT_FORM is one widget covering four distinct capture flows — split it by
- * the metadata surface so the card shows the real intent (a quote request reads
- * very differently from a quiz). Precedence follows scoring's intent order.
- * Every other widget passes through to its SOURCE_LABELS name. `key` is what the
- * board filter matches on; `label` is what the card shows.
- */
-const CONTACT_FORM_SURFACES: ReadonlyArray<{ meta: string; key: string; label: string }> = [
-  { meta: 'unifiedQuote', key: 'CONTACT_FORM:quote', label: 'Quote Request' },
-  { meta: 'chatQuiz', key: 'CONTACT_FORM:chat', label: 'Chat' },
-  { meta: 'eventQuiz', key: 'CONTACT_FORM:quiz', label: 'Event Quiz' },
-  { meta: 'contactForm', key: 'CONTACT_FORM:contact', label: 'Contact Form' },
-];
-
-/** unifiedQuote.source (quote/start zod enum) → sub-flow display label. */
-const QUOTE_FLOW_LABELS: Record<string, string> = {
-  chat: 'Quote · Chat',
-  'package-builder': 'Quote · Builder',
-  'event-quiz': 'Quote · Quiz',
-  'landing-quote': 'Quote · Landing',
-};
-
-/** groupDashboard.source (DashboardSource enum) → provenance display label. */
-const DASHBOARD_SOURCE_LABELS: Record<string, string> = {
-  WEBHOOK: 'Dashboard · Boat Webhook',
-  PARTNER_PAGE: 'Dashboard · Partner',
-};
-
-function asRecord(v: unknown): Record<string, unknown> | null {
-  return v && typeof v === 'object' && !Array.isArray(v) ? (v as Record<string, unknown>) : null;
-}
-
-/** 'premier-party-cruises' → 'Premier Party Cruises' (badge/label casing). */
-function titleCaseSlug(slug: string): string {
-  return slug
-    .split(/[-_\s]+/)
-    .filter(Boolean)
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ');
-}
-
-/**
- * Card source label with sheet-level precision. Filter KEYS are frozen (saved
- * filters/URLs keep working); only LABELS gain detail from the metadata the
- * capture routes already store (operator ask 2026-07-23: the board must show
- * exactly where a lead came from, like the ops sheet does).
- */
-export function refineSource(
-  sourceWidget: string | null,
-  metadata: unknown,
-): { key: string; label: string } {
-  const widget = sourceWidget ?? 'OTHER';
-  const m = asRecord(metadata);
-  if (m) {
-    if (widget === 'CONTACT_FORM') {
-      for (const s of CONTACT_FORM_SURFACES) {
-        if (m[s.meta] == null) continue;
-        if (s.meta === 'unifiedQuote') {
-          const flow = asRecord(m.unifiedQuote)?.source;
-          const flowLabel = typeof flow === 'string' ? QUOTE_FLOW_LABELS[flow] : undefined;
-          return { key: s.key, label: flowLabel ?? s.label };
-        }
-        return { key: s.key, label: s.label };
-      }
-    }
-    if (widget === 'QUICK_BUY') {
-      const occasion = asRecord(m.quickBuy)?.occasion;
-      if (typeof occasion === 'string' && occasion) {
-        return { key: widget, label: `Quick Buy · ${titleCaseSlug(occasion)}` };
-      }
-    }
-    if (widget === 'PARTNER_LANDING_PAGE') {
-      // Premier concierge quiz beats the partner-slug fallback: those leads
-      // carry BOTH partner='premier-concierge' and the quiz surface.
-      const quizParty = asRecord(m.conciergeQuiz)?.partyType;
-      if (typeof quizParty === 'string' && quizParty) {
-        return { key: widget, label: `Concierge · ${titleCaseSlug(quizParty)}` };
-      }
-      if (typeof m.partner === 'string' && m.partner && m.partner !== 'premier-concierge') {
-        return { key: widget, label: `Partner · ${titleCaseSlug(m.partner)}` };
-      }
-    }
-    if (widget === 'GROUP_DASHBOARD') {
-      const src = asRecord(m.groupDashboard)?.source;
-      const label = typeof src === 'string' ? DASHBOARD_SOURCE_LABELS[src] : undefined;
-      if (label) return { key: widget, label };
-    }
-    if (widget === 'PARTNER_INQUIRY') {
-      // businessType is free text from the inquiry form ('Mobile Bartender',
-      // 'Vacation Rental', a hotel/property dropdown value…) — show it so a
-      // bartender doesn't read identically to an STR manager on the board.
-      const businessType = asRecord(m.partnerInquiry)?.businessType;
-      if (typeof businessType === 'string' && businessType.trim()) {
-        return { key: widget, label: `B2B · ${titleCaseSlug(businessType)}` };
-      }
-    }
-  }
-  return { key: widget, label: SOURCE_LABELS[widget] ?? 'Site' };
-}
 
 /**
  * Is this card a BUSINESS reaching out rather than a customer?
@@ -164,22 +68,6 @@ export function isB2bLead(
   return typeof businessType === 'string' && isB2bBusinessType(businessType);
 }
 
-const CLICK_ID_KEYS = ['gclid', 'gbraid', 'wbraid', 'fbclid', 'msclkid'] as const;
-const PAID_MEDIUMS = new Set(['cpc', 'ppc', 'paid']);
-
-/**
- * Paid-traffic detector for the card's "Ads" chip: an ad-platform click id
- * in metadata.attribution, or a paid utm_medium. Pure; exported for tests.
- */
-export function isAdsLead(lead: {
-  utmMedium: string | null;
-  metadata: unknown;
-}): boolean {
-  if (lead.utmMedium && PAID_MEDIUMS.has(lead.utmMedium.toLowerCase())) return true;
-  const attribution = asRecord(asRecord(lead.metadata)?.attribution);
-  if (!attribution) return false;
-  return CLICK_ID_KEYS.some((k) => typeof attribution[k] === 'string' && attribution[k]);
-}
 
 /**
  * Premier Party Cruises lead detector — the operator wants the cruise-partner
@@ -241,7 +129,12 @@ export function toBoardLead(
   },
 ): BoardLead {
   const facts = extractLeadFacts(lead.metadata);
-  const source = refineSource(lead.sourceWidget, lead.metadata);
+  const source = classifyLeadSource({
+    sourceWidget: lead.sourceWidget,
+    utmMedium: lead.utmMedium,
+    metadata: lead.metadata,
+    hasAffiliate: Boolean(ctx.affiliate) || lead.affiliateId != null,
+  });
   const needsResponse = needsReply(lead, ctx.now);
   // CT calendar day, not UTC — a 7pm CT board view must not mark today's
   // event as already passed (review #6).
@@ -273,6 +166,9 @@ export function toBoardLead(
     sourceWidget: lead.sourceWidget,
     sourceKey: source.key,
     sourceLabel: source.label,
+    channel: source.channel,
+    formKey: source.formKey,
+    formLabel: source.formLabel,
     isB2b: isB2bLead(lead.sourceWidget, lead.tags ?? [], lead.metadata),
     sourcePage: lead.sourcePage,
     tags: lead.tags ?? [],
@@ -307,7 +203,8 @@ export function toBoardLead(
   };
 }
 
-function applyFilters(cards: BoardLead[], f: BoardFilters, now: Date): BoardLead[] {
+/** Pure; exported for tests alongside toBoardLead / needsReply. */
+export function applyFilters(cards: BoardLead[], f: BoardFilters, now: Date): BoardLead[] {
   return cards.filter((c) => {
     if (f.temp && c.temperature !== f.temp) return false;
     if (f.occasion && (c.occasion ?? '').toLowerCase() !== f.occasion.toLowerCase()) return false;
@@ -316,6 +213,9 @@ function applyFilters(cards: BoardLead[], f: BoardFilters, now: Date): BoardLead
     } else if (f.source === SOURCE_FILTER_CONSUMER) {
       if (c.isB2b) return false;
     } else if (f.source && c.sourceKey !== f.source) return false;
+    if (f.channel && c.channel !== f.channel) return false;
+    // Matches the key, never the label — labels gain detail, keys don't.
+    if (f.form && c.formKey !== f.form) return false;
     if (!f.showSnoozed && c.snoozedUntil && new Date(c.snoozedUntil) > now) return false;
     if (f.q) {
       const hay = `${c.name} ${c.email ?? ''} ${c.phone ?? ''}`.toLowerCase();

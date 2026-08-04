@@ -1,5 +1,6 @@
 import type { WeddingPlan } from '@/lib/weddingDrinkCalculator';
 import { fireLeadConversion } from '@/lib/leads/fireLeadConversion';
+import { getAttribution } from '@/lib/analytics/attribution';
 
 /**
  * Where on the page a wedding-bar quote was submitted. Sent as the
@@ -109,6 +110,9 @@ export async function submitWeddingQuote({
       deliveryDate: deliveryDate.toISOString().slice(0, 10),
       items,
       deliveryNotes: summary,
+      // Without this the lead's sourcePage falls back to a synthetic
+      // `quickbuy:wedding` string and the real landing page is lost.
+      attribution: getAttribution(),
     }),
   });
   const body = await res.json();

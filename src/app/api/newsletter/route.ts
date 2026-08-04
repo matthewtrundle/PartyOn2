@@ -18,6 +18,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { randomBytes } from 'crypto';
 import { upsertLead, recordEvent } from '@/lib/leads/leadCapture';
+import { attributionSchema } from '@/lib/leads/attribution-schema';
 import { sendEmail } from '@/lib/email/resend-client';
 import { newsletterConfirmEmail } from '@/lib/email/templates/newsletter-confirm';
 import { prisma } from '@/lib/database/client';
@@ -32,6 +33,8 @@ const schema = z.object({
   email: z.string().email().max(200),
   /** Which form the signup came from (e.g. "footer", "blog"). */
   source: z.string().max(60).optional(),
+  /** First-touch UTM + ad click ids captured client-side (optional). */
+  attribution: attributionSchema,
 });
 
 export async function POST(request: NextRequest) {
@@ -47,7 +50,22 @@ export async function POST(request: NextRequest) {
   try {
     const lead = await upsertLead(
       { email: body.email },
-      { sourcePage: source, sourceWidget: 'EMAIL_SIGNUP' },
+      {
+        sourcePage: source,
+        sourceWidget: 'EMAIL_SIGNUP',
+        // Blank-fill only: a newsletter signup should never overwrite the
+        // campaign that first brought someone to the site.
+        utmSource: body.attribution?.utmSource,
+        utmMedium: body.attribution?.utmMedium,
+        utmCampaign: body.attribution?.utmCampaign,
+        utmContent: body.attribution?.utmContent,
+        utmTerm: body.attribution?.utmTerm,
+        gclid: body.attribution?.gclid,
+        gbraid: body.attribution?.gbraid,
+        wbraid: body.attribution?.wbraid,
+        fbclid: body.attribution?.fbclid,
+        msclkid: body.attribution?.msclkid,
+      },
     );
     if (!lead) {
       return NextResponse.json({ error: 'Invalid email address' }, { status: 400 });

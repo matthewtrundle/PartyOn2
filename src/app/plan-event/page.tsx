@@ -9,6 +9,7 @@ import Footer from '@/components/Footer';
 import ScrollRevealCSS from '@/components/ui/ScrollRevealCSS';
 import WeddingDrinkCalculator from '@/components/WeddingDrinkCalculator';
 import { trackPageView, ANALYTICS_EVENTS } from '@/lib/analytics/track';
+import { getAttribution } from '@/lib/analytics/attribution';
 
 interface EventOption {
   id: string;
@@ -82,6 +83,7 @@ export default function PlanEventPage() {
         body: JSON.stringify({
           ...formData,
           source: 'plan-event-page',
+          attribution: getAttribution(),
           subject: `Event Planning Request: ${formData.eventType}`
         })
       });

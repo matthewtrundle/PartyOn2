@@ -2,7 +2,22 @@
 
 import { ReactElement, ReactNode } from 'react';
 import { extractLeadFacts } from '@/lib/leads/scoring';
+import { SOURCE_LABELS } from '@/lib/leads/board-types';
+import {
+  asRecord,
+  CHANNEL_LABELS,
+  classifyLeadSource,
+  labelFor,
+  type LeadChannel,
+} from '@/lib/leads/source-taxonomy';
+import HqBadge, { type HqBadgeVariant } from '@/components/backend/kit/Badge';
 import type { LeadDetail } from './drawer-types';
+
+/** The first strong widget that owned this lead, when one was recorded. */
+function readOriginWidget(metadata: unknown): string | null {
+  const v = asRecord(metadata)?.originWidget;
+  return typeof v === 'string' && v ? v : null;
+}
 import {
   describeDaysAway,
   eventIsPast,
@@ -28,6 +43,13 @@ import {
 export default function DrawerFacts({ detail }: { detail: LeadDetail }): ReactElement {
   const { lead, orders, drafts } = detail;
   const facts = extractLeadFacts(lead.metadata);
+  const source = classifyLeadSource({
+    sourceWidget: lead.sourceWidget,
+    utmMedium: lead.utmMedium,
+    metadata: lead.metadata,
+    hasAffiliate: detail.affiliate != null,
+  });
+  const originWidget = readOriginWidget(lead.metadata);
   const hasSubmission = extractSubmission(lead.metadata) !== null;
   const now = new Date();
   const daysAway = facts.eventDate ? describeDaysAway(facts.eventDate, now) : null;
@@ -52,10 +74,22 @@ export default function DrawerFacts({ detail }: { detail: LeadDetail }): ReactEl
         {!hasSubmission && facts.budgetPerPerson != null && (
           <Fact label="Budget / person" value={`$${facts.budgetPerPerson}`} />
         )}
+        {/* Same refined label the card shows — both call the shared taxonomy,
+            so the board and the drawer cannot describe a lead differently.
+            The raw enum stays available on hover for debugging. */}
         <Fact
           label="Source"
-          value={`${lead.sourceWidget ?? '—'}${lead.sourcePage ? ` · ${lead.sourcePage}` : ''}`}
+          value={
+            <span title={lead.sourceWidget ?? undefined}>
+              {source.label}
+              {lead.sourcePage ? ` · ${lead.sourcePage}` : ''}
+            </span>
+          }
         />
+        {source.formLabel && <Fact label="Form" value={source.formLabel} />}
+        {originWidget && originWidget !== lead.sourceWidget && (
+          <Fact label="Started as" value={labelFor(SOURCE_LABELS, originWidget) ?? originWidget} />
+        )}
         {detail.affiliate && (
           <Fact label="Affiliate" value={`${detail.affiliate.name} (${detail.affiliate.code})`} />
         )}
@@ -63,7 +97,7 @@ export default function DrawerFacts({ detail }: { detail: LeadDetail }): ReactEl
         <Fact label="Created" value={formatShortDate(lead.createdAt)} />
       </section>
 
-      <Attribution lead={lead} />
+      <Attribution lead={lead} channel={source.channel} />
 
       <OrdersAndQuotes orders={orders} drafts={drafts} />
     </>
@@ -85,7 +119,25 @@ const CLICK_ID_LABELS: ReadonlyArray<[key: string, platform: string]> = [
  * "direct / unknown" fallback; everything else renders only when present —
  * with Google Ads ValueTrack tagging on, Keyword = the search term bought.
  */
-function Attribution({ lead }: { lead: LeadDetail['lead'] }): ReactElement {
+/** Channel → badge colour. Semantic, not decorative: red flags our own spend. */
+const CHANNEL_VARIANTS: Record<LeadChannel, HqBadgeVariant> = {
+  paid: 'blue',
+  partner: 'brand',
+  outbound: 'amber',
+  ops: 'gray',
+  inbound: 'green',
+  referral: 'green',
+  organic: 'green',
+  direct: 'gray',
+};
+
+function Attribution({
+  lead,
+  channel,
+}: {
+  lead: LeadDetail['lead'];
+  channel: LeadChannel;
+}): ReactElement {
   const meta = lead.metadata;
   const attribution =
     meta && typeof meta.attribution === 'object' && meta.attribution && !Array.isArray(meta.attribution)
@@ -106,6 +158,12 @@ function Attribution({ lead }: { lead: LeadDetail['lead'] }): ReactElement {
         Attribution
       </h3>
       <div className="mt-1 grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+        <Fact
+          label="Channel"
+          value={
+            <HqBadge variant={CHANNEL_VARIANTS[channel]}>{CHANNEL_LABELS[channel]}</HqBadge>
+          }
+        />
         <Fact label="Campaign" value={lead.utmCampaign ?? lead.utmSource ?? 'direct / unknown'} />
         {(lead.utmSource || lead.utmMedium) && (
           <Fact label="Source / medium" value={`${lead.utmSource ?? '—'} / ${lead.utmMedium ?? '—'}`} />

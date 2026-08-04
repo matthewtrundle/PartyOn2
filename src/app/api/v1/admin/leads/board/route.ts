@@ -9,6 +9,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { requireAdminRole } from '@/lib/auth/ops-session';
 import { getBoardData } from '@/lib/leads/board-data';
+import { LEAD_CHANNELS } from '@/lib/leads/source-taxonomy';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -17,6 +18,8 @@ const filtersSchema = z.object({
   temp: z.enum(['hot', 'warm', 'cold']).optional(),
   occasion: z.string().max(60).optional(),
   source: z.string().max(60).optional(),
+  channel: z.enum(LEAD_CHANNELS).optional(),
+  form: z.string().max(80).optional(),
   q: z.string().max(120).optional(),
   showSnoozed: z.coerce.boolean().optional(),
   includePartial: z.coerce.boolean().optional(),

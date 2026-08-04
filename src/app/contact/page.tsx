@@ -7,6 +7,7 @@ import Navigation from "@/components/Navigation";
 import LuxuryCard from '@/components/LuxuryCard';
 import ScrollRevealCSS from '@/components/ui/ScrollRevealCSS';
 import { trackPageView, trackFormSubmit, ANALYTICS_EVENTS } from '@/lib/analytics/track';
+import { getAttribution } from '@/lib/analytics/attribution';
 
 export default function ContactPage() {
   // Track page view on mount
@@ -43,7 +44,11 @@ export default function ContactPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          source: 'contact',
+          attribution: getAttribution(),
+        }),
       });
 
       const data = await response.json();

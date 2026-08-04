@@ -89,6 +89,44 @@ function mergeAttributionMetadata(
   return base;
 }
 
+/** Metadata key recording the first strong widget that owned a lead. */
+export const ORIGIN_WIDGET_KEY = 'originWidget';
+
+/**
+ * Build the metadata patch for an update, or null when there is nothing to
+ * write. Two independent reasons to write:
+ *
+ *   - click ids (latest ad click wins, merged under `attribution`)
+ *   - `originWidget`, the first STRONG widget that owned this lead
+ *
+ * The origin stamp exists because six capture routes overwrite `sourceWidget`
+ * with their own value right after upsertLead returns, so a drink-calculator
+ * or package-builder lead that later completes a quote would otherwise read as
+ * if it had always been a quote. Written once and never overwritten; `OTHER`
+ * is a placeholder rather than provenance, so it is not worth recording.
+ */
+function buildMetadataPatch(
+  existing: unknown,
+  clickIds: Record<string, string> | null,
+  currentWidget: string | null,
+): Record<string, unknown> | null {
+  const base =
+    existing && typeof existing === 'object' && !Array.isArray(existing)
+      ? (existing as Record<string, unknown>)
+      : {};
+  const needsOrigin =
+    currentWidget != null &&
+    currentWidget !== 'OTHER' &&
+    base[ORIGIN_WIDGET_KEY] == null;
+  if (!clickIds && !needsOrigin) return null;
+
+  const next = clickIds
+    ? mergeAttributionMetadata(existing, clickIds)
+    : { ...base };
+  if (needsOrigin) next[ORIGIN_WIDGET_KEY] = currentWidget;
+  return next;
+}
+
 const MAX_FIELD_VALUE_LEN = 1000;
 
 // Email completeness lives in ./email-validation (a Prisma-free module so the
@@ -230,7 +268,14 @@ export async function upsertLead(
   const phone = normPhone(identify.phone);
   const firstName = sanitizeName(identify.firstName);
   const lastName = sanitizeName(identify.lastName);
-  if (!email && !phone && !firstName && !lastName) return null;
+  // A lead needs a way to be reached AND a way to be matched. findLead only
+  // looks up by email or phone, so a name-only capture can never join an
+  // existing row — it could only ever create an orphan nothing reaches later.
+  // The global form watcher snapshots fields as they are typed, so those
+  // orphans arrived one-per-name-variant. Field telemetry is unaffected:
+  // callers still record their LeadEvent + VisitorSession when this returns
+  // null.
+  if (!email && !phone) return null;
 
   // If we have email or phone, try to find an existing lead first.
   let lead: Lead | null = null;
@@ -296,6 +341,11 @@ export async function upsertLead(
     // Only fill in blanks — never blow away existing data. Two exceptions:
     // click ids (latest ad click wins, merged under metadata.attribution)
     // and prefix-matched fragments (the fuller email replaces the fragment).
+    const metadataPatch = buildMetadataPatch(
+      lead.metadata,
+      clickIds,
+      lead.sourceWidget,
+    );
     lead = await prisma.lead.update({
       where: { id: lead.id },
       data: {
@@ -324,14 +374,7 @@ export async function upsertLead(
         utmContent: lead.utmContent ?? nonEmpty(ctx.utmContent),
         utmTerm: lead.utmTerm ?? nonEmpty(ctx.utmTerm),
         affiliateId: lead.affiliateId ?? nonEmpty(ctx.affiliateId),
-        ...(clickIds
-          ? {
-              metadata: mergeAttributionMetadata(
-                lead.metadata,
-                clickIds,
-              ) as never,
-            }
-          : {}),
+        ...(metadataPatch ? { metadata: metadataPatch as never } : {}),
       },
     });
   }

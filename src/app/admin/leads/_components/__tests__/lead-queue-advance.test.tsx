@@ -85,6 +85,9 @@ const base: BoardLead = {
   sourceWidget: null,
   sourceKey: 'CONTACT_FORM',
   sourceLabel: 'Contact / Quote',
+  channel: 'direct',
+  formKey: null,
+  formLabel: null,
   sourcePage: null,
   isB2b: false,
   tags: [],
@@ -293,6 +296,39 @@ const press = (key: string): void => {
   fireEvent.keyDown(document, { key });
 };
 
+/**
+ * Press a key until the queue actually acts on it.
+ *
+ * `armed()` waits for the Log-call BUTTON to enable, but the queue gates the
+ * action function independently of what the UI shows — deliberately, so a
+ * mutation can never land on a card whose detail fetch hasn't confirmed. That
+ * means a key pressed in the window between "button renders enabled" and
+ * "handler's gate opens" is swallowed, which is the safe direction for an
+ * operator (they press again) but a race for a test that presses once and then
+ * waits forever for the result.
+ *
+ * `waitFor` retries the whole callback, so this re-presses until the effect it
+ * is waiting on actually happens — asserting the outcome rather than the
+ * timing. Only for keys whose handler is idempotent per card.
+ */
+async function pressUntil(key: string, landed: () => boolean): Promise<void> {
+  await waitFor(() => {
+    if (!landed()) press(key);
+    expect(landed()).toBe(true);
+  });
+}
+
+const callCount = (fn: unknown): number =>
+  (fn as { mock: { calls: unknown[] } }).mock.calls.length;
+
+/** The queue attempted a touch — the contract behind the 'c' shortcut. */
+const touched = (mutations: LeadMutations) => (): boolean =>
+  callCount(mutations.logTouch) > 0;
+
+/** The queue attempted a lead patch — the contract behind snooze ('z'). */
+const patched = (mutations: LeadMutations) => (): boolean =>
+  callCount(mutations.patchLead) > 0;
+
 /** Summary row value for a labelled outcome ("Calls logged" → "1"). */
 function summaryCount(label: string): string | null {
   return screen.getByText(label).nextElementSibling?.textContent ?? null;
@@ -498,7 +534,7 @@ describe('LeadQueue — the failure invariant (a failed action never advances)',
     render(<LeadQueue queue={QUEUE} mutations={mutations} onExit={vi.fn()} />);
     await atCard('1 / 3');
 
-    press('c');
+    await pressUntil('c', touched(mutations));
     await screen.findByText('Could not log the call — nothing was saved.');
 
     press('c');
@@ -517,7 +553,7 @@ describe('LeadQueue — the failure invariant (a failed action never advances)',
     render(<LeadQueue queue={QUEUE} mutations={mutations} onExit={vi.fn()} />);
     await atCard('1 / 3');
 
-    press('c');
+    await pressUntil('c', touched(mutations));
     await screen.findByText('Could not log the call — nothing was saved.');
 
     press('j');
@@ -538,7 +574,7 @@ describe('LeadQueue — the failure invariant (a failed action never advances)',
     render(<LeadQueue queue={QUEUE} mutations={mutations} onExit={vi.fn()} />);
     await atCard('1 / 3');
 
-    press('c');
+    await pressUntil('c', touched(mutations));
     await screen.findByText('Could not log the call — nothing was saved.');
 
     press('k');
@@ -680,7 +716,8 @@ describe('LeadQueue — the no-refetch guarantee', () => {
     render(<QueueHarness onChanged={RELOAD_BOARD} onExit={vi.fn()} />);
     await atCard('1 / 3');
 
-    press('c');
+    // Real hook here, so the contract is the request on the wire.
+    await pressUntil('c', () => urlsMatching('/touch').length > 0);
     await screen.findByText('Could not log the call — nothing was saved.');
 
     expect(position()).toBe('1 / 3');
@@ -719,7 +756,7 @@ describe('LeadQueue — end of the sitting', () => {
     render(<LeadQueue queue={QUEUE} mutations={mutations} onExit={vi.fn()} />);
     await atCard('1 / 3');
 
-    press('c'); // lead-a → called
+    await pressUntil('c', touched(mutations)); // lead-a → called
     await atCard('2 / 3');
 
     press('k'); // back onto the lead we just worked
@@ -732,7 +769,8 @@ describe('LeadQueue — end of the sitting', () => {
     press('j'); // skip lead-b for real
     await atCard('3 / 3');
 
-    press('z'); // snooze lead-c → queue is clear
+    // Snooze is gated the same way a call is, so wait for the write itself.
+    await pressUntil('z', patched(mutations)); // snooze lead-c → queue is clear
     await screen.findByText('Queue clear');
 
     // Without the don't-clobber guard lead-a reads "skipped": the Calls-logged

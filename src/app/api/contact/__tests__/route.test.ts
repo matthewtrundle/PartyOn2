@@ -99,3 +99,81 @@ describe('POST /api/contact', () => {
     expect(leadCaptureMock.upsertLead).not.toHaveBeenCalled();
   });
 });
+
+describe('POST /api/contact — which form sent it', () => {
+  /** Three separate pages post here; the board has to tell them apart. */
+  it('records /plan-event on BOTH the upsert and the last-touch update', async () => {
+    await POST(makeRequest({ ...validBody, source: 'plan-event-page' }));
+
+    expect(leadCaptureMock.upsertLead).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ sourcePage: '/plan-event' }),
+    );
+    const update = prismaMock.lead.update.mock.calls[0][0];
+    expect(update.data.sourcePage).toBe('/plan-event');
+    expect(update.data.metadata.contactForm.source).toBe('plan-event-page');
+  });
+
+  it('records /book-now for the booking form', async () => {
+    await POST(makeRequest({ ...validBody, source: 'book-now' }));
+    expect(leadCaptureMock.upsertLead).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ sourcePage: '/book-now' }),
+    );
+    expect(prismaMock.lead.update.mock.calls[0][0].data.sourcePage).toBe('/book-now');
+  });
+
+  it('falls back to /contact when no source is sent (older clients)', async () => {
+    await POST(makeRequest(validBody));
+    expect(leadCaptureMock.upsertLead).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ sourcePage: '/contact' }),
+    );
+    const update = prismaMock.lead.update.mock.calls[0][0];
+    expect(update.data.sourcePage).toBe('/contact');
+    expect(update.data.metadata.contactForm.source).toBe('contact');
+  });
+
+  it('never lets a caller-supplied string reach sourcePage', async () => {
+    // sourcePage is rendered on the admin board, so it is mapped, not
+    // interpolated. An unknown value falls back rather than passing through.
+    await POST(makeRequest({ ...validBody, source: '../../evil?x=1' }));
+    expect(leadCaptureMock.upsertLead).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ sourcePage: '/contact' }),
+    );
+    expect(prismaMock.lead.update.mock.calls[0][0].data.sourcePage).toBe('/contact');
+  });
+
+  it.each(['constructor', '__proto__', 'toString', 'valueOf', 'hasOwnProperty'])(
+    'resolves %s to a plain string, not an inherited property',
+    async (source) => {
+      // A plain-object lookup returns Object.prototype members instead of
+      // undefined, so `?? fallback` never fires and a FUNCTION lands where a
+      // string belongs — which Prisma refuses to serialize, silently losing
+      // the whole submission, and which React throws on when the drawer
+      // renders it. The tables are Maps for exactly this reason.
+      await POST(makeRequest({ ...validBody, source }));
+
+      const ctx = leadCaptureMock.upsertLead.mock.calls[0][1];
+      expect(typeof ctx.sourcePage).toBe('string');
+      expect(ctx.sourcePage).toBe('/contact');
+
+      const data = prismaMock.lead.update.mock.calls[0][0].data;
+      expect(typeof data.sourcePage).toBe('string');
+      expect(data.sourcePage).toBe('/contact');
+      // Only a recognised form id is ever persisted.
+      expect(data.metadata.contactForm.source).toBe('contact');
+    },
+  );
+
+  it('carries the form id onto the FORM_SUBMIT event page', async () => {
+    await POST(makeRequest({ ...validBody, source: 'plan-event-page' }));
+    expect(leadCaptureMock.recordEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        page: '/plan-event',
+        metadata: expect.objectContaining({ source: 'plan-event-page' }),
+      }),
+    );
+  });
+});

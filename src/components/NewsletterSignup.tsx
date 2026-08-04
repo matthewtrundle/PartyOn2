@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, type FormEvent } from 'react'
+import { getAttribution } from '@/lib/analytics/attribution'
 
 /**
  * Footer newsletter signup form. Posts to /api/newsletter, which persists the
@@ -24,7 +25,11 @@ export default function NewsletterSignup() {
       const res = await fetch('/api/newsletter', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, source: 'footer' }),
+        body: JSON.stringify({
+          email,
+          source: 'footer',
+          attribution: getAttribution(),
+        }),
       })
       const data = await res.json()
       if (res.ok) {

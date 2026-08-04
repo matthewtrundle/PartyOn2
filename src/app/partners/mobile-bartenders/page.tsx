@@ -8,6 +8,7 @@ import Navigation from "@/components/Navigation";
 import Footer from '@/components/Footer';
 import ScrollRevealCSS from '@/components/ui/ScrollRevealCSS';
 import YouTubeEmbed from '@/components/YouTubeEmbed';
+import { getAttribution } from '@/lib/analytics/attribution';
 
 export default function MobileBartenderPartnerPage() {
   const [formData, setFormData] = useState({
@@ -127,6 +128,7 @@ Source: ${formData.source}`,
 
           // System fields
           submittedAt: new Date().toISOString(),
+          attribution: getAttribution(),
           _formLoadedAt: formLoadedAt.current,
           // Honeypot: always-empty trap, unified non-autofill name (see @/lib/forms/honeypot).
           ...blankHoneypotFields(),
