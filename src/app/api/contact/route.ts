@@ -30,9 +30,26 @@ const bodySchema = z.object({
   eventDate: z.string().trim().max(60).optional().default(''),
   guestCount: z.union([z.string(), z.number()]).optional().default(''),
   message: z.string().trim().max(5000).optional().default(''),
+  /**
+   * Which form sent this. Three separate pages post here, so without it every
+   * submission records as `/contact` and the board cannot tell them apart.
+   * Optional so already-deployed clients keep working.
+   */
+  source: z.string().trim().max(40).optional(),
   /** First-touch UTM + ad click ids captured client-side (optional). */
   attribution: attributionSchema,
 });
+
+/**
+ * Form id → the page it actually lives on. Mapped rather than interpolated:
+ * `sourcePage` is rendered on the admin board, so a caller-supplied string
+ * must never reach it. Unknown values fall back to the historical `/contact`.
+ */
+const CONTACT_SOURCE_PAGES: Readonly<Record<string, string>> = {
+  contact: '/contact',
+  'plan-event-page': '/plan-event',
+  'book-now': '/book-now',
+};
 
 export async function POST(request: NextRequest) {
   try {
@@ -58,6 +75,8 @@ export async function POST(request: NextRequest) {
     const body = parsed.data;
     const submittedAt = new Date().toISOString();
     const [firstName, ...restName] = body.name.split(/\s+/);
+    const formSource = body.source ?? 'contact';
+    const sourcePage = CONTACT_SOURCE_PAGES[formSource] ?? '/contact';
 
     // 1. Store the submission — this is the system of record now; Zapier is
     // a best-effort mirror.
@@ -71,7 +90,7 @@ export async function POST(request: NextRequest) {
           lastName: restName.join(' ') || null,
         },
         {
-          sourcePage: '/contact',
+          sourcePage,
           sourceWidget: 'CONTACT_FORM',
           // UTM columns blank-fill + click ids merge into metadata.attribution.
           utmSource: body.attribution?.utmSource,
@@ -105,7 +124,7 @@ export async function POST(request: NextRequest) {
             // forever (2026-07-13 audit gap #10). Last-touch source stamp:
             // this submission is now the lead's active surface.
             status: 'SUBMITTED',
-            sourcePage: '/contact',
+            sourcePage,
             sourceWidget: 'CONTACT_FORM',
             metadata: {
               ...existingMeta,
@@ -118,6 +137,9 @@ export async function POST(request: NextRequest) {
                   }
                 : {}),
               contactForm: {
+                // Which of the three forms this was — the board reads it to
+                // split "Contact Form" into the page the visitor was on.
+                source: formSource,
                 eventType: body.eventType,
                 eventDate: body.eventDate,
                 guestCount: String(body.guestCount ?? ''),
@@ -133,10 +155,14 @@ export async function POST(request: NextRequest) {
         await recordEvent({
           type: 'FORM_SUBMIT',
           leadId: lead.id,
-          page: '/contact',
+          page: sourcePage,
           widget: 'CONTACT_FORM',
           fieldName: 'contact-form-submit',
-          metadata: { eventType: body.eventType || null, submittedAt },
+          metadata: {
+            eventType: body.eventType || null,
+            source: formSource,
+            submittedAt,
+          },
           trustedSubmit: true,
         });
       }
