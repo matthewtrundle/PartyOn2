@@ -94,10 +94,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     const cancelled = results.filter((r) => r.ok);
-    const refundedTotal = cancelled.reduce(
-      (sum, r) => sum + (r.ok && r.refund ? r.refund.amount : 0),
-      0
-    );
+    // Totals money that actually left, which is not the same as orders that
+    // cancelled: a cancel can refund and then lose the order to a concurrent
+    // non-refunding cancel, and that money still has to show up here.
+    const refundedTotal = results.reduce((sum, r) => sum + (r.refund?.amount ?? 0), 0);
 
     return NextResponse.json({
       success: true,
@@ -122,6 +122,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
                 ok: false as const,
                 code: r.code,
                 error: r.error,
+                // Non-zero only when this order refunded but lost the cancel to
+                // a concurrent request — the operator must not read "failed" as
+                // "no money moved".
+                refundedAmount: r.refund?.amount ?? 0,
               }
         ),
       },

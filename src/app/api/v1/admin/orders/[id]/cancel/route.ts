@@ -66,7 +66,15 @@ export async function POST(
 
     if (!result.ok) {
       return NextResponse.json(
-        { success: false, error: result.error },
+        {
+          success: false,
+          error: result.error,
+          // Non-null only when this cancel refunded and then lost the order to a
+          // concurrent request. The cancel failed but the money left, and the
+          // operator must not read the error as "nothing happened" — same reason
+          // bulk-cancel reports refundedAmount on its failure rows.
+          refund: result.refund ?? null,
+        },
         { status: statusForCode(result.code) }
       );
     }
