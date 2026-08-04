@@ -13,7 +13,7 @@ import type Stripe from 'stripe';
 import type { FinancialStatus, OrderStatus } from '@prisma/client';
 import { prisma } from '@/lib/database/client';
 import { stripe } from '@/lib/stripe/client';
-import { getMaxRefundable } from '@/lib/stripe/refund-utils';
+import { CANCEL_REFUND_TYPE, findCancelRefund, getMaxRefundable } from '@/lib/stripe/refund-utils';
 import {
   createRefund,
   recomputeOrderFinancialStatus,
@@ -159,6 +159,69 @@ async function claimTerminal(
 }
 
 /**
+ * Records a Stripe refund against the order if nobody has recorded it yet, and
+ * reports whether THIS call is the one that recorded it — which is what makes a
+ * caller responsible for the refund email ("one email per refund").
+ *
+ * createRefund returns the new row's id so we stamp THAT row: looking it up
+ * afterward with findFirst(desc) could grab a different row if the
+ * charge.refunded webhook inserts one for this order in between.
+ *
+ * The findFirst is only a fast path. On its own it is a check-then-act that two
+ * concurrent callers can both pass, so the real election is the stamp itself:
+ * Refund.stripeRefundId is UNIQUE, and of two callers holding the same replayed
+ * Stripe refund exactly one can land it.
+ *
+ * An existing row is left exactly as it is. It was written either by a concurrent
+ * cancel or by the charge.refunded webhook, which stamps processedBy: 'stripe' to
+ * mean "not one of our admin routes" — re-stamping would relabel the webhook's own
+ * record as an admin action. Reusing the row is the point; re-attributing is not.
+ */
+async function recordRefund(
+  orderId: string,
+  stripeRefundId: string,
+  amount: number,
+  actorRole: string | undefined,
+): Promise<boolean> {
+  const existingRow = await prisma.refund.findFirst({
+    where: { stripeRefundId },
+    select: { id: true },
+  });
+  if (existingRow) return false;
+
+  const refundRowId = await createRefund(orderId, amount, 'Order cancelled');
+  try {
+    await prisma.refund.update({
+      where: { id: refundRowId },
+      data: { stripeRefundId, processedBy: actorRole ?? 'admin', processedAt: new Date() },
+    });
+    return true;
+  } catch (error) {
+    if (!isUniqueViolation(error)) throw error;
+    // Someone else stamped this Stripe refund first, so they own the refund and
+    // its customer email. Drop the row we just created: left unstamped it would
+    // still count toward the order's refund total (getMaxRefundable sums the DB
+    // rows) and wrongly cap a later legitimate partial refund.
+    //
+    // A failure here must not abort the cancel — the money has already moved and
+    // the order still needs to reach CANCELLED. Log loudly instead: the leftover
+    // row is a reconcilable data problem, an un-cancelled paid order is a
+    // delivery that still goes out.
+    try {
+      await prisma.refund.delete({ where: { id: refundRowId } });
+      await recomputeOrderFinancialStatus(orderId);
+    } catch (cleanupError) {
+      console.error(
+        `[cancelOrder] Failed to remove duplicate refund row ${refundRowId} for order ${orderId} ` +
+          `(stripe refund ${stripeRefundId}); it will overstate the order's refunded total:`,
+        cleanupError,
+      );
+    }
+    return false;
+  }
+}
+
+/**
  * Renders the cancellation email for an order without changing anything.
  * Used by the per-order dialog's live preview.
  */
@@ -263,124 +326,123 @@ export async function cancelOrder(
     const refundAmount = await getMaxRefundable(order.stripePaymentIntentId, totalPriorRefunds);
 
     if (refundAmount <= 0) {
-      return {
-        ok: false,
-        ...ident,
-        code: 'ALREADY_REFUNDED',
-        error: 'Order has already been fully refunded',
-      };
-    }
+      // Nothing left to refund. Usually that just means the order was already
+      // refunded on purpose and a cancel has no money work left to do — but it is
+      // ALSO exactly what a cancel that died between its Stripe refund and its
+      // status write looks like, and THAT order is still sitting non-terminal with
+      // a delivery scheduled against it.
+      //
+      // "Fully refunded" on its own cannot tell those apart: the Full Moon batch
+      // refunder and the admin refund route both fully refund orders and
+      // deliberately never write Order.status, so treating a full refund as
+      // permission to cancel would silently cancel their orders too. Only the
+      // cancel flow's own metadata marker distinguishes them.
+      const interrupted = await findCancelRefund(order.stripePaymentIntentId, orderId);
 
-    // Idempotency key is derived from the order id + amount: a cancel is a
-    // one-shot terminal action, so if this request is retried after the Stripe
-    // refund succeeded but the DB write failed, Stripe replays the SAME refund
-    // instead of issuing a second one. The amount is included so that if the
-    // order is amended between a failed attempt and the retry (changing the
-    // computed refund), the retry gets a fresh key rather than colliding with
-    // the old amount and locking Stripe for 24h. Belt-and-suspenders with the
-    // Stripe-aware cap above (which already blocks re-refunding a refunded order).
-    const refundAmountCents = Math.round(refundAmount * 100);
-    let stripeRefund: Stripe.Refund;
-    try {
-      stripeRefund = await stripe.refunds.create(
-        {
-          payment_intent: order.stripePaymentIntentId,
-          amount: refundAmountCents,
-          reason: 'requested_by_customer',
-          metadata: {
-            orderId,
-            orderNumber: String(order.orderNumber),
-            reason: 'Order cancelled',
-          },
-        },
-        { idempotencyKey: `order-cancel-refund-${orderId}-${refundAmountCents}` },
-      );
-    } catch (error) {
-      // Stripe replays a completed request that reuses an idempotency key, but a
-      // key still held by an IN-FLIGHT request gets `idempotency_error` instead.
-      // The key here is derived from orderId + amount and every parameter above
-      // derives from those same two values, so that error can only mean another
-      // cancel for this order is running right now — never a key reused with
-      // different parameters. Report it as losing the race rather than as a
-      // Stripe fault, so a bulk cooler run shows "already cancelled" on that
-      // payer instead of a red Stripe error the operator would try to retry.
-      if (isStripeIdempotencyConflict(error)) {
+      if (!interrupted) {
         return {
           ok: false,
           ...ident,
-          code: 'ALREADY_TERMINAL',
-          error: 'Another cancel for this order is already in progress',
+          code: 'ALREADY_REFUNDED',
+          error: 'Order has already been fully refunded',
         };
       }
-      throw error;
-    }
 
-    // Create refund record in DB and stamp it with the Stripe refund id.
-    // createRefund returns the new row's id so we stamp THAT row — looking it
-    // up afterward with findFirst(desc) could grab a different row if the
-    // charge.refunded webhook inserts one for this order in between.
-    //
-    // First check whether this exact Stripe refund is already recorded. Two
-    // operators cancelling the same order at once both get the SAME refund
-    // object back (the idempotency key makes Stripe replay it), so without this
-    // guard each would insert its own row for one real refund — inflating the
-    // DB refund total and blocking a legitimate later partial refund, since
-    // getMaxRefundable caps on max(DB, Stripe).
-    const existingRow = await prisma.refund.findFirst({
-      where: { stripeRefundId: stripeRefund.id },
-      select: { id: true },
-    });
+      // Adopt the refund the interrupted attempt already issued and finish its
+      // job below: claim the order, release the inventory it never released, send
+      // the cancellation email it never sent.
+      console.warn(
+        `[cancelOrder] Finishing an interrupted cancel for order ${orderId}: Stripe refund ` +
+          `${interrupted.stripeRefundId} exists but the order was left non-terminal.`,
+      );
 
-    // An existing row is left exactly as it is. It was written either by a
-    // concurrent cancel or by the charge.refunded webhook, which stamps
-    // processedBy: 'stripe' to mean "not one of our admin routes" — and
-    // re-stamping it here would relabel the webhook's own record as an admin
-    // action. Reusing the row is the point; re-attributing it is not.
-    if (!existingRow) {
-      const refundRowId = await createRefund(orderId, refundAmount, 'Order cancelled');
+      // Record the refund if the dead attempt never got that far. Without this the
+      // row's only other author is the charge.refunded webhook, and the finance P&L
+      // and the auto-drafted QuickBooks "Refunds issued" journal both read Refund
+      // rows by createdAt — so a delayed or missed webhook would silently
+      // under-count this refund on the day it is posted.
+      //
+      // If the row already exists, the attempt died AFTER writing it and this call
+      // does not own the refund email. Nobody re-sends it: the webhook also skips
+      // an already-recorded refund. The customer is still told the amount, because
+      // the cancellation email below carries it whenever refundIssued is true — but
+      // the standalone "Refund Processed" email is genuinely skipped in that
+      // sub-case, and re-sending it here could just as easily double-notify, since
+      // a row that exists cannot be distinguished from one whose author emailed.
+      //
+      // recordRefund → createRefund also recomputes financialStatus from the DB
+      // rows, which can land on PARTIALLY_REFUNDED for a moment if another live
+      // Stripe refund on this PaymentIntent has not been recorded yet. The claim
+      // below overwrites it with REFUNDED from its own winning update rather than
+      // re-deriving it, so that value does not survive the call.
+      ownsRefundRecord = await recordRefund(
+        orderId,
+        interrupted.stripeRefundId,
+        interrupted.amount,
+        actorRole,
+      );
+      refundResult = interrupted;
+    } else {
+
+      // Idempotency key is derived from the order id + amount: a cancel is a
+      // one-shot terminal action, so if this request is retried after the Stripe
+      // refund succeeded but the DB write failed, Stripe replays the SAME refund
+      // instead of issuing a second one. The amount is included so that if the
+      // order is amended between a failed attempt and the retry (changing the
+      // computed refund), the retry gets a fresh key rather than colliding with
+      // the old amount and locking Stripe for 24h. Belt-and-suspenders with the
+      // Stripe-aware cap above (which already blocks re-refunding a refunded order).
+      const refundAmountCents = Math.round(refundAmount * 100);
+      let stripeRefund: Stripe.Refund;
       try {
-        await prisma.refund.update({
-          where: { id: refundRowId },
-          data: {
-            stripeRefundId: stripeRefund.id,
-            processedBy: actorRole ?? 'admin',
-            processedAt: new Date(),
+        stripeRefund = await stripe.refunds.create(
+          {
+            payment_intent: order.stripePaymentIntentId,
+            amount: refundAmountCents,
+            reason: 'requested_by_customer',
+            metadata: {
+              orderId,
+              orderNumber: String(order.orderNumber),
+              reason: 'Order cancelled',
+              // Structural marker, deliberately NOT the free-text `reason` above:
+              // the admin refund route lets an operator type any reason they like,
+              // including "Order cancelled". `type` is written only here and by the
+              // return route (as 'return'), so it is the one field that reliably
+              // says "one of our cancels created this refund" — which is what
+              // findCancelRefund keys the crash recovery on below.
+              type: CANCEL_REFUND_TYPE,
+            },
           },
-        });
-        // The stamp IS the election, and it is race-proof: Refund.stripeRefundId
-        // is UNIQUE, so of two callers holding the same replayed Stripe refund
-        // exactly one can land it. The findFirst above is only a fast path — on
-        // its own it is a check-then-act, and both callers can read null.
-        ownsRefundRecord = true;
+          { idempotencyKey: `order-cancel-refund-${orderId}-${refundAmountCents}` },
+        );
       } catch (error) {
-        if (!isUniqueViolation(error)) throw error;
-        // Someone else stamped this Stripe refund first, so they own the refund
-        // and its customer email. Drop the row we just created: left unstamped it
-        // would still count toward the order's refund total (getMaxRefundable
-        // sums the DB rows) and wrongly cap a later legitimate partial refund.
-        //
-        // A failure here must not abort the cancel — the money has already moved
-        // and the order still needs to reach CANCELLED. Log loudly instead: the
-        // leftover row is a reconcilable data problem, an un-cancelled paid order
-        // is a delivery that still goes out.
-        try {
-          await prisma.refund.delete({ where: { id: refundRowId } });
-          await recomputeOrderFinancialStatus(orderId);
-        } catch (cleanupError) {
-          console.error(
-            `[cancelOrder] Failed to remove duplicate refund row ${refundRowId} for order ${orderId} ` +
-              `(stripe refund ${stripeRefund.id}); it will overstate the order's refunded total:`,
-            cleanupError,
-          );
+        // Stripe replays a completed request that reuses an idempotency key, but a
+        // key still held by an IN-FLIGHT request gets `idempotency_error` instead.
+        // The key here is derived from orderId + amount and every parameter above
+        // derives from those same two values, so that error can only mean another
+        // cancel for this order is running right now — never a key reused with
+        // different parameters. Report it as losing the race rather than as a
+        // Stripe fault, so a bulk cooler run shows "already cancelled" on that
+        // payer instead of a red Stripe error the operator would try to retry.
+        if (isStripeIdempotencyConflict(error)) {
+          return {
+            ok: false,
+            ...ident,
+            code: 'ALREADY_TERMINAL',
+            error: 'Another cancel for this order is already in progress',
+          };
         }
+        throw error;
       }
-    }
 
-    refundResult = {
-      stripeRefundId: stripeRefund.id,
-      amount: refundAmount,
-      status: stripeRefund.status ?? 'unknown',
-    };
+      ownsRefundRecord = await recordRefund(orderId, stripeRefund.id, refundAmount, actorRole);
+
+      refundResult = {
+        stripeRefundId: stripeRefund.id,
+        amount: refundAmount,
+        status: stripeRefund.status ?? 'unknown',
+      };
+    }
   }
 
   // Claim the cancel. financialStatus is keyed off refundResult rather than the
