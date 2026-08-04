@@ -1,10 +1,10 @@
-# Wedding Video — Plain-Language Script (v1.0, 2026-08-03 — SHOOT-READY PENDING 3 SIGN-OFFS)
+# Wedding Video — Plain-Language Script (v1.1, 2026-08-04 — SHOOT-READY, ALL CLAIMS APPROVED)
 
 Companion to [wedding-video-brief-2026-07.md](./wedding-video-brief-2026-07.md). Same format as the approved bach script: **~90% voiceover over b-roll; Allan on camera 3 times only** (hook, the open-bar-math moment, CTA — under 10% of runtime). Venues and partners named.
 
-**Runtime target: ~4:30.** VO is ~680 words at a relaxed 150 wpm. Every chapter title is the search phrase — say it out loud as written and put it on screen.
+**Runtime target: ~4:45.** VO is ~730 words at a relaxed 150 wpm (chapter stamps are pre-edit targets — re-time against the final cut before the embed config ships). Every chapter title is the search phrase — say it out loud as written and put it on screen.
 
-> **Status: 3 claims still need Allan's sign-off before the shoot** (table at the bottom). The refund-policy blocker was **cleared 2026-08-03** — the real policy is *return up to 25% of the order unopened, refunded 100%* — but three live pages still describe it wrongly and must be corrected before the video sends anyone to them (see "Site copy that contradicts the script"). Everything else here is verified against live code or published pages.
+> **Status: SHOOT-READY — every claim approved by Allan 2026-08-04** (the tracker at the bottom records each decision and its basis). Refund policy: *return up to 25% of the order unopened, refunded 100%* — cleared 2026-08-03, site copy aligned via PR #359. Q10 timing: **30+ days, push ordering as early as possible.** Verified against live code, published pages, and the package calculator.
 
 Evidence sources: [internal-data-wedding-corporate-2026-07-14.md](../../data/seo/internal-data-wedding-corporate-2026-07-14.md) (real orders), `src/lib/wedding-packages/calculations.ts` + `tier-config.ts` (the formula and servings canon), `src/app/weddings/page.tsx` (published per-person tiers), SERP/PAA research in `data/seo/serp-paa/2026-07-14-wedding-corporate.md`.
 
@@ -43,24 +43,24 @@ Evidence sources: [internal-data-wedding-corporate-2026-07-14.md](../../data/seo
 
 > "A venue open bar runs about twenty-five to forty-five dollars a head for a standard package — and the top end goes a lot higher. For a hundred guests that's twenty-five hundred to forty-five hundred dollars, before service charge and before gratuity. What you're buying is convenience and somebody else's liability. What you're not buying is the alcohol at anything close to what it costs. The question isn't whether an open bar is nice. It's whether you know what the same drinks cost if you buy them yourself."
 
-*On-screen:* "$25–45 per person · 100 guests = $2,500–$4,500 (+ service + gratuity)". · *B-roll:* NEED — venue bar with a bartender working; a check presenter / invoice prop.
+*On-screen:* "$25–45 per person (industry averages) · 100 guests = $2,500–$4,500 (+ service + gratuity)". · *B-roll:* NEED — venue bar with a bartender working; a check presenter / invoice prop.
 
 ## Q4 — "Open bar vs buying your own: the real math" · 1:44–2:20 · **ALLAN ON CAMERA moment #2** (12 sec, standing beside a full delivery)
 
 **The opinion: our most expensive package costs what a venue's cheapest open bar costs.**
 
 > **[Allan, to camera]:** "This is the whole video in one sentence. Our most expensive wedding package is twenty-six dollars a person. A venue's *cheapest* open bar is about twenty-five."
-> **[VO resumes]:** "Our tiers run thirteen to twenty-six dollars a head — that's thirteen hundred to twenty-six hundred for a hundred guests, all in. Same guests, same five hours, same drinks in their hands. The difference is that you're buying bottles at retail instead of renting pours at a markup. You still need bartenders — budget for those separately, and hire good ones. But the alcohol itself is the single easiest line item to cut in half without a single guest noticing."
+> **[VO resumes]:** "Our tiers run thirteen to twenty-six dollars a head — that's thirteen hundred to twenty-six hundred for a hundred guests, all in. And that's not a teaser rate: price out the middle package for a hundred guests and five hours — champagne toast included — and it comes out just under eighteen hundred dollars. The venue bills twenty-five hundred to forty-five hundred for the same crowd. Same guests, same five hours, same drinks in their hands — the difference is that you're buying bottles at retail instead of renting pours at a markup. You still need bartenders — budget for those separately, and hire good ones. But the alcohol itself is the single easiest line item to cut in half without a single guest noticing."
 
-*On-screen:* side-by-side bars — "Venue open bar $25–45/pp" vs "Party On $13–26/pp". Then small print: "bartenders billed separately." · *B-roll:* HAVE — delivery handoff, van, cases going in. · *Evidence: published tiers on /weddings ($13/$16/$20/$23/$26 per person); open-bar range per Zola/Curated/EventWorks — see claims table.*
+*On-screen:* side-by-side bars — "Venue open bar $25–45/pp" vs "Party On $13–26/pp", then a receipt-style card: "Real math: 100 guests · 5 hrs · mid package, toast incl. = $1,773". Small print: "bartenders billed separately." · *B-roll:* HAVE — delivery handoff, van, cases going in. · *Evidence: published tiers on /weddings ($13/$16/$20/$23/$26 per person); $1,773 = calculateWeddingPackage(standard-bar, 100 guests, 5 hrs, toast incl.) at 2026-08-04 config prices — the 4-hour variant is $1,560; open-bar range per Zola/Curated/EventWorks (industry averages) — claims #1 ✅.*
 
 ## Q5 — "What's the right liquor, wine, and beer split?" · 2:20–2:46
 
-**The opinion: forty percent wine. Weddings are a wine event and the data isn't close.**
+**The opinion: forty percent wine. Weddings are a wine event — but the signature cocktail is where the personality goes.**
 
-> "Thirty percent spirits, forty percent wine, thirty percent beer for a full bar. Doing beer and wine only? Go fifty-five wine, forty-five beer. And here's the part I'd bet money on: **the top ten things Austin weddings actually order from us are led by prosecco, sauvignon blanc, pinot noir and cabernet** — whites and sparkling out front. Weddings are wine-first. Bachelor parties are seltzer-first. Do not plan a wedding bar like a bach party."
+> "Thirty percent spirits, forty percent wine, thirty percent beer for a full bar. Doing beer and wine only? Go fifty-five wine, forty-five beer. And here's what we see over and over at Austin weddings: a margarita or an old fashioned as the signature cocktail, prosecco, sauvignon blanc and pinot noir carrying the night, and Austin Beerworks variety packs and Shiner in the coolers. Weddings are wine-first. Bachelor parties are seltzer-first. Do not plan a wedding bar like a bach party."
 
-*On-screen:* pie chart 30/40/30, then the top-product list. · *B-roll:* HAVE — wine and prosecco bottle shots, pour close-ups. · *Evidence: DRINK_MIX_FULL_BAR in calculations.ts; internal top-products pull, n=15 (directional).*
+*On-screen:* pie chart 30/40/30, then the list: "Margaritas · Old Fashioneds · Prosecco · Sauv Blanc · Pinot Noir · ABW Variety · Shiner". · *B-roll:* HAVE — wine and prosecco bottle shots, pour close-ups. NEED — margarita + old-fashioned build close-ups. · *Evidence: splits from DRINK_MIX_FULL_BAR in calculations.ts; drink list = operator observation (Allan, 2026-08-04), deliberately anecdotal — the n=15 pull corroborates the wines and the margarita bases (Espolon/Lunazul) — claims #3 ✅.*
 
 ## Q6 — "Who pays for the alcohol at a wedding?" · 2:46–3:06
 
@@ -98,43 +98,35 @@ Evidence sources: [internal-data-wedding-corporate-2026-07-14.md](../../data/seo
 
 ## Q10 — "When do you order the alcohol?" · 4:10–4:26
 
-**The opinion: two to three weeks out. Most couples cut it much closer than that.**
+**The opinion: at least a month out — and don't wait on the final RSVP count.**
 
-> "Book the venue a year out, the bartenders three months out, and the alcohol two to three weeks out — once your RSVP count is real. **Our own median wedding order comes in ten days ahead**, which works, but it's tighter than it needs to be. Two to three weeks means you get the exact bottles you picked instead of the closest substitute. Run the free calculator the day your RSVPs close and order from the number it gives you."
+> "Book the venue a year out, the bartenders three months out, and the alcohol at least a month out. That's not caution — **most of our wedding orders already come in thirty-plus days ahead**, and those are the smooth ones: the exact bottles you picked, delivered in the calm week, not the chaos week. Don't wait on final RSVPs. Get close and round up — the return policy covers the difference. Then run the free calculator and order from the number it gives you."
 
-*On-screen:* timeline: venue −12mo · bartenders −3mo · **alcohol −2 to 3 weeks**. · *Evidence: internal median wedding lead time = 10 days (n=15).*
+*On-screen:* timeline: venue −12mo · bartenders −3mo · **alcohol −30 days or more**. · *Evidence: operator count (Allan, 2026-08-04) — most weddings arrive via the bartender/private-party channel, untracked as weddings, typically 30+ days out; see claims table #4.*
 
 ## CTA — 4:26–4:42 · **ALLAN ON CAMERA #3** (van door, hand truck of cases)
 
-> "We're Party On Delivery, and we stock weddings all over Austin — downtown venues, Hill Country ranches, Lake Travis, wherever you're getting married. Free calculator on our site does this math for your exact guest count in about a minute, and we'll deliver it cold to the venue on the day. Link's below. Congratulations — go enjoy it."
+> "We're Party On Delivery, and we've stocked more than a hundred weddings all over Austin — downtown venues, Hill Country ranches, Lake Travis, wherever you're getting married. Free calculator on our site does this math for your exact guest count in about a minute, and we'll deliver it cold to the venue on the day. Link's below. Congratulations — go enjoy it."
 
 *On-screen:* partyondelivery.com/wedding-drink-calculator. *End screen: chapters menu (each question = a card) — feeds the shorts.*
 
 ---
 
-## Claims needing Allan's sign-off (4)
+## Claims sign-off tracker — ALL RESOLVED 2026-08-04
 
 | # | Claim as scripted | What's behind it | Status |
 |---|---|---|---|
-| 1 | "Twenty-five to forty-five dollars a head" for a venue open bar | External sources only (Zola / Curated / EventWorks industry ranges, full range $15–90). We have no first-party venue pricing. | ⚠ **APPROVE OR SOFTEN** — suggest "typically twenty-five to forty-five" and cite "industry averages" on screen, or replace with 2–3 real Austin venue quotes if you have them |
+| 1 | "Twenty-five to forty-five dollars a head" for a venue open bar | External sources only (Zola / Curated / EventWorks industry ranges, full range $15–90). Mitigations applied 2026-08-04: "(industry averages)" tag on the Q3 card, and Q4 now anchors on our first-party number — mid package, 100 guests, 5 hrs, toast included = **$1,773** (calculator-verified) — so the external range is context, not the load-bearing claim. | ✅ **APPROVED by Allan 2026-08-04** (with first-party anchor added) |
 | 2 | Q8 — "return up to a quarter of your order unopened, 100% of your money back on what you return" | **RESOLVED by Allan 2026-08-03: the cap is on volume, not on the refund rate — up to 25% of the total order can come back, and that 25% is refunded in full.** ⚠ One assumption I made and you should correct if wrong: that **unopened** is a condition of the return. | ✅ **CLEARED — Q8 is shootable.** But see below: three pages on the site still describe this policy wrongly and need fixing before the video points people at them |
-| 3 | "The top ten things Austin weddings order are led by prosecco, sauvignon blanc, pinot noir and cabernet" | Internal pull, **n=15 paid wedding orders, 2026 only** — directional, not statistically solid. Top items: Amor Di Amanti Prosecco (25), Dos Equis 12pk (24), Bogle Pinot Noir (22), Espolon 1.75L (21), Chandon Brut (20). | ⚠ **APPROVE** — accurate as stated but thin; safe because it's phrased as what people order from *us*, not a market claim |
-| 4 | "Our own median wedding order comes in ten days ahead" | Internal median lead time = 10 days (n=15). Same sample caveat. | ⚠ **APPROVE** — same pattern as the bach script's approved 48-hour stat |
+| 3 | Q5 drink list — was "top ten … led by prosecco, sauvignon blanc, pinot noir and cabernet" (an n=15 data claim) | **Softened per Allan 2026-08-04** to operator observation: "what we see over and over at Austin weddings" — margaritas, old fashioneds, prosecco, sauv blanc, pinot noir, ABW variety packs, Shiner. No "top ten"/data framing, so the thin n=15 no longer has to carry it (the pull still corroborates the wines + margarita bases; old fashioneds and ABW/Shiner are operator-observed). | ✅ **APPROVED by Allan 2026-08-04** (softened, list per Allan) |
+| 4 | Q10 — "most of our wedding orders already come in thirty-plus days ahead" | **Allan's operator count, 2026-08-04**: most weddings arrive as bartender-referred private parties, untracked as weddings in the DB (~30 of ~50 in 2026), and those book 30+ days out. Tagged-channel medians are shorter (pay→delivery 10d, n=15; invoice-created 14.5d, n=6) but cover only the minority. Phrased as "**most**", not "median", to match the evidence we actually have. | ✅ **APPROVED by Allan 2026-08-04** — Q10 rewritten to push ordering as early as possible (the business goal); the stat stays as social proof |
+| 5 | CTA — "we've stocked more than a hundred weddings all over Austin" | Allan 2026-08-04: 50+ weddings in 2026 alone → 100+ served all-time is comfortable. DB corroborates: 125 wedding-tagged dashboards (in a 2026-only table) + 6 paid wedding invoices, plus the untagged majority. Same conservative no-time-qualifier pattern as the bach script's approved "500+ parties". | ✅ **APPROVED by Allan 2026-08-04** |
 
 **Verified, no sign-off needed:** the formula `guests × (hours + 1)`; the 30/40/30 and 55/45 splits; wine 5 / spirits 17 / champagne 5 per bottle; the 100/150/200 worked examples (recomputed for this script); the published `$13–$26/person` tiers; TABC-licensed + $1M insured + TABC-certified drivers + carding on delivery.
 
-## ⚠ Site copy that contradicts the script (fix before the video goes live)
+## ✅ Site copy contradiction — RESOLVED 2026-08-03 (PR #359, merged to main)
 
-The real policy is **return up to 25% of the order unopened → 100% refund on that portion**. Three live surfaces overstate or muddle it, and two of them promise more than we deliver:
-
-| Where | Says today | Problem |
-|---|---|---|
-| `src/app/page.tsx:31` (homepage FAQ) | "100% refund policy—we want your day perfect, not wasteful." | **Overstates.** Reads as "refund the whole order." No 25% cap mentioned |
-| `src/app/page.tsx:159` (homepage card) | "Weddings: 100% refund on unopened" | **Overstates.** Same problem — implies any unopened bottle comes back |
-| `src/app/wedding-drink-calculator/page.tsx:61` | "partial refund (depending on volume)" | **Understates and is vague.** The refund isn't partial — it's 100% on up to a quarter. "Depending on volume" is the cap, said unclearly |
-| `src/components/landing/configs/corporate.ts:31` | "free returns on unopened" | Needs the same cap language if the policy applies to corporate too — **confirm whether 25% is company-wide or wedding-specific** |
-
-Suggested single line to standardize on, everywhere: **"Return up to 25% of your order unopened for a full refund."**
+All four surfaces the earlier draft flagged now state the real policy: homepage FAQ + wedding card (`src/app/page.tsx`), the wedding-calculator FAQ, the corporate lander config (so the cap **does** apply to corporate), plus the hotels-resorts and venue pages. Standard language everywhere: **100% refund on up to 25% of your order, dropped back at the store unopened, same day, no restocking fees.** On-screen refund copy in this video can be checked against any of those live pages.
 
 ## Master shot list (NEED — one shoot day, ideally piggybacked on a real wedding delivery)
 
@@ -145,7 +137,7 @@ Suggested single line to standardize on, everywhere: **"Return up to 25% of your
 5. **Delivery arrival at a venue** — van, hand truck, cases through a service door (Q4/CTA)
 6. Allan's 3 on-camera pieces (hook / the $26-vs-$25 line / CTA) — under 60 sec total
 7. Prop shots: venue invoice or check presenter (Q3), planning binder (Q6)
-8. Bottle close-ups: prosecco, sauv blanc, pinot noir, cabernet (Q5 — match the real top-sellers list)
+8. Q5 drink shots: margarita + old-fashioned builds, prosecco / sauv blanc / pinot noir bottles, ABW variety pack + Shiner (match the spoken list)
 
 Existing b-roll assumed usable: delivery vans, warehouse, product close-ups, Austin skyline. **Consistency notes for editors:** champagne = 5 glasses/bottle everywhere (never 6–8); wine = 5, spirits = 17 — these now match every calculator on the site, so on-screen numbers can be checked against the live tools; always say bartenders are billed separately when the $13–26/pp tiers are on screen.
 
