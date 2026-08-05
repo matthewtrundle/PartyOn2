@@ -33,6 +33,8 @@ import {
   getAffiliateRoi,
 } from '@/lib/analytics/internal-rollups';
 import { getRepeatRateBySegment, getLtvBySegment } from '@/lib/analytics/cohort-rollups';
+import { mapChannelSessions } from '@/lib/analytics/channel-mapping';
+import { putFileToRepo, type PutFileResult } from '@/lib/github/put-file';
 import { buildSnapshotRecommendations } from '@/lib/analytics/snapshot-recommendations';
 import { persistRecommendations, listRecommendations } from '@/lib/analytics/recommendation-store';
 import { getPageEngagement } from '@/lib/analytics/variant-rollup';
@@ -206,11 +208,24 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     averageOrderValue: totalOrders > 0 ? totalRevenue / totalOrders : 0,
   };
 
+  // Project the GA4 Default Channel Group rows (already fetched into
+  // trafficSources / top_referrers) into the five scalar session columns.
+  // These were permanently 0 until now because the upsert never wrote them.
+  // NB: trafficSources is a top-10 pull, so channelSessions sums to ~3% under
+  // total sessions — see channel-mapping.ts. `residual` is intentionally not
+  // persisted to a column (no column exists); it stays visible in top_referrers.
+  const channelSessions = mapChannelSessions(trafficSources ?? []);
+
   // Upsert snapshot
   const snapshot = await prisma.analyticsSnapshot.upsert({
     where: { date: today },
     update: {
       ...orderScalars,
+      organicSessions: channelSessions.organic,
+      directSessions: channelSessions.direct,
+      referralSessions: channelSessions.referral,
+      socialSessions: channelSessions.social,
+      paidSessions: channelSessions.paid,
       sessions: traffic?.sessions ?? 0,
       users: traffic?.users ?? 0,
       pageviews: traffic?.pageviews ?? 0,
@@ -241,6 +256,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     create: {
       date: today,
       ...orderScalars,
+      organicSessions: channelSessions.organic,
+      directSessions: channelSessions.direct,
+      referralSessions: channelSessions.referral,
+      socialSessions: channelSessions.social,
+      paidSessions: channelSessions.paid,
       sessions: traffic?.sessions ?? 0,
       users: traffic?.users ?? 0,
       pageviews: traffic?.pageviews ?? 0,
@@ -285,7 +305,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     listRecommendations({ status: ['open', 'approved'], limit: 25 })
   )) ?? [];
 
-  // Regenerate human-readable markdown summary
+  // Regenerate human-readable markdown summary, then deliver it: local FS in
+  // dev, GitHub commit in prod. Both delivery results are surfaced in the
+  // response so a silent failure can't hide again.
+  let fsWritten = false;
+  let commit: PutFileResult = { committed: false, error: 'not attempted' };
   try {
     const md = renderMarkdown({
       date: today,
@@ -315,11 +339,51 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       pageEngagement: pageEngagement ?? [],
       errors,
     });
-    const docsDir = path.join(process.cwd(), 'docs');
-    fs.mkdirSync(docsDir, { recursive: true });
-    fs.writeFileSync(path.join(docsDir, 'WEBSITE-ANALYTICS.md'), md);
+
+    // 1) Local filesystem write — only succeeds in dev; Vercel's FS is
+    //    read-only outside /tmp. Kept first, in its own guard, so `npm run
+    //    dev` still refreshes the local docs copy. This is why the doc went
+    //    unwritten for 101 days: the throw here was caught into `errors` and
+    //    the route still returned 200, and nobody reads cron response bodies.
+    try {
+      const docsDir = path.join(process.cwd(), 'docs');
+      fs.mkdirSync(docsDir, { recursive: true });
+      fs.writeFileSync(path.join(docsDir, 'WEBSITE-ANALYTICS.md'), md);
+      fsWritten = true;
+    } catch {
+      // Expected on Vercel (read-only FS) — the GitHub commit below is the
+      // real delivery path in prod. Deliberately not pushed into `errors`:
+      // a failed local write is not a partial-pull failure.
+      fsWritten = false;
+    }
+
+    // 2) Commit to the repo so the marketing-director agent's
+    //    docs/WEBSITE-ANALYTICS.md is actually fresh. `[skip ci]` keeps the
+    //    nightly docs commit from re-running the Test & Lint GitHub Action
+    //    (which does fire on push to main). NOTE: Vercel does NOT honor
+    //    commit-message skip tokens, so this commit still triggers a prod
+    //    redeploy — same as the existing weekly finance/operations/marketing
+    //    briefing crons that also commit here. Suppressing that would need a
+    //    vercel.json Ignored Build Step, deliberately not added (a wrong
+    //    ignoreCommand blocks ALL deploys, and it'd change behavior for those
+    //    other crons too). Fails soft — mirrors operations-briefing.
+    const dateStr = today.toISOString().split('T')[0];
+    commit = await putFileToRepo({
+      path: 'docs/WEBSITE-ANALYTICS.md',
+      content: md,
+      message: `chore(analytics): nightly snapshot ${dateStr} [skip ci]`,
+    }).catch((err) => ({
+      committed: false,
+      error: err instanceof Error ? err.message : String(err),
+    }));
+    if (!commit.committed && commit.error) {
+      // A commit failure IS a real delivery failure (unlike the fs write), so
+      // surface it in `errors` for the response. It can't reach the markdown
+      // banner — that content was already frozen when renderMarkdown ran above.
+      errors.push(`markdown-commit: ${commit.error}`);
+    }
   } catch (err) {
-    console.error('[analytics-snapshot] markdown write failed:', err);
+    console.error('[analytics-snapshot] markdown render/deliver failed:', err);
     errors.push(`markdown: ${err instanceof Error ? err.message : String(err)}`);
   }
 
@@ -328,6 +392,8 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     snapshotId: snapshot.id,
     recommendations: persistResult,
     openRecCount: openRecs.length,
+    fsWritten,
+    commit,
     errors: errors.length ? errors : undefined,
   });
 }
@@ -642,6 +708,25 @@ function renderMarkdown(s: {
       lines.push(`| ${k.keyword} | ${k.clicks} | ${k.impressions} | ${k.position.toFixed(1)} |`);
     }
   }
+  lines.push('');
+
+  // Static footer — the ops instructions the original hand-written stub carried,
+  // preserved here so the first real generated write doesn't destroy them.
+  lines.push('---');
+  lines.push('');
+  lines.push('## Regenerate manually');
+  lines.push('');
+  lines.push('```bash');
+  lines.push('curl -H "Authorization: Bearer $CRON_SECRET" \\');
+  lines.push('  https://partyondelivery.com/api/cron/analytics-snapshot');
+  lines.push('```');
+  lines.push('');
+  lines.push(
+    '_This file is regenerated nightly (cron `0 7 * * *` UTC) and committed by ' +
+      'the analytics bot — do not hand-edit; changes are overwritten. The full ' +
+      'structured snapshot (with `marginData` / `vercelData` / `gbpData` / ' +
+      '`segmentData` JSON columns) lives on the `AnalyticsSnapshot` row for each ' +
+      'date; this document is the human-readable projection of it._');
   lines.push('');
 
   return lines.join('\n');
