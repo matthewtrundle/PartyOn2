@@ -157,25 +157,25 @@ export const SIGNATURE_KIT_RECIPES: Record<string, KitRecipe> = {
 
   'mint-julep-smash-serves-16': {
     displayName: 'Mint Julep Smash',
-    spirit: 'Bourbon',
+    spirit: 'Whiskey',
     yieldLabel: 'Serves 16',
     prepTimeLabel: '5 minutes',
     prepTimeISO: 'PT5M',
     garnish: 'Mint sprigs',
     ingredients: [
-      'Treaty Oak Day Drinker Bourbon — 750ml bottle',
+      'Austin 85 Light Whiskey — 750ml bottle',
       'Fresh Victor Three Citrus & Mint Leaf — 2 x 16 oz bottles',
       'H-E-B Club Soda — 2L bottle',
       '1.2-gallon drink dispenser',
     ],
     instructions: [
-      'Pour the full bottle of bourbon (750ml) into the included dispenser.',
+      'Pour the full bottle of whiskey (750ml) into the included dispenser.',
       'Add both bottles of mixer and stir well.',
       'Add one liter of sparkling water, stir and taste. Add more water if the drink is too strong.',
       'Fill with ice, stir gently, and serve.',
     ],
     proTip:
-      'The most spirit-forward kit on the list, so taste before you stop adding water. Crushed ice is worth the trouble — it chills fast and softens the bourbon as it melts.',
+      'One of the more spirit-forward kits, so taste before you stop adding water. Crushed ice is worth the trouble — it chills fast and softens the whiskey as it melts.',
   },
 
   '6th-street-gold-rush-serves-16': {
