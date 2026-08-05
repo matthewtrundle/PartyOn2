@@ -162,7 +162,7 @@ export default function CorporateProductsPage() {
                 ← Back to Corporate
               </Link>
               <span className="text-gray-400">|</span>
-              <Link href="/products" className="text-sm text-gray-600 hover:text-brand-yellow transition-colors">
+              <Link href="/order" className="text-sm text-gray-600 hover:text-brand-yellow transition-colors">
                 Browse All Products
               </Link>
             </div>
