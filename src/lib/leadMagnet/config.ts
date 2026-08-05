@@ -28,6 +28,13 @@ export type LeadMagnet = {
   previewImage?: string;
   /** Path to the PDF / page they'll be sent to after submit. */
   rewardUrl: string;
+  /**
+   * Optional discount code delivered as the reward (shown in the success
+   * state + welcome email). When set, the magnet is a "here's a code" offer
+   * rather than a "here's a PDF" offer. Must be an existing, active Discount
+   * row — see scripts/ops/create-lead-magnet-discounts.mjs.
+   */
+  rewardCode?: string;
   /** CTA button label. */
   cta: string;
   /** Whether to ask for phone in the form. */
@@ -67,6 +74,55 @@ export type LeadMagnet = {
  * pages + triggers. The controller will pick it up automatically.
  */
 export const LEAD_MAGNETS: LeadMagnet[] = [
+  // ── Free-delivery asks on two high-traffic pages that produced ZERO leads ──
+  // Both pages get thousands of landing sessions and had no ask at all. The
+  // reward is a free-delivery code (FREE_SHIPPING discount, margin-safe — waives
+  // the delivery fee, never touches the product-margin floor). Codes must exist
+  // as active Discount rows: see scripts/ops/create-lead-magnet-discounts.mjs.
+  // Listed BEFORE the flyer magnet so their specific page matches win first.
+  {
+    id: 'bday-free-delivery-2026',
+    title: 'Free Delivery on Your Birthday Order',
+    subhead: 'Planning an Austin birthday? Get your first delivery free.',
+    reward: 'A free-delivery code + our party-planning playbook',
+    previewImage: '/images/gallery/party-headquarters.webp',
+    rewardUrl: '/order',
+    rewardCode: 'BDAYPARTY',
+    cta: 'Get my free delivery →',
+    askPhone: true,
+    accent: { primary: '#D4AF37', primaryText: '#0A1F33', navy: '#0A1F33' },
+    // Exact path — pathMatches treats a pattern with no '*' as an exact match.
+    pages: ['/blog/15-unique-birthday-party-ideas-in-austin-for-adults'],
+    triggers: [
+      { type: 'time', seconds: 25 },
+      { type: 'scroll', percent: 55 },
+      { type: 'manual' },
+    ],
+    cooldownDays: 7,
+    enabled: true,
+  },
+  {
+    id: 'products-free-delivery-2026',
+    title: 'Free Delivery on Your First Order',
+    subhead: 'Building your order? We deliver it free — beer, wine, liquor, ice.',
+    reward: 'A free-delivery code for your first Austin order',
+    previewImage: '/images/products/delivery-bag-contents.webp',
+    rewardUrl: '/order',
+    rewardCode: 'STOCKED',
+    cta: 'Get my free delivery →',
+    askPhone: true,
+    accent: { primary: '#D4AF37', primaryText: '#0A1F33', navy: '#0A1F33' },
+    // Both entries needed: a glob ('/products/*') does NOT match the bare
+    // '/products', and the exact '/products' does not match handle pages.
+    pages: ['/products', '/products/*'],
+    triggers: [
+      { type: 'time', seconds: 25 },
+      { type: 'scroll', percent: 55 },
+      { type: 'manual' },
+    ],
+    cooldownDays: 7,
+    enabled: true,
+  },
   {
     id: 'pod-services-flyer-2026',
     title: 'The Party On Delivery Playbook',

@@ -16,6 +16,7 @@ import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { sendLeadEvent } from '@/lib/leads/client';
 import { getAttribution } from '@/lib/analytics/attribution';
+import { trackCTAClick } from '@/lib/analytics/ga4-events';
 import SmsConsentCheckbox from '@/components/consent/SmsConsentCheckbox';
 import type { LeadMagnet } from '@/lib/leadMagnet/config';
 
@@ -82,6 +83,11 @@ export default function LeadMagnetModal({ magnet, open, onClose, modeBadge }: Pr
     if (!email || !firstName) return;
     setSubmitting(true);
 
+    // Measure the submit as a CTA click (mirrors to first-party analytics_events
+    // + GA4) — without this the new asks would be as unmeasurable as the pages
+    // they're fixing.
+    trackCTAClick(magnet.cta, magnet.rewardUrl, 'lead_magnet');
+
     // Fire lead-event (creates / promotes the Lead row to SUBMITTED).
     await sendLeadEvent({
       type: 'FORM_SUBMIT',
@@ -115,6 +121,7 @@ export default function LeadMagnetModal({ magnet, open, onClose, modeBadge }: Pr
           magnetTitle: magnet.title,
           rewardUrl: magnet.rewardUrl,
           rewardCta: magnet.cta,
+          rewardCode: magnet.rewardCode ?? null,
           attribution: getAttribution(),
         }),
       });
@@ -124,13 +131,19 @@ export default function LeadMagnetModal({ magnet, open, onClose, modeBadge }: Pr
 
     setSubmitted(true);
     setSubmitting(false);
-    // Auto-open the reward in a new tab + close modal after a short beat.
-    setTimeout(() => {
-      if (typeof window !== 'undefined') {
-        window.open(magnet.rewardUrl, '_blank', 'noopener');
-      }
-      onClose('submit');
-    }, 1100);
+
+    // For a discount-code reward the success state shows the code the visitor
+    // needs to copy, so DON'T auto-close — let them read it and close when
+    // ready. For a PDF/page reward, auto-open it in a new tab and close the
+    // modal after a short beat (the original behavior).
+    if (!magnet.rewardCode) {
+      setTimeout(() => {
+        if (typeof window !== 'undefined') {
+          window.open(magnet.rewardUrl, '_blank', 'noopener');
+        }
+        onClose('submit');
+      }, 1100);
+    }
   };
 
   if (!open) return null;
@@ -207,10 +220,40 @@ export default function LeadMagnetModal({ magnet, open, onClose, modeBadge }: Pr
               <h3 className="font-heading text-xl font-bold mb-1" style={{ color: T.navy }}>
                 You&apos;re in, {firstName}.
               </h3>
-              <p className="text-sm text-gray-700">
-                Opening your copy now and sending it to{' '}
-                <strong style={{ color: T.navy }}>{email}</strong>.
-              </p>
+              {magnet.rewardCode ? (
+                <>
+                  <p className="text-sm text-gray-700 mb-3">
+                    Here&apos;s your code for{' '}
+                    <strong style={{ color: T.navy }}>free delivery</strong> on your
+                    first order — apply it at checkout. We also sent it to{' '}
+                    <strong style={{ color: T.navy }}>{email}</strong>.
+                  </p>
+                  <div
+                    className="inline-block rounded-lg px-4 py-2.5 font-mono text-lg font-bold tracking-[0.15em]"
+                    style={{
+                      background: T.primary,
+                      color: T.primaryText,
+                      border: `2px dashed ${T.navy}`,
+                    }}
+                  >
+                    {magnet.rewardCode}
+                  </div>
+                  <div className="mt-4">
+                    <a
+                      href={magnet.rewardUrl}
+                      className="inline-block rounded-lg px-5 py-2.5 text-sm font-bold tracking-widest"
+                      style={{ background: T.navy, color: '#FFFFFF' }}
+                    >
+                      START YOUR ORDER →
+                    </a>
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm text-gray-700">
+                  Opening your copy now and sending it to{' '}
+                  <strong style={{ color: T.navy }}>{email}</strong>.
+                </p>
+              )}
             </div>
           ) : (
             <>

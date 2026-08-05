@@ -58,7 +58,8 @@ export type CtaSection =
   | 'recipe_card'
   | 'recipe_modal'
   | 'how_it_works'
-  | 'sticky_bar';
+  | 'sticky_bar'
+  | 'lead_magnet';
 
 /**
  * Track CTA button clicks for A/B testing
