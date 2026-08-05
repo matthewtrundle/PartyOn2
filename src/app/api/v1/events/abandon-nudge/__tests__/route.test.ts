@@ -61,11 +61,7 @@ describe('POST /api/v1/events/abandon-nudge', () => {
   it('resolves the lead through upsertLead, not a local email lookup', async () => {
     const res = await POST(makeRequest(validBody));
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({
-      ok: true,
-      status: 'scheduled',
-      leadId: 'lead-9',
-    });
+    expect(await res.json()).toEqual({ ok: true });
 
     expect(leadCaptureMock.upsertLead).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -116,7 +112,7 @@ describe('POST /api/v1/events/abandon-nudge', () => {
       },
     });
     const res = await POST(makeRequest(validBody));
-    expect(await res.json()).toEqual({ ok: true, status: 'already-nudged' });
+    expect(await res.json()).toEqual({ ok: true });
     expect(prismaMock.lead.update).not.toHaveBeenCalled();
   });
 
@@ -184,6 +180,28 @@ describe('POST /api/v1/events/abandon-nudge', () => {
     const data = prismaMock.lead.update.mock.calls[0][0].data;
     expect(data.metadata.abandonedCart).not.toHaveProperty('resumeUrl');
     expect(JSON.stringify(data)).not.toContain('evil.example');
+  });
+
+  it('returns a byte-identical body whether it scheduled or already nudged', async () => {
+    // CWE-204, same reasoning as the /cancel sibling: 'scheduled' vs
+    // 'already-nudged' would reveal whether a guessed email already has a
+    // nudge for a (public) slug. The old body also echoed the internal leadId.
+    const seen = new Set<string>();
+    for (const metadata of [
+      null,
+      {
+        abandonedCart: {
+          eventSlug: 'brian-41st-birthday',
+          nudgeSentAt: '2026-08-01T00:00:00.000Z',
+        },
+      },
+    ]) {
+      leadCaptureMock.upsertLead.mockResolvedValue({ id: 'lead-9', metadata });
+      const res = await POST(makeRequest(validBody));
+      expect(res.status).toBe(200);
+      seen.add(JSON.stringify(await res.json()));
+    }
+    expect([...seen]).toEqual(['{"ok":true}']);
   });
 
   it('throttles a caller hammering it from one address', async () => {

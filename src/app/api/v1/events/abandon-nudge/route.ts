@@ -48,6 +48,17 @@ const schema = z.object({
   cartTotal: z.number().min(0).optional(),
 });
 
+/**
+ * The one and only success body. Every branch returns this, byte for byte.
+ *
+ * Telling the caller which branch ran ('scheduled' vs 'already-nudged') would
+ * reveal whether a guessed email already has a nudge for a given party — the
+ * slug is public, it's in the page URL. The old body also echoed the internal
+ * leadId. Nothing reads any of it: the modal fires this and drops the
+ * response. Same reasoning as the /cancel sibling (CWE-204).
+ */
+const OK = { ok: true } as const;
+
 export async function POST(req: NextRequest) {
   // Unauthenticated and now several DB round trips per call (the shared writer
   // runs a fragment-merge scan), so throttle before parsing the body. Uses the
@@ -130,7 +141,7 @@ export async function POST(req: NextRequest) {
     prevAbandon.eventSlug === body.eventSlug &&
     prevAbandon.nudgeSentAt
   ) {
-    return NextResponse.json({ ok: true, status: 'already-nudged' });
+    return NextResponse.json(OK);
   }
 
   await prisma.lead.update({
@@ -140,5 +151,5 @@ export async function POST(req: NextRequest) {
       resumeCart: { itemCount: body.itemCount, cartTotal: body.cartTotal },
     },
   });
-  return NextResponse.json({ ok: true, status: 'scheduled', leadId: lead.id });
+  return NextResponse.json(OK);
 }

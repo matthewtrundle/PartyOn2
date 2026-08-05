@@ -67,7 +67,7 @@ describe('POST /api/v1/events/abandon-nudge/cancel', () => {
 
     const res = await POST(makeRequest(validBody));
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ ok: true, status: 'canceled' });
+    expect(await res.json()).toEqual({ ok: true });
 
     const meta = prismaMock.lead.update.mock.calls[0][0].data.metadata;
     expect(meta.abandonedCart.canceledAt).toEqual(expect.any(String));
@@ -105,7 +105,7 @@ describe('POST /api/v1/events/abandon-nudge/cancel', () => {
       },
     });
     const res = await POST(makeRequest(validBody));
-    expect(await res.json()).toEqual({ ok: true, status: 'no-op' });
+    expect(await res.json()).toEqual({ ok: true });
     expect(prismaMock.lead.update).not.toHaveBeenCalled();
   });
 
@@ -118,7 +118,7 @@ describe('POST /api/v1/events/abandon-nudge/cancel', () => {
     });
 
     const res = await POST(makeRequest(validBody));
-    expect(await res.json()).toEqual({ ok: true, status: 'no-op' });
+    expect(await res.json()).toEqual({ ok: true });
     expect(prismaMock.lead.update).not.toHaveBeenCalled();
   });
 
@@ -128,7 +128,7 @@ describe('POST /api/v1/events/abandon-nudge/cancel', () => {
     const res = await POST(makeRequest({ ...validBody, email: 'stranger@example.com' }));
     expect(res.status).toBe(200);
     // Same shape as the "found but nothing to clear" case — no enumeration oracle.
-    expect(await res.json()).toEqual({ ok: true, status: 'no-op' });
+    expect(await res.json()).toEqual({ ok: true });
     expect(leadCaptureMock.upsertLead).not.toHaveBeenCalled();
     expect(prismaMock.lead.update).not.toHaveBeenCalled();
   });
@@ -136,7 +136,7 @@ describe('POST /api/v1/events/abandon-nudge/cancel', () => {
   it('is a no-op when the lead has no pending nudge at all', async () => {
     leadCaptureMock.findLead.mockResolvedValue({ id: 'lead-9', metadata: null });
     const res = await POST(makeRequest(validBody));
-    expect(await res.json()).toEqual({ ok: true, status: 'no-op' });
+    expect(await res.json()).toEqual({ ok: true });
     expect(prismaMock.lead.update).not.toHaveBeenCalled();
   });
 
@@ -144,6 +144,34 @@ describe('POST /api/v1/events/abandon-nudge/cancel', () => {
     const res = await POST(makeRequest({ ...validBody, email: 'nope' }));
     expect(res.status).toBe(400);
     expect(leadCaptureMock.findLead).not.toHaveBeenCalled();
+  });
+
+  it('returns a byte-identical body across every internal branch', async () => {
+    // CWE-204. Reporting which branch ran would tell an attacker who guessed
+    // an email + a (public) slug whether that person has an unfinished drink
+    // order for that party. Same status code is not enough — same BODY.
+    const branches = [
+      null, // address unknown to us
+      { id: 'l', metadata: null }, // known, no cart at all
+      { id: 'l', metadata: { abandonedCart: { eventSlug: 'other-party' } } }, // cart, wrong event
+      {
+        id: 'l',
+        metadata: { abandonedCart: { eventSlug: 'brian-41st-birthday', canceledAt: 'x' } },
+      }, // already canceled
+      {
+        id: 'l',
+        metadata: { abandonedCart: { eventSlug: 'brian-41st-birthday', nudgeSentAt: null } },
+      }, // the one that actually cancels
+    ];
+
+    const seen = new Set<string>();
+    for (const lead of branches) {
+      leadCaptureMock.findLead.mockResolvedValue(lead);
+      const res = await POST(makeRequest(validBody));
+      expect(res.status).toBe(200);
+      seen.add(JSON.stringify(await res.json()));
+    }
+    expect([...seen]).toEqual(['{"ok":true}']);
   });
 
   it('throttles a caller hammering it from one address', async () => {

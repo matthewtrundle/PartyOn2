@@ -13,10 +13,13 @@
  * endpoint can do is STOP mail. Worst case an attacker suppresses a nudge they
  * guessed the address for. It's still throttled, because it hits the DB.
  *
- * Any well-formed request gets the same { ok: true } shape whether or not the
- * address is known to us — a 404 for an unknown one would turn this into an
- * email-enumeration oracle. (Malformed bodies still 400, throttled callers
- * still 429; neither reveals anything about the address.)
+ * Every well-formed request gets a byte-identical `{ ok: true }` — not just the
+ * same status code. Reporting which branch ran ('canceled' vs 'no-op') would
+ * tell an attacker who guessed an email and a slug (slugs are public, they're
+ * in the URL) whether that person has an unfinished drink order for that
+ * party. Nothing reads the body — the modal fires this and drops the response
+ * — so there is no cost to saying nothing. (CWE-204. Malformed bodies still
+ * 400 and throttled callers still 429; neither depends on the address.)
  */
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
@@ -33,6 +36,9 @@ const schema = z.object({
   eventSlug: z.string().max(120),
   email: z.string().email().max(200),
 });
+
+/** The one and only success body. Every branch returns this, byte for byte. */
+const OK = { ok: true } as const;
 
 export async function POST(req: NextRequest) {
   if (!(await checkRateLimit('abandon-nudge-cancel', clientIpFrom(req), 15, 60))) {
@@ -51,7 +57,7 @@ export async function POST(req: NextRequest) {
 
   // findLead, not upsertLead — a cancel must never bring a Lead into existence.
   const lead = await findLead({ email: body.email });
-  if (!lead) return NextResponse.json({ ok: true, status: 'no-op' });
+  if (!lead) return NextResponse.json(OK);
 
   const meta = (lead.metadata as Record<string, unknown> | null) ?? {};
   const abandon = meta.abandonedCart as
@@ -60,7 +66,7 @@ export async function POST(req: NextRequest) {
   // Only clear the nudge for the event they just ordered for — a guest can be
   // invited to two parties, and finishing one shouldn't silence the other.
   if (!abandon || abandon.eventSlug !== body.eventSlug || abandon.canceledAt) {
-    return NextResponse.json({ ok: true, status: 'no-op' });
+    return NextResponse.json(OK);
   }
 
   // Stamp rather than delete. Dropping the key would also drop this lead's
@@ -80,5 +86,5 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  return NextResponse.json({ ok: true, status: 'canceled' });
+  return NextResponse.json(OK);
 }
