@@ -40,16 +40,15 @@ function makeRequest(body: unknown): NextRequest {
   });
 }
 
+// No eventTitle / resumeUrl — the route reads both off the event registry now.
 const validBody = {
   eventSlug: 'brian-41st-birthday',
-  eventTitle: "Brian's 41st",
   firstName: 'Sam',
   lastName: 'Reyes',
   email: 'Sam.Reyes@Example.com',
   phone: '512-555-0134',
   itemCount: 3,
   cartTotal: 128.5,
-  resumeUrl: 'https://partyondelivery.com/events/brian-41st-birthday',
 };
 
 beforeEach(() => {
@@ -146,6 +145,45 @@ describe('POST /api/v1/events/abandon-nudge', () => {
     const res = await POST(makeRequest({ ...validBody, email: 'nope' }));
     expect(res.status).toBe(400);
     expect(leadCaptureMock.upsertLead).not.toHaveBeenCalled();
+  });
+
+  // --- Unauthenticated-input containment (security review) -----------------
+  // This endpoint takes no auth, so anything it stores can end up in a
+  // domain-authenticated email. It used to accept eventTitle + resumeUrl from
+  // the body, which handed an anonymous caller both the copy and the link.
+
+  it('400s on an event slug that is not one of ours', async () => {
+    const res = await POST(
+      makeRequest({ ...validBody, eventSlug: 'not-a-real-party' }),
+    );
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ ok: false, error: 'Unknown event' });
+    expect(prismaMock.lead.update).not.toHaveBeenCalled();
+  });
+
+  it('400s on inherited Object.prototype keys posing as a slug', async () => {
+    // The registry is a plain object, so a bare DEMO_EVENTS[slug] would hand
+    // back Object.prototype.constructor — truthy, so the guard would pass and
+    // every field read off it would be undefined.
+    for (const slug of ['constructor', 'toString', '__proto__', 'valueOf']) {
+      const res = await POST(makeRequest({ ...validBody, eventSlug: slug }));
+      expect(res.status, `slug leaked through: ${slug}`).toBe(400);
+    }
+    expect(prismaMock.lead.update).not.toHaveBeenCalled();
+  });
+
+  it('reads the stored event title off the registry, not the request body', async () => {
+    await POST(makeRequest({ ...validBody, eventTitle: 'CLICK HERE FOR FREE MONEY' }));
+    const stored = prismaMock.lead.update.mock.calls[0][0].data.metadata.abandonedCart;
+    expect(stored.eventTitle).toBe("Brian's 41st Birthday Bash");
+    expect(JSON.stringify(stored)).not.toContain('FREE MONEY');
+  });
+
+  it('never persists a caller-supplied resumeUrl', async () => {
+    await POST(makeRequest({ ...validBody, resumeUrl: 'https://evil.example/phish' }));
+    const data = prismaMock.lead.update.mock.calls[0][0].data;
+    expect(data.metadata.abandonedCart).not.toHaveProperty('resumeUrl');
+    expect(JSON.stringify(data)).not.toContain('evil.example');
   });
 
   it('throttles a caller hammering it from one address', async () => {

@@ -20,6 +20,7 @@ import { generateDeliveryEnRouteEmail, generateDeliveryCompletedEmail } from '..
 import { generateInvoiceEmail } from '../invoice';
 import { generateOrderCancellationEmail } from '../order-cancellation';
 import { generateReceiptEmail } from '../receipt';
+import { eventAbandonedCartEmail } from '../event-abandoned-cart';
 
 const TAG = '<script>alert(1)</script>'; // space-free — survives the firstName split
 const ESCAPED = '&lt;script&gt;alert(1)&lt;/script&gt;';
@@ -147,6 +148,27 @@ describe('receipt email escapes customer fields', () => {
     paymentDate: '2026-08-01',
   });
   it('does not emit the raw <script> tag (name, address, item)', () => {
+    expect(html).not.toContain('<script>');
+    expect(html).toContain(ESCAPED);
+  });
+});
+
+describe('event abandoned-cart email escapes its fields', () => {
+  // Unlike the others this one renders from an UNAUTHENTICATED endpoint's
+  // output, and it has an href sink. Deeper coverage lives in
+  // ./event-abandoned-cart.test.ts; this keeps it in the shared sweep.
+  const { html } = eventAbandonedCartEmail({
+    firstName: TAG,
+    eventTitle: TAG,
+    eventDateLine: TAG,
+    eventVenue: TAG,
+    eventAddress: TAG,
+    resumeUrl: 'https://partyondelivery.com/events/x',
+    unsubscribeUrl: 'https://partyondelivery.com/email/preferences?email=a%40b.com&token=t',
+    itemCount: 2,
+    cartTotal: 40,
+  });
+  it('does not emit the raw <script> tag (name, title, venue, address, date)', () => {
     expect(html).not.toContain('<script>');
     expect(html).toContain(ESCAPED);
   });
