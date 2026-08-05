@@ -50,8 +50,8 @@ export const SIGNATURE_KIT_RECIPES: Record<string, KitRecipe> = {
     prepTimeISO: 'PT5M',
     garnish: 'Lime wheels and jalapeño slices',
     ingredients: [
-      'Dulce Vida Pineapple Jalapeño Tequila — 750ml bottle',
-      'Fresh Victor Mexican Lime & Agave — 2 x 16 oz bottles',
+      'Lunazul Blanco Tequila — 750ml bottle',
+      'Fresh Victor Jalapeño & Lime — 2 x 16 oz bottles',
       'H-E-B Club Soda — 2L bottle',
       '1.2-gallon drink dispenser',
     ],
@@ -62,7 +62,7 @@ export const SIGNATURE_KIT_RECIPES: Record<string, KitRecipe> = {
       'Fill with ice, stir gently, and serve.',
     ],
     proTip:
-      'The heat builds as it sits. If your group runs mild, pour in half the tequila first, taste it, then add the rest.',
+      'The heat comes from the mixer, not the tequila, so it builds as it sits. If your group runs mild, add one bottle of mixer first, taste it, then add the second.',
   },
 
   'cucumber-crush-margarita-serves-16': {
