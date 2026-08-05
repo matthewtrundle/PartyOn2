@@ -1,5 +1,10 @@
 # Wedding Video Production Brief — Q&A Listicle (drafted 2026-07-14, produce FALL 2026)
 
+> **Script written 2026-08-03:** the word-for-word shoot script is at
+> [wedding-video-script-2026-08.md](./wedding-video-script-2026-08.md). It is shoot-ready
+> except for **4 claims awaiting Allan's sign-off**, one of which (the leftover/refund
+> policy) is a hard blocker on Q8 — see "Consistency fixes" below.
+
 Same format as [bach-video-brief-2026-07.md](./bach-video-brief-2026-07.md): one 3–5 min long-form, ~10 keyword-targeted questions as chapters, chopped into per-question shorts. Timing: **produce September 2026** — engagement season peaks Nov–Feb and fall wedding-planning search rises from September.
 
 Evidence: `data/seo/semrush/2026-07-09/keyword-magic-how-much-alcohol-for-wedding.txt` + `keyword-magic-wedding-bar.txt`, `data/seo/semrush/2026-07-14/keyword-magic-QUESTIONS-wedding-alcohol.txt`, `data/seo/serp-paa/2026-07-14-wedding-corporate.md`, `data/seo/internal-data-wedding-corporate-2026-07-14.md`.
@@ -40,8 +45,27 @@ Bonus short-only: **"Do wedding venues water down alcohol?"** (20/mo, maximally 
 
 ## Consistency fixes BEFORE shooting (surfaced by this research)
 
-- **The three calculators disagree**: wedding engine says wine = 5 glasses/bottle & spirits 17 drinks; the corporate MDX calculator says wine 4 & liquor 12. Pick one canon (recommend the wedding engine's numbers, they match the bach script) and align the corporate components — separate small PR.
-- **Buyback claim** ("100% buyback on unopened bottles") appears only on the corporate MDX calculator — confirm whether it applies to weddings before the video promises it.
+- ✅ **RESOLVED 2026-08-03 — servings canon is now consistent site-wide.** Allan chose the
+  engines' numbers: **wine = 5 glasses / 750ml, spirits = 17 drinks / 750ml, champagne = 5**.
+  The audit found *four* components, not three, and two were drifted:
+  `CorporateEventCalculator.tsx` used 4 and 12 in both its math and its on-screen copy, and
+  `api/v1/ai-party-planner/route.ts` used 25 for spirits behind a comment claiming it mirrored
+  the engine. Both fixed. `drinkPlannerLogic.ts`, `wedding-packages/tier-config.ts` and
+  `CorporateEventCalculatorLanding.tsx` were already correct. Videos can now quote per-bottle
+  numbers that match every calculator on the site.
+- ✅ **RESOLVED 2026-08-03 — the real policy is: return up to 25% of the total order unopened, and
+  that portion is refunded 100%.** The cap is on *how much* comes back, not on the refund rate.
+  Q8 of the wedding script is written and shootable. **But the site still describes this wrongly in
+  four places** — the homepage overstates it twice ("100% refund policy" / "Weddings: 100% refund on
+  unopened", no cap mentioned), `/wedding-drink-calculator` understates it ("partial refund
+  depending on volume" — it isn't partial), and the corporate lander says "free returns on unopened"
+  with no cap. Standardize on: **"Return up to 25% of your order unopened for a full refund."**
+  Open sub-question: does the 25% cap apply to corporate/bach too, or is it wedding-specific?
+- ⚠ **Unrelated drift spotted during the same audit (not fixed, out of scope):** ice quantities
+  disagree — `drinkPlannerLogic.ts` recommends 1 bag per 10 guests (≈0.7 lb/guest), the partner
+  `DrinkCalculator.tsx` recommends 1 bag per 4 guests, and `CorporateEventCalculatorLanding.tsx`
+  computes 1.5–2.0 lb/guest. The bach script already says "one bag per ten," which matches the
+  main engine. Worth a decision before any video says a number for ice.
 
 ## Embed & follow-ups
 

@@ -192,6 +192,10 @@ export const bachelorConfig: LandingConfig = {
     },
   ],
 
+  // Video section (above the FAQ) — enable once the bach video is uploaded:
+  //   video: buildBachVideo({ videoId: '<id>', uploadDate: '<YYYY-MM-DD>', duration: 'PT4M40S' }),
+  // Chapters + copy live in ./bachVideo.ts, shared with the bachelorette lander.
+
   faqHeadline: 'The questions every best man asks.',
   faqs: [
     {

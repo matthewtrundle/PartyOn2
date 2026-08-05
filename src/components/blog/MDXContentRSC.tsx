@@ -1,5 +1,6 @@
 import { compileMDX } from 'next-mdx-remote/rsc'
 import CorporateEventCalculator from '@/components/CorporateEventCalculator'
+import YouTubeEmbed from '@/components/YouTubeEmbed'
 
 interface MDXContentRSCProps {
   source: string
@@ -9,6 +10,11 @@ interface MDXContentRSCProps {
 const components = {
   // Custom React components
   CorporateEventCalculator,
+  // Lets a post embed a video with:
+  //   <YouTubeEmbed videoId="abc123" title="How to plan a bachelorette party" />
+  // Pair it with a VideoObject JSON-LD block on the post (generateVideoSchema
+  // in @/lib/seo/schemas) — the embed alone is not indexable as a video.
+  YouTubeEmbed,
 
   // Custom image component
   img: (props: React.ImgHTMLAttributes<HTMLImageElement>) => {

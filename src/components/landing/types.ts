@@ -74,6 +74,39 @@ export type Review = {
 
 export type Faq = { q: string; a: string };
 
+/**
+ * Optional YouTube video section on a landing page.
+ *
+ * The section renders ONLY when a config supplies this object — landers
+ * without it are unchanged. Supplying it also emits VideoObject JSON-LD,
+ * which is what makes the video eligible for video rich results and the
+ * "key moments" treatment in Google.
+ *
+ * `chapters` are optional but strongly recommended: each one becomes a
+ * `hasPart`/Clip in the schema, which is how Google surfaces individual
+ * questions as jump-to moments in the SERP.
+ */
+export type LandingVideo = {
+  /** YouTube video ID only — not the full URL. */
+  videoId: string;
+  /** Section heading, e.g. "Watch: 10 bach party questions, answered". */
+  heading: string;
+  /** One or two sentences under the heading. */
+  blurb?: string;
+  /** Video title used for the iframe title, schema name, and a11y. */
+  title: string;
+  /** Schema description. Falls back to `blurb` when unset. */
+  description?: string;
+  /** ISO 8601 date the video was published, e.g. "2026-08-15". */
+  uploadDate: string;
+  /** ISO 8601 duration, e.g. "PT4M15S" for 4:15. */
+  duration?: string;
+  /** Thumbnail URL. Defaults to YouTube's hqdefault for the video ID. */
+  thumbnailUrl?: string;
+  /** Chapter markers — start offset in seconds + the on-screen question. */
+  chapters?: { name: string; startOffsetSeconds: number }[];
+};
+
 /** One product in the "popular for this event" internal-link strip. */
 export type PopularProductLink = {
   /** Postgres product handle — card links to /products/<handle>. */
@@ -182,6 +215,14 @@ export type LandingConfig = {
   // FAQ
   faqHeadline: string;
   faqs: Faq[];
+
+  /**
+   * Optional video section, rendered directly above the FAQ (the video is a
+   * Q&A listicle, so it reads as the lead-in to the written Q&A). When unset,
+   * nothing renders and no VideoObject schema is emitted — every lander that
+   * predates this field behaves exactly as before.
+   */
+  video?: LandingVideo;
 
   /**
    * Optional "popular for this event" product strip — contextual internal

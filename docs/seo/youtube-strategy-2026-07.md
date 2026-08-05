@@ -4,6 +4,18 @@ Companion to [youtube-keyword-research-2026-07.md](./youtube-keyword-research-20
 
 > **Order changed 2026-07-10 (seasonality beats raw ROI): BACH FIRST — it's peak bach season now; wedding and corporate move to fall.** The bach video also changed format: a 3–5 min Q&A listicle (10 keyword-targeted questions as chapters) that gets chopped into per-question shorts. Full deep-dive research + shoot-ready spec: **[bach-video-brief-2026-07.md](./bach-video-brief-2026-07.md)** — it supersedes the Video 2 sketch below. Wedding and corporate briefs below remain the plan for fall.
 
+> **Update 2026-08-03 — all three scripts now exist, and the embed plumbing is built.**
+> Shoot scripts: [bach](./bach-video-script-2026-07.md) (approved) ·
+> [wedding](./wedding-video-script-2026-08.md) (4 sign-offs pending, 1 blocker) ·
+> [corporate](./corporate-video-script-2026-08.md) (3 sign-offs pending).
+> Code side: `YouTubeEmbed` is registered in the MDX components map, `LandingPageTemplate`
+> renders an optional video section above the FAQ with `VideoObject` JSON-LD (chapters become
+> Google "key moments"), and the servings-math canon that all three scripts quote is now
+> consistent across every calculator on the site. **Nothing renders until a config supplies a
+> real `videoId`** — see `src/components/landing/configs/bachVideo.ts` for the one-line enable.
+
+
+
 ## Strategy in one paragraph
 
 Each video does two jobs. **On the landing page** it deepens the page that already half-ranks for its money terms (dwell time, content depth, a second indexable asset) — note there is currently no video carousel on these SERPs to hijack, so the Google win is indirect. **On YouTube** it fishes where planners actually search, which per both this research and the 2026-06 vidIQ study means broad planning phrasings ("corporate event ideas", "austin bachelorette party"), not hyperlocal service terms. Titles use the exact live-autocomplete phrasing; the Austin/service specificity lives in the content, description, and end-screen CTA, not the title.
@@ -60,8 +72,22 @@ Each video does two jobs. **On the landing page** it deepens the page that alrea
 ## Production & measurement notes
 
 - **Channel reality check:** no posting integration exists anywhere in the stack; YouTube is embed-only today. Uploading is manual (that's fine — 3 videos).
-- **Embedding:** `src/components/YouTubeEmbed.tsx` already exists (used on partner pages). The bachelor/bachelorette/corporate landers render through `LandingPageTemplate.tsx` — the sanctioned no-nav paid landers — so adding an embed section there is a deliberate template change in its own PR, not a drive-by. `/weddings` and `/wedding-drink-calculator` are standard pages; embeds are straightforward.
-- **Schema:** add `VideoObject` JSON-LD on each embedding page (mirror the Article/FAQ JSON-LD pattern already used on blog posts).
+- **Embedding — BUILT 2026-08-03.** `LandingPageTemplate.tsx` now renders an optional video
+  section (heading, blurb, embed, visible chapter list) directly above the FAQ, driven by a
+  `video?: LandingVideo` field on `LandingConfig`. It renders nothing when the field is absent, so
+  every existing lander is unchanged until a video ID is supplied. `YouTubeEmbed` is also registered
+  in `MDXContentRSC.tsx`, so MDX blog posts can now embed video (they could not before).
+  `/weddings` and `/wedding-drink-calculator` are standard pages and still need their own embed
+  when the wedding video lands.
+- **Schema — BUILT 2026-08-03.** `generateVideoSchema()` in `src/lib/seo/schemas.ts` emits
+  `VideoObject` JSON-LD, with chapters mapped to `hasPart`/`Clip` so Google can surface each
+  question as a jump-to "key moment." The landing template emits it automatically alongside the
+  existing FAQ schema whenever a video is configured. Covered by
+  `src/lib/seo/__tests__/video-schema.test.ts`.
+- **To go live once footage exists:** set `video:` in the lander config
+  (`buildBachVideo({ videoId, uploadDate, duration })` in
+  `src/components/landing/configs/bachVideo.ts`), after confirming the chapter timestamps against
+  the final cut — the ones committed today come from the script's target runtimes, not a real edit.
 - **Measure (re-check ~2026-09-01, gives 6+ weeks):**
   - GSC position deltas on each video's embed-target queries (the pos 5–25 flags in `data/seo/gsc/2026-07-09-segments.json` are the baseline)
   - YouTube Studio: impressions + CTR on the three target phrasings

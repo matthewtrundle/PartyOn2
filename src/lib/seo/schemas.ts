@@ -77,6 +77,98 @@ export function generateArticleSchema({
   }
 }
 
+/**
+ * VideoObject schema (schema.org/VideoObject) — makes an embedded YouTube
+ * video eligible for video rich results.
+ *
+ * Chapters matter more than they look: each one becomes a `Clip` in `hasPart`,
+ * which is how Google surfaces individual questions as jump-to "key moments"
+ * under the result. Our videos are Q&A listicles where every chapter title IS
+ * a target keyword, so passing chapters is the whole point of the schema.
+ *
+ * `endOffsetSeconds` is derived by chaining each chapter to the start of the
+ * next; the last chapter runs to `durationSeconds` when one is supplied, and is
+ * otherwise emitted without an end offset (Google accepts that).
+ *
+ * @param video - Video metadata. `uploadDate` is an ISO 8601 date; `duration`
+ *   is an ISO 8601 duration such as `PT4M15S`.
+ * @param pageUrl - Absolute URL of the page embedding the video.
+ * @returns A VideoObject JSON-LD object ready to stringify into a script tag.
+ */
+export function generateVideoSchema(
+  video: {
+    videoId: string;
+    title: string;
+    description: string;
+    uploadDate: string;
+    duration?: string;
+    thumbnailUrl?: string;
+    chapters?: Array<{ name: string; startOffsetSeconds: number }>;
+  },
+  pageUrl: string,
+) {
+  const durationSeconds = video.duration
+    ? isoDurationToSeconds(video.duration)
+    : undefined;
+
+  const chapters = video.chapters ?? [];
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'VideoObject',
+    name: video.title,
+    description: video.description,
+    thumbnailUrl:
+      video.thumbnailUrl ||
+      `https://i.ytimg.com/vi/${video.videoId}/hqdefault.jpg`,
+    uploadDate: video.uploadDate,
+    ...(video.duration ? { duration: video.duration } : {}),
+    embedUrl: `https://www.youtube.com/embed/${video.videoId}`,
+    contentUrl: `https://www.youtube.com/watch?v=${video.videoId}`,
+    publisher: {
+      '@type': 'Organization',
+      name: 'Party On Delivery',
+      logo: {
+        '@type': 'ImageObject',
+        url: 'https://partyondelivery.com/images/pod-logo-2025.svg',
+      },
+    },
+    ...(chapters.length
+      ? {
+          hasPart: chapters.map((chapter, index) => {
+            const next = chapters[index + 1];
+            const endOffset = next
+              ? next.startOffsetSeconds
+              : durationSeconds;
+
+            return {
+              '@type': 'Clip',
+              name: chapter.name,
+              startOffset: chapter.startOffsetSeconds,
+              ...(endOffset !== undefined ? { endOffset } : {}),
+              url: `${pageUrl}#t=${chapter.startOffsetSeconds}`,
+            };
+          }),
+        }
+      : {}),
+  };
+}
+
+/**
+ * Convert an ISO 8601 duration (e.g. `PT4M15S`, `PT1H2M`) to whole seconds.
+ * Returns undefined for anything it can't parse, so callers can omit the
+ * field rather than emit a wrong number.
+ */
+function isoDurationToSeconds(duration: string): number | undefined {
+  const match = /^PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/.exec(duration);
+  if (!match || (!match[1] && !match[2] && !match[3])) return undefined;
+
+  const hours = Number(match[1] ?? 0);
+  const minutes = Number(match[2] ?? 0);
+  const seconds = Number(match[3] ?? 0);
+  return hours * 3600 + minutes * 60 + seconds;
+}
+
 export function generateBreadcrumbSchema(items: Array<{ name: string; url: string }>) {
   return {
     '@context': 'https://schema.org',
