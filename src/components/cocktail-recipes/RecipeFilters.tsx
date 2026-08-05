@@ -22,8 +22,12 @@ interface RecipeFiltersProps {
 }
 
 export default function RecipeFilters({ query, onQueryChange, searchRef, countLabel }: RecipeFiltersProps): ReactElement {
+  // Sticky offset must track the nav's own bar (h-14 md:h-16), not the 96px
+  // figure CLAUDE.md quotes for page-header padding. /design-example spells this
+  // out: "Sticky elements: top-14 md:top-16 (NOT top-24)". Getting it wrong
+  // leaves a 30-40px window that page content scrolls through.
   return (
-    <div className="sticky top-24 z-40 border-b border-gray-200 bg-white py-3">
+    <div className="sticky top-14 md:top-16 z-40 border-b border-gray-200 bg-white py-3">
       <div className="container-custom">
         <div className="flex items-center gap-4">
           <div className="relative flex-1">
