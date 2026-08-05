@@ -19,6 +19,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { LEAD_MAGNETS, pathMatches, type LeadMagnet } from '@/lib/leadMagnet/config';
+import { trackPodEvent } from '@/lib/analytics/client-tracker';
 import LeadMagnetModal from './LeadMagnetModal';
 
 function cooldownKey(id: string) {
@@ -94,6 +95,13 @@ export default function LeadMagnetController() {
       fired = true;
       cleanupFns.forEach((fn) => fn());
       setActiveMagnet(candidate);
+      // First-party impression event so "did the ask even show?" is answerable
+      // in analytics_events (the pages this targets had zero measurable asks).
+      trackPodEvent('lead_magnet_shown', {
+        magnet_id: candidate.id,
+        trigger: source,
+        path: pathname ?? '',
+      });
       // Tag the trigger so we can analyze conversion later.
       try {
         window.dispatchEvent(

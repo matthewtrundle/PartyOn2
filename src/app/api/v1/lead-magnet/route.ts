@@ -38,6 +38,13 @@ const schema = z.object({
   magnetTitle: z.string().max(200),
   rewardUrl: z.string().max(500),
   rewardCta: z.string().max(80).optional().nullable(),
+  // Discount code lands in the welcome-email HTML — constrain to a safe
+  // charset so it can't smuggle markup into the template.
+  rewardCode: z
+    .string()
+    .regex(/^[A-Z0-9_-]{2,40}$/)
+    .optional()
+    .nullable(),
   /** First-touch UTM + ad click ids captured client-side (optional). */
   attribution: attributionSchema,
 });
@@ -120,6 +127,7 @@ export async function POST(req: NextRequest) {
               magnetId: body.magnetId,
               magnetTitle: body.magnetTitle,
               submittedAt: new Date().toISOString(),
+              ...(body.rewardCode ? { rewardCode: body.rewardCode } : {}),
             },
           },
         },
@@ -141,6 +149,7 @@ export async function POST(req: NextRequest) {
     magnetTitle: body.magnetTitle,
     rewardUrl: body.rewardUrl,
     rewardCta: body.rewardCta ?? undefined,
+    rewardCode: body.rewardCode ?? undefined,
   });
 
   try {
@@ -157,6 +166,7 @@ export async function POST(req: NextRequest) {
         flow: 'lead-magnet',
         magnetId: body.magnetId,
         rewardUrl: body.rewardUrl,
+        ...(body.rewardCode ? { rewardCode: body.rewardCode } : {}),
       },
       tags: [
         { name: 'flow', value: 'lead_magnet' },

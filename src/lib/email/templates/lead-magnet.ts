@@ -14,6 +14,8 @@ export type LeadMagnetEmailInput = {
   magnetTitle: string;
   rewardUrl: string;
   rewardCta?: string;
+  /** Optional discount code to feature (e.g. a free-delivery reward). */
+  rewardCode?: string;
 };
 
 const NAVY = '#0A1F33';
@@ -38,8 +40,22 @@ export function leadMagnetEmail(input: LeadMagnetEmailInput): {
   const url = input.rewardUrl.startsWith('http')
     ? input.rewardUrl
     : `https://partyondelivery.com${input.rewardUrl}`;
+  const code = input.rewardCode ? escape(input.rewardCode) : '';
 
-  const subject = `${input.magnetTitle} — your copy is ready, ${fn}`;
+  const subject = code
+    ? `Your free-delivery code, ${fn} — ${input.magnetTitle}`
+    : `${input.magnetTitle} — your copy is ready, ${fn}`;
+
+  // Featured code block (free-delivery reward). Rendered only when a code is
+  // present; the charset is already constrained at the API boundary, and it's
+  // HTML-escaped here as belt-and-suspenders.
+  const codeBlockHtml = code
+    ? `<div style="text-align:center;margin:8px 0 20px;">
+         <div style="font-size:12px;font-weight:700;letter-spacing:1.5px;color:#6B7280;margin-bottom:6px;">YOUR FREE-DELIVERY CODE</div>
+         <div style="display:inline-block;background:${GOLD};color:${NAVY};padding:12px 26px;border-radius:8px;font-family:'Courier New',monospace;font-size:20px;font-weight:700;letter-spacing:3px;border:2px dashed ${NAVY};">${code}</div>
+         <div style="font-size:13px;color:#6B7280;margin-top:8px;">Apply it at checkout — free delivery on your first order.</div>
+       </div>`
+    : '';
 
   const html = `<!doctype html>
 <html>
@@ -58,10 +74,13 @@ export function leadMagnetEmail(input: LeadMagnetEmailInput): {
               <td style="padding:30px 28px 8px;">
                 <p style="margin:0 0 14px;font-size:16px;line-height:1.55;color:${NAVY};">Hey ${fn},</p>
                 <p style="margin:0 0 14px;font-size:16px;line-height:1.55;color:${NAVY};">
-                  Your copy of <strong>${title}</strong> is ready. Click below — it covers everything we do:
-                  alcohol delivery, party rentals, full bar setup, our Fresh Victor cocktail kits, and
-                  white-glove concierge planning.
+                  ${
+                    code
+                      ? `Here's your free-delivery code — apply it at checkout and your first Austin order ships on us: beer, wine, liquor, ice, mixers, the works.`
+                      : `Your copy of <strong>${title}</strong> is ready. Click below — it covers everything we do: alcohol delivery, party rentals, full bar setup, our Fresh Victor cocktail kits, and white-glove concierge planning.`
+                  }
                 </p>
+                ${codeBlockHtml}
                 <div style="text-align:center;margin:28px 0;">
                   <a href="${url}" style="display:inline-block;background:${GOLD};color:${NAVY};padding:14px 32px;border-radius:8px;font-size:14px;font-weight:700;letter-spacing:2px;text-decoration:none;">${cta.toUpperCase()} →</a>
                 </div>
@@ -93,13 +112,24 @@ export function leadMagnetEmail(input: LeadMagnetEmailInput): {
   </body>
 </html>`;
 
-  const text = `Hey ${fn},
+  const textBody = code
+    ? `Hey ${fn},
+
+Your free-delivery code: ${input.rewardCode}
+
+Apply it at checkout and your first Austin order ships on us: ${url}
+
+Got a party on the calendar? Hit reply with the date + headcount and I'll send back a quote in under 24 hours.`
+    : `Hey ${fn},
 
 Your copy of ${input.magnetTitle} is ready: ${url}
 
 It covers everything we do: alcohol delivery, party rentals, full bar setup, Fresh Victor cocktail kits, and white-glove concierge planning.
 
-Got a party on the calendar? Hit reply with the date + headcount and I'll send back a quote in under 24 hours.
+Got a party on the calendar? Hit reply with the date + headcount and I'll send back a quote in under 24 hours.`;
+
+  // Shared footer — signature + CAN-SPAM unsubscribe/age line on EVERY email.
+  const text = `${textBody}
 
 — Brian Hill, Founder
 Party On Delivery · Austin, TX
