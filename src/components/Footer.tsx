@@ -13,6 +13,8 @@ export default function Footer() {
       { label: 'Boat Party Packages', href: '/boat-parties' },
       { label: 'Bachelor/ette Parties', href: '/bach-parties' },
       { label: 'Keg Delivery', href: '/kegs' },
+      { label: 'Cocktail Kits', href: '/cocktail-kits' },
+      { label: 'Cocktail Kit Recipes', href: '/cocktail-recipes' },
     ],
     company: [
       { label: 'About Us', href: '/about' },

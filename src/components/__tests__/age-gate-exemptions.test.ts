@@ -28,6 +28,13 @@ describe('age-gate exemptions', () => {
     expect(AGE_GATE_EXEMPT_PATHS).toContain(route);
   });
 
+  it('/cocktail-recipes is exempt from the entrance gate', () => {
+    // Recipe lookup for people who already have a kit — shared by link and
+    // found by organic search. Nothing is sold on the page; its only CTA
+    // links to the product page, which keeps the gate.
+    expect(AGE_GATE_EXEMPT_PATHS).toContain('/cocktail-recipes');
+  });
+
   it('keeps the gate on ordinary site routes', () => {
     // The exemption is per-page and deliberate — it must never become
     // site-wide. These carry the gate because they are not link-shared

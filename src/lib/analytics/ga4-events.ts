@@ -54,7 +54,9 @@ export type CtaSection =
   | 'package_card'
   | 'quick_buy'
   | 'package_builder'
-  | 'property_picker';
+  | 'property_picker'
+  | 'recipe_card'
+  | 'recipe_modal';
 
 /**
  * Track CTA button clicks for A/B testing
