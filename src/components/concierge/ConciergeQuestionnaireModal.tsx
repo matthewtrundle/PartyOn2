@@ -18,6 +18,7 @@
 
 import { useMemo, useState, type ReactElement, type FormEvent } from 'react';
 import { getAttribution } from '@/lib/analytics/attribution';
+import { fireLeadConversionAndFlush } from '@/lib/leads/fireLeadConversion';
 
 const NAVY = '#0A1F33';
 const GOLD = '#D4AF37';
@@ -177,6 +178,16 @@ export default function ConciergeQuestionnaireModal({
         setSubmitting(false);
         return;
       }
+      // Cross-network lead conversion (Meta Lead + GA4 generate_lead + Ads).
+      // occasion = the lander variant so GA4 splits it into the per-occasion
+      // key events Google Ads imports as Lead – Bachelor / Lead – Bachelorette
+      // — this is the ONLY conversion signal the paid concierge campaigns get.
+      // Flush variant: onSuccess() unmounts the modal immediately, so we wait
+      // (≤400ms) for gtag to send the beacon before the component tears down.
+      await fireLeadConversionAndFlush({
+        occasion: variant,
+        placement: 'concierge-quiz',
+      });
       onSuccess();
     } catch (err) {
       console.error('[concierge modal] submit failed', err);

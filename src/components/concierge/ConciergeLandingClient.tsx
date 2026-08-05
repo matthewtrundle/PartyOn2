@@ -22,6 +22,13 @@
 import Image from 'next/image';
 import { useState, type ReactElement } from 'react';
 import ConciergeQuestionnaireModal from './ConciergeQuestionnaireModal';
+import {
+  trackCTAClick,
+  trackContactClick,
+  type CtaSection,
+} from '@/lib/analytics/ga4-events';
+
+const CONCIERGE_PHONE = 'tel:+17373719700';
 
 // ─── Brand tokens ─────────────────────────────────────────────────
 // Default (bachelor) theme values kept as top-level constants so
@@ -316,6 +323,15 @@ export default function ConciergeLandingClient({
   const [open, setOpen] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
 
+  // Every CTA on this page opens the same questionnaire modal, so per-CTA
+  // attribution was previously impossible — cta_click never fired here (the
+  // gap this PR exists to close). Tag each opener with the section it lives
+  // in; trackCTAClick mirrors to the first-party analytics_events stream.
+  function openFromCta(section: CtaSection, label: string) {
+    trackCTAClick(label, '#concierge-questionnaire', section);
+    setOpen(true);
+  }
+
   function handleSuccess() {
     setOpen(false);
     setConfirmed(true);
@@ -330,22 +346,40 @@ export default function ConciergeLandingClient({
       className="min-h-screen overflow-x-hidden"
       style={{ background: theme.soft, color: theme.primary }}
     >
-      <TopNav theme={theme} copy={copy} onCtaClick={() => setOpen(true)} />
+      <TopNav
+        theme={theme}
+        copy={copy}
+        variant={variant}
+        onCtaClick={() => openFromCta('navigation', copy.ctaLabels.stickyMobile)}
+      />
 
       {confirmed && (
         <ConfirmationBanner text={copy.confirmation} />
       )}
 
-      <Hero theme={theme} copy={copy} onCtaClick={() => setOpen(true)} />
+      <Hero
+        theme={theme}
+        copy={copy}
+        variant={variant}
+        onCtaClick={() => openFromCta('hero', copy.ctaLabels.primary)}
+      />
       <TrustBar theme={theme} stats={copy.trustStats} />
       <ServicesGrid
         theme={theme}
         copy={copy}
         services={services}
-        onCtaClick={() => setOpen(true)}
+        onCtaClick={() => openFromCta('services', copy.ctaLabels.services)}
       />
-      <HowItWorks theme={theme} copy={copy} onCtaClick={() => setOpen(true)} />
-      <FinalCta theme={theme} copy={copy} onCtaClick={() => setOpen(true)} />
+      <HowItWorks
+        theme={theme}
+        copy={copy}
+        onCtaClick={() => openFromCta('how_it_works', copy.ctaLabels.stickyMobile)}
+      />
+      <FinalCta
+        theme={theme}
+        copy={copy}
+        onCtaClick={() => openFromCta('final_cta', copy.ctaLabels.finalCta)}
+      />
 
       {/* Sticky mobile CTA */}
       <div
@@ -367,7 +401,7 @@ export default function ConciergeLandingClient({
           </div>
           <button
             type="button"
-            onClick={() => setOpen(true)}
+            onClick={() => openFromCta('sticky_bar', copy.ctaLabels.stickyMobile)}
             className="rounded-lg px-5 py-3 text-sm font-bold tracking-[0.08em] transition-transform hover:scale-[1.03]"
             style={{
               background: theme.accent,
@@ -397,10 +431,12 @@ export default function ConciergeLandingClient({
 function TopNav({
   theme,
   copy,
+  variant,
   onCtaClick,
 }: {
   theme: Theme;
   copy: Copy;
+  variant: Variant;
   onCtaClick: () => void;
 }) {
   return (
@@ -427,7 +463,10 @@ function TopNav({
         </div>
         <div className="flex items-center gap-2 sm:gap-3">
           <a
-            href="tel:+17373719700"
+            href={CONCIERGE_PHONE}
+            onClick={() =>
+              trackContactClick('phone', 'header', variant, CONCIERGE_PHONE)
+            }
             className="hidden sm:inline-flex items-center gap-1 text-white text-sm font-bold hover:opacity-80"
           >
             <PhoneIcon /> (737) 371-9700
@@ -455,10 +494,12 @@ function TopNav({
 function Hero({
   theme,
   copy,
+  variant,
   onCtaClick,
 }: {
   theme: Theme;
   copy: Copy;
+  variant: Variant;
   onCtaClick: () => void;
 }) {
   return (
@@ -512,7 +553,10 @@ function Hero({
             {copy.ctaLabels.primary}
           </button>
           <a
-            href="tel:+17373719700"
+            href={CONCIERGE_PHONE}
+            onClick={() =>
+              trackContactClick('phone', 'hero', variant, CONCIERGE_PHONE)
+            }
             className="text-sm sm:text-base font-bold text-white hover:opacity-80 flex items-center gap-1.5"
           >
             <PhoneIcon /> {copy.ctaLabels.secondary}
