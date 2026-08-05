@@ -179,16 +179,17 @@ export default function EventDrinksMenuModal({
       headers: { 'content-type': 'application/json' },
       credentials: 'same-origin',
       keepalive: true,
+      // No eventTitle / resumeUrl — the server reads both off the event
+      // registry using the slug, so the email copy and link can't be steered
+      // from the browser.
       body: JSON.stringify({
         eventSlug: event.slug,
-        eventTitle: event.title,
         firstName: first,
         lastName: rest.join(' '),
         email: guestEmail,
         phone: guestPhone || null,
         itemCount,
         cartTotal: Number(subtotalEstimate.toFixed(2)),
-        resumeUrl: `/events/${event.slug}`,
       }),
     }).catch(() => {
       // Silent — if it fails we'll just miss that one abandoned-cart
@@ -202,7 +203,6 @@ export default function EventDrinksMenuModal({
     guestName,
     guestPhone,
     event.slug,
-    event.title,
     productById,
     nudgeScheduled,
   ]);
@@ -254,8 +254,19 @@ export default function EventDrinksMenuModal({
     }
 
     // Order locked in — clear the saved cart so the abandoned-cart cron
-    // doesn't keep nudging this user.
+    // doesn't keep nudging this user. clearCart only touches localStorage, so
+    // tell the server too, otherwise the scheduled nudge still fires in 30 min.
     clearCart(event.slug);
+    void fetch('/api/v1/events/abandon-nudge/cancel', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      credentials: 'same-origin',
+      keepalive: true,
+      body: JSON.stringify({ eventSlug: event.slug, email: guestEmail }),
+    }).catch(() => {
+      // Silent — worst case they get one "finish your order" email they
+      // don't need. Not worth blocking the confirmation screen over.
+    });
 
     // Mockup: short delay then show confirmation. Real version will
     // create a DraftOrder + redirect to embedded Stripe checkout.

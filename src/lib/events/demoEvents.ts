@@ -70,7 +70,18 @@ export const DEMO_EVENTS: Record<string, EventInvite> = {
   },
 };
 
+/**
+ * Resolve a slug to an event, or null.
+ *
+ * The own-property check is load-bearing, not defensive noise: `slug` is
+ * caller-supplied (it arrives on an unauthenticated POST and in a public URL),
+ * and a bare `DEMO_EVENTS[slug]` inherits from Object.prototype — so
+ * `getDemoEvent('constructor')` returns the Object constructor, which is
+ * truthy. Every `if (!event)` guard downstream would pass and then read
+ * `undefined` off it. Same class of bug as the source-taxonomy registry.
+ */
 export function getDemoEvent(slug: string): EventInvite | null {
+  if (!Object.prototype.hasOwnProperty.call(DEMO_EVENTS, slug)) return null;
   return DEMO_EVENTS[slug] ?? null;
 }
 
