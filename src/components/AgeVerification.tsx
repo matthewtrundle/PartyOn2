@@ -50,6 +50,12 @@ export const AGE_GATE_EXEMPT_PATHS = [
   // binding 25+/21+ controls are the ticket checkout attestation and ID at
   // the dock). Gating the Stripe bounce-back would be pure friction.
   '/full-moon-thanks',
+  // Cocktail-kit recipe lookup. Reached from a kit already delivered (or an
+  // organic "how do I mix this" search), so a DOB form before the recipe is
+  // pure friction on a page that sells nothing — the only CTA links out to
+  // the product page, where the standard gate and the /order 21+ TABC
+  // confirmation both still apply.
+  '/cocktail-recipes',
 ]
 
 /**

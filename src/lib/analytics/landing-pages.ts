@@ -45,6 +45,7 @@ export type LandingPageKey =
   | 'area-east-austin'
   | 'area-lake-travis'
   | 'area-south-congress'
+  | 'cocktail-recipes'
   // Secondary B2B / partner-recruitment pages.
   | 'partners-bartenders'
   | 'partners-vacation-rentals'
@@ -423,6 +424,21 @@ export const LANDING_PAGES: LandingPageDef[] = [
     group: 'secondary-consumer',
     canonicalPath: '/areas/south-congress',
     aliasPaths: [],
+  },
+  {
+    // Recipe-reference page for people who already have a kit. Traffic is
+    // post-purchase + organic recipe searches, so the interesting numbers are
+    // recipe_card opens and how many of those click through to buy again.
+    key: 'cocktail-recipes',
+    displayName: 'Cocktail Recipes',
+    navOrder: 123,
+    group: 'secondary-consumer',
+    canonicalPath: '/cocktail-recipes',
+    aliasPaths: [],
+    ctaSections: [
+      { id: 'recipe_card', label: 'Recipe card' },
+      { id: 'recipe_modal', label: 'Recipe popup — get this kit' },
+    ],
   },
 
   // ── Secondary: B2B / partner recruitment ───────────────────────────────

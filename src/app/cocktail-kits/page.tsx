@@ -1,11 +1,13 @@
 import { Metadata } from 'next'
 import Image from 'next/image'
+import Link from 'next/link'
 import TrackedLink from '@/components/analytics/TrackedLink'
 import CocktailKitsHero from './CocktailKitsHero'
 import CocktailKitsProductSection from '@/components/CocktailKitsProductSection'
 import July4CocktailKitsSection from '@/components/July4CocktailKitsSection'
 import LuxuryCard from '@/components/LuxuryCard'
 import { prisma } from '@/lib/database/client'
+import { JULY4_KIT_HANDLES } from '@/lib/products/july4-kits'
 import { transformToProduct } from '@/lib/products/transform'
 import { Product } from '@/lib/types'
 
@@ -49,11 +51,7 @@ export default async function CocktailKitsPage() {
   // --- July 4th seasonal trio (Red → True Blue → Coconut). Fetched by handle (not via the
   // collection) so the section is explicit and ordered; these kits also live in the cocktail-kits
   // category, so they're de-duped out of the grid below. Mirrors /austin-4th-of-july-delivery. ---
-  const JULY4_HANDLES = [
-    'strawberry-lemonade-vodka-kit-serves-16',
-    'blue-margarita-kit-serves-16',
-    'coconut-colada-kit-serves-16',
-  ]
+  const JULY4_HANDLES: string[] = [...JULY4_KIT_HANDLES]
   const july4Rows = await prisma.product.findMany({
     where: { handle: { in: JULY4_HANDLES }, status: 'ACTIVE' },
     include: {
@@ -163,6 +161,12 @@ export default async function CocktailKitsPage() {
             <p className="text-lg text-gray-700 max-w-2xl mx-auto">
               Curated cocktail kits featuring local ingredients and classic recipes. Each makes 16-24 drinks!
             </p>
+            <Link
+              href="/cocktail-recipes"
+              className="inline-block mt-4 text-sm font-medium text-brand-blue hover:underline"
+            >
+              Already have a kit? See the mixing instructions for every kit →
+            </Link>
           </div>
 
           <CocktailKitsProductSection
