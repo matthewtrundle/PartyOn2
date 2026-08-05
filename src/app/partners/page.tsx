@@ -225,7 +225,7 @@ export default function AustinPartnersPage() {
               </p>
               <p>
                 Combined with Party On Delivery&apos;s{' '}
-                <Link href="/products" className="text-brand-yellow hover:text-yellow-600">
+                <Link href="/order" className="text-brand-yellow hover:text-yellow-600">
                   premium alcohol delivery
                 </Link>
                 , you have everything you need for the perfect Austin event. We deliver beer, wine,

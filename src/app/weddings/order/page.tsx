@@ -234,7 +234,7 @@ export default function WeddingOrderPage(): ReactElement {
               <Link href="/weddings" className="text-sm text-gray-600 hover:text-brand-yellow transition-colors">
                 Wedding Services
               </Link>
-              <Link href="/products" className="text-sm text-gray-600 hover:text-brand-yellow transition-colors">
+              <Link href="/order" className="text-sm text-gray-600 hover:text-brand-yellow transition-colors">
                 Full Catalog
               </Link>
               <Link href="/contact" className="text-sm text-gray-600 hover:text-brand-yellow transition-colors">

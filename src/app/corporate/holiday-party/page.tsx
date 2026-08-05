@@ -991,7 +991,7 @@ export default function CorporateHolidayPartyPage() {
               <h4 className="font-light text-gray-900 mb-4 tracking-[0.1em]">SHOP</h4>
               <ul className="space-y-2">
                 <li>
-                  <Link href="/products" className="text-gray-600 hover:text-brand-yellow text-sm transition-colors">
+                  <Link href="/order" className="text-gray-600 hover:text-brand-yellow text-sm transition-colors">
                     All Products
                   </Link>
                 </li>

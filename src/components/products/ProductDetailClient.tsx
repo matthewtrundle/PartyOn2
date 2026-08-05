@@ -70,7 +70,7 @@ export default function ProductDetailClient({ product }: Props) {
         <nav className="flex items-center space-x-2 text-gray-500">
           <Link href="/" className="hover:text-brand-yellow transition-colors">Home</Link>
           <span>/</span>
-          <Link href="/products" className="hover:text-brand-yellow transition-colors">Products</Link>
+          <Link href="/order" className="hover:text-brand-yellow transition-colors">Products</Link>
           <span>/</span>
           <span className="text-gray-900">{product.title}</span>
         </nav>
