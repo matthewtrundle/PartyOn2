@@ -21,6 +21,9 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import type { ReactElement } from 'react';
+import { trackCTAClick, trackContactClick } from '@/lib/analytics/ga4-events';
+
+const GATE_PHONE = 'tel:+17373719700';
 
 const NAVY = '#0A1F33';
 const GOLD = '#D4AF37';
@@ -101,6 +104,13 @@ export default function PartyTypeGateClient(): ReactElement {
             <Link
               href="/austin-bachelor-concierge"
               prefetch
+              onClick={() =>
+                trackCTAClick(
+                  'Plan the guys weekend',
+                  '/austin-bachelor-concierge',
+                  'choose_path',
+                )
+              }
               className="block rounded-2xl overflow-hidden transition-transform hover:scale-[1.02] active:scale-[0.99]"
               style={{
                 background: NAVY,
@@ -145,6 +155,13 @@ export default function PartyTypeGateClient(): ReactElement {
             <Link
               href="/austin-bachelorette-concierge"
               prefetch
+              onClick={() =>
+                trackCTAClick(
+                  'Plan the girls weekend',
+                  '/austin-bachelorette-concierge',
+                  'choose_path',
+                )
+              }
               className="block rounded-2xl overflow-hidden transition-transform hover:scale-[1.02] active:scale-[0.99]"
               style={{
                 background: RASPBERRY,
@@ -192,7 +209,10 @@ export default function PartyTypeGateClient(): ReactElement {
           >
             Corporate or something else? Call{' '}
             <a
-              href="tel:+17373719700"
+              href={GATE_PHONE}
+              onClick={() =>
+                trackContactClick('phone', 'final_cta', undefined, GATE_PHONE)
+              }
               className="font-bold underline"
               style={{ color: NAVY }}
             >

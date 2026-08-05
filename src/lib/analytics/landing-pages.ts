@@ -265,6 +265,14 @@ export const LANDING_PAGES: LandingPageDef[] = [
     group: 'secondary-consumer',
     canonicalPath: '/austin-bachelor-concierge',
     aliasPaths: [],
+    ctaSections: [
+      { id: 'navigation', label: 'Nav' },
+      { id: 'hero', label: 'Hero' },
+      { id: 'services', label: 'Services' },
+      { id: 'how_it_works', label: 'How it works' },
+      { id: 'final_cta', label: 'Final CTA' },
+      { id: 'sticky_bar', label: 'Sticky bar' },
+    ],
   },
   {
     key: 'bachelorette-concierge',
@@ -273,6 +281,14 @@ export const LANDING_PAGES: LandingPageDef[] = [
     group: 'secondary-consumer',
     canonicalPath: '/austin-bachelorette-concierge',
     aliasPaths: [],
+    ctaSections: [
+      { id: 'navigation', label: 'Nav' },
+      { id: 'hero', label: 'Hero' },
+      { id: 'services', label: 'Services' },
+      { id: 'how_it_works', label: 'How it works' },
+      { id: 'final_cta', label: 'Final CTA' },
+      { id: 'sticky_bar', label: 'Sticky bar' },
+    ],
   },
   {
     key: 'concierge',
@@ -281,6 +297,7 @@ export const LANDING_PAGES: LandingPageDef[] = [
     group: 'secondary-consumer',
     canonicalPath: '/austin-concierge',
     aliasPaths: [],
+    ctaSections: [{ id: 'choose_path', label: 'Choose path' }],
   },
   {
     key: 'byob-venues',
