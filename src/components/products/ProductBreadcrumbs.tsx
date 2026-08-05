@@ -24,7 +24,10 @@ export default function ProductBreadcrumbs({
 }: ProductBreadcrumbsProps) {
   const breadcrumbs: BreadcrumbItem[] = [
     { name: 'Home', url: 'https://partyondelivery.com/' },
-    { name: 'Products', url: 'https://partyondelivery.com/products' },
+    // /order, not /products — next.config.ts 307s the bare /products route,
+    // and this URL is both the visible breadcrumb link and the one Google
+    // reads out of the BreadcrumbList schema below.
+    { name: 'Products', url: 'https://partyondelivery.com/order' },
   ];
 
   // Add category if provided
