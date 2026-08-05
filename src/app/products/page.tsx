@@ -304,7 +304,12 @@ function ProductsContent() {
       )}
 
       {/* Advanced Filter Bar */}
-      <section className={`border-b border-gray-200 ${isMobile ? 'sticky top-0' : 'sticky top-24'} bg-white z-30`}>
+      {/* Sticky offset tracks the nav's own bar (h-14 md:h-16), per
+          /design-example: "Sticky elements: top-14 md:top-16 (NOT top-24)".
+          Was top-24 on desktop (a gap content scrolled through) and top-0 on
+          mobile, which tucked this bar under the z-50 nav. Pure CSS now, so it
+          is also correct before `isMobile` resolves on the client. */}
+      <section className="border-b border-gray-200 sticky top-14 md:top-16 bg-white z-30">
         <div className={`${isMobile ? 'px-4 py-3' : 'max-w-7xl mx-auto px-8 py-6'}`}>
           {/* Mobile Filter Button */}
           {isMobile ? (

@@ -29,8 +29,11 @@ export default function VenueFilters({
   venueCounts,
   hiddenOnMobile = false,
 }: VenueFiltersProps) {
+  // Sticky offset tracks the nav's own bar (h-14 md:h-16), per /design-example:
+  // "Sticky elements: top-14 md:top-16 (NOT top-24)". top-24 is the page-header
+  // figure and left a gap here that content scrolled through.
   return (
-    <div className="bg-white border-b border-gray-200 sticky top-24 z-40">
+    <div className="bg-white border-b border-gray-200 sticky top-14 md:top-16 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-8 py-4">
         {/* Search and Partner Toggle Row - Hide on mobile when scrolling */}
         <div className={`transition-all duration-300 overflow-hidden ${
