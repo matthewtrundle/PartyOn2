@@ -292,42 +292,18 @@ function expectCurrentReason(reason: string): void {
   expect(screen.getByText(new RegExp(reason))).toBeInTheDocument();
 }
 
+/**
+ * One press is enough, by contract. The hook re-points its document listeners
+ * in a layout effect — synchronously, inside the same commit that enables the
+ * buttons — so once `armed()` has observed the armed UI, the very next press
+ * MUST reach an open gate. This file used to re-press inside a waitFor
+ * (`pressUntil`) to paper over the old passive-effect listener swap, whose
+ * post-commit window swallowed single presses under CI load; do not bring that
+ * helper back, because it would hide a regression of exactly that guarantee.
+ */
 const press = (key: string): void => {
   fireEvent.keyDown(document, { key });
 };
-
-/**
- * Press a key until the queue actually acts on it.
- *
- * `armed()` waits for the Log-call BUTTON to enable, but the queue gates the
- * action function independently of what the UI shows — deliberately, so a
- * mutation can never land on a card whose detail fetch hasn't confirmed. That
- * means a key pressed in the window between "button renders enabled" and
- * "handler's gate opens" is swallowed, which is the safe direction for an
- * operator (they press again) but a race for a test that presses once and then
- * waits forever for the result.
- *
- * `waitFor` retries the whole callback, so this re-presses until the effect it
- * is waiting on actually happens — asserting the outcome rather than the
- * timing. Only for keys whose handler is idempotent per card.
- */
-async function pressUntil(key: string, landed: () => boolean): Promise<void> {
-  await waitFor(() => {
-    if (!landed()) press(key);
-    expect(landed()).toBe(true);
-  });
-}
-
-const callCount = (fn: unknown): number =>
-  (fn as { mock: { calls: unknown[] } }).mock.calls.length;
-
-/** The queue attempted a touch — the contract behind the 'c' shortcut. */
-const touched = (mutations: LeadMutations) => (): boolean =>
-  callCount(mutations.logTouch) > 0;
-
-/** The queue attempted a lead patch — the contract behind snooze ('z'). */
-const patched = (mutations: LeadMutations) => (): boolean =>
-  callCount(mutations.patchLead) > 0;
 
 /** Summary row value for a labelled outcome ("Calls logged" → "1"). */
 function summaryCount(label: string): string | null {
@@ -534,7 +510,7 @@ describe('LeadQueue — the failure invariant (a failed action never advances)',
     render(<LeadQueue queue={QUEUE} mutations={mutations} onExit={vi.fn()} />);
     await atCard('1 / 3');
 
-    await pressUntil('c', touched(mutations));
+    press('c');
     await screen.findByText('Could not log the call — nothing was saved.');
 
     press('c');
@@ -553,7 +529,7 @@ describe('LeadQueue — the failure invariant (a failed action never advances)',
     render(<LeadQueue queue={QUEUE} mutations={mutations} onExit={vi.fn()} />);
     await atCard('1 / 3');
 
-    await pressUntil('c', touched(mutations));
+    press('c');
     await screen.findByText('Could not log the call — nothing was saved.');
 
     press('j');
@@ -574,7 +550,7 @@ describe('LeadQueue — the failure invariant (a failed action never advances)',
     render(<LeadQueue queue={QUEUE} mutations={mutations} onExit={vi.fn()} />);
     await atCard('1 / 3');
 
-    await pressUntil('c', touched(mutations));
+    press('c');
     await screen.findByText('Could not log the call — nothing was saved.');
 
     press('k');
@@ -717,7 +693,7 @@ describe('LeadQueue — the no-refetch guarantee', () => {
     await atCard('1 / 3');
 
     // Real hook here, so the contract is the request on the wire.
-    await pressUntil('c', () => urlsMatching('/touch').length > 0);
+    press('c');
     await screen.findByText('Could not log the call — nothing was saved.');
 
     expect(position()).toBe('1 / 3');
@@ -756,7 +732,7 @@ describe('LeadQueue — end of the sitting', () => {
     render(<LeadQueue queue={QUEUE} mutations={mutations} onExit={vi.fn()} />);
     await atCard('1 / 3');
 
-    await pressUntil('c', touched(mutations)); // lead-a → called
+    press('c'); // lead-a → called
     await atCard('2 / 3');
 
     press('k'); // back onto the lead we just worked
@@ -769,8 +745,7 @@ describe('LeadQueue — end of the sitting', () => {
     press('j'); // skip lead-b for real
     await atCard('3 / 3');
 
-    // Snooze is gated the same way a call is, so wait for the write itself.
-    await pressUntil('z', patched(mutations)); // snooze lead-c → queue is clear
+    press('z'); // snooze lead-c → queue is clear
     await screen.findByText('Queue clear');
 
     // Without the don't-clobber guard lead-a reads "skipped": the Calls-logged
@@ -831,6 +806,34 @@ describe('LeadQueue — double-fire guard', () => {
 
     await atPosition('2 / 3');
     expect(logTouch).toHaveBeenCalledTimes(1);
+  });
+
+  it('refuses a second press that lands before the first one has even rendered', async () => {
+    const gate = deferred<boolean>();
+    const logTouch = vi.fn<LeadMutations['logTouch']>().mockReturnValue(gate.promise);
+    const mutations = fakeMutations({ logTouch });
+    render(<LeadQueue queue={QUEUE} mutations={mutations} onExit={vi.fn()} />);
+    await atCard('1 / 3');
+
+    // Two raw dispatches in ONE synchronous block: unlike sequential fireEvent
+    // calls, React gets no chance to re-render in between, so the second press
+    // reaches the handler while the first one's `busy` state has not committed.
+    // Only the synchronous busyRef mutex can refuse it — a guard reading the
+    // `busy` state through a closure still sees false and writes twice.
+    act(() => {
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', bubbles: true }));
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'c', bubbles: true }));
+    });
+
+    expect(logTouch).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      gate.resolve(true);
+    });
+    await atPosition('2 / 3');
+    // The refused press stays refused — it must not advance a second card.
+    expect(logTouch).toHaveBeenCalledTimes(1);
+    expect(position()).toBe('2 / 3');
   });
 
   it('ignores a held-down key (auto-repeat) so one press cannot burn a run of leads', async () => {
