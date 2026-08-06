@@ -206,7 +206,7 @@ export function generateDeliveryCompletedEmail(data: DeliveryUpdateData): string
     <!-- Call to Action -->
     <tr>
       <td style="padding: 0 24px 24px; text-align: center;">
-        <a href="https://partyondelivery.com/products" style="display: inline-block; background-color: #D4AF37; color: #1a1a1a; text-decoration: none; padding: 12px 32px; border-radius: 6px; font-weight: 600; font-size: 16px;">
+        <a href="https://partyondelivery.com/order" style="display: inline-block; background-color: #D4AF37; color: #1a1a1a; text-decoration: none; padding: 12px 32px; border-radius: 6px; font-weight: 600; font-size: 16px;">
           Order Again
         </a>
       </td>
@@ -285,7 +285,7 @@ ${total ? `Order Total: ${formatCurrency(total)}` : ''}
 
 Thank you for choosing Party On Delivery! We hope you enjoy your purchase.
 
-Order again at: https://partyondelivery.com/products
+Order again at: https://partyondelivery.com/order
 
 How was your experience? Reply to this email with any feedback!
 

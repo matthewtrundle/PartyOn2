@@ -47,7 +47,12 @@ function classify(slug: string, p?: {productType?: string|null, tags?: string[]}
   if (/vodka|tequila|whiskey|whisky|rum|gin|scotch|bourbon|liqueur|triple.?sec|absinthe|cognac|brandy|mezcal|amaretto/.test(blob)) return '/products?search=liquor';
   if (/beer|ipa|lager|pilsner|stout|ale|hefe|porter|wheat|blonde|amber/.test(blob)) return '/products?search=beer';
   if (/juice|soda|water|mixer|tonic|syrup|grenadine|bitters|brine|na\b|non.?alcoholic|mocktail/.test(blob)) return '/products?search=mixers';
-  return '/products';
+
+  // Unclassified fallback. NOT '/products' — next.config.ts 307s the bare route
+  // to /order (it spares only ?search= requests), so a '/products' fallback here
+  // emits a two-hop chain. The ?search= destinations above are unaffected by
+  // that rule and stay as they are.
+  return '/order';
 }
 
 const rows = slugs

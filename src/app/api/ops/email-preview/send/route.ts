@@ -251,7 +251,7 @@ function generatePaymentFailedHtml(customerName: string, errorMessage: string): 
           </tr>
           <tr>
             <td style="padding: 0 24px 24px; text-align: center;">
-              <a href="https://partyondelivery.com/products" style="display: inline-block; background-color: #D4AF37; color: #1a1a1a; text-decoration: none; padding: 12px 32px; border-radius: 6px; font-weight: 600; font-size: 16px;">Try Again</a>
+              <a href="https://partyondelivery.com/order" style="display: inline-block; background-color: #D4AF37; color: #1a1a1a; text-decoration: none; padding: 12px 32px; border-radius: 6px; font-weight: 600; font-size: 16px;">Try Again</a>
             </td>
           </tr>
           <tr>

@@ -177,7 +177,7 @@ export async function sendPaymentFailedEmail(
           <!-- CTA -->
           <tr>
             <td style="padding: 0 24px 24px; text-align: center;">
-              <a href="https://partyondelivery.com/products" style="display: inline-block; background-color: #D4AF37; color: #1a1a1a; text-decoration: none; padding: 12px 32px; border-radius: 6px; font-weight: 600; font-size: 16px;">
+              <a href="https://partyondelivery.com/order" style="display: inline-block; background-color: #D4AF37; color: #1a1a1a; text-decoration: none; padding: 12px 32px; border-radius: 6px; font-weight: 600; font-size: 16px;">
                 Try Again
               </a>
             </td>
@@ -215,7 +215,7 @@ We were unable to process your payment. This can happen for several reasons:
 ${errorMessage ? `Error Details: ${errorMessage}\n` : ''}
 Please try again with a different payment method or contact your bank if the issue persists.
 
-Try again at: https://partyondelivery.com/products
+Try again at: https://partyondelivery.com/order
 
 Need help? Reply to this email or contact support@partyondelivery.com
 
