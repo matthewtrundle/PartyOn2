@@ -187,6 +187,13 @@ export const bacheloretteConfig: LandingConfig = {
     },
   ],
 
+  // Pain-point mirror — the MOH/planner anxiety is the mental load of one
+  // more workstream. Qiana's "one big part off of my plate" mirrors it.
+  featuredReview: {
+    reviewId: 'qiana-valentine',
+    reassurance: 'Order online in advance — everything’s waiting when the group arrives.',
+  },
+
   // Video section (above the FAQ) — enable once the bach video is uploaded:
   //   video: buildBachVideo({ videoId: '<id>', uploadDate: '<YYYY-MM-DD>', duration: 'PT4M40S' }),
   // Chapters + copy live in ./bachVideo.ts, shared with the bachelor lander.

@@ -850,3 +850,53 @@
     animation: none;
   }
 }
+
+/* ── Review marquee ("Review Storm" — landing social proof) ──────────────
+   Duplicated-track technique: each track holds the card list twice (second
+   copy aria-hidden), and translating -50% loops seamlessly. The extra 8px
+   offset is half the 16px flex gap. Rows alternate direction via the
+   --reverse modifier and vary speed via --pod-marquee-dur. Transform-only
+   animation, GPU-composited — no layout thrash. */
+.pod-marquee {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+}
+
+.pod-marquee-track {
+  display: flex;
+  gap: 16px;
+  width: max-content;
+  animation: pod-marquee-left var(--pod-marquee-dur, 60s) linear infinite;
+}
+
+.pod-marquee-track--reverse {
+  animation-name: pod-marquee-right;
+}
+
+/* Any tile hovered pauses the whole wall so it can be read. */
+.pod-marquee:hover .pod-marquee-track {
+  animation-play-state: paused;
+}
+
+@keyframes pod-marquee-left {
+  from { transform: translateX(0); }
+  to { transform: translateX(calc(-50% - 8px)); }
+}
+
+@keyframes pod-marquee-right {
+  from { transform: translateX(calc(-50% - 8px)); }
+  to { transform: translateX(0); }
+}
+
+/* Reduced motion: freeze the wall into ordinary swipeable rows. */
+@media (prefers-reduced-motion: reduce) {
+  .pod-marquee-track {
+    animation: none;
+  }
+  .pod-marquee {
+    overflow-x: auto;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+}

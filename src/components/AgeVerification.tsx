@@ -56,6 +56,12 @@ export const AGE_GATE_EXEMPT_PATHS = [
   // the product page, where the standard gate and the /order 21+ TABC
   // confirmation both still apply.
   '/cocktail-recipes',
+  // Wall of Love — every "4.9 · 100+ Google reviews" strip on the landing
+  // pages links here, and organic "party on delivery reviews" searches land
+  // here. Nothing is sold on the page; every CTA leads to pages that keep
+  // their own gate (or the /order 21+ TABC confirmation). A DOB form in
+  // front of testimonial text is pure friction on the trust-building step.
+  '/reviews',
 ]
 
 /**

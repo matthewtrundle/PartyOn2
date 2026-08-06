@@ -192,6 +192,13 @@ export const bachelorConfig: LandingConfig = {
     },
   ],
 
+  // Pain-point mirror (above the final CTA) — the bach-group anxiety is
+  // hauling cases across a marina in July. Nikita's review says it verbatim.
+  featuredReview: {
+    reviewId: 'nikita-patel',
+    reassurance: 'Cooler iced, labeled with your crew’s name, waiting at the dock.',
+  },
+
   // Video section (above the FAQ) — enable once the bach video is uploaded:
   //   video: buildBachVideo({ videoId: '<id>', uploadDate: '<YYYY-MM-DD>', duration: 'PT4M40S' }),
   // Chapters + copy live in ./bachVideo.ts, shared with the bachelorette lander.

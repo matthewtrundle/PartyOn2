@@ -181,6 +181,15 @@ export const corporateConfig: LandingConfig = {
     },
   ],
 
+  // Pain-point mirror — the office-party organizer's decade-old chore.
+  // Dane's "first time in 10 years, I didn't have to buy the booze" is the
+  // most corporate-matched quote in the pool (see the TODO above about
+  // harvesting more corporate-specific reviews).
+  featuredReview: {
+    reviewId: 'dane-witbeck',
+    reassurance: 'Clean invoicing your finance team will approve.',
+  },
+
   faqHeadline: 'The questions every event planner asks.',
   faqs: [
     {

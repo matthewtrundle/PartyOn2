@@ -179,6 +179,13 @@ export const weddingVenueBoatsConfig: LandingConfig = {
     },
   ],
 
+  // Pain-point mirror — boat charters live or die on day-of logistics.
+  // Kirby's "all set up by the time we even arrived" is the exact promise.
+  featuredReview: {
+    reviewId: 'kirby-parsons',
+    reassurance: 'Loaded dockside before boarding — nothing to carry, nothing to coordinate.',
+  },
+
   faqHeadline: 'Wedding-on-a-boat questions.',
   faqs: [
     {
