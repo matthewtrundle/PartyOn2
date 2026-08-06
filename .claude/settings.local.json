@@ -54,7 +54,8 @@
       "Bash(powershell:*)",
       "Bash(python test-screenshots/test_create_flow.py:*)",
       "Bash(python:*)",
-      "Bash(npx next dev)"
+      "Bash(npx next dev)",
+      "mcp__Claude_Code_Remote__send_later"
     ],
     "deny": [],
     "ask": []
