@@ -21,11 +21,11 @@
 import type { Metadata } from 'next';
 import Navigation from '@/components/Navigation';
 import TrackedLink from '@/components/analytics/TrackedLink';
+import ReviewerAvatar from '@/components/landing/sections/ReviewerAvatar';
 import {
   CUSTOMER_REVIEWS,
   GOOGLE_RATING_DISPLAY,
   GOOGLE_REVIEW_COUNT_DISPLAY,
-  reviewerInitials,
 } from '@/lib/reviews/reviews';
 
 export const metadata: Metadata = {
@@ -103,13 +103,7 @@ export default function ReviewsPage() {
                 &ldquo;{r.quote}&rdquo;
               </blockquote>
               <figcaption className="mt-4 flex items-center gap-2.5 border-t pt-4" style={{ borderColor: '#F1ECDF' }}>
-                <span
-                  className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-[11px] font-extrabold"
-                  style={{ background: r.avatarBg, color: NAVY }}
-                  aria-hidden="true"
-                >
-                  {reviewerInitials(r.author)}
-                </span>
+                <ReviewerAvatar review={r} size={32} />
                 <span>
                   <span className="block text-sm font-bold" style={{ color: NAVY }}>
                     {r.author}

@@ -21,9 +21,9 @@ import type { ThemeColors } from '../types';
 import {
   GOOGLE_RATING_DISPLAY,
   GOOGLE_REVIEW_COUNT_DISPLAY,
-  reviewerInitials,
   type CustomerReview,
 } from '@/lib/reviews/reviews';
+import ReviewerAvatar from './ReviewerAvatar';
 
 type Props = {
   headline: string;
@@ -57,13 +57,7 @@ function ReviewTile({ review, theme }: { review: CustomerReview; theme: ThemeCol
       }}
     >
       <div className="mb-2.5 flex items-center gap-2.5">
-        <span
-          className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-xs font-extrabold"
-          style={{ background: review.avatarBg, color: '#0A1F33' }}
-          aria-hidden="true"
-        >
-          {reviewerInitials(review.author)}
-        </span>
+        <ReviewerAvatar review={review} size={32} />
         <div className="min-w-0">
           <div className="truncate text-sm font-bold text-white">{review.author}</div>
           <div className="text-[11px] text-white/55">via Google · {review.context}</div>

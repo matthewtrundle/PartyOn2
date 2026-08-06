@@ -18,8 +18,8 @@ import {
   CUSTOMER_REVIEWS,
   GOOGLE_RATING_DISPLAY,
   GOOGLE_REVIEW_COUNT_DISPLAY,
-  reviewerInitials,
 } from '@/lib/reviews/reviews';
+import ReviewerAvatar from './ReviewerAvatar';
 
 type Props = {
   /** Where the strip lives, for CTA-click attribution (e.g. 'reviews_strip'). */
@@ -36,9 +36,12 @@ type Props = {
   className?: string;
 };
 
-// First four reviewers make the facepile — stable, so the strip doesn't
-// reshuffle between renders/pages.
-const FACEPILE = CUSTOMER_REVIEWS.slice(0, 4);
+// Four reviewers make the facepile — real harvested photos first (faces are
+// processed pre-attentively; initials are the fallback), order otherwise
+// stable so the strip doesn't reshuffle between renders/pages.
+const FACEPILE = [...CUSTOMER_REVIEWS]
+  .sort((a, b) => Number(Boolean(b.photoSrc)) - Number(Boolean(a.photoSrc)))
+  .slice(0, 4);
 
 export default function RatingStrip({
   section,
@@ -59,17 +62,8 @@ export default function RatingStrip({
     >
       <div className="flex" aria-hidden="true">
         {FACEPILE.map((r, i) => (
-          <span
-            key={r.id}
-            className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-extrabold"
-            style={{
-              background: r.avatarBg,
-              color: '#0A1F33',
-              border: `2px solid ${ring}`,
-              marginLeft: i === 0 ? 0 : -8,
-            }}
-          >
-            {reviewerInitials(r.author)}
+          <span key={r.id} style={{ marginLeft: i === 0 ? 0 : -8 }} className="inline-flex">
+            <ReviewerAvatar review={r} size={28} ringColor={ring} />
           </span>
         ))}
       </div>

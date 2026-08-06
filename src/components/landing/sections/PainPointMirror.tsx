@@ -17,9 +17,9 @@ import { trackCTAClick } from '@/lib/analytics/ga4-events';
 import {
   GOOGLE_RATING_DISPLAY,
   GOOGLE_REVIEW_COUNT_DISPLAY,
-  reviewerInitials,
   type CustomerReview,
 } from '@/lib/reviews/reviews';
+import ReviewerAvatar from './ReviewerAvatar';
 import type { ThemeColors } from '../types';
 
 type Props = {
@@ -67,17 +67,12 @@ export default function PainPointMirror({
             &rdquo;
           </blockquote>
           <figcaption className="mt-5 flex items-center gap-3">
-            <span
-              className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full text-base font-extrabold"
-              style={{
-                background: review.avatarBg,
-                color: '#0A1F33',
-                border: `2.5px solid ${theme.primary}`,
-              }}
-              aria-hidden="true"
-            >
-              {reviewerInitials(review.author)}
-            </span>
+            <ReviewerAvatar
+              review={review}
+              size={44}
+              ringColor={theme.primary}
+              ringWidth={2.5}
+            />
             <span>
               <span className="block text-sm font-extrabold" style={{ color: theme.navy }}>
                 {review.author}

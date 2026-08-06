@@ -20,17 +20,17 @@
 
 /**
  * The aggregate claim shown next to every star strip. Operator-confirmed
- * 2026-08-06 ("over a hundred" — Allan). The profile itself is the ground
- * truth; bump this label when the live count grows. Deliberately "100+",
- * not an exact number, so it never overstates. Rating kept at 4.9 (the
- * conservative claim already live on /partners/inn-cahoots) — a 4.9 with a
- * count reads as real; a flat 5.0 reads as fake.
+ * 2026-08-06: the profile shows 5.0 with 100+ reviews (Allan). The profile
+ * itself is the ground truth; update these when it changes. Deliberately
+ * "100+", not an exact number, so the claim never overstates — and always
+ * render rating + count TOGETHER (a 5.0 with a visible count reads as
+ * earned; a bare 5.0 reads as fake — Baymard).
  *
  * NOTE: do NOT emit Schema.org AggregateRating from these — self-serving
  * review markup (rating your own LocalBusiness on your own site) has been
  * ineligible for rich results since 2019 and risks a manual action.
  */
-export const GOOGLE_RATING_DISPLAY = '4.9';
+export const GOOGLE_RATING_DISPLAY = '5.0';
 export const GOOGLE_REVIEW_COUNT_DISPLAY = '100+';
 
 /** Event segment a review speaks to (used for message-matched ordering). */
@@ -66,6 +66,16 @@ export type CustomerReview = {
   segments: ReviewSegment[];
   /** Initials-avatar background (brand-adjacent palette, deterministic). */
   avatarBg: string;
+  /**
+   * Optional self-hosted reviewer photo under /public, e.g.
+   * "/images/reviewers/nikita-patel.webp". Harvested from the reviewer's
+   * public Google profile — see HARVEST.md for the workflow and rules
+   * (real personal photos only: never default-avatar silhouettes, logos,
+   * or stock/AI faces; remove immediately if a reviewer asks). Every
+   * surface falls back to initials when unset, and a repo test fails if
+   * the path is set but the file is missing.
+   */
+  photoSrc?: string;
 };
 
 /**

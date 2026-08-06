@@ -1,4 +1,6 @@
 import { describe, it, expect } from 'vitest';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import {
   CUSTOMER_REVIEWS,
   reviewsForOccasion,
@@ -47,6 +49,19 @@ describe('customer review pool integrity', () => {
     for (const r of CUSTOMER_REVIEWS) {
       expect(r.segments.length).toBeGreaterThan(0);
       expect(r.avatarBg).toMatch(/^#[0-9A-Fa-f]{6}$/);
+    }
+  });
+
+  it('every photoSrc points at a real file under public/ (see HARVEST.md)', () => {
+    // A set photoSrc with a missing file would ship a broken avatar on every
+    // landing page at once — fail here instead.
+    for (const r of CUSTOMER_REVIEWS) {
+      if (!r.photoSrc) continue;
+      expect(r.photoSrc).toMatch(/^\/images\/reviewers\/[\w-]+\.(webp|jpg|jpeg|png)$/);
+      expect(
+        existsSync(join(process.cwd(), 'public', r.photoSrc)),
+        `${r.id}: ${r.photoSrc} missing from public/`,
+      ).toBe(true);
     }
   });
 });
