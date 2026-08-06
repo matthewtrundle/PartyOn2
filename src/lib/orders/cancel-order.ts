@@ -480,6 +480,19 @@ export async function cancelOrder(
       console.error('[cancelOrder] Failed to release committed inventory:', inventoryError);
     }
 
+    // Cancel the linked delivery task too — otherwise it sits at PENDING
+    // forever and anything that reads DeliveryTask directly (rather than
+    // Order.status) still treats this delivery as scheduled.
+    // updateMany (not update): safe no-op if this order never got a task.
+    try {
+      await prisma.deliveryTask.updateMany({
+        where: { orderId },
+        data: { status: 'CANCELLED' },
+      });
+    } catch (deliveryTaskError) {
+      console.error('[cancelOrder] Failed to cancel delivery task:', deliveryTaskError);
+    }
+
     try {
       await sendOrderCancellationEmail(
         order.customerEmail,
