@@ -10,7 +10,7 @@
  */
 
 import type Stripe from 'stripe';
-import type { FinancialStatus, OrderStatus } from '@prisma/client';
+import type { DeliveryTaskStatus, FinancialStatus, OrderStatus } from '@prisma/client';
 import { prisma } from '@/lib/database/client';
 import { stripe } from '@/lib/stripe/client';
 import { CANCEL_REFUND_TYPE, findCancelRefund, getMaxRefundable } from '@/lib/stripe/refund-utils';
@@ -111,6 +111,13 @@ function buildEmailData(
 
 /** Terminal statuses a cancel refuses to act on — an order here is already done. */
 const TERMINAL_STATUSES: OrderStatus[] = ['CANCELLED', 'REFUNDED'];
+
+/**
+ * Delivery-task statuses a cancel must never overwrite. A task here already
+ * concluded — cancelling the order afterward (a post-hoc refund, a dispute)
+ * must not erase that history by stomping it back to CANCELLED.
+ */
+const DELIVERY_TASK_TERMINAL_STATUSES: DeliveryTaskStatus[] = ['DELIVERED', 'FAILED', 'CANCELLED'];
 
 /** Prisma's unique-constraint violation. Same check the charge.refunded webhook uses. */
 function isUniqueViolation(error: unknown): boolean {
@@ -484,9 +491,11 @@ export async function cancelOrder(
     // forever and anything that reads DeliveryTask directly (rather than
     // Order.status) still treats this delivery as scheduled.
     // updateMany (not update): safe no-op if this order never got a task.
+    // Scoped away from DELIVERED/FAILED so a post-delivery cancel (a later
+    // refund or dispute) can't erase how that delivery actually concluded.
     try {
       await prisma.deliveryTask.updateMany({
-        where: { orderId },
+        where: { orderId, status: { notIn: DELIVERY_TASK_TERMINAL_STATUSES } },
         data: { status: 'CANCELLED' },
       });
     } catch (deliveryTaskError) {

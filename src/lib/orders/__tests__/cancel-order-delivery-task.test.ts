@@ -80,7 +80,9 @@ describe('cancelOrder — DeliveryTask cascade', () => {
     expect(result.ok).toBe(true);
     expect(mockDeliveryTaskUpdateMany).toHaveBeenCalledTimes(1);
     expect(mockDeliveryTaskUpdateMany).toHaveBeenCalledWith({
-      where: { orderId: 'order-1' },
+      // notIn DELIVERED/FAILED/CANCELLED: a post-delivery cancel (a later
+      // refund or dispute) must not erase how the delivery actually concluded.
+      where: { orderId: 'order-1', status: { notIn: ['DELIVERED', 'FAILED', 'CANCELLED'] } },
       data: { status: 'CANCELLED' },
     });
   });
