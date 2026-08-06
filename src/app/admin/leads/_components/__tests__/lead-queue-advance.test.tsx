@@ -299,17 +299,17 @@ const press = (key: string): void => {
 /**
  * Press a key until the queue actually acts on it.
  *
- * `armed()` waits for the Log-call BUTTON to enable, but the queue gates the
- * action function independently of what the UI shows — deliberately, so a
- * mutation can never land on a card whose detail fetch hasn't confirmed. That
- * means a key pressed in the window between "button renders enabled" and
- * "handler's gate opens" is swallowed, which is the safe direction for an
- * operator (they press again) but a race for a test that presses once and then
- * waits forever for the result.
- *
- * `waitFor` retries the whole callback, so this re-presses until the effect it
- * is waiting on actually happens — asserting the outcome rather than the
- * timing. Only for keys whose handler is idempotent per card.
+ * HISTORICAL NOTE (kept as defense-in-depth): the keydown listener used to
+ * re-subscribe in a passive effect, so there was a post-paint window where the
+ * Log-call button rendered enabled while the attached handler still closed
+ * over the previous confirmedId — a single press in that window was silently
+ * swallowed, and these tests raced on it under CI load (three failures on
+ * 2026-08-05 alone). useLeadQueue now dispatches through a ref refreshed in a
+ * layout effect, so "button enabled ⟹ handler armed" is an invariant and a
+ * bare press() after armed() is deterministic. The mount-once property is
+ * pinned by its own test below; this helper stays because re-pressing an
+ * idempotent key costs nothing and keeps the file robust if that architecture
+ * ever shifts again.
  */
 async function pressUntil(key: string, landed: () => boolean): Promise<void> {
   await waitFor(() => {

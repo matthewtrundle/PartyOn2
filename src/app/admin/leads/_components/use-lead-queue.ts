@@ -13,7 +13,7 @@
 
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { BoardLead } from '@/lib/leads/board-types';
 import { LOST_REASONS } from '@/lib/leads/work-queue';
 import type { LeadMutations } from './use-lead-mutations';
@@ -62,6 +62,13 @@ function hasDraftText(target: EventTarget | null): boolean {
 function focusReplyBody(): void {
   document.querySelector<HTMLTextAreaElement>('textarea[aria-label="Email body"]')?.focus();
 }
+
+/**
+ * useLayoutEffect that is SSR-silent. The queue only ever mounts client-side
+ * (behind the launcher), but Next still evaluates client components on the
+ * server for the initial HTML, and a bare useLayoutEffect logs a warning there.
+ */
+const useIsomorphicLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
 
 export interface LeadQueueState {
   current: BoardLead | null;
@@ -180,8 +187,13 @@ export function useLeadQueue(
   // Escape must not destroy a half-typed reply. BottomSheet listens on the
   // document bubble phase, so a capture-phase listener sees the key first and
   // can stop it from ever reaching the sheet.
-  useEffect(() => {
-    const onCapture = (e: KeyboardEvent): void => {
+  //
+  // Dispatched through a ref (see the keyboard-map effect below for why): the
+  // listener itself subscribes once; the handler it runs is refreshed every
+  // commit, so it can never act on stale lostOpen/helpOpen.
+  const captureRef = useRef<(e: KeyboardEvent) => void>(() => {});
+  useIsomorphicLayoutEffect(() => {
+    captureRef.current = (e: KeyboardEvent): void => {
       if (e.key !== 'Escape') return;
       if (lostOpen) {
         e.stopPropagation();
@@ -198,9 +210,12 @@ export function useLeadQueue(
         (e.target as HTMLElement).blur();
       }
     };
+  });
+  useEffect(() => {
+    const onCapture = (e: KeyboardEvent): void => captureRef.current(e);
     document.addEventListener('keydown', onCapture, true);
     return () => document.removeEventListener('keydown', onCapture, true);
-  }, [lostOpen, helpOpen]);
+  }, []);
 
   /** Movement and other keys that change nothing. True when the key was consumed. */
   const handleNavKey = useCallback(
@@ -278,8 +293,21 @@ export function useLeadQueue(
     [act],
   );
 
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent): void => {
+  // The keyboard map, subscribed ONCE and dispatched through a ref that is
+  // refreshed in a layout effect (i.e. inside the commit, before anything can
+  // observe the new DOM). This closes a real race the old shape had: the
+  // listener used to re-subscribe in a PASSIVE effect whenever `act`'s deps
+  // changed, so there was a post-paint window where the "Log call" button
+  // rendered enabled but the attached handler still closed over the previous
+  // confirmedId — a keypress in that window was silently swallowed. Operators
+  // shrugged and pressed again; the queue tests raced on it three separate
+  // ways under CI load (2026-08-05). With the ref refreshed at commit time,
+  // "the button you can see is the handler you get" is now an invariant.
+  // The confirmedId write-gate in act() is unchanged — this only removes the
+  // accidental extra staleness on top of it.
+  const keymapRef = useRef<(e: KeyboardEvent) => void>(() => {});
+  useIsomorphicLayoutEffect(() => {
+    keymapRef.current = (e: KeyboardEvent): void => {
       // Browser/OS chords stay the browser's.
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       if (isTypingTarget(e.target)) return;
@@ -290,9 +318,12 @@ export function useLeadQueue(
       if (handleNavKey(e)) return;
       handleActionKey(e);
     };
+  });
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent): void => keymapRef.current(e);
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [handleNavKey, handleActionKey, handleLostKey, lostOpen]);
+  }, []);
 
   return useMemo(
     () => ({
