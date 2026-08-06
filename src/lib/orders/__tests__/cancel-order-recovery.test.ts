@@ -69,6 +69,8 @@ vi.mock('@/lib/database/client', () => ({
       update: (...a: unknown[]) => mockRefundUpdate(...a),
       delete: (...a: unknown[]) => mockRefundDelete(...a),
     },
+    // Not under test here — see cancel-order-delivery-task.test.ts.
+    deliveryTask: { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
   },
 }));
 
