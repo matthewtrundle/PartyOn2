@@ -11,6 +11,11 @@ import QuickBuyModal from './QuickBuyModal';
 import PopularProductsStrip from './PopularProductsStrip';
 import HeroBackdrop from './sections/HeroBackdrop';
 import PackageCard from './sections/PackageCard';
+import RatingStrip from './sections/RatingStrip';
+import CountUpStat from './sections/CountUpStat';
+import ReviewMarquee from './sections/ReviewMarquee';
+import PainPointMirror from './sections/PainPointMirror';
+import { reviewsForOccasion, reviewById } from '@/lib/reviews/reviews';
 import { PhoneIcon, ChatIcon, CheckIcon } from './sections/icons';
 import type { LandingConfig, Catalog, Package } from './types';
 import type { UpsellProducts } from '@/lib/landing/getUpsellProducts';
@@ -216,6 +221,16 @@ export default function LandingPageTemplate({
     return 'wedding';
   })();
 
+  // Social proof: the review marquee pulls the shared verbatim pool ordered
+  // for this occasion (best-matched segments drift past first), and the
+  // optional pain-point mirror resolves its config-referenced review.
+  // NOTE: no AggregateRating JSON-LD on purpose — self-serving review markup
+  // has been ineligible for rich results since 2019 (see lib/reviews).
+  const stormReviews = reviewsForOccasion(occasion);
+  const featuredReview = config.featuredReview
+    ? reviewById(config.featuredReview.reviewId)
+    : undefined;
+
   // FAQ schema — Schema.org FAQPage built from the same Q&A rendered
   // on the page. Eligible for FAQ rich-snippet treatment in SERPs.
   // Note: Google requires the schema's questions/answers to match the
@@ -415,6 +430,15 @@ export default function LandingPageTemplate({
               )}
             </div>
 
+            {/* Proof strip — rating + count directly under the CTA, where
+                the "is this legit?" hesitation actually happens. */}
+            <RatingStrip
+              section="reviews_strip"
+              starColor={T.primary}
+              facepileRingColor={T.navy}
+              className="mb-4"
+            />
+
             {/* Call/text-or-tap row */}
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-white/90 mb-4">
               <a
@@ -472,7 +496,9 @@ export default function LandingPageTemplate({
                 className="font-heading text-3xl md:text-4xl font-bold"
                 style={{ color: T.primary }}
               >
-                {s.stat}
+                {/* Count-up on scroll-into-view — animates the configured
+                    claim exactly, never invents a number. */}
+                <CountUpStat stat={s.stat} />
               </div>
               <div className="text-xs sm:text-sm uppercase tracking-widest opacity-80 mt-1">
                 {s.label}
@@ -718,42 +744,17 @@ export default function LandingPageTemplate({
         </div>
       </section>
 
-      {/* SOCIAL PROOF */}
-      <section className="py-20 text-white" style={{ background: T.navy }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-14">
-            <p
-              className="font-bold tracking-[0.15em] text-sm mb-3"
-              style={{ color: T.primary }}
-            >
-              {config.reviewsEyebrow}
-            </p>
-            <h2 className="font-heading text-4xl md:text-5xl font-bold mb-4">
-              {config.reviewsHeadline}
-            </h2>
-          </div>
-          <div className="grid md:grid-cols-3 gap-6">
-            {config.reviews.map((r) => (
-              <div
-                key={r.author}
-                className="bg-white/5 backdrop-blur rounded-xl p-7"
-                style={{ border: '1px solid rgba(255,255,255,0.1)' }}
-              >
-                <div className="text-lg mb-3" style={{ color: T.primary }}>
-                  ★★★★★
-                </div>
-                <p className="editorial text-lg text-gray-100 leading-relaxed mb-5">
-                  &ldquo;{r.quote}&rdquo;
-                </p>
-                <div className="text-sm">
-                  <div className="font-bold text-white">{r.author}</div>
-                  <div className="opacity-70">{r.detail}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+      {/* SOCIAL PROOF — the "Review Storm": two counter-rotating marquee
+          rows fed by the shared verbatim pool (lib/reviews), ordered so
+          this occasion's reviews drift past first. Replaced the static
+          3-card grid (config.reviews now only feeds legacy surfaces —
+          the marquee's aggregate eyebrow comes from the shared constants
+          so it can't drift from the hero strip's claim). */}
+      <ReviewMarquee
+        headline={config.reviewsHeadline}
+        reviews={stormReviews}
+        theme={T}
+      />
 
       {/* VIDEO — optional. Sits directly above the FAQ because the video is a
           Q&A listicle: it reads as the spoken version of the written Q&A
@@ -881,6 +882,23 @@ export default function LandingPageTemplate({
         </section>
       )}
 
+      {/* PAIN-POINT MIRROR — one oversized message-matched review right
+          before the booking decision. Static on purpose: anything the
+          visitor must actually read never moves. Renders only when the
+          config names a featured review. */}
+      {featuredReview && (
+        <PainPointMirror
+          review={featuredReview}
+          theme={T}
+          ctaText={config.ctaText}
+          onCta={() => {
+            funnel.track('builder_open', { metadata: { source: 'pain-point-mirror' } });
+            setBuilderOpen(true);
+          }}
+          reassurance={config.featuredReview?.reassurance}
+        />
+      )}
+
       {/* FINAL CTA */}
       <section className="relative py-24 overflow-hidden">
         <div className="absolute inset-0">
@@ -970,6 +988,14 @@ export default function LandingPageTemplate({
               >
                 <ChatIcon className="w-4 h-4" /> Text us
               </a>
+            </div>
+            {/* Proof travels with the button — same strip as the hero. */}
+            <div className="mt-5 flex justify-center">
+              <RatingStrip
+                section="reviews_strip"
+                starColor={T.primary}
+                facepileRingColor={T.navy}
+              />
             </div>
           </div>
         </div>

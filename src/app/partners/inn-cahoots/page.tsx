@@ -9,6 +9,10 @@ import Footer from '@/components/Footer';
 import JoinOrderModal from '@/components/partners/JoinOrderModal';
 import InnCahootsHero from '@/components/partners/InnCahootsHero';
 import LazyVideo from '@/components/partners/LazyVideo';
+import {
+  GOOGLE_RATING_DISPLAY,
+  GOOGLE_REVIEW_COUNT_DISPLAY,
+} from '@/lib/reviews/reviews';
 
 // Real Google reviews pulled from GbpReview table (synced via Places API).
 // Selected for relevance to Inn Cahoots' BnB / lodging / event-venue use case.
@@ -244,7 +248,12 @@ function InnCahootsPageContent(): ReactElement {
                   </svg>
                 ))}
               </div>
-              <span className="text-sm font-medium text-gray-900">4.9 · 94+ reviews on Google</span>
+              {/* Derived from the shared aggregate constants (lib/reviews) so
+                  this page can never claim a different rating than the
+                  landing-page strips. */}
+              <span className="text-sm font-medium text-gray-900">
+                {GOOGLE_RATING_DISPLAY} · {GOOGLE_REVIEW_COUNT_DISPLAY} reviews on Google
+              </span>
             </div>
           </div>
 

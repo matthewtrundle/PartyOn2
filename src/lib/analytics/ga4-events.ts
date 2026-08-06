@@ -59,7 +59,10 @@ export type CtaSection =
   | 'recipe_modal'
   | 'how_it_works'
   | 'sticky_bar'
-  | 'lead_magnet';
+  | 'lead_magnet'
+  | 'reviews_strip'
+  | 'pain_point_mirror'
+  | 'reviews_wall';
 
 /**
  * Track CTA button clicks for A/B testing

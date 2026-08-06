@@ -28,6 +28,13 @@ describe('age-gate exemptions', () => {
     expect(AGE_GATE_EXEMPT_PATHS).toContain(route);
   });
 
+  it('/reviews is exempt from the entrance gate', () => {
+    // The Wall of Love — linked from every landing page's rating strip and
+    // found by organic "reviews" searches. Sells nothing; all CTAs lead to
+    // pages that keep their own gate.
+    expect(AGE_GATE_EXEMPT_PATHS).toContain('/reviews');
+  });
+
   it('/cocktail-recipes is exempt from the entrance gate', () => {
     // Recipe lookup for people who already have a kit — shared by link and
     // found by organic search. Nothing is sold on the page; its only CTA

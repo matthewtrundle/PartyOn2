@@ -212,6 +212,16 @@ export type LandingConfig = {
   reviewsHeadline: string;
   reviews: Review[];
 
+  /**
+   * Optional message-matched review rendered as the PainPointMirror section
+   * directly above the final CTA — one oversized quote whose highlighted
+   * phrase voices this audience's exact pre-purchase anxiety. `reviewId`
+   * references the shared verbatim pool in lib/reviews/reviews.ts;
+   * `reassurance` is an optional risk-reversal line under the button.
+   * When unset, the section doesn't render.
+   */
+  featuredReview?: { reviewId: string; reassurance?: string };
+
   // FAQ
   faqHeadline: string;
   faqs: Faq[];

@@ -160,6 +160,14 @@ export const weddingConfig: LandingConfig = {
     },
   ],
 
+  // Pain-point mirror — the couple's anxiety is wedding-day alcohol
+  // logistics landing on them. Nick's review names it verbatim, and the
+  // reassurance line is Mary H.'s real refund experience (see lib/reviews).
+  featuredReview: {
+    reviewId: 'nick-gorman',
+    reassurance: 'Unopened cases refunded after the big day.',
+  },
+
   faqHeadline: 'The questions every couple and planner asks.',
   faqs: [
     {

@@ -46,6 +46,7 @@ export type LandingPageKey =
   | 'area-lake-travis'
   | 'area-south-congress'
   | 'cocktail-recipes'
+  | 'reviews'
   // Secondary B2B / partner-recruitment pages.
   | 'partners-bartenders'
   | 'partners-vacation-rentals'
@@ -137,6 +138,9 @@ export const LANDING_PAGES: LandingPageDef[] = [
       { id: 'wedding_calc_package', label: 'Calculator (package)' },
       { id: 'wedding_calc_sticky', label: 'Calculator (sticky)' },
       { id: 'final_cta', label: 'Final CTA' },
+      // Fired on the /austin-wedding-weekend-delivery template lander.
+      { id: 'reviews_strip', label: 'Reviews strip' },
+      { id: 'pain_point_mirror', label: 'Pain-point mirror' },
     ],
     defaultExperimentElementId: 'hero',
     experimentPaths: [
@@ -171,6 +175,8 @@ export const LANDING_PAGES: LandingPageDef[] = [
       { id: 'quick_buy', label: 'Quick buy' },
       { id: 'package_builder', label: 'Package builder' },
       { id: 'final_cta', label: 'Final CTA' },
+      { id: 'reviews_strip', label: 'Reviews strip' },
+      { id: 'pain_point_mirror', label: 'Pain-point mirror' },
     ],
     defaultExperimentElementId: 'hero',
   },
@@ -186,6 +192,8 @@ export const LANDING_PAGES: LandingPageDef[] = [
       { id: 'quick_buy', label: 'Quick buy' },
       { id: 'package_builder', label: 'Package builder' },
       { id: 'final_cta', label: 'Final CTA' },
+      { id: 'reviews_strip', label: 'Reviews strip' },
+      { id: 'pain_point_mirror', label: 'Pain-point mirror' },
     ],
     defaultExperimentElementId: 'hero',
   },
@@ -203,6 +211,8 @@ export const LANDING_PAGES: LandingPageDef[] = [
       { id: 'quick_buy', label: 'Quick buy' },
       { id: 'package_builder', label: 'Package builder' },
       { id: 'final_cta', label: 'Final CTA' },
+      { id: 'reviews_strip', label: 'Reviews strip' },
+      { id: 'pain_point_mirror', label: 'Pain-point mirror' },
     ],
     defaultExperimentElementId: 'hero',
   },
@@ -456,6 +466,19 @@ export const LANDING_PAGES: LandingPageDef[] = [
       { id: 'recipe_card', label: 'Recipe card' },
       { id: 'recipe_modal', label: 'Recipe popup — get this kit' },
     ],
+  },
+  {
+    // Wall of Love — destination for every "4.9 · 100+ Google reviews"
+    // strip on the landing pages. Interesting numbers: how many strip
+    // clicks arrive, and how many click back OUT into a funnel
+    // (reviews_wall CTAs) — the wall is a trust detour, not a dead end.
+    key: 'reviews',
+    displayName: 'Reviews (Wall of Love)',
+    navOrder: 124,
+    group: 'secondary-consumer',
+    canonicalPath: '/reviews',
+    aliasPaths: [],
+    ctaSections: [{ id: 'reviews_wall', label: 'Wall → plan/order links' }],
   },
 
   // ── Secondary: B2B / partner recruitment ───────────────────────────────
