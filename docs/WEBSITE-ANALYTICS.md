@@ -34,10 +34,10 @@ _Generated: 2026-08-06 — regenerated nightly by `/api/cron/analytics-snapshot`
 _Update status via `POST /api/admin/analytics/recommendations` with `{ id, status, notes? }`._
 
 ## Traffic (last 30 days)
-- Sessions: **3,976** (▲ 14%)  •  Users: **2,820** (▲ 14%)  •  Pageviews: **6,157**
+- Sessions: **3,990** (▲ 14%)  •  Users: **2,829** (▲ 14%)  •  Pageviews: **6,169**
 
 ## SEO (Search Console, 30d)
-- Impressions: **27,798** (▼ 14%)  •  Clicks: **476** (▲ 12%)  •  CTR: 1.71%  •  Avg position: 19.7
+- Impressions: **28,621** (▼ 12%)  •  Clicks: **497** (▲ 17%)  •  CTR: 1.74%  •  Avg position: 19.6
 
 ## Revenue by internal channel (30d, vs prior 30d)
 | Channel | Orders | Revenue | AOV | Margin % | Cost coverage | Rev WoW |
@@ -75,27 +75,27 @@ _Update status via `POST /api/admin/analytics/recommendations` with `{ id, statu
 ## GA4 revenue by channel (30d, vs prior 30d)
 | Channel | Sessions | Transactions | Revenue | Conv rate | Rev WoW |
 |---|---:|---:|---:|---:|---:|
-| Direct | 1871 | 1 | $1,748.57 | 0.05% | ▲ 1774% |
-| Organic Search | 601 | 2 | $509.31 | 0.33% | 🆕 |
-| Paid Search | 935 | 0 | $0 | 0.00% | — |
+| Direct | 1877 | 1 | $1,748.57 | 0.05% | ▲ 1774% |
+| Organic Search | 602 | 2 | $509.31 | 0.33% | 🆕 |
+| Paid Search | 937 | 0 | $0 | 0.00% | — |
 | Referral | 174 | 0 | $0 | 0.00% | — |
 | Organic Shopping | 144 | 0 | $0 | 0.00% | — |
 | Unassigned | 43 | 0 | $0 | 0.00% | — |
 | Organic Social | 31 | 0 | $0 | 0.00% | — |
 | Email | 22 | 0 | $0 | 0.00% | — |
-| Cross-network | 15 | 0 | $0 | 0.00% | — |
+| Cross-network | 16 | 0 | $0 | 0.00% | — |
 | AI Assistant | 12 | 0 | $0 | 0.00% | — |
 | Paid Other | 3 | 0 | $0 | 0.00% | — |
 
 ## Conversion by landing page (GA4, 30d, vs prior 30d)
 | Path | Sessions | Transactions | Conv rate | Conv WoW |
 |---|---:|---:|---:|---:|
-| /austin-bachelor-concierge | 794 | 0 | 0.00% | — |
-| / | 416 | 0 | 0.00% | — |
-| /blog/15-unique-birthday-party-ideas-in-austin-for-adults | 321 | 0 | 0.00% | — |
-| /austin-bachelorette-party-delivery | 187 | 0 | 0.00% | — |
+| /austin-bachelor-concierge | 795 | 0 | 0.00% | — |
+| / | 417 | 0 | 0.00% | — |
+| /blog/15-unique-birthday-party-ideas-in-austin-for-adults | 323 | 0 | 0.00% | — |
+| /austin-bachelorette-party-delivery | 188 | 0 | 0.00% | — |
 | (not set) | 120 | 0 | 0.00% | — |
-| /partners/lake-travis-yacht-rentals | 119 | 0 | 0.00% | — |
+| /partners/lake-travis-yacht-rentals | 120 | 0 | 0.00% | — |
 | /dashboard/E5CSY8 | 108 | 0 | 0.00% | — |
 | /partners/premier | 99 | 0 | 0.00% | — |
 | /dashboard/NWMFAE | 75 | 0 | 0.00% | — |
@@ -161,10 +161,10 @@ _Vercel Analytics not configured — set VERCEL_ANALYTICS_TOKEN_
 ## Per-page engagement (our tracker, 30d)
 | Path | Sessions | Pageviews | Bounce | Avg scroll | CTA clicks | CTA rate |
 |---|---:|---:|---:|---:|---:|---:|
-| / | 1055 | 1198 | 64% | 12.3% | 105 | 10.0% |
-| /austin-bachelor-concierge | 944 | 985 | 98% | 0% | 1 | 0.1% |
-| /order | 521 | 564 | 30% | 0% | 251 | 48.2% |
-| /blog/15-unique-birthday-party-ideas-in-austin-for-adults | 459 | 474 | 98% | 0% | 0 | 0.0% |
+| / | 1055 | 1198 | 64% | 12.2% | 105 | 10.0% |
+| /austin-bachelor-concierge | 947 | 988 | 98% | 0% | 1 | 0.1% |
+| /order | 522 | 567 | 30% | 0% | 252 | 48.3% |
+| /blog/15-unique-birthday-party-ideas-in-austin-for-adults | 460 | 475 | 98% | 0% | 0 | 0.0% |
 | /products | 305 | 307 | 100% | 0% | 0 | 0.0% |
 | /austin-bachelorette-party-delivery | 284 | 315 | 90% | 0% | 65 | 22.9% |
 | /dashboard/E5CSY8 | 168 | 176 | 99% | 0% | 0 | 0.0% |
@@ -176,31 +176,31 @@ _Vercel Analytics not configured — set VERCEL_ANALYTICS_TOKEN_
 | /ops/orders | 71 | 103 | 38% | 0% | 0 | 0.0% |
 | /dashboard/N6N86N | 64 | 65 | 100% | 0% | 0 | 0.0% |
 | /partners/mobile-bartenders | 59 | 59 | 98% | 0% | 0 | 0.0% |
-| /partners/big-tex-boats | 58 | 66 | 41% | 0% | 0 | 0.0% |
-| /cocktail-kits | 52 | 55 | 77% | 0% | 17 | 32.7% |
+| /partners/big-tex-boats | 58 | 68 | 40% | 0% | 0 | 0.0% |
 | /austin-bachelor-party-delivery | 52 | 56 | 75% | 0% | 14 | 26.9% |
+| /cocktail-kits | 51 | 54 | 76% | 0% | 17 | 33.3% |
 | /boat-parties | 45 | 54 | 33% | 0% | 22 | 48.9% |
 | /partners | 42 | 41 | 55% | 0% | 0 | 0.0% |
 
 ## Top search queries (GSC, 30d)
 | Query | Clicks | Impressions | Avg position |
 |---|---:|---:|---:|
-| party on delivery | 25 | 57 | 1.1 |
-| austin birthday ideas | 10 | 91 | 3.6 |
+| party on delivery | 27 | 60 | 1.1 |
+| austin birthday ideas | 10 | 99 | 3.7 |
+| birthday ideas austin | 5 | 131 | 7.8 |
 | things to do in austin for birthday | 5 | 50 | 7.3 |
-| adult birthday party ideas austin | 4 | 32 | 3.3 |
-| birthday activities austin | 4 | 46 | 5.9 |
-| birthday ideas austin | 4 | 125 | 7.9 |
+| adult birthday party ideas austin | 4 | 34 | 3.4 |
+| birthday activities austin | 4 | 49 | 5.8 |
 | fun birthday ideas in austin | 4 | 37 | 5.4 |
 | austin birthday party ideas | 3 | 14 | 6.7 |
 | austin tx birthday ideas | 3 | 16 | 5.2 |
 | birthday party places austin | 3 | 97 | 12.7 |
 | fun adult birthday ideas | 3 | 17 | 9.8 |
-| unique birthday places in austin for adults | 3 | 42 | 3.7 |
-| birthday ideas for adults | 2 | 112 | 13.7 |
-| birthday places in austin for adults | 2 | 142 | 4.6 |
-| fun birthday ideas for adults | 2 | 56 | 11.9 |
-| hugo spritz kit | 2 | 44 | 9.2 |
+| unique birthday places in austin for adults | 3 | 43 | 3.7 |
+| birthday ideas for adults | 2 | 117 | 13.6 |
+| birthday places in austin for adults | 2 | 145 | 4.5 |
+| fun birthday ideas for adults | 2 | 57 | 11.8 |
+| hugo spritz kit | 2 | 47 | 8.9 |
 | 20 pound ice | 1 | 1 | 2.0 |
 | 24 hour alcohol delivery near me open now | 1 | 2 | 5.0 |
 | activities for bday | 1 | 1 | 1.0 |
