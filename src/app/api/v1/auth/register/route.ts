@@ -77,11 +77,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
                 <li>Track your orders</li>
                 <li>Create group orders for events</li>
               </ul>
-              <a href="https://partyondelivery.com/products" style="display: inline-block; background-color: #D4AF37; color: #1a1a1a; text-decoration: none; padding: 12px 32px; border-radius: 6px; font-weight: 600;">Start Shopping</a>
+              <a href="https://partyondelivery.com/order" style="display: inline-block; background-color: #D4AF37; color: #1a1a1a; text-decoration: none; padding: 12px 32px; border-radius: 6px; font-weight: 600;">Start Shopping</a>
             </div>
           </div>
         `,
-        text: `Welcome to Party On Delivery${customer.firstName ? `, ${customer.firstName}` : ''}! Browse our premium selection at https://partyondelivery.com/products`,
+        text: `Welcome to Party On Delivery${customer.firstName ? `, ${customer.firstName}` : ''}! Browse our premium selection at https://partyondelivery.com/order`,
         type: EmailType.WELCOME,
         customerId: customer.id,
       }).catch((err: unknown) => console.error('[Auth] Welcome email failed:', err));

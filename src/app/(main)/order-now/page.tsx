@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 
 export default function OrderNowPage() {
-  // Redirect to products page for now
-  // In production, this would integrate with Shopify Storefront API
-  redirect('/products')
+  // Straight to /order. Going via /products chained two redirects, because
+  // next.config.ts already 307s the bare /products route here.
+  redirect('/order')
 }
