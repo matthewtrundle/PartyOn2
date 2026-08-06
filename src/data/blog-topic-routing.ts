@@ -74,10 +74,14 @@ const TOPIC_TO_CTA: Record<BlogTopic, BlogCta> = {
     buttonText: 'Shop the 4th of July kits',
     href: '/austin-4th-of-july-delivery',
   },
+  // NB: no free-delivery promise here — that offer is delivered as a code by
+  // the page's lead-magnet popup (email capture is the point). A promise on
+  // this static card would send readers to checkout expecting a discount the
+  // card never gave them.
   BIRTHDAY: {
     topic: 'BIRTHDAY',
     heading: 'Planning an Austin birthday party?',
-    body: 'We deliver beer, wine, liquor, mixers, and ice straight to your party — free delivery on your first order.',
+    body: 'We deliver beer, wine, liquor, mixers, and ice straight to your party — order in minutes, delivered in hours.',
     buttonText: 'Start your order',
     href: '/order',
   },
@@ -276,6 +280,10 @@ const SLUG_TO_TOPIC: Record<string, BlogTopic> = {
 };
 
 export function getBlogCta(slug: string): BlogCta {
-  const topic = SLUG_TO_TOPIC[slug] ?? 'GENERIC';
+  // Object.hasOwn, not `?? 'GENERIC'`: a slug named like an Object.prototype
+  // member ('constructor', '__proto__', …) returns an inherited truthy value
+  // from a plain-object lookup and would index TOPIC_TO_CTA with garbage.
+  // Same footgun that ate lead submissions in #363 — treat it codebase-wide.
+  const topic = Object.hasOwn(SLUG_TO_TOPIC, slug) ? SLUG_TO_TOPIC[slug] : 'GENERIC';
   return TOPIC_TO_CTA[topic];
 }

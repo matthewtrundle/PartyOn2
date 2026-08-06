@@ -48,22 +48,36 @@ function uuid(): string {
 
 function getSessionId(): string {
   if (!isClient()) return 'ssr';
-  let id = sessionStorage.getItem(SESSION_KEY);
-  if (!id) {
-    id = uuid();
-    sessionStorage.setItem(SESSION_KEY, id);
+  // Fully guarded: storage access can THROW (not just fail to persist) when
+  // storage is disabled — and this helper now sits on the critical path of
+  // lead-magnet submits and concierge CTA tracking. An analytics ID must never
+  // take down the flow it measures.
+  try {
+    let id = sessionStorage.getItem(SESSION_KEY);
+    if (!id) {
+      id = uuid();
+      sessionStorage.setItem(SESSION_KEY, id);
+    }
+    return id;
+  } catch {
+    return uuid(); // per-call fallback — session continuity lost, flow intact
   }
-  return id;
 }
 
 function getVisitorId(): string {
   if (!isClient()) return 'ssr';
-  let id = localStorage.getItem(VISITOR_KEY);
-  if (!id) {
-    id = uuid();
-    try { localStorage.setItem(VISITOR_KEY, id); } catch { /* private mode */ }
+  // getItem can throw too (storage disabled entirely) — guard the whole read,
+  // same rationale as getSessionId above.
+  try {
+    let id = localStorage.getItem(VISITOR_KEY);
+    if (!id) {
+      id = uuid();
+      try { localStorage.setItem(VISITOR_KEY, id); } catch { /* private mode */ }
+    }
+    return id;
+  } catch {
+    return uuid();
   }
-  return id;
 }
 
 function pageContext(): Pick<QueuedEvent, 'path' | 'fullUrl' | 'referrer'> {

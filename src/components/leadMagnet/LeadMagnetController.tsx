@@ -18,19 +18,29 @@
  */
 import { useEffect, useMemo, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { LEAD_MAGNETS, pathMatches, type LeadMagnet } from '@/lib/leadMagnet/config';
+import {
+  LEAD_MAGNETS,
+  pathMatches,
+  magnetSeenKey,
+  magnetDoneKey,
+  type LeadMagnet,
+} from '@/lib/leadMagnet/config';
 import { trackPodEvent } from '@/lib/analytics/client-tracker';
 import LeadMagnetModal from './LeadMagnetModal';
 
-function cooldownKey(id: string) {
-  return `pod_lm_seen_${id}`;
-}
-
-function isOnCooldown(magnet: LeadMagnet): boolean {
+/**
+ * Suppressed = already submitted (permanent) OR shown within cooldownDays.
+ * The seen stamp is written at SHOW time in fire() — not on close — so a
+ * visitor who closes the tab (or clicks a success-state link that navigates
+ * away) is still cooled down. Before this, the stamp lived only in onClose and
+ * a submitted visitor could be re-prompted forever.
+ */
+function isSuppressed(magnet: LeadMagnet): boolean {
   if (typeof window === 'undefined') return true;
-  if (magnet.cooldownDays <= 0) return false;
   try {
-    const raw = localStorage.getItem(cooldownKey(magnet.id));
+    if (localStorage.getItem(magnetDoneKey(magnet.id))) return true;
+    if (magnet.cooldownDays <= 0) return false;
+    const raw = localStorage.getItem(magnetSeenKey(magnet.id));
     if (!raw) return false;
     const last = Number(raw);
     if (!Number.isFinite(last)) return false;
@@ -44,7 +54,7 @@ function isOnCooldown(magnet: LeadMagnet): boolean {
 
 function markShown(id: string) {
   try {
-    localStorage.setItem(cooldownKey(id), String(Date.now()));
+    localStorage.setItem(magnetSeenKey(id), String(Date.now()));
   } catch {
     /* swallow */
   }
@@ -86,7 +96,7 @@ export default function LeadMagnetController() {
   useEffect(() => {
     if (!candidate) return;
     if (typeof window === 'undefined') return;
-    if (isOnCooldown(candidate)) return;
+    if (isSuppressed(candidate)) return;
 
     let fired = false;
     const cleanupFns: Array<() => void> = [];
@@ -94,6 +104,9 @@ export default function LeadMagnetController() {
       if (fired) return;
       fired = true;
       cleanupFns.forEach((fn) => fn());
+      // Stamp the cooldown at SHOW time (impression = seen). Stamping only on
+      // close left tab-closers and success-link-clickers unstamped → re-prompt.
+      markShown(candidate.id);
       setActiveMagnet(candidate);
       // First-party impression event so "did the ask even show?" is answerable
       // in analytics_events (the pages this targets had zero measurable asks).
@@ -123,11 +136,13 @@ export default function LeadMagnetController() {
     // before wiring the triggers, mirroring how DeliveryWindowGate/DashboardTour
     // wait on their prerequisite flag.
     //
-    // Every page the current LEAD_MAGNETS target ('/', '/services/*', '/flyer')
-    // is age-gated, and the config excludes '/dashboard/*' and never lists
-    // '/order', so the delivery-window gate is never in play here. If you ever
-    // point a magnet at an age-gate-EXEMPT page, its automatic triggers won't
-    // fire until `age_verified` exists — rely on a manual trigger there.
+    // Every page the current LEAD_MAGNETS target ('/', '/services/*', '/flyer',
+    // the birthday blog post, '/products' + product handle pages) is age-gated,
+    // and the config excludes '/dashboard/*' and never lists '/order', so the
+    // delivery-window gate is never in play here. If you ever point a magnet at
+    // an age-gate-EXEMPT page (see AGE_GATE_EXEMPT_PATHS), its automatic
+    // triggers won't fire until `age_verified` exists — rely on a manual
+    // trigger there. Keep this list in sync when adding magnets.
     const wireAutoTriggers = () => {
       if (fired) return;
       for (const t of candidate.triggers) {
