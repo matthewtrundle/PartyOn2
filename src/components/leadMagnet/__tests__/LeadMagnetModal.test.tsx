@@ -36,8 +36,18 @@ const codeMagnet: LeadMagnet = {
   enabled: true,
 };
 
+// The shared test env's localStorage is a partial stub — give this file a
+// real Map-backed one so the done-flag write is observable and deterministic.
+const lsStore = new Map<string, string>();
 beforeEach(() => {
   vi.clearAllMocks();
+  lsStore.clear();
+  vi.stubGlobal('localStorage', {
+    getItem: (k: string) => lsStore.get(k) ?? null,
+    setItem: (k: string, v: string) => void lsStore.set(k, String(v)),
+    removeItem: (k: string) => void lsStore.delete(k),
+    clear: () => lsStore.clear(),
+  });
   global.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true }) });
 });
 
@@ -80,19 +90,56 @@ describe('LeadMagnetModal — discount-code reward', () => {
   });
 
   it('shows the code in the success state and does NOT auto-close over it', async () => {
+    // Fake timers are installed BEFORE render so that IF the auto-close
+    // regression were reintroduced, its setTimeout would be a fake timer and
+    // advanceTimersByTimeAsync would actually fire it. (An earlier version of
+    // this test installed fake timers after submit — a real pending timer
+    // would never fire under fake advancement, so the test could not fail.)
+    // shouldAdvanceTime keeps waitFor/microtasks flowing.
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const onClose = vi.fn();
+    try {
+      render(<LeadMagnetModal magnet={codeMagnet} open onClose={onClose} />);
+      await submit();
+      await waitFor(() => expect(screen.getByText('STOCKED')).toBeInTheDocument());
+      await vi.advanceTimersByTimeAsync(1500);
+      expect(onClose).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('CONTROL: a PDF-reward magnet DOES auto-close after ~1100ms (proves the harness catches the regression)', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const onClose = vi.fn();
+    const pdfMagnet = { ...codeMagnet, id: 'pdf-magnet-test', rewardCode: undefined };
+    const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+    try {
+      render(<LeadMagnetModal magnet={pdfMagnet} open onClose={onClose} />);
+      await submit();
+      await vi.advanceTimersByTimeAsync(1500);
+      expect(onClose).toHaveBeenCalledWith('submit');
+      expect(openSpy).toHaveBeenCalledWith('/order', '_blank', 'noopener');
+    } finally {
+      openSpy.mockRestore();
+      vi.useRealTimers();
+    }
+  });
+
+  it('writes the permanent done flag on submit so a converted visitor is never re-prompted', async () => {
+    render(<LeadMagnetModal magnet={codeMagnet} open onClose={vi.fn()} />);
+    await submit();
+    await waitFor(() =>
+      expect(lsStore.get('pod_lm_done_products-free-delivery-2026')).toBeTruthy(),
+    );
+  });
+
+  it('the success-state START YOUR ORDER link closes the modal (so the controller can stamp) before navigating', async () => {
     const onClose = vi.fn();
     render(<LeadMagnetModal magnet={codeMagnet} open onClose={onClose} />);
     await submit();
     await waitFor(() => expect(screen.getByText('STOCKED')).toBeInTheDocument());
-    // The code-reward path must not schedule the 1100ms auto-close (the visitor
-    // needs to read the code). Advance well past that window with fake timers —
-    // no real wall-clock wait, so this can't add flake pressure to the suite.
-    vi.useFakeTimers();
-    try {
-      vi.advanceTimersByTime(1500);
-    } finally {
-      vi.useRealTimers();
-    }
-    expect(onClose).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('link', { name: /start your order/i }));
+    expect(onClose).toHaveBeenCalledWith('submit');
   });
 });

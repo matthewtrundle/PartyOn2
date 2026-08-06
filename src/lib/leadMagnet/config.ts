@@ -84,7 +84,7 @@ export const LEAD_MAGNETS: LeadMagnet[] = [
     id: 'bday-free-delivery-2026',
     title: 'Free Delivery on Your Birthday Order',
     subhead: 'Planning an Austin birthday? Get your first delivery free.',
-    reward: 'A free-delivery code + our party-planning playbook',
+    reward: 'A free-delivery code for your first Austin order',
     previewImage: '/images/gallery/party-headquarters.webp',
     rewardUrl: '/order',
     rewardCode: 'BDAYPARTY',
@@ -175,6 +175,22 @@ export const PRIMARY_FLYER_MAGNET_ID = 'pod-services-flyer-2026';
 
 export function findMagnet(id: string): LeadMagnet | undefined {
   return LEAD_MAGNETS.find((m) => m.id === id);
+}
+
+/**
+ * localStorage keys for magnet suppression — shared by the controller (reads)
+ * and the modal (writes the done flag on submit), so the two can never drift.
+ *
+ *   seen: timestamp of the last time the popup was SHOWN — drives the
+ *         cooldownDays re-show window.
+ *   done: set once on a successful SUBMIT — a converted visitor is suppressed
+ *         permanently, not just for the cooldown window.
+ */
+export function magnetSeenKey(id: string): string {
+  return `pod_lm_seen_${id}`;
+}
+export function magnetDoneKey(id: string): string {
+  return `pod_lm_done_${id}`;
 }
 
 /**

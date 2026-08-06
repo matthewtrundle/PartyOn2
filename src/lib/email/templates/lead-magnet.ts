@@ -100,7 +100,7 @@ export function leadMagnetEmail(input: LeadMagnetEmailInput): {
             <tr>
               <td style="padding:18px 28px 24px;border-top:1px solid #E5E7EB;text-align:center;">
                 <p style="margin:0;font-size:11px;color:#9CA3AF;line-height:1.5;">
-                  You got this because you requested the playbook on partyondelivery.com.<br/>
+                  You got this because you requested ${code ? 'a free-delivery code' : 'the playbook'} on partyondelivery.com.<br/>
                   Reply STOP to unsubscribe. Must be 21+ to order alcohol.
                 </p>
               </td>

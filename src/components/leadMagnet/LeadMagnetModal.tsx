@@ -18,7 +18,7 @@ import { sendLeadEvent } from '@/lib/leads/client';
 import { getAttribution } from '@/lib/analytics/attribution';
 import { trackCTAClick } from '@/lib/analytics/ga4-events';
 import SmsConsentCheckbox from '@/components/consent/SmsConsentCheckbox';
-import type { LeadMagnet } from '@/lib/leadMagnet/config';
+import { magnetDoneKey, type LeadMagnet } from '@/lib/leadMagnet/config';
 
 type Props = {
   magnet: LeadMagnet;
@@ -88,27 +88,38 @@ export default function LeadMagnetModal({ magnet, open, onClose, modeBadge }: Pr
     // they're fixing.
     trackCTAClick(magnet.cta, magnet.rewardUrl, 'lead_magnet');
 
-    // Fire lead-event (creates / promotes the Lead row to SUBMITTED).
-    await sendLeadEvent({
-      type: 'FORM_SUBMIT',
-      widget: 'EMAIL_SIGNUP',
-      identify: { firstName, email, phone: phone || undefined },
-      setStatus: 'SUBMITTED',
-      metadata: {
-        leadMagnetId: magnet.id,
-        rewardUrl: magnet.rewardUrl,
-        flow: 'lead-magnet',
-        // A2P 10DLC consent proof: only true when a phone was given AND the
-        // customer affirmatively checked the (unchecked-by-default) opt-in.
-        smsConsent: phone.trim() ? smsConsent : false,
-      },
-      page: typeof window !== 'undefined' ? window.location.pathname : undefined,
-    });
-
-    // Send the actual welcome email via Resend. Failure is non-blocking —
-    // the Lead row is already saved, so we don't gate the success UI on it.
+    // Permanent suppression: a visitor who submitted should never be
+    // re-prompted, regardless of cooldown or how they leave the page.
     try {
-      await fetch('/api/v1/lead-magnet', {
+      localStorage.setItem(magnetDoneKey(magnet.id), String(Date.now()));
+    } catch {
+      /* private mode — the show-time cooldown stamp still applies */
+    }
+
+    // Both requests are keepalive fetches (they survive navigation) and each
+    // side covers the other: /api/v1/lead-magnet upserts the Lead row
+    // server-side even if the pixel event dies, and vice versa. Fire them in
+    // parallel and show the success state immediately — the code the visitor
+    // needs is static config, so nothing on screen waits on the network.
+    void Promise.allSettled([
+      // Lead-event (creates / promotes the Lead row to SUBMITTED).
+      sendLeadEvent({
+        type: 'FORM_SUBMIT',
+        widget: 'EMAIL_SIGNUP',
+        identify: { firstName, email, phone: phone || undefined },
+        setStatus: 'SUBMITTED',
+        metadata: {
+          leadMagnetId: magnet.id,
+          rewardUrl: magnet.rewardUrl,
+          flow: 'lead-magnet',
+          // A2P 10DLC consent proof: only true when a phone was given AND the
+          // customer affirmatively checked the (unchecked-by-default) opt-in.
+          smsConsent: phone.trim() ? smsConsent : false,
+        },
+        page: typeof window !== 'undefined' ? window.location.pathname : undefined,
+      }),
+      // Welcome email via Resend. Failure is non-blocking by design.
+      fetch('/api/v1/lead-magnet', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         credentials: 'same-origin',
@@ -124,10 +135,10 @@ export default function LeadMagnetModal({ magnet, open, onClose, modeBadge }: Pr
           rewardCode: magnet.rewardCode ?? null,
           attribution: getAttribution(),
         }),
-      });
-    } catch (err) {
-      console.warn('[lead-magnet] email request failed', err);
-    }
+      }).catch((err) => {
+        console.warn('[lead-magnet] email request failed', err);
+      }),
+    ]);
 
     setSubmitted(true);
     setSubmitting(false);
@@ -241,6 +252,9 @@ export default function LeadMagnetModal({ magnet, open, onClose, modeBadge }: Pr
                   <div className="mt-4">
                     <a
                       href={magnet.rewardUrl}
+                      // Close (and let the controller stamp) before the full
+                      // navigation unmounts us — default nav still proceeds.
+                      onClick={() => onClose('submit')}
                       className="inline-block rounded-lg px-5 py-2.5 text-sm font-bold tracking-widest"
                       style={{ background: T.navy, color: '#FFFFFF' }}
                     >
@@ -327,8 +341,11 @@ export default function LeadMagnetModal({ magnet, open, onClose, modeBadge }: Pr
               </form>
 
               <ul className="mt-3 space-y-1 text-[11px] text-gray-600">
-                <li>✓ Instant download. No follow-up sales spam.</li>
-                <li>✓ Unsubscribe with one click any time.</li>
+                <li>
+                  ✓ {magnet.rewardCode ? 'Your code shows instantly.' : 'Instant download.'} No
+                  follow-up sales spam.
+                </li>
+                <li>✓ Unsubscribe any time.</li>
                 <li>✓ Built by the team behind 500+ Austin parties.</li>
               </ul>
             </>

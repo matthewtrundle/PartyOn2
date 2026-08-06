@@ -28,7 +28,13 @@
 
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { PrismaClient } from '@prisma/client';
+
+// Anchor all default paths to the REPO ROOT (this file lives at
+// scripts/ops/), not the cwd — running from another directory must not drop
+// the PII CSV outside the gitignored data/ tree.
+const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 import {
   cartValue,
   classifyDead,
@@ -261,11 +267,11 @@ async function main() {
     }
     const outPath =
       OUT_FLAG?.split('=')[1] ||
-      path.join('data', 'ops', `abandoned-carts-${todayCentralISO}.csv`);
-    // PII-containment guard: the default lands under gitignored data/. A custom
-    // --out= path outside data/ risks committing PII (or writing it to a synced
-    // drive), so warn loudly — the operator can still choose to do it.
-    if (!path.resolve(outPath).startsWith(path.resolve('data') + path.sep)) {
+      path.join(REPO_ROOT, 'data', 'ops', `abandoned-carts-${todayCentralISO}.csv`);
+    // PII-containment guard: the default lands under the repo's gitignored
+    // data/. A custom --out= path outside it risks committing PII (or writing
+    // it to a synced drive), so warn loudly — the operator can still choose to.
+    if (!path.resolve(outPath).startsWith(path.join(REPO_ROOT, 'data') + path.sep)) {
       console.warn(
         `WARNING: ${outPath} is OUTSIDE the gitignored data/ tree — this file ` +
           `contains customer PII (names/emails/phones). Make sure it won't be committed or synced.`,

@@ -184,9 +184,14 @@ export default function ConciergeQuestionnaireModal({
       // — this is the ONLY conversion signal the paid concierge campaigns get.
       // Flush variant: onSuccess() unmounts the modal immediately, so we wait
       // (≤400ms) for gtag to send the beacon before the component tears down.
+      // Swallow analytics failures: the lead is already created server-side at
+      // this point, so surfacing "try again" here would invite a duplicate
+      // submit over a tracking-only hiccup.
       await fireLeadConversionAndFlush({
         occasion: variant,
         placement: 'concierge-quiz',
+      }).catch((err) => {
+        console.warn('[concierge modal] lead conversion tracking failed', err);
       });
       onSuccess();
     } catch (err) {
