@@ -1,8 +1,16 @@
 # GBP review harvest — the workflow
 
+> **Automated as of 2026-08: use `/harvest-reviews` from a LOCAL Claude session
+> with the Chrome extension paired** (`.claude/skills/harvest-reviews/SKILL.md`).
+> It scrapes the full public Maps review wall in one pass, and
+> `scripts/reviews/ingest-review-harvest.ts` generates deduped, paste-ready
+> entries + avatar webps. The manual steps below remain the fallback when the
+> extension isn't available or Google breaks the extractor — and the rules in
+> this file govern BOTH paths.
+
 The Places API sync only mirrors the **5 most-recent** reviews per night
 (`src/lib/analytics/gbp.ts`), so the full 100+ set gets on the site exactly one
-way: a manual harvest from the Business Profile reviews manager into
+way: a harvest from the review wall into
 `src/lib/reviews/reviews.ts`. This is the same workflow bachelor.ts documented
 on 2026-06-12 — this file just makes it repeatable, and adds photos.
 
@@ -24,7 +32,7 @@ marquee, the facepile strips, and the /reviews wall all read `CUSTOMER_REVIEWS`.
    worse than no face at all). If a reviewer ever asks to be removed, delete
    their entry + photo and ship it the same day.
 
-## Step by step (~2 min per review)
+## Step by step — manual fallback (~2 min per review)
 
 1. **Open the reviews manager**: business.google.com → the Party On Delivery
    profile → **Reviews** (or google.com/maps → the business page → Reviews

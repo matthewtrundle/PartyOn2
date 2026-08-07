@@ -1,0 +1,72 @@
+{
+  "placeUrl": "https://www.google.com/maps/place/fixture",
+  "count": 6,
+  "reviews": [
+    {
+      "reviewId": "fix-001",
+      "author": "Maria Alvarez",
+      "rating": 5,
+      "text": "We used Party On Delivery for my sister's bachelorette on Lake Travis and it was perfect. I was so worried about how much to buy and they walked me through everything. The boat was stocked before we even got to the marina!!",
+      "relativeDate": "2 months ago",
+      "avatarUrl": "https://lh3.googleusercontent.com/a/ACg8ocFAKEmaria=s120-c",
+      "photoUrls": ["https://lh3.googleusercontent.com/geougc/FAKEphoto=w300-h225"],
+      "hasOwnerResponse": false,
+      "cardInnerText": "Maria Alvarez\n3 reviews\n2 months ago\nWe used Party On Delivery for my sister's bachelorette on Lake Travis and it was perfect..."
+    },
+    {
+      "reviewId": "fix-002",
+      "author": "Jane Doe",
+      "rating": 5,
+      "text": "Party On Delivery saved our lake day! Everything showed up cold and on time.",
+      "relativeDate": "a year ago",
+      "avatarUrl": "https://lh3.googleusercontent.com/a/default-user=s120-c",
+      "photoUrls": [],
+      "hasOwnerResponse": true,
+      "cardInnerText": "Jane Doe\n1 review\na year ago\nParty On Delivery saved our lake day!..."
+    },
+    {
+      "reviewId": "fix-003",
+      "author": "Sam Oakley",
+      "rating": 5,
+      "text": "Booked them again, this time for a corporate happy hour at the office. Seamless as always and the delivery was right on time even though we ordered last minute.",
+      "relativeDate": "3 weeks ago",
+      "avatarUrl": "https://lh3.googleusercontent.com/a/ACg8ocFAKEsam=s120-c",
+      "photoUrls": [],
+      "hasOwnerResponse": false,
+      "cardInnerText": "Sam Oakley\n5 reviews\n3 weeks ago\nBooked them again..."
+    },
+    {
+      "reviewId": "fix-004",
+      "author": "Rating Only Rita",
+      "rating": 5,
+      "text": "",
+      "relativeDate": "5 months ago",
+      "avatarUrl": null,
+      "photoUrls": [],
+      "hasOwnerResponse": false,
+      "cardInnerText": "Rating Only Rita\n2 reviews\n5 months ago"
+    },
+    {
+      "reviewId": "fix-005",
+      "author": "Fourstar Fred",
+      "rating": 4,
+      "text": "Pretty good, delivery took a bit longer than expected but the selection was solid.",
+      "relativeDate": "8 months ago",
+      "avatarUrl": null,
+      "photoUrls": [],
+      "hasOwnerResponse": false,
+      "cardInnerText": "Fourstar Fred\n12 reviews\n8 months ago\nPretty good..."
+    },
+    {
+      "reviewId": "fix-006",
+      "author": "Maria Alvarez",
+      "rating": 5,
+      "text": "Second time using them, this time for a birthday boat day. Still flawless. They even remembered our order from last time and had suggestions ready. Truly did not have to think about a single thing all weekend, which as the planner friend is priceless.",
+      "relativeDate": "1 week ago",
+      "avatarUrl": "https://lh3.googleusercontent.com/a/ACg8ocFAKEmaria=s120-c",
+      "photoUrls": [],
+      "hasOwnerResponse": false,
+      "cardInnerText": "Maria Alvarez\n3 reviews\n1 week ago\nSecond time using them..."
+    }
+  ]
+}

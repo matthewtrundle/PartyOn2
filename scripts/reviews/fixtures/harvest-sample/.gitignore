@@ -1,0 +1,3 @@
+# --test regenerates these on every run; only expected-candidates.json is source-of-truth
+candidates.json
+candidates.snippet.ts
