@@ -6,7 +6,7 @@
 'use client';
 
 import Link from 'next/link';
-import type { ReactElement, ReactNode } from 'react';
+import type { CSSProperties, ReactElement, ReactNode } from 'react';
 import { trackCTAClick, type CtaSection } from '@/lib/analytics/ga4-events';
 
 interface TrackedLinkProps {
@@ -15,6 +15,9 @@ interface TrackedLinkProps {
   section: CtaSection;
   buttonText: string;
   className?: string;
+  /** Inline styles for values Tailwind arbitrary classes can't express
+      (e.g. rgba() with commas). */
+  style?: CSSProperties;
 }
 
 /**
@@ -26,13 +29,14 @@ export default function TrackedLink({
   section,
   buttonText,
   className,
+  style,
 }: TrackedLinkProps): ReactElement {
   const handleClick = () => {
     trackCTAClick(buttonText, href, section);
   };
 
   return (
-    <Link href={href} onClick={handleClick} className={className}>
+    <Link href={href} onClick={handleClick} className={className} style={style}>
       {children}
     </Link>
   );
