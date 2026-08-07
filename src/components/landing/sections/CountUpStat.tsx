@@ -11,7 +11,13 @@
  * number ("Free") render as-is. The final value always matches the config
  * string exactly — this animates real claims, it never invents numbers.
  *
- * Honors prefers-reduced-motion by rendering the final value immediately.
+ * The server (and any client until the animation actually starts) renders
+ * the REAL value — the count-up resets to 0 only in the same frame the
+ * animation begins. Rendering 0 as the initial state would put "0.0★
+ * GOOGLE RATING" in the SSR HTML for crawlers, no-JS visitors, and anyone
+ * who scrolls before hydration finishes — a worse claim than no stat.
+ *
+ * Honors prefers-reduced-motion by never animating (value stays final).
  */
 
 import { useEffect, useRef, useState } from 'react';
@@ -35,17 +41,17 @@ export default function CountUpStat({ stat, className, style }: Props) {
   const grouped = match?.[2].includes(',') ?? false;
 
   const ref = useRef<HTMLSpanElement>(null);
-  const [value, setValue] = useState<number | null>(target === null ? null : 0);
+  // Start at the final value: SSR HTML and pre-hydration paint show the
+  // real claim. The observer resets to 0 in the same frame it starts the
+  // count-up, so a 0 is only ever visible while actively counting.
+  const [value, setValue] = useState<number | null>(target);
 
   useEffect(() => {
     const el = ref.current;
     if (!el || target === null) return;
 
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduced || !('IntersectionObserver' in window)) {
-      setValue(target);
-      return;
-    }
+    if (reduced || !('IntersectionObserver' in window)) return; // stays final
 
     let raf = 0;
     const observer = new IntersectionObserver(
@@ -61,6 +67,7 @@ export default function CountUpStat({ stat, className, style }: Props) {
           setValue(target * eased);
           if (progress < 1) raf = requestAnimationFrame(tick);
         };
+        setValue(0);
         raf = requestAnimationFrame(tick);
       },
       { threshold: 0.4 },

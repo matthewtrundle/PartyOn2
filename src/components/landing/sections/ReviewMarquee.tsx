@@ -47,7 +47,7 @@ function HighlightedExcerpt({ review }: { review: CustomerReview }) {
   );
 }
 
-function ReviewTile({ review, theme }: { review: CustomerReview; theme: ThemeColors }) {
+function ReviewTile({ review, starColor }: { review: CustomerReview; starColor: string }) {
   return (
     <div
       className="w-[300px] sm:w-[330px] flex-shrink-0 rounded-xl p-5"
@@ -64,7 +64,7 @@ function ReviewTile({ review, theme }: { review: CustomerReview; theme: ThemeCol
         </div>
         <span
           className="ml-auto flex-shrink-0 text-xs"
-          style={{ color: theme.primary, letterSpacing: '2px' }}
+          style={{ color: starColor, letterSpacing: '2px' }}
           aria-label="5 out of 5 stars"
         >
           ★★★★★
@@ -77,18 +77,25 @@ function ReviewTile({ review, theme }: { review: CustomerReview; theme: ThemeCol
   );
 }
 
-function MarqueeRow({
+/**
+ * One drifting marquee row. Exported so surfaces beyond the landing
+ * template (the /reviews Wall of Love hero) can render the storm without
+ * the section chrome. Server-component-safe: no hooks, pure CSS motion.
+ */
+export function MarqueeRow({
   reviews,
-  theme,
+  starColor,
   reverse,
   durationSeconds,
 }: {
   reviews: CustomerReview[];
-  theme: ThemeColors;
+  starColor: string;
   reverse?: boolean;
   durationSeconds: number;
 }) {
-  const tiles = reviews.map((r) => <ReviewTile key={r.id} review={r} theme={theme} />);
+  const tiles = reviews.map((r) => (
+    <ReviewTile key={r.id} review={r} starColor={starColor} />
+  ));
   return (
     <div className="pod-marquee">
       <div
@@ -100,7 +107,7 @@ function MarqueeRow({
             screen readers so each review is announced once. */}
         <div className="contents" aria-hidden="true">
           {reviews.map((r) => (
-            <ReviewTile key={`${r.id}-dup`} review={r} theme={theme} />
+            <ReviewTile key={`${r.id}-dup`} review={r} starColor={starColor} />
           ))}
         </div>
       </div>
@@ -130,9 +137,9 @@ export default function ReviewMarquee({ headline, reviews, theme }: Props) {
         <h2 className="font-heading mb-0 text-4xl font-bold md:text-5xl">{headline}</h2>
       </div>
 
-      <MarqueeRow reviews={rowA} theme={theme} durationSeconds={58} />
+      <MarqueeRow reviews={rowA} starColor={theme.primary} durationSeconds={58} />
       <div className="h-4" />
-      <MarqueeRow reviews={rowB} theme={theme} reverse durationSeconds={74} />
+      <MarqueeRow reviews={rowB} starColor={theme.primary} reverse durationSeconds={74} />
 
       <p className="mt-10 text-center text-sm text-white/60">
         Every review verbatim, straight from our Google profile —{' '}
