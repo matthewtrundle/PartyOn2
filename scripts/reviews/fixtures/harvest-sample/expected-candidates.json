@@ -1,0 +1,72 @@
+{
+  "candidates": [
+    {
+      "id": "maria-alvarez",
+      "author": "Maria Alvarez",
+      "quote": "We used Party On Delivery for my sister's bachelorette on Lake Travis and it was perfect. I was so worried about how much to buy and they walked me through everything. The boat was stocked before we even got to the marina!!",
+      "excerpt": "I was so worried about how much to buy and they walked me through everything.",
+      "highlight": "worried",
+      "context": "",
+      "segments": [
+        "bachelorette",
+        "boat"
+      ],
+      "avatarBg": "#7FC8F5",
+      "rating": 5,
+      "relativeDate": "2 months ago",
+      "reviewId": "fix-001",
+      "avatarDownloaded": false,
+      "possibleDuplicateOf": null,
+      "flags": []
+    },
+    {
+      "id": "sam-oakley-2",
+      "author": "Sam Oakley",
+      "quote": "Booked them again, this time for a corporate happy hour at the office. Seamless as always and the delivery was right on time even though we ordered last minute.",
+      "excerpt": "Seamless as always and the delivery was right on time even though we ordered last minute.",
+      "highlight": "last minute",
+      "context": "",
+      "segments": [
+        "corporate"
+      ],
+      "avatarBg": "#A8E0B0",
+      "rating": 5,
+      "relativeDate": "3 weeks ago",
+      "reviewId": "fix-003",
+      "avatarDownloaded": false,
+      "possibleDuplicateOf": "sam-oakley",
+      "flags": []
+    },
+    {
+      "id": "maria-alvarez-2",
+      "author": "Maria Alvarez",
+      "quote": "Second time using them, this time for a birthday boat day. Still flawless. They even remembered our order from last time and had suggestions ready. Truly did not have to think about a single thing all weekend, which as the planner friend is priceless.",
+      "excerpt": "Truly did not have to think about a single thing all weekend, which as the planner friend is priceless.",
+      "highlight": "did not have to",
+      "context": "",
+      "segments": [
+        "boat"
+      ],
+      "avatarBg": "#E8B87F",
+      "rating": 5,
+      "relativeDate": "1 week ago",
+      "reviewId": "fix-006",
+      "avatarDownloaded": false,
+      "possibleDuplicateOf": null,
+      "flags": []
+    }
+  ],
+  "duplicates": [
+    "Jane Doe → already in pool as 'jane-doe'"
+  ],
+  "skipped": [
+    {
+      "author": "Rating Only Rita",
+      "reason": "rating-only (no text)"
+    },
+    {
+      "author": "Fourstar Fred",
+      "reason": "rating 4 — pool policy is 5★ quotes; curate manually if wanted"
+    }
+  ]
+}
