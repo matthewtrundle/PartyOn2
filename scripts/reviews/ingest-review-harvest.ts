@@ -203,8 +203,22 @@ async function downloadPhoto(url: string, outPath: string): Promise<void> {
   }
 }
 
+/**
+ * Emit a single-quoted TS string literal. Multi-paragraph reviews carry real
+ * newlines, which would terminate the literal mid-quote and make the whole
+ * snippet unparseable — so every char that can't appear raw in a single-line
+ * string is escaped, not just the backslash and quote.
+ */
+const TS_ESCAPES: Record<string, string> = {
+  '\\': '\\\\',
+  "'": "\\'",
+  '\n': '\\n',
+  '\r': '\\r',
+  '\t': '\\t',
+};
+
 function tsString(s: string): string {
-  return `'${s.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
+  return `'${s.replace(/[\\'\n\r\t]/g, (ch) => TS_ESCAPES[ch])}'`;
 }
 
 function snippetFor(c: Candidate): string {

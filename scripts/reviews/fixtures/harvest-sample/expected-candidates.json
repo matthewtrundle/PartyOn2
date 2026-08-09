@@ -54,6 +54,24 @@
       "avatarDownloaded": false,
       "possibleDuplicateOf": null,
       "flags": []
+    },
+    {
+      "id": "paragraph-pete",
+      "author": "Paragraph Pete",
+      "quote": "They delivered a keg, a tap, a barrel and ice for our block party.\n\nInstead of driving to three stores and borrowing a truck, I made one call.\tHaving it all show up took a huge part of the planning off my plate.",
+      "excerpt": "They delivered a keg, a tap, a barrel and ice for our block party.",
+      "highlight": null,
+      "context": "",
+      "segments": [
+        "general"
+      ],
+      "avatarBg": "#F2D34F",
+      "rating": 5,
+      "relativeDate": "6 months ago",
+      "reviewId": "fix-007",
+      "avatarDownloaded": false,
+      "possibleDuplicateOf": null,
+      "flags": []
     }
   ],
   "duplicates": [
