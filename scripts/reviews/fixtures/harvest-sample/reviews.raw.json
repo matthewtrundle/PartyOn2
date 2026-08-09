@@ -1,6 +1,6 @@
 {
   "placeUrl": "https://www.google.com/maps/place/fixture",
-  "count": 6,
+  "count": 7,
   "reviews": [
     {
       "reviewId": "fix-001",
@@ -67,6 +67,17 @@
       "photoUrls": [],
       "hasOwnerResponse": false,
       "cardInnerText": "Maria Alvarez\n3 reviews\n1 week ago\nSecond time using them..."
+    },
+    {
+      "reviewId": "fix-007",
+      "author": "Paragraph Pete",
+      "rating": 5,
+      "text": "They delivered a keg, a tap, a barrel and ice for our block party.\n\nInstead of driving to three stores and borrowing a truck, I made one call.\tHaving it all show up took a huge part of the planning off my plate.",
+      "relativeDate": "6 months ago",
+      "avatarUrl": "https://lh3.googleusercontent.com/a/ACg8ocFAKEpete=s120-c",
+      "photoUrls": [],
+      "hasOwnerResponse": false,
+      "cardInnerText": "Paragraph Pete\n7 reviews\n6 months ago\nThey delivered a keg, a tap, a barrel and ice..."
     }
   ]
 }
