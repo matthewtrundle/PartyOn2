@@ -36,7 +36,7 @@ import {
 
 export const metadata: Metadata = {
   title: `Party On Delivery Reviews — ${GOOGLE_RATING_DISPLAY}★ on Google | Austin Alcohol Delivery`,
-  description: `Real Google reviews from ${GOOGLE_REVIEW_COUNT_DISPLAY} Austin parties: boat days, bachelorette weekends, weddings, and corporate events. Every quote verbatim.`,
+  description: `${GOOGLE_REVIEW_COUNT_DISPLAY} real Google reviews from Austin parties: boat days, bachelorette weekends, weddings, and corporate events. Every quote verbatim.`,
   alternates: { canonical: 'https://partyondelivery.com/reviews' },
 };
 
@@ -122,11 +122,15 @@ export default function ReviewsPage() {
           </div>
 
           <h1 className="font-heading mx-auto mb-3 mt-4 max-w-3xl text-3xl font-bold text-white md:text-5xl">
-            {GOOGLE_REVIEW_COUNT_DISPLAY} Austin parties can&rsquo;t be wrong
+            {GOOGLE_REVIEW_COUNT_DISPLAY} reviews can&rsquo;t be wrong
           </h1>
+          {/* "Over a thousand parties" is deliberately conservative: ~1,460 by
+              the books (delivered orders pre-2026 + group dashboards counted
+              once each, walk-in POS sales excluded — they aren't parties). */}
           <p className="mx-auto mb-8 max-w-2xl text-lg text-white/75">
-            Boat days, bachelorette weekends, weddings, corporate events —
-            every review on this page is word-for-word from our Google profile.
+            We&rsquo;ve delivered to over a thousand Austin parties — boat days,
+            bachelorette weekends, weddings, corporate events. These are the
+            ones who came back and wrote about it.
           </p>
 
           <div className="mb-14 flex flex-wrap items-center justify-center gap-2.5">
@@ -155,10 +159,11 @@ export default function ReviewsPage() {
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
         <div className="mb-10 text-center">
           <h2 className="font-heading text-3xl font-bold md:text-4xl" style={{ color: NAVY }}>
-            All of them. Word for word.
+            Some of our favorites. Word for word.
           </h2>
           <p className="mt-2 text-sm text-gray-500">
-            No edits, no cherry-picked fragments — the full reviews, exactly as posted.
+            Not every review we&rsquo;ve gotten — just the ones we love. Each one
+            complete and unedited, exactly as posted.
           </p>
         </div>
 
