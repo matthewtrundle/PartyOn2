@@ -62,16 +62,16 @@ _(not captured)_
 
 ```json
 {
-  "orders": 54,
-  "revenue": 16824.77,
+  "orders": 53,
+  "revenue": 16509.97,
   "segments": [
     {
       "margin": null,
-      "orders": 47,
-      "revenue": 14580.61,
+      "orders": 46,
+      "revenue": 14265.81,
       "segment": "general",
       "averageMarginPct": null,
-      "averageOrderValue": 310.23,
+      "averageOrderValue": 310.13,
       "marginCoveragePct": 0
     },
     {
@@ -84,7 +84,7 @@ _(not captured)_
       "marginCoveragePct": 26
     }
   ],
-  "capturedAt": "2026-08-10T08:01:02.183Z",
+  "capturedAt": "2026-08-11T08:00:21.583Z",
   "affiliateRoi": [
     {
       "code": "POUR24",
@@ -111,18 +111,6 @@ _(not captured)_
       "marginCoveragePct": 0
     },
     {
-      "code": "SIPNSOCIAL",
-      "margin": null,
-      "orders": 2,
-      "roiPct": null,
-      "revenue": 616.29,
-      "netMargin": null,
-      "affiliateId": "3d00911f-3b75-40ad-bc3c-c87f20cdaeaf",
-      "businessName": "Sip & Social On Wheels",
-      "commissionPaid": 26.65,
-      "marginCoveragePct": 0
-    },
-    {
       "code": "PREMIER",
       "margin": null,
       "orders": 27,
@@ -132,6 +120,18 @@ _(not captured)_
       "affiliateId": "d21bac1a-3f99-489c-89fd-e1980c264a8d",
       "businessName": "Premier Party Cruises",
       "commissionPaid": 195.23,
+      "marginCoveragePct": 0
+    },
+    {
+      "code": "SIPNSOCIAL",
+      "margin": null,
+      "orders": 1,
+      "roiPct": null,
+      "revenue": 301.49,
+      "netMargin": null,
+      "affiliateId": "3d00911f-3b75-40ad-bc3c-c87f20cdaeaf",
+      "businessName": "Sip & Social On Wheels",
+      "commissionPaid": 12.75,
       "marginCoveragePct": 0
     },
     {
@@ -159,15 +159,15 @@ _(not captured)_
       "marginCoveragePct": 0
     }
   ],
-  "snapshotDate": "2026-08-10",
-  "averageOrderValue": 311.5698148148148,
+  "snapshotDate": "2026-08-11",
+  "averageOrderValue": 311.5088679245283,
   "marginCoveragePct": null
 }
 ```
 ## Updates
 
 - 2026-05-05 — Created with status `executed` from source `director`.
-- 2026-08-10 — Status shipped → shipped (cron:measure-recommendations). Notes: Auto-captured 14-day measurement
+- 2026-08-11 — Status shipped → shipped (cron:measure-recommendations). Notes: Auto-captured 14-day measurement
 
 ---
 _Mirror file. Edited automatically by the triage queue when status changes. Source of truth is the database (id: `4fe8e34e-83cb-4ee7-9576-4a60386400dc`). Slug: `premier-86-of-group-dashboards-never-convert-diagnose-the-ac`._
