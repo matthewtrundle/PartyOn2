@@ -263,6 +263,39 @@ export default function LandingPageTemplate({
       )
     : null;
 
+  // Vertical (9:16) footage restructures the whole video section, not just the
+  // player's aspect ratio. A clamped 9:16 player is narrow, which frees the
+  // horizontal room the chapter keywords would otherwise be pushed below — so
+  // vertical goes side-by-side and landscape keeps its original stacked markup.
+  const isVerticalVideo = config.video?.orientation === 'vertical';
+
+  /**
+   * Chapter list — the same questions the schema declares as key moments. Keeps
+   * the keyword text on the page, not only in JSON-LD, and gives a skimmer the
+   * contents without playing. The caller supplies the class list because the
+   * stacked layout needs a top margin and the side-by-side one does not.
+   */
+  const videoChapters = config.video?.chapters ?? [];
+  const renderVideoChapters = (className: string) =>
+    videoChapters.length > 0 ? (
+      <ul className={className}>
+        {videoChapters.map((chapter) => (
+          <li
+            key={chapter.name}
+            className="flex gap-4 text-base text-gray-700"
+          >
+            <span
+              className="font-semibold tabular-nums shrink-0"
+              style={{ color: T.blue }}
+            >
+              {formatChapterTime(chapter.startOffsetSeconds)}
+            </span>
+            <span>{chapter.name}</span>
+          </li>
+        ))}
+      </ul>
+    ) : null;
+
   return (
     <main className="bg-white text-gray-900">
       {/* FAQ schema — server-rendered into initial HTML so search crawlers see it */}
@@ -776,31 +809,26 @@ export default function LandingPageTemplate({
               )}
             </div>
 
-            <YouTubeEmbed
-              videoId={config.video.videoId}
-              title={config.video.title}
-            />
-
-            {/* Chapter list — the same questions the schema declares as key
-                moments. Keeps the keyword text on the page, not only in
-                JSON-LD, and gives a skimmer the contents without playing. */}
-            {config.video.chapters && config.video.chapters.length > 0 && (
-              <ul className="mt-8 space-y-2">
-                {config.video.chapters.map((chapter) => (
-                  <li
-                    key={chapter.name}
-                    className="flex gap-4 text-base text-gray-700"
-                  >
-                    <span
-                      className="font-semibold tabular-nums shrink-0"
-                      style={{ color: T.blue }}
-                    >
-                      {formatChapterTime(chapter.startOffsetSeconds)}
-                    </span>
-                    <span>{chapter.name}</span>
-                  </li>
-                ))}
-              </ul>
+            {isVerticalVideo ? (
+              /* Vertical: player left, chapters right on desktop; stacks on
+                 mobile. The column width matches the player's own max-w-sm
+                 clamp so there is one number governing how wide it gets. */
+              <div className="grid gap-8 md:grid-cols-[minmax(0,24rem)_1fr] md:items-start md:gap-10">
+                <YouTubeEmbed
+                  videoId={config.video.videoId}
+                  title={config.video.title}
+                  aspectRatio="9/16"
+                />
+                {renderVideoChapters('space-y-2')}
+              </div>
+            ) : (
+              <>
+                <YouTubeEmbed
+                  videoId={config.video.videoId}
+                  title={config.video.title}
+                />
+                {renderVideoChapters('mt-8 space-y-2')}
+              </>
             )}
           </div>
         </section>

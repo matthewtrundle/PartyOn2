@@ -8,17 +8,28 @@ interface YouTubeEmbedProps {
   autoplay?: boolean;
   muted?: boolean;
   controls?: boolean;
-  aspectRatio?: '16/9' | '4/3' | '1/1';
+  aspectRatio?: '16/9' | '4/3' | '1/1' | '9/16';
 }
 
 /**
  * Responsive YouTube video embed component
+ *
+ * Pass `aspectRatio="9/16"` for phone-shot vertical video (a YouTube Short, or
+ * a vertical long-form upload — both embed through the same `/embed/<id>` path).
+ * Vertical clamps its own width, because a 9:16 box at full container width is
+ * absurdly tall on desktop and an MDX author has no wrapper to constrain it.
  *
  * @example
  * ```tsx
  * <YouTubeEmbed
  *   videoId="dQw4w9WgXcQ"
  *   title="Our Bartender Partnership Program"
+ * />
+ *
+ * <YouTubeEmbed
+ *   videoId="dQw4w9WgXcQ"
+ *   title="How group ordering works"
+ *   aspectRatio="9/16"
  * />
  * ```
  */
@@ -41,15 +52,25 @@ export default function YouTubeEmbed({
 
   const embedUrl = `https://www.youtube.com/embed/${videoId}?${params.toString()}`;
 
-  // Aspect ratio mapping
-  const aspectRatioClass = {
-    '16/9': 'aspect-video', // 16:9 (standard)
-    '4/3': 'aspect-[4/3]',   // 4:3 (traditional)
-    '1/1': 'aspect-square'   // 1:1 (square)
+  // Aspect ratio mapping. Only the vertical case carries a width clamp — the
+  // others stay full-width exactly as before.
+  const { ratioClass, widthClass } = {
+    '16/9': { ratioClass: 'aspect-video', widthClass: '' },  // 16:9 (standard)
+    '4/3': { ratioClass: 'aspect-[4/3]', widthClass: '' },   // 4:3 (traditional)
+    '1/1': { ratioClass: 'aspect-square', widthClass: '' },  // 1:1 (square)
+    '9/16': { ratioClass: 'aspect-[9/16]', widthClass: 'max-w-sm mx-auto' }, // vertical / Shorts
   }[aspectRatio];
 
+  const wrapperClass = [
+    'relative w-full overflow-hidden rounded-lg shadow-xl',
+    ratioClass,
+    widthClass,
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
-    <div className={`relative w-full overflow-hidden rounded-lg shadow-xl ${aspectRatioClass}`}>
+    <div className={wrapperClass}>
       <iframe
         src={embedUrl}
         title={title}
