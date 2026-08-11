@@ -4,8 +4,7 @@ import Link from 'next/link';
 import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import type { CategoryTemplateProps } from './template-types';
-import PartnerLogo from '@/components/partners/PartnerLogo';
-import YouTubeEmbed from '@/components/YouTubeEmbed';
+import VideoFacade from '@/components/VideoFacade';
 
 type BoatTemplateProps = CategoryTemplateProps & {
   /** Override the default "Free Drink Delivery for {business}" H1 (co-branded partner headline). */
@@ -16,31 +15,30 @@ type BoatTemplateProps = CategoryTemplateProps & {
   ctaHref?: string;
   /** Full-bleed hero background image. Defaults to the shared PoD boat hero. */
   heroBackgroundImage?: string;
-  /** Render the partner logo on a white rounded chip (for full-color logos) instead of the white-recolored treatment. */
-  logoLightChip?: boolean;
   /**
-   * Optional watchable video section, rendered directly under the hero.
+   * Optional partner video. When supplied it takes over the hero's media slot,
+   * replacing `partnerHeroImage` — the video sits beside the headline and CTA on
+   * desktop and stacks below them on mobile.
    *
    * This is NOT the silent looping hero background (see PartnerHeroVideo) — it
    * is a real player with sound and controls, for a narrated partner spot that
-   * someone is meant to sit and watch.
+   * someone is meant to sit and watch. It mounts click-to-play (VideoFacade) so
+   * a third-party iframe never loads in the hero unasked.
    *
    * No VideoObject JSON-LD is emitted on purpose. These partner spots are
    * post-booking utility videos with no search job (they play here, in booking
    * confirmations, and in the text a partner sends), so they are hosted
    * unlisted and are not competing for video rich results.
    *
-   * Omit the whole object and nothing renders.
+   * Omit the whole object and the hero falls back to the still image.
    */
   video?: {
     /** YouTube video ID only — not the full URL. Works for Shorts too. */
     videoId: string;
     /** Used for the iframe title and screen readers. */
     title: string;
-    /** Section heading. */
-    heading: string;
-    /** Optional sentence under the heading. */
-    blurb?: string;
+    /** Local poster still under /public/images, shown until someone clicks play. */
+    posterImage: string;
     /** Shape of the footage. Vertical renders a clamped 9:16 player. */
     orientation?: 'landscape' | 'vertical';
   };
@@ -115,7 +113,13 @@ function StarIcon() {
   );
 }
 
-export function BoatTemplate({ affiliate, partnerLogo, partnerHeroImage, headline, subhead, ctaHref, heroBackgroundImage, logoLightChip, video }: BoatTemplateProps) {
+// `partnerLogo` is intentionally not destructured: the hero no longer renders a
+// partner logo chip. The LTYR logo asset is a square social-media badge with its
+// own border and baked-in text, so chipped or un-chipped it read as a box inside
+// a box (removed 2026-08-11). The prop stays in the shared CategoryTemplateProps
+// for the other templates — if a partner ever supplies a transparent wordmark,
+// bring the logo back rather than restyling the badge.
+export function BoatTemplate({ affiliate, partnerHeroImage, headline, subhead, ctaHref, heroBackgroundImage, video }: BoatTemplateProps) {
   const { businessName } = affiliate;
   const heroImage = partnerHeroImage || '/images/boat-heroes/boat-party-epic-sunset.webp';
   const heroBg = heroBackgroundImage || '/images/boat-heroes/boat-party-epic-sunset.webp';
@@ -140,17 +144,6 @@ export function BoatTemplate({ affiliate, partnerLogo, partnerHeroImage, headlin
         <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 pt-24 md:pt-28 pb-16 md:pb-20">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-12 items-center">
             <div className="order-1 text-center">
-              <PartnerLogo
-                logo={partnerLogo}
-                businessName={businessName}
-                lightChip={!!partnerLogo && !!logoLightChip}
-                imgClassName={
-                  logoLightChip
-                    ? 'h-28 md:h-36 w-auto object-contain mx-auto'
-                    : 'h-40 md:h-48 w-auto object-contain mx-auto drop-shadow-[0_0_15px_rgba(255,255,255,0.3)] brightness-110'
-                }
-              />
-
               <h1 className="font-heading text-3xl sm:text-4xl md:text-5xl text-white mb-4 tracking-wide leading-tight">
                 {headline ?? (
                   <>
@@ -184,15 +177,36 @@ export function BoatTemplate({ affiliate, partnerLogo, partnerHeroImage, headlin
             </div>
 
             <div className="order-2 flex flex-col gap-5">
-              <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden shadow-lg border border-white/10">
-                <Image
-                  src={heroImage}
-                  alt={`${businessName} - Party On Delivery`}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, 50vw"
+              {/* The video, when a partner has one, owns this slot instead of the
+                  still. Vertical footage is clamped to 320px rather than filling
+                  the column: at full column width a 9:16 player runs ~970px tall
+                  and would leave the headline and CTA floating in dead space. */}
+              {video ? (
+                <VideoFacade
+                  videoId={video.videoId}
+                  title={video.title}
+                  posterImage={video.posterImage}
+                  aspectRatio={video.orientation === 'vertical' ? '9/16' : '16/9'}
+                  maxWidthClass={
+                    video.orientation === 'vertical' ? 'max-w-[320px] mx-auto' : undefined
+                  }
+                  sizes={
+                    video.orientation === 'vertical'
+                      ? '320px'
+                      : '(max-width: 768px) 100vw, 50vw'
+                  }
                 />
-              </div>
+              ) : (
+                <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden shadow-lg border border-white/10">
+                  <Image
+                    src={heroImage}
+                    alt={`${businessName} - Party On Delivery`}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                  />
+                </div>
+              )}
 
               <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-white/60">
                 <span className="flex items-center gap-1.5">
@@ -213,36 +227,6 @@ export function BoatTemplate({ affiliate, partnerLogo, partnerHeroImage, headlin
           </div>
         </div>
       </section>
-
-      {/* VIDEO — optional, opt-in per partner. Sits directly under the hero
-          because these spots are aimed at someone who has just booked: they
-          answer "what happens next" before the page starts explaining it in
-          text. Renders nothing when the config has no video. */}
-      {video && (
-        <section className="bg-white py-10 md:py-14">
-          <div className="max-w-4xl mx-auto px-6 md:px-8">
-            <div className="text-center mb-8">
-              <p className="text-gray-500 tracking-[0.1em] uppercase text-sm mb-2">
-                Watch
-              </p>
-              <h2 className="font-heading text-2xl md:text-3xl text-gray-900 tracking-wide">
-                {video.heading}
-              </h2>
-              {video.blurb && (
-                <p className="text-gray-600 text-base mt-3 max-w-xl mx-auto">
-                  {video.blurb}
-                </p>
-              )}
-            </div>
-
-            <YouTubeEmbed
-              videoId={video.videoId}
-              title={video.title}
-              aspectRatio={video.orientation === 'vertical' ? '9/16' : '16/9'}
-            />
-          </div>
-        </section>
-      )}
 
       {/* HOW IT WORKS */}
       <section className="bg-gray-50 py-10 md:py-16">

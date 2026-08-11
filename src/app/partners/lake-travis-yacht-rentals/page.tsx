@@ -59,7 +59,6 @@ export default function LakeTravisYachtRentalsPage(): ReactElement {
       partnerLogo="/images/partners/lake-travis-yacht-rentals-logo.png"
       partnerHeroImage="/images/partners/lake-travis-yacht-rentals-hero.jpg"
       heroBackgroundImage="/images/partners/lake-travis-yacht-rentals-hero-bg.webp"
-      logoLightChip
       headline={
         <>
           <span className="text-brand-yellow">Lake Travis Yacht Rental</span> Delivery
@@ -74,9 +73,7 @@ export default function LakeTravisYachtRentalsPage(): ReactElement {
         videoId: LTYR_VIDEO_ID,
         orientation: 'vertical',
         title: 'PartyOn Delivery at Lake Travis Yacht Rentals — drinks delivered to the dock',
-        heading: 'A Real Delivery at the Dock, Start to Finish',
-        blurb:
-          'Forty-five seconds at Hurst Harbor: what actually shows up, and where it lands.',
+        posterImage: '/images/partners/ltyr-marina-video-poster.webp',
       }}
       ctaHref={CTA_HREF}
     />
