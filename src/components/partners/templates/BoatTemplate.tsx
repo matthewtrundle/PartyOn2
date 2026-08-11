@@ -5,6 +5,7 @@ import Navigation from '@/components/Navigation';
 import Footer from '@/components/Footer';
 import type { CategoryTemplateProps } from './template-types';
 import PartnerLogo from '@/components/partners/PartnerLogo';
+import YouTubeEmbed from '@/components/YouTubeEmbed';
 
 type BoatTemplateProps = CategoryTemplateProps & {
   /** Override the default "Free Drink Delivery for {business}" H1 (co-branded partner headline). */
@@ -17,6 +18,32 @@ type BoatTemplateProps = CategoryTemplateProps & {
   heroBackgroundImage?: string;
   /** Render the partner logo on a white rounded chip (for full-color logos) instead of the white-recolored treatment. */
   logoLightChip?: boolean;
+  /**
+   * Optional watchable video section, rendered directly under the hero.
+   *
+   * This is NOT the silent looping hero background (see PartnerHeroVideo) — it
+   * is a real player with sound and controls, for a narrated partner spot that
+   * someone is meant to sit and watch.
+   *
+   * No VideoObject JSON-LD is emitted on purpose. These partner spots are
+   * post-booking utility videos with no search job (they play here, in booking
+   * confirmations, and in the text a partner sends), so they are hosted
+   * unlisted and are not competing for video rich results.
+   *
+   * Omit the whole object and nothing renders.
+   */
+  video?: {
+    /** YouTube video ID only — not the full URL. Works for Shorts too. */
+    videoId: string;
+    /** Used for the iframe title and screen readers. */
+    title: string;
+    /** Section heading. */
+    heading: string;
+    /** Optional sentence under the heading. */
+    blurb?: string;
+    /** Shape of the footage. Vertical renders a clamped 9:16 player. */
+    orientation?: 'landscape' | 'vertical';
+  };
 };
 
 const BOAT_TESTIMONIALS = [
@@ -88,7 +115,7 @@ function StarIcon() {
   );
 }
 
-export function BoatTemplate({ affiliate, partnerLogo, partnerHeroImage, headline, subhead, ctaHref, heroBackgroundImage, logoLightChip }: BoatTemplateProps) {
+export function BoatTemplate({ affiliate, partnerLogo, partnerHeroImage, headline, subhead, ctaHref, heroBackgroundImage, logoLightChip, video }: BoatTemplateProps) {
   const { businessName } = affiliate;
   const heroImage = partnerHeroImage || '/images/boat-heroes/boat-party-epic-sunset.webp';
   const heroBg = heroBackgroundImage || '/images/boat-heroes/boat-party-epic-sunset.webp';
@@ -186,6 +213,36 @@ export function BoatTemplate({ affiliate, partnerLogo, partnerHeroImage, headlin
           </div>
         </div>
       </section>
+
+      {/* VIDEO — optional, opt-in per partner. Sits directly under the hero
+          because these spots are aimed at someone who has just booked: they
+          answer "what happens next" before the page starts explaining it in
+          text. Renders nothing when the config has no video. */}
+      {video && (
+        <section className="bg-white py-10 md:py-14">
+          <div className="max-w-4xl mx-auto px-6 md:px-8">
+            <div className="text-center mb-8">
+              <p className="text-gray-500 tracking-[0.1em] uppercase text-sm mb-2">
+                Watch
+              </p>
+              <h2 className="font-heading text-2xl md:text-3xl text-gray-900 tracking-wide">
+                {video.heading}
+              </h2>
+              {video.blurb && (
+                <p className="text-gray-600 text-base mt-3 max-w-xl mx-auto">
+                  {video.blurb}
+                </p>
+              )}
+            </div>
+
+            <YouTubeEmbed
+              videoId={video.videoId}
+              title={video.title}
+              aspectRatio={video.orientation === 'vertical' ? '9/16' : '16/9'}
+            />
+          </div>
+        </section>
+      )}
 
       {/* HOW IT WORKS */}
       <section className="bg-gray-50 py-10 md:py-16">
