@@ -3,7 +3,7 @@ title: Routes and Pages
 project: PartyOn2
 doc_type: codebase-reference
 section: routes
-last_generated: 2026-08-03
+last_generated: 2026-08-10
 tags: [partyondelivery, codebase, routes, api, pages]
 ---
 
@@ -68,6 +68,7 @@ Every `page.tsx` and `route.ts` discovered under `src/app/`. Paths are literal f
 | `/checkout` | `src/app/checkout/page.tsx` | Stripe checkout handoff. | — | Optional | Age verification required. |
 | `/checkout/success` | `src/app/checkout/success/page.tsx` | Post-payment success. | — | No | |
 | `/cocktail-kits` | `src/app/cocktail-kits/page.tsx` | Cocktail kits catalog. | — | No | |
+| `/cocktail-recipes` | `src/app/cocktail-recipes/page.tsx` | Mixing instructions for every cocktail kit. Membership comes from the live `cocktail-kits` category (a retired kit drops off on its own); `src/data/cocktail-recipes` only enriches it, and a kit with no curated recipe is skipped rather than guessed. Added 2026-08. | — | No | ISR `revalidate = 300`. Recipe + ItemList JSON-LD. |
 | `/community/affiliate/signup` | `src/app/community/affiliate/signup/page.tsx` | Alt affiliate signup. | — | No | |
 | `/contact` | `src/app/contact/page.tsx` | Contact form. | — | No | |
 | `/corporate` | `src/app/corporate/page.tsx` | Corporate funnel. | — | No | |
@@ -124,6 +125,7 @@ Every `page.tsx` and `route.ts` discovered under `src/app/`. Paths are literal f
 | `/rentals/chair-rentals-austin` | ... | Chair rentals. | — | No | |
 | `/rentals/cocktail-table-rentals-austin` | ... | Table rentals. | — | No | |
 | `/rentals/cooler-rentals-austin` | ... | Cooler rentals. | — | No | |
+| `/reviews` | `src/app/reviews/page.tsx` | "Wall of Love" — every harvested Google review, full text, verbatim. Click-through destination for the `5.0 · 100+ Google reviews` strips on the landers. Pool lives in `src/lib/reviews/reviews.ts`. Added 2026-08. | — | No | Age-gate exempt (nothing sold here). **No AggregateRating JSON-LD** — self-serving review markup is rich-result ineligible and risks a manual action. |
 | `/services` | `src/app/services/page.tsx` | Services overview. | — | No | |
 | `/terms` | `src/app/terms/page.tsx` | Terms. | — | No | |
 | `/venues/[slug]` | `src/app/venues/[slug]/page.tsx` | BYOB venue detail. | `slug` | No | |
@@ -325,6 +327,13 @@ These are **parallel namespaces, not a migration** — neither supersedes the ot
 | `/api/v1/admin/features` | | Feature flags. |
 | `/api/v1/admin/group-orders` | | Admin GroupOrderV2 list. |
 | `/api/v1/admin/group-orders/[id]` | | Detail / mutate. |
+| `/api/v1/admin/leads/board` | `.../admin/leads/board/route.ts` | Lead Flow Kanban payload. Runs the enroll sweep first (a **write**) so a fresh lead appears on open, and reads only the top 500 by score. |
+| `/api/v1/admin/leads/sources` | `.../admin/leads/sources/route.ts` | True per-form / per-channel totals. Deliberately **not** built on `getBoardData` — that sweeps-and-slices, so anything derived from it is a slice, not a total. Strictly read-only, whole-table, capped at 20k rows. Added 2026-08. |
+| `/api/v1/admin/leads/[id]` | | GET drawer detail (lead + timeline + matched orders/drafts + score breakdown); PATCH notes/owner/snooze only — stage changes must go through `/stage`. |
+| `/api/v1/admin/leads/[id]/stage` | | Move a card. All moves route through `transitionStage` (single writer: audit `LeadEvent` + stamps + score recompute) so the transition matrix always applies. |
+| `/api/v1/admin/leads/[id]/reply` | | Send a 1:1 email from the board composer (suppression-respecting, from/reply-to `info@`) → `EmailLog` + `LeadEvent` + auto NEW→CONTACTED. |
+| `/api/v1/admin/leads/[id]/touch` | | Log an off-board call/text so touch count and "last touched" reflect reality. Same bookkeeping as `/reply`, minus the email. |
+| `/api/v1/admin/leads/[id]/email/[emailId]` | | Body of one email sent to this lead (drawer timeline expansion). `EmailLog` stores no body — fetched on demand from Resend by `resendId`. |
 | `/api/v1/admin/reports` | | Report index. |
 | `/api/v1/admin/reports/sales` | | Sales report. |
 | `/api/v1/admin/reports/customers` | | Customers report. |
@@ -430,6 +439,7 @@ These are **parallel namespaces, not a migration** — neither supersedes the ot
 | `/api/v1/landing/quote` | `.../v1/landing/quote/route.ts` | Landing-page quote submission — converts a captured cart into a `DraftOrder` + invoice email. Added 2026-05. |
 | `/api/v1/lead-magnet` | `.../v1/lead-magnet/route.ts` | Lead-magnet (Playbook PDF) email send via Resend. Companion event row is written by the client through `/lead-event`. Added 2026-05. |
 | `/api/v1/events/abandon-nudge` | `.../v1/events/abandon-nudge/route.ts` | Sends the abandoned-RSVP email for the events flow (called by the 15-min cron). Added 2026-05. |
+| `/api/v1/events/abandon-nudge/cancel` | `.../v1/events/abandon-nudge/cancel/route.ts` | POST — cancels a scheduled nudge because the guest actually finished their drink order (the drinks modal's `clearCart()` only touches localStorage, so the server never hears about it otherwise). Unauthenticated by design: it can only STOP mail. Rate-limited. **Every well-formed request returns a byte-identical `{ ok: true }`** — distinguishing 'canceled' from 'no-op' would leak whether a guessed email has an unfinished order (CWE-204). Added 2026-08. |
 | `/api/partners/inquiry` | `.../partners/inquiry/route.ts` | Partner form → Zapier. |
 | `/api/profile/upload-image` | `.../profile/upload-image/route.ts` | Avatar upload. |
 | `/api/experiments/assign` | `.../experiments/assign/route.ts` | Assign variant. |
@@ -481,7 +491,7 @@ find src/app -name 'page.tsx' | sed 's|^src/app||; s|/page.tsx$||'
 find src/app -name 'route.ts' | sed 's|^src/app||; s|/route.ts$||'
 ```
 
-### All pages (191)
+### All pages (193)
 
 **/ (root)** — 1
 
@@ -742,6 +752,10 @@ find src/app -name 'route.ts' | sed 's|^src/app||; s|/route.ts$||'
 **/cocktail-kits** — 1
 
 `/cocktail-kits`
+
+**/cocktail-recipes** — 1
+
+`/cocktail-recipes`
 
 **/community/affiliate** — 1
 
@@ -1035,6 +1049,10 @@ find src/app -name 'route.ts' | sed 's|^src/app||; s|/route.ts$||'
 
 `/rentals/cooler-rentals-austin`
 
+**/reviews** — 1
+
+`/reviews`
+
 **/services** — 1
 
 `/services`
@@ -1067,7 +1085,7 @@ find src/app -name 'route.ts' | sed 's|^src/app||; s|/route.ts$||'
 
 `/weddings/products`
 
-### All API routes (330)
+### All API routes (332)
 
 **/.well-known/oauth-authorization-server** — 1
 
@@ -1389,9 +1407,9 @@ find src/app -name 'route.ts' | sed 's|^src/app||; s|/route.ts$||'
 
 `/api/public/boat-schedule`, `/api/public/boat-schedule/order/[orderNumber]`
 
-**/api/v1/admin** — 64
+**/api/v1/admin** — 65
 
-`/api/v1/admin/collections`, `/api/v1/admin/collections/[id]`, `/api/v1/admin/collections/[id]/products`, `/api/v1/admin/customers`, `/api/v1/admin/customers/[id]`, `/api/v1/admin/dashboard`, `/api/v1/admin/discounts`, `/api/v1/admin/discounts/[id]`, `/api/v1/admin/discounts/automatic`, `/api/v1/admin/discounts/validate`, `/api/v1/admin/draft-orders`, `/api/v1/admin/draft-orders/[id]`, `/api/v1/admin/draft-orders/[id]/email-events`, `/api/v1/admin/draft-orders/[id]/preview`, `/api/v1/admin/draft-orders/[id]/send`, `/api/v1/admin/features`, `/api/v1/admin/group-orders`, `/api/v1/admin/group-orders/[id]`, `/api/v1/admin/leads/[id]`, `/api/v1/admin/leads/[id]/email/[emailId]`, `/api/v1/admin/leads/[id]/reply`, `/api/v1/admin/leads/[id]/stage`, `/api/v1/admin/leads/[id]/touch`, `/api/v1/admin/leads/board`, `/api/v1/admin/orders`, `/api/v1/admin/orders/[id]`, `/api/v1/admin/orders/[id]/amend`, `/api/v1/admin/orders/[id]/cancel`, `/api/v1/admin/orders/[id]/refund`, `/api/v1/admin/orders/[id]/return`, `/api/v1/admin/orders/[id]/send-amendment`, `/api/v1/admin/orders/[id]/send-receipt`, `/api/v1/admin/orders/bulk-cancel`, `/api/v1/admin/orders/bulk-fulfill`, `/api/v1/admin/orders/send-review-requests`, `/api/v1/admin/partner-dashboards`, `/api/v1/admin/partner-prospects`, `/api/v1/admin/partner-prospects/[id]`, `/api/v1/admin/partner-prospects/[id]/campaign`, `/api/v1/admin/partner-prospects/ab`, `/api/v1/admin/partner-prospects/campaign`, `/api/v1/admin/partner-prospects/enroll`, `/api/v1/admin/partner-prospects/metrics`, `/api/v1/admin/partner-prospects/sync`, `/api/v1/admin/partner-prospects/test-send`, `/api/v1/admin/partner-prospects/verify`, `/api/v1/admin/premiere-credits`, `/api/v1/admin/premiere-credits/[id]/approve`, `/api/v1/admin/premiere-credits/[id]/cancel`, `/api/v1/admin/premiere-credits/[id]/contact`, `/api/v1/admin/premiere-credits/[id]/resend`, `/api/v1/admin/products`, `/api/v1/admin/products/[id]`, `/api/v1/admin/products/[id]/images/reorder`, `/api/v1/admin/products/[id]/variants/[variantId]`, `/api/v1/admin/products/images`, `/api/v1/admin/products/images/[imageId]`, `/api/v1/admin/reports`, `/api/v1/admin/reports/customers`, `/api/v1/admin/reports/inventory`, `/api/v1/admin/reports/sales`, `/api/v1/admin/shortage-list/email`, `/api/v1/admin/sync`, `/api/v1/admin/unpaid-carts`
+`/api/v1/admin/collections`, `/api/v1/admin/collections/[id]`, `/api/v1/admin/collections/[id]/products`, `/api/v1/admin/customers`, `/api/v1/admin/customers/[id]`, `/api/v1/admin/dashboard`, `/api/v1/admin/discounts`, `/api/v1/admin/discounts/[id]`, `/api/v1/admin/discounts/automatic`, `/api/v1/admin/discounts/validate`, `/api/v1/admin/draft-orders`, `/api/v1/admin/draft-orders/[id]`, `/api/v1/admin/draft-orders/[id]/email-events`, `/api/v1/admin/draft-orders/[id]/preview`, `/api/v1/admin/draft-orders/[id]/send`, `/api/v1/admin/features`, `/api/v1/admin/group-orders`, `/api/v1/admin/group-orders/[id]`, `/api/v1/admin/leads/[id]`, `/api/v1/admin/leads/[id]/email/[emailId]`, `/api/v1/admin/leads/[id]/reply`, `/api/v1/admin/leads/[id]/stage`, `/api/v1/admin/leads/[id]/touch`, `/api/v1/admin/leads/board`, `/api/v1/admin/leads/sources`, `/api/v1/admin/orders`, `/api/v1/admin/orders/[id]`, `/api/v1/admin/orders/[id]/amend`, `/api/v1/admin/orders/[id]/cancel`, `/api/v1/admin/orders/[id]/refund`, `/api/v1/admin/orders/[id]/return`, `/api/v1/admin/orders/[id]/send-amendment`, `/api/v1/admin/orders/[id]/send-receipt`, `/api/v1/admin/orders/bulk-cancel`, `/api/v1/admin/orders/bulk-fulfill`, `/api/v1/admin/orders/send-review-requests`, `/api/v1/admin/partner-dashboards`, `/api/v1/admin/partner-prospects`, `/api/v1/admin/partner-prospects/[id]`, `/api/v1/admin/partner-prospects/[id]/campaign`, `/api/v1/admin/partner-prospects/ab`, `/api/v1/admin/partner-prospects/campaign`, `/api/v1/admin/partner-prospects/enroll`, `/api/v1/admin/partner-prospects/metrics`, `/api/v1/admin/partner-prospects/sync`, `/api/v1/admin/partner-prospects/test-send`, `/api/v1/admin/partner-prospects/verify`, `/api/v1/admin/premiere-credits`, `/api/v1/admin/premiere-credits/[id]/approve`, `/api/v1/admin/premiere-credits/[id]/cancel`, `/api/v1/admin/premiere-credits/[id]/contact`, `/api/v1/admin/premiere-credits/[id]/resend`, `/api/v1/admin/products`, `/api/v1/admin/products/[id]`, `/api/v1/admin/products/[id]/images/reorder`, `/api/v1/admin/products/[id]/variants/[variantId]`, `/api/v1/admin/products/images`, `/api/v1/admin/products/images/[imageId]`, `/api/v1/admin/reports`, `/api/v1/admin/reports/customers`, `/api/v1/admin/reports/inventory`, `/api/v1/admin/reports/sales`, `/api/v1/admin/shortage-list/email`, `/api/v1/admin/sync`, `/api/v1/admin/unpaid-carts`
 
 **/api/v1/affiliate** — 17
 
@@ -1441,9 +1459,9 @@ find src/app -name 'route.ts' | sed 's|^src/app||; s|/route.ts$||'
 
 `/api/v1/event-quiz/submit`
 
-**/api/v1/events** — 2
+**/api/v1/events** — 3
 
-`/api/v1/events/abandon-nudge`, `/api/v1/events/track`
+`/api/v1/events/abandon-nudge`, `/api/v1/events/abandon-nudge/cancel`, `/api/v1/events/track`
 
 **/api/v1/features** — 1
 

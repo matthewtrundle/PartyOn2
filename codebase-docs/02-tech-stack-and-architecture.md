@@ -3,7 +3,7 @@ title: Tech Stack and Architecture
 project: PartyOn2
 doc_type: codebase-reference
 section: architecture
-last_generated: 2026-08-03
+last_generated: 2026-08-10
 tags: [partyondelivery, codebase, architecture, stack, env]
 ---
 
@@ -48,7 +48,7 @@ tags: [partyondelivery, codebase, architecture, stack, env]
 
 ```text
 src/
-├── app/                        # Next.js App Router — 191 page.tsx, 330 route.ts
+├── app/                        # Next.js App Router — 193 page.tsx, 332 route.ts
 │   ├── (main)/                 # Route group for marketing pages (areas, press, tabc…)
 │   ├── api/
 │   │   ├── v1/                 # Primary API: auth, products, orders, cart, inventory, admin, affiliate, invoice

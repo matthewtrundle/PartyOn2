@@ -28,9 +28,12 @@ Premium alcohol delivery service in Austin, TX. Next.js 15.4 + TypeScript + Tail
 ## DESIGN SYSTEM — MANDATORY
 
 **Before creating or modifying ANY page/component, read these files:**
-1. `memory/design-system.md` — Full token reference (colors, typography, buttons, inputs, cards, modals, spacing)
-2. `src/app/globals.css` — All CSS utility classes
-3. `src/app/design-example/page.tsx` — Live interactive showcase at `/design-example`
+1. `src/app/globals.css` — All CSS utility classes
+2. `src/app/design-example/page.tsx` — Live interactive showcase at `/design-example`
+
+The full token reference (colors, typography, buttons, inputs, cards, spacing) is
+the rest of this section — there is no separate design-system file. (`DESIGN-SYSTEM-MIGRATION-PLAN.md`
+at the repo root is a Feb-2026 font/color cleanup plan, NOT a token reference.)
 
 **Use existing design system classes. Do NOT create ad-hoc styles that duplicate what already exists.**
 
@@ -211,7 +214,7 @@ src/
 
 ## Blog System
 
-MDX-based blog stored in `content/blog/posts/` (134 posts). NOT database-backed.
+MDX-based blog stored in `content/blog/posts/` (123 `.mdx` posts). NOT database-backed.
 
 - **Generation**: `npm run generate-blog` — Claude 3 Haiku via OpenRouter API
 - **Cron route**: `GET /api/cron/generate-blog` — Claude 3.5 Sonnet via OpenRouter (requires `CRON_SECRET`)
