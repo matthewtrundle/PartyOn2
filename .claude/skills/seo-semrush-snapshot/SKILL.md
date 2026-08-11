@@ -68,13 +68,13 @@ data/seo/semrush/<YYYY-MM-DD>/
 
 # seo-semrush-snapshot
 
-> **Status: Phase 0 stub.** This file documents the Phase 1 contract and surfaces the reconnaissance the operator must complete before implementation begins. There is no `script.ts` or `selectors.ts` yet — those land in Phase 1 after the reconnaissance below confirms the approach is viable.
+> **Status: producer lives in Cowork, not this repo.** The Phase 0 reconnaissance ([Obsidian vault: `Memory/SEO/Recon-2026-05-06-semrush.md`](../../../docs/seo/cowork-semrush-brief.md)) confirmed the approach. The actual scraper is being built in a Cowork project — see [`docs/seo/cowork-semrush-brief.md`](../../../docs/seo/cowork-semrush-brief.md) for the drop-in brief that bootstraps that work. This file remains as the engineering-repo's record of the **output contract** the Cowork producer must honor, so the consumer cron (Phase 1 PR 3, in this repo) can rely on it.
 
 ## Why this skill exists
 
-Party On Delivery has a paid SEMrush UI subscription but no API budget and no Ahrefs subscription. The SEO Director agent needs weekly position-tracking, organic-research, backlink, site-audit, and keyword-magic data to produce its Monday briefings. Until/unless the operator buys API access, the only path is **driving the SEMrush UI with a real browser** (Playwright) on a weekly schedule, screenshotting each dashboard, scraping the visible data tables, and writing structured JSON the SEO Director can read from disk.
+Party On Delivery has a paid SEMrush UI subscription but no API budget and no Ahrefs subscription. The SEO Director agent needs weekly position-tracking, organic-research, backlink, site-audit, and keyword-magic data to produce its Monday briefings. The only path is **driving the SEMrush UI with a real browser** (Playwright) on a weekly schedule, screenshotting each dashboard, scraping the visible data tables, and writing structured JSON the SEO Director can read.
 
-The runner cannot live on Vercel — serverless functions don't ship browser binaries. Phase 1 chooses between **GitHub Actions** (cloud cron, requires SEMrush credentials in GH secrets) and **local cron** on a workstation.
+Vercel serverless can't run Playwright — no browser binaries. The producer runs in **Cowork**, not in this repo. The consumer-side reader cron (Phase 1 PR 3, lands in this repo) reads the JSON files Cowork hands off.
 
 ## Phase 1 contract (what the skill will do)
 
