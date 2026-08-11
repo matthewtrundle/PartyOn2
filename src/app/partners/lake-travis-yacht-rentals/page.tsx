@@ -17,6 +17,20 @@ import { BoatTemplate } from '@/components/partners/templates/BoatTemplate';
 
 const CTA_HREF = '/order?ref=LTYACHTRENTALS&p=boat&d=boat';
 
+/**
+ * The marina walk-down spot — a 0:45 vertical cut shot at Hurst Harbor.
+ *
+ * Hosted UNLISTED on YouTube, which is deliberate: it embeds and plays fine
+ * while staying out of search, the channel's public list, and the Shorts feed.
+ * It has no search job (see docs/marketing/ltyr-marina-video-script-2026-07.md)
+ * — do not make it public expecting views to mean anything.
+ *
+ * Vertical because it was shot on a phone. At 0:45 YouTube classifies it as a
+ * Short, which changes nothing about embedding: Shorts serve through the same
+ * /embed/<id> path as long-form.
+ */
+const LTYR_VIDEO_ID = 'R9vhASE29xc';
+
 export const metadata: Metadata = {
   title: 'Lake Travis Yacht Rental Delivery | Party On Delivery',
   description:
@@ -56,6 +70,14 @@ export default function LakeTravisYachtRentalsPage(): ReactElement {
           Drinks delivered iced to your boat at the dock — plus stock the house before you set sail. Free marina delivery.
         </>
       }
+      video={{
+        videoId: LTYR_VIDEO_ID,
+        orientation: 'vertical',
+        title: 'PartyOn Delivery at Lake Travis Yacht Rentals — drinks delivered to the dock',
+        heading: 'A Real Delivery at the Dock, Start to Finish',
+        blurb:
+          'Forty-five seconds at Hurst Harbor: what actually shows up, and where it lands.',
+      }}
       ctaHref={CTA_HREF}
     />
   );
