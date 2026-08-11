@@ -53,6 +53,11 @@ export function buildBachVideo(opts: {
 }): LandingVideo {
   return {
     videoId: opts.videoId,
+    // Shot vertically on a phone, like everything from the fall 2026 shoot. At
+    // ~4:15 it is too long to be a Short (YouTube's ceiling is ~3 min), so it
+    // uploads as vertical long-form — which keeps the chapters this config
+    // exists to declare. Shorts do not support chapters.
+    orientation: 'vertical',
     uploadDate: opts.uploadDate,
     duration: opts.duration,
     heading: 'Watch: 10 bach party questions, answered in 4 minutes',

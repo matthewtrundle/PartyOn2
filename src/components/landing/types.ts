@@ -89,6 +89,19 @@ export type Faq = { q: string; a: string };
 export type LandingVideo = {
   /** YouTube video ID only — not the full URL. */
   videoId: string;
+  /**
+   * Shape of the source footage. Omit for the 16:9 default.
+   *
+   * `'vertical'` is for phone-shot 9:16 footage, which is everything from the
+   * fall 2026 shoot. It renders the player clamped and narrow with the chapter
+   * list beside it, instead of a full-width 16:9 box that would pillarbox the
+   * picture down to a sliver on desktop.
+   *
+   * Note this is about the *file*, not about Shorts: YouTube only treats a
+   * vertical upload as a Short under ~3 minutes, so the 4-minute Q&A videos are
+   * vertical long-form. Both embed identically, so this field covers both.
+   */
+  orientation?: 'landscape' | 'vertical';
   /** Section heading, e.g. "Watch: 10 bach party questions, answered". */
   heading: string;
   /** One or two sentences under the heading. */
