@@ -3,7 +3,7 @@ title: PartyOn2 Codebase Reference — Index
 project: PartyOn2
 doc_type: codebase-reference
 section: index
-last_generated: 2026-08-03
+last_generated: 2026-08-10
 tags: [partyondelivery, codebase, index, toc]
 ---
 
@@ -33,13 +33,25 @@ PartyOn2 is the Next.js 15 App Router codebase that powers [partyondelivery.com]
 | Database | Neon Postgres via `@prisma/client` 6.15.0 |
 | Hosting | Vercel (crons in `vercel.json`) |
 | Primary package | `party-on-delivery` v0.1.0 |
-| `page.tsx` files | **191** |
-| `route.ts` API files | **330** |
+| `page.tsx` files | **193** |
+| `route.ts` API files | **332** |
 | Prisma models | **109** |
 | Prisma enums | **46** |
-| Blog posts in `content/blog/posts/` | **133** |
-| TS/TSX files in `src/` | **1047** |
-| Approx. LOC in `src/` (TS + TSX) | **~200,613** |
+| Blog posts in `content/blog/posts/` | **123** (`.mdx`) |
+| TS/TSX files in `src/` | **1,718** |
+| Approx. LOC in `src/` (TS + TSX) | **~307,600** |
+
+Counts are as of `last_generated` above. Regenerate them with:
+
+```bash
+find src/app -name 'page.tsx' | wc -l          # pages
+find src/app -name 'route.ts' | wc -l          # API routes
+grep -cE '^model ' prisma/schema.prisma        # models
+grep -cE '^enum ' prisma/schema.prisma         # enums
+ls content/blog/posts/ | wc -l                 # blog posts
+find src \( -name '*.ts' -o -name '*.tsx' \) | wc -l
+find src \( -name '*.ts' -o -name '*.tsx' \) -print0 | xargs -0 wc -l | tail -1
+```
 
 ## How to use this reference (for LLMs)
 
