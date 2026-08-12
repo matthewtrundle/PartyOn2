@@ -400,14 +400,26 @@ function buildCards(
     const c = cardMap.get(key)!;
     c.payments.push({ payer: o.customerName });
     c.orders.push({ ...o._serialized, payerDiffers: lbl.payerDiffers });
-    for (const it of o._serialized.items) {
-      c.aggregatedItems.set(it.title, (c.aggregatedItems.get(it.title) || 0) + it.quantity);
+    // Cancelled orders stay VISIBLE as sub-cards (ops needs to see that the
+    // order existed and was refunded) but must not feed the cooler rollup --
+    // otherwise the pack list tells the picker to load items nobody paid for.
+    // Unpaid-but-live orders DO count: they still have to be packed, which is
+    // what the "N unpaid" badge is there to flag.
+    if (o.status !== OrderStatus.CANCELLED) {
+      for (const it of o._serialized.items) {
+        c.aggregatedItems.set(it.title, (c.aggregatedItems.get(it.title) || 0) + it.quantity);
+      }
     }
     if (!c.deliveryNotes && o.deliveryInstructions) c.deliveryNotes = o.deliveryInstructions;
   }
 
   const cards: OrderCardData[] = [...cardMap.values()].map((c) => {
-    const total = c.orders.reduce((s, o) => s + o.total, 0);
+    // Same rule as the item rollup: a cancelled+refunded order contributes no
+    // money to the card total, so "order total" matches what was actually kept.
+    const total = c.orders.reduce(
+      (s, o) => (o.status === OrderStatus.CANCELLED ? s : s + o.total),
+      0
+    );
     const totalItems = [...c.aggregatedItems.values()].reduce((s, q) => s + q, 0);
     const displayName = preferredCustomerName(c);
     const cruise = resolveCruiseType(c);
