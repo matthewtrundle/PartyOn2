@@ -62,16 +62,16 @@ _(not captured)_
 
 ```json
 {
-  "orders": 53,
-  "revenue": 16509.97,
+  "orders": 55,
+  "revenue": 17407.39,
   "segments": [
     {
       "margin": null,
-      "orders": 46,
-      "revenue": 14265.81,
+      "orders": 48,
+      "revenue": 15163.23,
       "segment": "general",
       "averageMarginPct": null,
-      "averageOrderValue": 310.13,
+      "averageOrderValue": 315.9,
       "marginCoveragePct": 0
     },
     {
@@ -84,7 +84,7 @@ _(not captured)_
       "marginCoveragePct": 26
     }
   ],
-  "capturedAt": "2026-08-11T08:00:21.583Z",
+  "capturedAt": "2026-08-12T08:00:30.370Z",
   "affiliateRoi": [
     {
       "code": "POUR24",
@@ -135,6 +135,18 @@ _(not captured)_
       "marginCoveragePct": 0
     },
     {
+      "code": "BIGTEXBOATRENTALS",
+      "margin": null,
+      "orders": 1,
+      "roiPct": null,
+      "revenue": 308.37,
+      "netMargin": null,
+      "affiliateId": "39489c4d-df1a-429e-ade3-13f493b496a4",
+      "businessName": "BigTex Boat Rentals",
+      "commissionPaid": 12.39,
+      "marginCoveragePct": 0
+    },
+    {
       "code": "BACHBABES",
       "margin": null,
       "orders": 1,
@@ -159,15 +171,15 @@ _(not captured)_
       "marginCoveragePct": 0
     }
   ],
-  "snapshotDate": "2026-08-11",
-  "averageOrderValue": 311.5088679245283,
+  "snapshotDate": "2026-08-12",
+  "averageOrderValue": 316.498,
   "marginCoveragePct": null
 }
 ```
 ## Updates
 
 - 2026-05-05 — Created with status `executed` from source `director`.
-- 2026-08-11 — Status shipped → shipped (cron:measure-recommendations). Notes: Auto-captured 14-day measurement
+- 2026-08-12 — Status shipped → shipped (cron:measure-recommendations). Notes: Auto-captured 14-day measurement
 
 ---
 _Mirror file. Edited automatically by the triage queue when status changes. Source of truth is the database (id: `4fe8e34e-83cb-4ee7-9576-4a60386400dc`). Slug: `premier-86-of-group-dashboards-never-convert-diagnose-the-ac`._
