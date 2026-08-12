@@ -12,10 +12,13 @@ import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import VideoFacade from '../VideoFacade';
 
+// Deliberately a fixture path, not the real poster filename. The live poster
+// gets a version bump every time the cover changes (see the LTYR page comment),
+// and a test asserting nothing about the image should not go stale with it.
 const BASE = {
   videoId: 'R9vhASE29xc',
   title: 'PartyOn Delivery at Lake Travis Yacht Rentals',
-  posterImage: '/images/partners/ltyr-marina-video-poster.webp',
+  posterImage: '/images/partners/test-poster.webp',
 };
 
 describe('VideoFacade before the click', () => {

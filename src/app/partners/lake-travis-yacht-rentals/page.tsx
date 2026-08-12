@@ -73,7 +73,16 @@ export default function LakeTravisYachtRentalsPage(): ReactElement {
         videoId: LTYR_VIDEO_ID,
         orientation: 'vertical',
         title: 'PartyOn Delivery at Lake Travis Yacht Rentals — drinks delivered to the dock',
-        posterImage: '/images/partners/ltyr-marina-video-poster.webp',
+        // Derived from YouTube's `oardefault` still, which tracks whatever cover
+        // is currently set on the Short. Kept as a local file so no third-party
+        // request fires before someone clicks play.
+        //
+        // ⚠ BUMP THE FILENAME when you replace this image. next.config.ts sets
+        // `minimumCacheTTL` to a year, so reusing the path can serve a stale
+        // optimized derivative for months. Re-pull with:
+        //   curl -s https://i.ytimg.com/vi/R9vhASE29xc/oardefault.jpg -o /tmp/p.jpg
+        //   then sharp-resize to 640w webp as -v3, and update this path.
+        posterImage: '/images/partners/ltyr-marina-video-poster-v2.webp',
       }}
       ctaHref={CTA_HREF}
     />
