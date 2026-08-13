@@ -62,16 +62,16 @@ _(not captured)_
 
 ```json
 {
-  "orders": 55,
-  "revenue": 17407.39,
+  "orders": 54,
+  "revenue": 15769.76,
   "segments": [
     {
       "margin": null,
-      "orders": 48,
-      "revenue": 15163.23,
+      "orders": 47,
+      "revenue": 13525.6,
       "segment": "general",
       "averageMarginPct": null,
-      "averageOrderValue": 315.9,
+      "averageOrderValue": 287.78,
       "marginCoveragePct": 0
     },
     {
@@ -84,7 +84,7 @@ _(not captured)_
       "marginCoveragePct": 26
     }
   ],
-  "capturedAt": "2026-08-12T08:00:30.370Z",
+  "capturedAt": "2026-08-13T08:01:26.765Z",
   "affiliateRoi": [
     {
       "code": "POUR24",
@@ -113,9 +113,9 @@ _(not captured)_
     {
       "code": "PREMIER",
       "margin": null,
-      "orders": 27,
+      "orders": 25,
       "roiPct": null,
-      "revenue": 4451.07,
+      "revenue": 3490.6,
       "netMargin": null,
       "affiliateId": "d21bac1a-3f99-489c-89fd-e1980c264a8d",
       "businessName": "Premier Party Cruises",
@@ -125,13 +125,13 @@ _(not captured)_
     {
       "code": "SIPNSOCIAL",
       "margin": null,
-      "orders": 1,
+      "orders": 2,
       "roiPct": null,
-      "revenue": 301.49,
+      "revenue": 551.47,
       "netMargin": null,
       "affiliateId": "3d00911f-3b75-40ad-bc3c-c87f20cdaeaf",
       "businessName": "Sip & Social On Wheels",
-      "commissionPaid": 12.75,
+      "commissionPaid": 24.3,
       "marginCoveragePct": 0
     },
     {
@@ -157,29 +157,17 @@ _(not captured)_
       "businessName": "Bach Babes",
       "commissionPaid": 7.45,
       "marginCoveragePct": 0
-    },
-    {
-      "code": "DTRbartending",
-      "margin": null,
-      "orders": 1,
-      "roiPct": null,
-      "revenue": 1342.66,
-      "netMargin": null,
-      "affiliateId": "f029d561-1c6f-45ba-9cac-7135eac17ce2",
-      "businessName": "DTR Bartending",
-      "commissionPaid": 94.85,
-      "marginCoveragePct": 0
     }
   ],
-  "snapshotDate": "2026-08-12",
-  "averageOrderValue": 316.498,
+  "snapshotDate": "2026-08-13",
+  "averageOrderValue": 292.0325925925926,
   "marginCoveragePct": null
 }
 ```
 ## Updates
 
 - 2026-05-05 — Created with status `executed` from source `director`.
-- 2026-08-12 — Status shipped → shipped (cron:measure-recommendations). Notes: Auto-captured 14-day measurement
+- 2026-08-13 — Status shipped → shipped (cron:measure-recommendations). Notes: Auto-captured 14-day measurement
 
 ---
 _Mirror file. Edited automatically by the triage queue when status changes. Source of truth is the database (id: `4fe8e34e-83cb-4ee7-9576-4a60386400dc`). Slug: `premier-86-of-group-dashboards-never-convert-diagnose-the-ac`._
