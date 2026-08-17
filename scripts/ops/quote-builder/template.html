@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{TITLE}}</title>
+<style>
+/* ────────────────────────────────────────────────────────────────────────
+   Premier Party Cruises — two-page quote / proposal
+   Static port of the approved Claude Design layout (2026-08-17).
+   All data lives in double-brace tokens filled by build-quote.mjs. Do not hand-edit
+   the built output; edit the JSON and rebuild.
+   ──────────────────────────────────────────────────────────────────────── */
+
+/* Playfair Display — inlined so the type is identical offline and in email */
+@font-face{
+  font-family:"Playfair Display";font-style:normal;font-weight:400 700;font-display:swap;
+  src:url("{{FONT_PLAYFAIR}}") format("woff2");
+}
+
+:root{
+  --navy:#17323D; --navy-soft:#DCE6EA;
+  --cyan:#25D5EF; --cyan-ink:#0A6E80; --cyan-soft:#E2F7FB; --cyan-line:#A9E4F0; --cyan-text:#0B4A56;
+  --sand:#B5762A; --sand-ink:#7A4C12; --sand-soft:#FBF0DF;
+  --gray:#55656C; --gray-soft:#EFEDE8;
+  --cream:#FAF7F2;
+  --ink:#141A1D; --ink-2:#42525A; --ink-3:#6F8189;
+  --line-2:#E9E5DF;
+  --side-text:#C3D6DC; --side-label:#8FB0BC; --side-rule:rgba(255,255,255,.16);
+  --yellow:#FFD21E; --yellow-ink:#5C4300;      /* once per page: button (p1), total (p2) */
+  --display:"Playfair Display",Georgia,serif;
+  --body:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:#E9E6E0;font-family:var(--body);color:var(--ink);font-size:16px;line-height:1.44;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:var(--display);font-weight:400;margin:0}
+p{margin:0}
+b,strong{font-weight:650;color:var(--ink)}
+a{color:var(--cyan-ink);text-decoration:none}
+
+/* ── page shell ── */
+.page{width:8.5in;height:11in;margin:20px auto;background:var(--cream);display:flex;overflow:hidden;
+  box-shadow:0 1px 2px rgba(20,26,29,.05),0 10px 30px -14px rgba(20,26,29,.22)}
+.main{flex:1 1 auto;display:flex;flex-direction:column;min-width:0}
+.p1 .main{padding:.3in .34in .28in .3in}
+.p2 .main{padding:.3in .26in .28in .34in}
+
+/* ── navy sidebar ── */
+.side{flex:0 0 1.72in;background:var(--navy);color:var(--side-text);display:flex;flex-direction:column;
+  padding:.28in .22in;min-width:0}
+.p2 .side{flex-basis:1.95in}   /* p2 sidebar carries the total + weather text */
+.side .brand{font-family:var(--display);font-size:25px;line-height:1.06;color:#fff}
+.side .tel{font-family:var(--mono);font-size:12.5px;letter-spacing:.06em;color:var(--cyan);margin-top:7px}
+.side .badges{display:flex;flex-direction:column;gap:5px;margin-top:18px}
+.side .badge{font-family:var(--mono);font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--side-label)}
+.side .badge.hi{color:var(--cyan)}
+.side .block{margin-top:18px;padding-top:14px;border-top:1px solid var(--side-rule)}
+.side .block.tight{margin-top:16px;padding-top:12px}
+.side .lbl{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--side-label);display:block}
+.side .lbl.mb{margin-bottom:6px}
+.side .lbl.mt{margin-top:10px}
+.side .name{font-family:var(--display);font-size:20px;line-height:1.14;color:#fff;display:block}
+.side .name.sm{font-size:19px;margin-top:3px}
+.side .name.xs{font-size:18px}
+.side .meta{font-size:14px;line-height:1.5;display:block;margin-top:6px}
+.side .photos{display:flex;flex-direction:column;gap:5px;margin-top:18px;flex:1 1 auto;min-height:0}
+.side .photos img{width:100%;flex:1 1 0;min-height:0;object-fit:cover;display:block;background:var(--gray-soft)}
+.side .small{font-size:13px;line-height:1.42;display:block}
+.side .small.mt{margin-top:8px}
+.side .h{font-family:var(--display);font-size:18px;color:#fff;display:block;margin-bottom:3px}
+.side .stack{display:flex;flex-direction:column;gap:12px}
+.side .contact-tel{font-family:var(--mono);font-size:11px;letter-spacing:.05em;color:var(--cyan);display:block;margin-top:3px}
+.side .contact-line{font-size:12.5px;line-height:1.45;display:block;margin-top:3px;overflow-wrap:anywhere}
+.side .total-lbl{font-family:var(--display);font-size:21px;line-height:1.12;color:#fff;margin-top:5px}
+.side .total-amt{font-family:var(--display);font-variant-numeric:tabular-nums;font-size:26px;line-height:1;
+  color:var(--navy);background:var(--yellow);padding:12px 6px;margin-top:10px;text-align:center;white-space:nowrap;
+  overflow:hidden;letter-spacing:-.01em}
+.side .total-amt.long{font-size:22px}
+.side .total-amt.xlong{font-size:19px}
+
+/* ── page 1 main ── */
+.p1 h1{font-size:50px;line-height:1.02;letter-spacing:-.018em;text-wrap:balance}
+.p1 .sub{font-size:19px;line-height:1.4;color:var(--ink-2);margin-top:11px;text-wrap:pretty}
+.hero{width:100%;flex:1 1 auto;min-height:1.5in;object-fit:cover;display:block;background:var(--gray-soft);margin-top:14px}
+.lede{background:var(--navy);color:#E8F1F4;padding:14px 17px;margin-top:12px;flex:0 0 auto}
+.lede .hl{font-family:var(--display);font-size:25px;color:#fff;display:block;margin-bottom:5px;line-height:1.1}
+.lede p{font-size:16.5px;line-height:1.45;color:var(--side-text);text-wrap:pretty}
+.lede strong{color:var(--cyan);font-weight:500}
+.cols{display:grid;grid-template-columns:1.1fr 1fr;gap:22px;margin-top:15px;flex:0 0 auto}
+.cols h3{font-size:21px;line-height:1.15;margin:0 0 7px}
+.cols .col2{display:flex;flex-direction:column;gap:14px}
+.cols .col2 h3{margin-bottom:5px}
+.cols p{font-size:16px;line-height:1.44;color:var(--ink-2);text-wrap:pretty}
+.list{list-style:none;padding:0;margin:0;font-size:16px;line-height:1.38;color:var(--ink-2);display:flex;flex-direction:column;gap:5px}
+.list li{padding-left:16px;position:relative}
+.list li::before{content:"";position:absolute;left:0;top:.5em;width:5px;height:5px;border-radius:50%;background:var(--cyan)}
+.callout{margin-top:15px;background:var(--cyan-soft);border:1px solid var(--cyan-line);border-left:4px solid var(--cyan);
+  padding:13px 16px;display:flex;flex-direction:column;gap:10px;flex:0 0 auto}
+.callout h3{font-size:23px;color:var(--cyan-ink);line-height:1.15}
+.callout .row{display:flex;justify-content:space-between;align-items:center;gap:16px}
+.callout p{font-size:15.5px;line-height:1.42;color:var(--cyan-text);text-wrap:pretty}
+.callout p b{color:inherit}
+.btn{flex:0 0 auto;background:var(--yellow);color:var(--navy);text-decoration:none;font-size:15px;font-weight:700;
+  padding:12px 17px;white-space:nowrap;text-align:center;line-height:1.3}
+.btn span{display:block;font-family:var(--mono);font-size:9.5px;font-weight:500;color:var(--yellow-ink);letter-spacing:.03em;margin-top:3px}
+
+/* ── page 2 main ── */
+.p2 h1{font-size:41px;line-height:1.03;letter-spacing:-.016em}
+.p2 .sub{font-size:18px;color:var(--ink-2);margin-top:9px;text-wrap:pretty}
+.sh{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:8px 14px;margin-top:16px;
+  border-left:4px solid var(--navy);background:var(--navy-soft)}
+.sh:first-of-type{margin-top:18px}
+.sh h2{font-size:25px;line-height:1.1;color:var(--navy);white-space:nowrap}
+.sh .tag{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--navy);text-align:right}
+.sh.sand{border-left-color:var(--sand);background:var(--sand-soft)} .sh.sand h2,.sh.sand .tag{color:var(--sand-ink)}
+.sh.cyan{border-left-color:var(--cyan-ink);background:var(--cyan-soft)} .sh.cyan h2,.sh.cyan .tag{color:var(--cyan-ink)}
+.sh.gray{border-left-color:var(--gray);background:var(--gray-soft)} .sh.gray h2,.sh.gray .tag{color:var(--gray)}
+table{width:100%;border-collapse:collapse;font-size:17px;margin-top:9px}
+td{padding:8px 0;border-bottom:1px solid var(--line-2);vertical-align:top;color:var(--ink-2)}
+td.price{padding-left:12px;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums;font-weight:650;color:var(--ink)}
+tr:last-child td{border-bottom:0}
+td .note{font-size:14px;color:var(--ink-3);display:block;margin-top:2px;line-height:1.35}
+.folio{margin-top:auto;padding-top:12px;font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--ink-3);text-transform:uppercase;flex:0 0 auto}
+
+/* ── responsive (screen only, must stay BELOW Letter width so print never trips it) ── */
+@media screen and (max-width:780px){
+  .page{width:auto;height:auto;flex-direction:column}
+  .side{flex:0 0 auto}
+  .cols{grid-template-columns:1fr}
+  .callout .row{flex-direction:column;align-items:flex-start}
+}
+
+/* ── print ── */
+@media print{
+  body{background:#fff}
+  .page{margin:0;box-shadow:none;page-break-after:always;break-after:page}
+  .page:last-child{page-break-after:auto;break-after:auto}
+  .btn{background:var(--yellow)!important;color:var(--navy)!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  @page{size:letter;margin:0}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════ PAGE 1 — the boat ═══════════════════ -->
+<section class="page p1">
+  <aside class="side">
+    <span class="brand">{{BRAND_LINE_1}}<br>{{BRAND_LINE_2}}</span>
+    <span class="tel">{{SENDER_PHONE}}</span>
+
+    <div class="badges">{{BADGES}}</div>
+
+    <div class="block">
+      <span class="lbl mb">Prepared for</span>
+      <span class="name">{{CLIENT_COMPANY}}</span>
+      <span class="meta">Attn: {{CLIENT_CONTACT}}<br>{{EVENT_LABEL}}<br>{{GUESTS}} guests</span>
+    </div>
+
+    <div class="photos">{{SIDEBAR_1_PHOTOS}}</div>
+
+    <div class="block tight">
+      <span class="lbl">Prepared by</span>
+      <span class="name sm">{{SENDER_NAME}}</span>
+      <span class="lbl mt">Page 1 of 2</span>
+    </div>
+  </aside>
+
+  <div class="main">
+    <h1>{{HEADLINE}}</h1>
+    <p class="sub">{{SUBHEAD}}</p>
+
+    <img class="hero" src="{{HERO_SRC}}" alt="{{HERO_ALT}}">
+
+    <div class="lede">
+      <span class="hl">{{LEDE_TITLE}}</span>
+      <p>{{LEDE_BODY}}</p>
+    </div>
+
+    <div class="cols">
+      <div>
+        <h3>{{INCLUDES_TITLE}}</h3>
+        <ul class="list">{{INCLUDES}}</ul>
+      </div>
+      <div class="col2">
+        <div>
+          <h3>{{MAKE_IT_YOURS_TITLE}}</h3>
+          <p>{{MAKE_IT_YOURS}}</p>
+        </div>
+        <div>
+          <h3>{{GETTING_THERE_TITLE}}</h3>
+          <p>{{GETTING_THERE}}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout">
+      <h3>{{PARTNER_TITLE}}</h3>
+      <div class="row">
+        <p>{{PARTNER_BODY}}</p>
+        <a class="btn" href="{{PARTNER_URL}}">{{PARTNER_BUTTON}}<span>{{PARTNER_URL_LABEL}}</span></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ PAGE 2 — the estimate ═══════════════════ -->
+<section class="page p2">
+  <div class="main">
+    <h1>{{ESTIMATE_TITLE}}</h1>
+    <p class="sub">{{ESTIMATE_SUB}}</p>
+
+    <div class="sh"><h2>{{BOAT_TITLE}}</h2><span class="tag">{{BOAT_TAG}}</span></div>
+    <table><tbody>{{BOAT_ROWS}}</tbody></table>
+
+    <div class="sh sand"><h2>{{FOOD_TITLE}}</h2><span class="tag">{{FOOD_TAG}}</span></div>
+    <table><tbody>{{FOOD_ROWS}}</tbody></table>
+
+    <div class="sh cyan"><h2>{{DRINKS_TITLE}}</h2><span class="tag">{{DRINKS_TAG}}</span></div>
+    <table><tbody>{{DRINKS_ROWS}}</tbody></table>
+
+    {{ADDONS_BLOCK}}
+
+    <span class="folio">Page 2 of 2</span>
+  </div>
+
+  <aside class="side">
+    <span class="lbl">Estimated all-in</span>
+    <span class="total-lbl">{{TOTAL_LABEL}}</span>
+    <span class="total-amt{{TOTAL_CLASS}}">{{TOTAL_AMOUNT}}</span>
+    <span class="small mt">{{TOTAL_NOTE}}</span>
+
+    <div class="photos">{{SIDEBAR_2_PHOTOS}}</div>
+
+    <div class="block stack">
+      <div>
+        <span class="h">{{WEATHER_TITLE}}</span>
+        <span class="small">{{WEATHER}}</span>
+      </div>
+      <div>
+        <span class="h">{{QUESTIONS_TITLE}}</span>
+        <span class="small">{{QUESTIONS}}</span>
+      </div>
+    </div>
+
+    <div class="block tight">
+      <span class="name xs">{{SENDER_NAME}}</span>
+      <span class="contact-tel">{{SENDER_PHONE}}</span>
+      <span class="contact-line">{{SENDER_EMAIL}}</span>
+      <span class="contact-line">{{SENDER_VENUE_SHORT}}</span>
+    </div>
+  </aside>
+</section>
+
+</body>
+</html>
