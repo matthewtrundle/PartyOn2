@@ -1,0 +1,155 @@
+{
+  "$comment": "Preset: Clever Girl corporate holiday buyout. Copy this file for a new quote — never edit the preset in place. Values are the Elizabeth Morgan & Associates quote approved 2026-08-17.",
+
+  "quoteId": "2026-08-ema-holiday",
+  "schema": 1,
+  "status": "draft",
+  "created": "2026-08-17",
+  "sent": null,
+  "validUntil": "2026-08-31",
+  "eventDates": ["2026-12-12", "2026-12-19"],
+
+  "client": {
+    "company": "Elizabeth Morgan &amp; Associates",
+    "contact": "Lesa Wheat",
+    "email": "lwheat@emalegal.com",
+    "phone": "512.656.5266",
+    "guests": 35,
+    "eventLabel": "December 2026"
+  },
+
+  "sender": {
+    "brandLine1": "Premier",
+    "brandLine2": "Party Cruises",
+    "name": "Dylan Rooney",
+    "phone": "(512) 488-5892",
+    "email": "dylan@premierpartycruises.com",
+    "venue": "Anderson Mill Marina",
+    "address": "13993 FM 2769, Leander, TX 78641",
+    "venueShort": "Anderson Mill Marina, Leander TX"
+  },
+
+  "vessel": {
+    "name": "Clever Girl",
+    "capacityLabel": "up to 50 guests",
+    "hours": 4
+  },
+
+  "badges": [
+    { "text": "Since 2009" },
+    { "text": "USCG Certified Captains" },
+    { "text": "Heated for Winter", "highlight": true }
+  ],
+
+  "headline": "Your Holiday Party,<br>On the Water",
+  "subhead": "A private boat on Lake Travis — the whole vessel is yours, crew included.",
+
+  "lede": {
+    "title": "Cozy inside, lake all around.",
+    "body": "In winter our flagship gets partially enclosed with heaters and a fire pit on the bow, so your team celebrates in <strong>comfort no matter the temperature</strong>. Austin Decembers are generally gorgeous — but the evenings can get chilly."
+  },
+
+  "includes": {
+    "title": "Every booking includes",
+    "items": [
+      "The whole boat, private to your group",
+      "Captain and crew",
+      "<b>Two clean restrooms</b> on board",
+      "Heaters, winter enclosure, bow fire pit",
+      "Full sound system — bring your playlist",
+      "<b>Four large coolers</b>, iced and ready",
+      "Your own event coordinator"
+    ]
+  },
+
+  "makeItYours": {
+    "title": "Make it yours",
+    "body": "Cruise the lake, stay dockside and mingle, or do half and half — same price either way. Bring the caterer you love. Decorate it however you like."
+  },
+
+  "gettingThere": {
+    "title": "Easy to get to",
+    "body": "<b>Anderson Mill Marina</b>, 13993 FM 2769, Leander, TX 78641 — about 30 minutes from downtown. We'll arrange a shuttle so nobody has to drive."
+  },
+
+  "partnerCallout": {
+    "title": "Free bar consultation &amp; drink delivery",
+    "body": "Our partner <b>Party On Delivery</b> plans your bar with you and delivers straight to the dock — no venue markup, free delivery to the marina, and unopened bottles come back for a refund.",
+    "buttonLabel": "Plan your bar",
+    "url": "https://partyondelivery.com/corporate",
+    "urlLabel": "partyondelivery.com/corporate"
+  },
+
+  "estimate": {
+    "title": "Party Details &amp; Estimate",
+    "sub": "One flat price for the boat, plus estimates for food and drinks."
+  },
+
+  "boat": {
+    "title": "The boat",
+    "tag": "4 hours · up to 50 guests",
+    "rows": [
+      { "label": "Saturday — December 12 or 19", "note": "Captain, crew, heaters, enclosure, sound, coolers and ice all included", "price": "$2,500" },
+      { "label": "Thursday — December 17", "price": "$2,000" },
+      { "label": "Monday–Wednesday evenings", "price": "$1,500" }
+    ]
+  },
+
+  "food": {
+    "title": "Food — three ideas",
+    "tag": "Est. for 35 · or bring your own",
+    "rows": [
+      { "label": "Rudy's Bar-B-Q", "note": "Three meats, three sides, linens and serving ware included", "price": "$800–900" },
+      { "label": "La Pera", "note": "Upscale Latin-inspired platters and boxed service", "price": "$2,000–2,300" },
+      { "label": "The Board Bae ATX", "note": "A styled grazing table — great for mingling", "price": "$1,900–2,500" }
+    ]
+  },
+
+  "drinks": {
+    "title": "Drinks",
+    "tag": "Party On Delivery",
+    "rows": [
+      { "label": "Estimate for cocktails, wine and beer", "note": "Delivered to the dock. Free bar consultation included — you pick exactly what your team likes, at retail prices. Free delivery to the marina, and unopened items can be returned.", "price": "~$900" }
+    ]
+  },
+
+  "addOns": {
+    "title": "Optional add-ons",
+    "tag": "Add any, or none",
+    "rows": [
+      { "label": "Live DJ", "inline": "our house DJ, set up and ready when you board", "price": "$600" },
+      { "label": "Event photographer", "inline": "aboard all evening, edited photos delivered after", "price": "$600" },
+      { "label": "Bartender", "inline": "pouring and serving all evening", "price": "$600" }
+    ]
+  },
+
+  "total": {
+    "label": "For 35 guests",
+    "amount": "$4,200–5,900",
+    "note": "Saturday boat + food + drinks, depending on the caterer you choose."
+  },
+
+  "weather": {
+    "title": "If the weather turns",
+    "body": "We check the forecast together 48 hours out. Below 40°F or too windy, we reschedule — one free rain date within 12 months, deposit carried over."
+  },
+
+  "questions": {
+    "title": "Questions?",
+    "body": "Call or email anytime — happy to hold a date while you decide."
+  },
+
+  "photos": {
+    "hero":     { "file": "01-boat-enclosed-golden-hour.jpg", "alt": "Interior under the winter enclosure at golden hour" },
+    "sidebar1": [
+      { "file": "03-onboard-dusk.jpg",     "alt": "Bow fire pit at dusk" },
+      { "file": "05-boat-after-dark.jpg",  "alt": "Lit up after dark" },
+      { "file": "04-lake-blue-hour.jpg",   "alt": "On the water at blue hour" }
+    ],
+    "sidebar2": [
+      { "file": "06-grazing-table.jpg",    "alt": "A styled grazing table set up on board" },
+      { "file": "07-pod-dispensers.jpg",   "alt": "Party On Delivery drink dispensers" },
+      { "file": "02-boat-afternoon.jpg",   "alt": "Interior, late afternoon" }
+    ]
+  }
+}
