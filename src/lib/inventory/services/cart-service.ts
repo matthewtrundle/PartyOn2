@@ -482,13 +482,18 @@ async function recalculateCart(cartId: string): Promise<CartWithItems> {
   if (isPickup || hasFreeShipping) {
     deliveryFee = 0;
   } else if (zipCode && cart.deliveryAddress) {
-    // Calculate delivery fee based on zone - use existing fee if manually set
-    const existingFee = parseFloat(cart.deliveryFee.toString());
-    // Only auto-calculate if fee is 0 or if we don't have a fee set
-    if (existingFee === 0) {
-      const deliveryResult = calculateDeliveryFee(zipCode, subtotal, false);
-      deliveryFee = deliveryResult.fee;
-    }
+    // Always recompute from the current zip + subtotal. The previous version
+    // only recalculated when the stored fee was 0, which made the fee sticky:
+    // once a non-zero fee landed on the cart it never moved again, so a
+    // customer who added items until they crossed their zone's free-delivery
+    // threshold ($250 Central / $300 Greater / $400 Extended) kept paying the
+    // old fee, and changing to a different zone's zip kept the old zone's rate.
+    //
+    // Nothing else writes Cart.deliveryFee -- this function is its only writer
+    // -- so there is no manually-set cart fee to preserve here. (Ops overrides
+    // live on DraftOrder.deliveryFee, a different model entirely.)
+    const deliveryResult = calculateDeliveryFee(zipCode, subtotal, false);
+    deliveryFee = deliveryResult.fee;
   }
 
   // Calculate total
