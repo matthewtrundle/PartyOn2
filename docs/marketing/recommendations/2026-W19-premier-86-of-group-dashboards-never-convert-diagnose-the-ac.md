@@ -84,7 +84,7 @@ _(not captured)_
       "marginCoveragePct": 27.8
     }
   ],
-  "capturedAt": "2026-08-17T08:01:38.796Z",
+  "capturedAt": "2026-08-18T08:00:01.859Z",
   "affiliateRoi": [
     {
       "code": "POUR24",
@@ -159,7 +159,7 @@ _(not captured)_
       "marginCoveragePct": 0
     }
   ],
-  "snapshotDate": "2026-08-17",
+  "snapshotDate": "2026-08-18",
   "averageOrderValue": 290.2201923076923,
   "marginCoveragePct": null
 }
@@ -167,7 +167,7 @@ _(not captured)_
 ## Updates
 
 - 2026-05-05 — Created with status `executed` from source `director`.
-- 2026-08-17 — Status shipped → shipped (cron:measure-recommendations). Notes: Auto-captured 14-day measurement
+- 2026-08-18 — Status shipped → shipped (cron:measure-recommendations). Notes: Auto-captured 14-day measurement
 
 ---
 _Mirror file. Edited automatically by the triage queue when status changes. Source of truth is the database (id: `4fe8e34e-83cb-4ee7-9576-4a60386400dc`). Slug: `premier-86-of-group-dashboards-never-convert-diagnose-the-ac`._
