@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import ScrollRevealCSS from '@/components/ui/ScrollRevealCSS';
 import ProductModal from '@/components/ProductModal';
@@ -10,48 +10,64 @@ import { useCartContext } from '@/contexts/CartContext';
 import { canPurchaseAlcohol } from '@/lib/utils';
 
 /**
- * Keg product grid with category tabs
- * Shows in-stock kegs vs request-a-quote kegs with prices from Shopify
+ * Keg product grid with category tabs.
+ *
+ * Renders live from the `kegs` collection via the public catalog API rather than
+ * a hardcoded list. That endpoint only returns ACTIVE products and only their
+ * `availableForSale` variants, so an archived or unavailable keg simply stops
+ * rendering instead of showing an "In Stock" badge over a dead Add to Cart
+ * button, and prices can never drift from what checkout actually charges.
+ *
+ * The only thing still hardcoded is the brand taxonomy (domestic/import/craft),
+ * because the database has no such field. Unmapped handles fall back to 'craft'
+ * so a new keg is always reachable from a tab.
  */
 
+type BrandCategory = 'domestics' | 'imports' | 'craft';
+type SizeType = 'half' | 'slim';
+
 interface Keg {
+  handle: string;
   name: string;
   size: string;
-  price?: string;
-  inStock: boolean;
-  handle?: string;
-  category: 'domestics' | 'imports' | 'craft';
-  sizeType: 'half' | 'slim';
+  price: string;
+  variantId: string | null;
+  category: BrandCategory;
+  sizeType: SizeType;
 }
 
-const ALL_KEGS: Keg[] = [
-  // Domestics
-  { name: 'Miller Lite', size: '1/2 barrel', price: '$174.99', inStock: true, handle: 'miller-lite-keg', category: 'domestics', sizeType: 'half' },
-  { name: 'Miller Lite', size: '1/4 barrel', price: '$109.99', inStock: true, handle: 'miller-lite-keg-1-4-barrel-5-5-gal', category: 'domestics', sizeType: 'slim' },
-  { name: 'Michelob Ultra', size: '1/2 barrel', price: '$189.00', inStock: true, handle: 'michelob-ultra-1-2-barrel', category: 'domestics', sizeType: 'half' },
-  { name: 'Lone Star', size: '1/2 barrel', price: '$163.99', inStock: true, handle: 'lone-star-keg-1-2-barrel', category: 'domestics', sizeType: 'half' },
-  { name: 'Bud Light', size: '1/2 barrel', price: '$172.99', inStock: true, handle: 'bud-light-1-2-barrell', category: 'domestics', sizeType: 'half' },
-  { name: 'Bud Light', size: '1/4 barrel', price: '$89.99', inStock: true, handle: 'bud-light-1-4-slim-barrell', category: 'domestics', sizeType: 'slim' },
-  { name: 'Coors Light', size: '1/2 barrel', price: '$174.99', inStock: true, handle: '1-4-barrel-1-2-keg-of-coors-light', category: 'domestics', sizeType: 'half' },
-  { name: 'Budweiser', size: '1/2 barrel', price: '$172.99', inStock: true, handle: 'budweiser-1-2-barrell', category: 'domestics', sizeType: 'half' },
+/** Shape returned by GET /api/v1/products/catalog */
+interface CatalogProduct {
+  id: string;
+  handle: string;
+  title: string;
+  productType: string | null;
+  basePrice: number;
+  image: { url: string; altText: string | null } | null;
+  variants: Array<{
+    id: string;
+    title: string;
+    price: number;
+    availableForSale: boolean;
+  }>;
+}
 
-  // Imports
-  { name: 'Corona Extra', size: '1/2 barrel', price: '$189.99', inStock: true, handle: 'corona-extra-1-2-barrel', category: 'imports', sizeType: 'half' },
-  { name: 'Modelo Especial', size: '1/2 barrel', price: '$189.99', inStock: true, handle: 'modelo-especial-keg-1-2-barrel-15-5gallons', category: 'imports', sizeType: 'half' },
-  { name: 'Dos Equis', size: '1/2 barrel', price: '$214.99', inStock: true, handle: 'miller-lite-keg-1-2-barrel-11-gal-copy', category: 'imports', sizeType: 'half' },
-  { name: 'Dos Equis', size: '1/6 barrel', price: '$89.99', inStock: true, handle: 'dos-equis-lager-1-6', category: 'imports', sizeType: 'slim' },
-  { name: 'Dos Equis Slim', size: '20L', price: '$84.99', inStock: true, handle: 'dos-equis-keg-slim-keg-20l', category: 'imports', sizeType: 'slim' },
-
-  // Craft
-  { name: 'Austin BeerWorks Pearl Snap', size: '1/6 barrel', price: '$94.99', inStock: true, handle: 'austin-beer-works-pearl-snaps-1-6', category: 'craft', sizeType: 'slim' },
-  { name: 'Karbach Love Street', size: '1/2 barrel', price: '$274.99', inStock: true, handle: 'karbach-love-street-1-2-barrell', category: 'craft', sizeType: 'half' },
-  { name: 'Karbach Hopadillo', size: '1/6 barrel', price: '$109.99', inStock: true, handle: 'karbach-hopadillo-1-6-barrel', category: 'craft', sizeType: 'slim' },
-  { name: 'Shiner Light Blonde', size: '1/2 barrel', price: '$189.00', inStock: true, handle: 'shiner-light-blonde-keg', category: 'craft', sizeType: 'half' },
-  { name: 'Blue Moon Belgian White', size: '1/6 barrel', price: '$89.99', inStock: true, handle: 'blue-moon-belgian-white-1-6-barrel', category: 'craft', sizeType: 'slim' },
-  { name: 'Yuengling', size: '1/4 barrel', price: '$114.99', inStock: true, handle: 'yuengling-slim-1-4-barrel', category: 'craft', sizeType: 'slim' },
-  { name: 'Franziskaner Hefeweizen', size: '13.2 gal', price: '$199.00', inStock: true, handle: 'franziskaner-hefeweizen-13-2g-keg', category: 'craft', sizeType: 'slim' },
-  { name: 'Electric Jellyfish Hazy IPA', size: '1/6 barrel', price: '$159.99', inStock: true, handle: 'electric-jellyfish-hazy-ipa-1-6-barrel', category: 'craft', sizeType: 'slim' },
-];
+/**
+ * Brand taxonomy by product handle. Only domestics and imports need listing --
+ * anything unmapped is treated as craft.
+ */
+const BRAND_CATEGORY: Record<string, BrandCategory> = {
+  'coors-light-keg-1-2-barrel': 'domestics',
+  'miller-lite-keg': 'domestics',
+  'michelob-ultra-1-2-barrel': 'domestics',
+  'lone-star-keg-1-2-barrel': 'domestics',
+  'corona-extra-1-2-barrel': 'imports',
+  'modelo-especial-keg-1-2-barrel-15-5gallons': 'imports',
+  'modelo-especial-slim-keg-1-4-barrel': 'imports',
+  'dos-equis-keg-1-2-barrel': 'imports',
+  'dos-equis-keg-slim-keg-20l': 'imports',
+  'dos-equis-lager-1-6': 'imports',
+};
 
 const CATEGORIES = [
   { id: 'all', name: 'All Kegs' },
@@ -62,38 +78,117 @@ const CATEGORIES = [
   { id: 'craft', name: 'Craft' },
 ];
 
+/**
+ * Split a catalog title into a display name and a size label.
+ *
+ * Most keg titles are "Brand Name • 1/2 Barrel". A few legacy rows have no
+ * bullet (e.g. "Yuengling Slim Keg 1/4 Barrel"), so fall back to peeling a
+ * trailing size off the end.
+ */
+export function splitTitle(title: string): { name: string; size: string } {
+  const bullet = title.indexOf('•');
+  if (bullet !== -1) {
+    return {
+      name: title.slice(0, bullet).trim(),
+      size: title.slice(bullet + 1).trim(),
+    };
+  }
+
+  const match = title.match(/\s(\d\/\d\s*Barrel|Slim\s*Keg.*|\d+L)\s*$/i);
+  if (match) {
+    return {
+      name: title.slice(0, match.index).trim(),
+      size: match[1].trim(),
+    };
+  }
+
+  return { name: title.trim(), size: 'Keg' };
+}
+
+/** Half barrels are the only "half" size; everything else is a slim keg. */
+export function sizeTypeOf(size: string): SizeType {
+  return /1\/2/.test(size) ? 'half' : 'slim';
+}
+
+function toKeg(product: CatalogProduct): Keg {
+  const { name, size } = splitTitle(product.title);
+  const variant = product.variants[0] ?? null;
+  const price = variant ? variant.price : product.basePrice;
+
+  return {
+    handle: product.handle,
+    name,
+    size,
+    price: `$${price.toFixed(2)}`,
+    variantId: variant?.id ?? null,
+    category: BRAND_CATEGORY[product.handle] ?? 'craft',
+    sizeType: sizeTypeOf(size),
+  };
+}
+
 export default function KegProductGrid() {
   const [activeCategory, setActiveCategory] = useState('all');
+  const [kegs, setKegs] = useState<Keg[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loadingHandle, setLoadingHandle] = useState<string | null>(null);
   const [showAgeVerification, setShowAgeVerification] = useState(false);
-  const [pendingCartAdd, setPendingCartAdd] = useState<string | null>(null);
+  const [pendingCartAdd, setPendingCartAdd] = useState<Keg | null>(null);
   const [addingToCart, setAddingToCart] = useState<string | null>(null);
   const [productCache, setProductCache] = useState<Record<string, Product>>({});
 
   const { addToCart, loading: cartLoading } = useCartContext();
 
-  const filteredKegs = activeCategory === 'all'
-    ? ALL_KEGS
-    : activeCategory === 'half' || activeCategory === 'slim'
-      ? ALL_KEGS.filter(keg => keg.sizeType === activeCategory)
-      : ALL_KEGS.filter(keg => keg.category === activeCategory);
+  // Load the live kegs collection once on mount.
+  useEffect(() => {
+    let cancelled = false;
 
-  // Fetch product by handle
-  const fetchProduct = async (handle: string): Promise<Product | null> => {
-    // Check cache first
-    if (productCache[handle]) {
-      return productCache[handle];
+    const loadKegs = async () => {
+      try {
+        const response = await fetch('/api/v1/products/catalog?collection=kegs&limit=100');
+        if (!response.ok) throw new Error(`Catalog responded ${response.status}`);
+
+        const json = await response.json();
+        const products: CatalogProduct[] = json?.data?.products ?? [];
+        if (cancelled) return;
+
+        // Defensive: the endpoint already filters to sellable variants, but a
+        // product with none would render an un-addable card.
+        setKegs(products.filter((p) => p.variants.length > 0).map(toKeg));
+        setLoadFailed(false);
+      } catch (error) {
+        console.error('Error loading kegs:', error);
+        if (!cancelled) setLoadFailed(true);
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    };
+
+    loadKegs();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const filteredKegs = useMemo(() => {
+    if (activeCategory === 'all') return kegs;
+    if (activeCategory === 'half' || activeCategory === 'slim') {
+      return kegs.filter((keg) => keg.sizeType === activeCategory);
     }
+    return kegs.filter((keg) => keg.category === activeCategory);
+  }, [kegs, activeCategory]);
+
+  // Fetch the full product record, needed only for the detail modal.
+  const fetchProduct = async (handle: string): Promise<Product | null> => {
+    if (productCache[handle]) return productCache[handle];
 
     try {
       const response = await fetch(`/api/products/${handle}`);
       if (!response.ok) return null;
       const product = await response.json();
-
-      // Cache the product
-      setProductCache(prev => ({ ...prev, [handle]: product }));
+      setProductCache((prev) => ({ ...prev, [handle]: product }));
       return product;
     } catch (error) {
       console.error('Error fetching product:', error);
@@ -101,10 +196,7 @@ export default function KegProductGrid() {
     }
   };
 
-  // Handle title click - open modal with product details
   const handleTitleClick = async (keg: Keg) => {
-    if (!keg.handle) return;
-
     setLoadingHandle(keg.handle);
     const product = await fetchProduct(keg.handle);
     setLoadingHandle(null);
@@ -115,38 +207,26 @@ export default function KegProductGrid() {
     }
   };
 
-  // Handle add to cart
   const handleAddToCart = async (keg: Keg) => {
-    if (!keg.handle) return;
-
-    // Check age verification
     if (!canPurchaseAlcohol()) {
-      setPendingCartAdd(keg.handle);
+      setPendingCartAdd(keg);
       setShowAgeVerification(true);
       return;
     }
 
-    await addProductToCart(keg.handle);
+    await addKegToCart(keg);
   };
 
-  // Actually add to cart
-  const addProductToCart = async (handle: string) => {
-    setAddingToCart(handle);
+  /**
+   * Add straight from the catalog's variant id -- no second lookup, so a stale
+   * or renamed handle can no longer turn this into a silent no-op.
+   */
+  const addKegToCart = async (keg: Keg) => {
+    if (!keg.variantId) return;
 
+    setAddingToCart(keg.handle);
     try {
-      const product = await fetchProduct(handle);
-      if (!product) {
-        console.error('Product not found');
-        return;
-      }
-
-      const variant = product.variants?.edges?.[0]?.node;
-      if (!variant?.id || !variant.availableForSale) {
-        console.error('No available variant');
-        return;
-      }
-
-      await addToCart(variant.id, 1);
+      await addToCart(keg.variantId, 1);
     } catch (error) {
       console.error('Error adding to cart:', error);
     } finally {
@@ -154,13 +234,12 @@ export default function KegProductGrid() {
     }
   };
 
-  // Handle age verification success
   const handleAgeVerified = async () => {
     setShowAgeVerification(false);
     localStorage.setItem('age_verified', 'true');
 
     if (pendingCartAdd) {
-      await addProductToCart(pendingCartAdd);
+      await addKegToCart(pendingCartAdd);
       setPendingCartAdd(null);
     }
   };
@@ -197,86 +276,95 @@ export default function KegProductGrid() {
             ))}
           </div>
 
-          {/* Keg Grid */}
-          <div
-            key={activeCategory}
-            className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6"
-            style={{
-              animation: 'result-fade-in 0.4s cubic-bezier(0.25, 0.1, 0.25, 1) forwards',
-            }}
-          >
-            {filteredKegs.map((keg, index) => (
-              <div
-                key={`${keg.name}-${keg.size}`}
-                className="bg-white rounded-lg p-4 md:p-6 shadow-lg border border-gray-200 hover:border-brand-yellow transition-all duration-300 text-center"
-                style={{
-                  animation: `result-fade-in 0.4s cubic-bezier(0.25, 0.1, 0.25, 1) forwards`,
-                  animationDelay: `${index * 30}ms`,
-                  opacity: 0,
-                }}
+          {isLoading ? (
+            <p className="text-center text-gray-600 text-sm md:text-lg py-12">
+              Loading available kegs...
+            </p>
+          ) : loadFailed ? (
+            <div className="text-center py-12">
+              <p className="text-gray-700 text-sm md:text-lg mb-4">
+                We couldn&apos;t load our keg list just now.
+              </p>
+              <a
+                href="tel:7373719700"
+                className="inline-block px-8 py-3 bg-brand-yellow text-gray-900 hover:bg-yellow-600 transition-colors tracking-[0.1em] text-sm font-medium rounded"
               >
-                {/* In Stock Badge */}
-                <div className="mb-3">
-                  {keg.inStock ? (
+                CALL (737) 371-9700
+              </a>
+            </div>
+          ) : filteredKegs.length === 0 ? (
+            <p className="text-center text-gray-600 text-sm md:text-lg py-12">
+              No kegs in this category right now. Try another tab or give us a call.
+            </p>
+          ) : (
+            <div
+              key={activeCategory}
+              className="grid grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6"
+              style={{
+                animation: 'result-fade-in 0.4s cubic-bezier(0.25, 0.1, 0.25, 1) forwards',
+              }}
+            >
+              {filteredKegs.map((keg, index) => (
+                <div
+                  key={keg.handle}
+                  className="bg-white rounded-lg p-4 md:p-6 shadow-lg border border-gray-200 hover:border-brand-yellow transition-all duration-300 text-center"
+                  style={{
+                    animation: `result-fade-in 0.4s cubic-bezier(0.25, 0.1, 0.25, 1) forwards`,
+                    animationDelay: `${index * 30}ms`,
+                    opacity: 0,
+                  }}
+                >
+                  {/* In Stock Badge */}
+                  <div className="mb-3">
                     <span className="bg-green-100 text-green-800 text-xs md:text-sm px-3 py-1 rounded-full font-medium">
                       In Stock
                     </span>
-                  ) : (
-                    <span className="bg-gray-100 text-gray-600 text-xs md:text-sm px-3 py-1 rounded-full font-medium">
-                      Request Quote
-                    </span>
-                  )}
-                </div>
+                  </div>
 
-                {/* Title - Clickable */}
-                <button
-                  onClick={() => handleTitleClick(keg)}
-                  disabled={!keg.handle || loadingHandle === keg.handle}
-                  className="w-full mb-1 hover:text-brand-yellow transition-colors disabled:cursor-default"
-                >
-                  <h3 className="font-heading text-lg md:text-2xl text-gray-900 tracking-[0.05em] leading-tight">
-                    {loadingHandle === keg.handle ? 'Loading...' : keg.name}
-                  </h3>
-                </button>
+                  {/* Title - Clickable */}
+                  <button
+                    onClick={() => handleTitleClick(keg)}
+                    disabled={loadingHandle === keg.handle}
+                    className="w-full mb-1 hover:text-brand-yellow transition-colors disabled:cursor-default"
+                  >
+                    <h3 className="font-heading text-lg md:text-2xl text-gray-900 tracking-[0.05em] leading-tight">
+                      {loadingHandle === keg.handle ? 'Loading...' : keg.name}
+                    </h3>
+                  </button>
 
-                {/* Size */}
-                <p className="text-gray-500 text-sm md:text-base mb-3">{keg.size}</p>
+                  {/* Size */}
+                  <p className="text-gray-500 text-sm md:text-base mb-3">{keg.size}</p>
 
-                {/* Price */}
-                {keg.price ? (
+                  {/* Price */}
                   <p className="text-2xl md:text-3xl font-medium text-brand-yellow mb-4">
                     {keg.price}
                   </p>
-                ) : (
-                  <p className="text-base md:text-lg text-gray-400 mb-4 italic">
-                    Price on request
-                  </p>
-                )}
 
-                {/* Action Button */}
-                {keg.inStock && keg.handle ? (
-                  <button
-                    onClick={() => handleAddToCart(keg)}
-                    disabled={addingToCart === keg.handle || cartLoading}
-                    className={`w-full py-2 md:py-3 transition-colors tracking-[0.05em] md:tracking-[0.1em] text-xs md:text-sm font-medium rounded ${
-                      addingToCart === keg.handle || cartLoading
-                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                        : 'bg-brand-yellow text-gray-900 hover:bg-yellow-600'
-                    }`}
-                  >
-                    {addingToCart === keg.handle ? 'ADDING...' : 'ADD TO CART'}
-                  </button>
-                ) : (
-                  <Link
-                    href="/contact"
-                    className="block w-full py-2 md:py-3 border border-brand-yellow text-gray-900 hover:bg-brand-yellow transition-colors tracking-[0.05em] md:tracking-[0.1em] text-xs md:text-sm font-medium text-center rounded"
-                  >
-                    REQUEST QUOTE
-                  </Link>
-                )}
-              </div>
-            ))}
-          </div>
+                  {/* Action Button */}
+                  {keg.variantId ? (
+                    <button
+                      onClick={() => handleAddToCart(keg)}
+                      disabled={addingToCart === keg.handle || cartLoading}
+                      className={`w-full py-2 md:py-3 transition-colors tracking-[0.05em] md:tracking-[0.1em] text-xs md:text-sm font-medium rounded ${
+                        addingToCart === keg.handle || cartLoading
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                          : 'bg-brand-yellow text-gray-900 hover:bg-yellow-600'
+                      }`}
+                    >
+                      {addingToCart === keg.handle ? 'ADDING...' : 'ADD TO CART'}
+                    </button>
+                  ) : (
+                    <Link
+                      href="/contact"
+                      className="block w-full py-2 md:py-3 border border-brand-yellow text-gray-900 hover:bg-brand-yellow transition-colors tracking-[0.05em] md:tracking-[0.1em] text-xs md:text-sm font-medium text-center rounded"
+                    >
+                      REQUEST QUOTE
+                    </Link>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Bulk Order CTA */}
           <ScrollRevealCSS duration={800} y={20} delay={300} className="mt-12">
