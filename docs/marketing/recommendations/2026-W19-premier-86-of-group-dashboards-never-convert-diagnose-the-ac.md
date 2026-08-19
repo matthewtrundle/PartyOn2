@@ -62,16 +62,16 @@ _(not captured)_
 
 ```json
 {
-  "orders": 52,
-  "revenue": 15091.45,
+  "orders": 54,
+  "revenue": 15850.68,
   "segments": [
     {
       "margin": null,
-      "orders": 44,
-      "revenue": 12616.85,
+      "orders": 46,
+      "revenue": 13376.08,
       "segment": "general",
       "averageMarginPct": null,
-      "averageOrderValue": 286.75,
+      "averageOrderValue": 290.78,
       "marginCoveragePct": 0
     },
     {
@@ -84,7 +84,7 @@ _(not captured)_
       "marginCoveragePct": 27.8
     }
   ],
-  "capturedAt": "2026-08-18T08:00:01.859Z",
+  "capturedAt": "2026-08-19T08:00:25.751Z",
   "affiliateRoi": [
     {
       "code": "POUR24",
@@ -137,13 +137,13 @@ _(not captured)_
     {
       "code": "LTYACHTRENTALS",
       "margin": null,
-      "orders": 8,
+      "orders": 9,
       "roiPct": null,
-      "revenue": 2451.36,
+      "revenue": 2665.84,
       "netMargin": null,
       "affiliateId": "e09b3a40-26cb-4c70-9b2a-6ea311c7a62e",
       "businessName": "Lake Travis Yacht Rentals",
-      "commissionPaid": 96.3,
+      "commissionPaid": 105.75,
       "marginCoveragePct": 0
     },
     {
@@ -159,15 +159,15 @@ _(not captured)_
       "marginCoveragePct": 0
     }
   ],
-  "snapshotDate": "2026-08-18",
-  "averageOrderValue": 290.2201923076923,
+  "snapshotDate": "2026-08-19",
+  "averageOrderValue": 293.5311111111111,
   "marginCoveragePct": null
 }
 ```
 ## Updates
 
 - 2026-05-05 — Created with status `executed` from source `director`.
-- 2026-08-18 — Status shipped → shipped (cron:measure-recommendations). Notes: Auto-captured 14-day measurement
+- 2026-08-19 — Status shipped → shipped (cron:measure-recommendations). Notes: Auto-captured 14-day measurement
 
 ---
 _Mirror file. Edited automatically by the triage queue when status changes. Source of truth is the database (id: `4fe8e34e-83cb-4ee7-9576-4a60386400dc`). Slug: `premier-86-of-group-dashboards-never-convert-diagnose-the-ac`._
