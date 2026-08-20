@@ -46,6 +46,7 @@ export type CtaSection =
   | 'navigation'
   | 'group_order_strip'
   | 'wedding_calc_hero'
+  | 'wedding_calc_header'
   | 'wedding_calc_package'
   | 'wedding_calc_sticky'
   | 'packages'
