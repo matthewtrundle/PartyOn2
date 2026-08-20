@@ -46,6 +46,30 @@ export default function CalculatorHero(): ReactElement {
 
   return (
     <section className="relative h-[45vh] md:h-[50vh] min-h-[420px] overflow-hidden bg-[#1a1410]">
+      {/* Logo → homepage. Deliberately NOT the global nav (paid lander stays
+          focused), but visitors asked for a way to learn about the company —
+          this is the sanctioned escape hatch. White via brightness-0 invert,
+          same treatment as DrinkPlannerQuiz on dark ground. */}
+      <div className="absolute top-0 left-0 right-0 z-20">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-center md:justify-start">
+          <Link
+            href="/"
+            aria-label="Party On Delivery — visit the main site"
+            onClick={() =>
+              trackCTAClick('Header Logo', '/', 'wedding_calc_header')
+            }
+          >
+            <Image
+              src="/images/party-on-logo-main.svg"
+              alt="Party On Delivery"
+              width={140}
+              height={38}
+              className="h-12 md:h-14 w-auto brightness-0 invert opacity-90 hover:opacity-100 transition-opacity drop-shadow-[0_1px_4px_rgba(0,0,0,0.4)]"
+              priority
+            />
+          </Link>
+        </div>
+      </div>
       <Image
         src="/images/services/weddings/outdoor-bar-setup.webp"
         alt="Austin wedding bar setup with champagne and spirits"
