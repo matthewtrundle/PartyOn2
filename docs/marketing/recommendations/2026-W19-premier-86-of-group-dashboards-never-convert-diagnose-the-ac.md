@@ -62,16 +62,16 @@ _(not captured)_
 
 ```json
 {
-  "orders": 56,
-  "revenue": 16409.41,
+  "orders": 54,
+  "revenue": 16370.85,
   "segments": [
     {
       "margin": null,
-      "orders": 48,
-      "revenue": 13934.81,
+      "orders": 46,
+      "revenue": 13896.25,
       "segment": "general",
       "averageMarginPct": null,
-      "averageOrderValue": 290.31,
+      "averageOrderValue": 302.09,
       "marginCoveragePct": 0
     },
     {
@@ -84,7 +84,7 @@ _(not captured)_
       "marginCoveragePct": 27.8
     }
   ],
-  "capturedAt": "2026-08-20T08:01:10.847Z",
+  "capturedAt": "2026-08-21T08:01:27.737Z",
   "affiliateRoi": [
     {
       "code": "POUR24",
@@ -101,13 +101,13 @@ _(not captured)_
     {
       "code": "PREMIER",
       "margin": null,
-      "orders": 23,
+      "orders": 19,
       "roiPct": null,
-      "revenue": 2694.42,
+      "revenue": 2419.96,
       "netMargin": null,
       "affiliateId": "d21bac1a-3f99-489c-89fd-e1980c264a8d",
       "businessName": "Premier Party Cruises",
-      "commissionPaid": 178.52,
+      "commissionPaid": 168.93,
       "marginCoveragePct": 0
     },
     {
@@ -137,13 +137,13 @@ _(not captured)_
     {
       "code": "LTYACHTRENTALS",
       "margin": null,
-      "orders": 10,
+      "orders": 9,
       "roiPct": null,
-      "revenue": 2956.11,
+      "revenue": 2739.45,
       "netMargin": null,
       "affiliateId": "e09b3a40-26cb-4c70-9b2a-6ea311c7a62e",
       "businessName": "Lake Travis Yacht Rentals",
-      "commissionPaid": 118.69,
+      "commissionPaid": 110.24,
       "marginCoveragePct": 0
     },
     {
@@ -159,15 +159,15 @@ _(not captured)_
       "marginCoveragePct": 0
     }
   ],
-  "snapshotDate": "2026-08-20",
-  "averageOrderValue": 293.0251785714286,
+  "snapshotDate": "2026-08-21",
+  "averageOrderValue": 303.1638888888889,
   "marginCoveragePct": null
 }
 ```
 ## Updates
 
 - 2026-05-05 — Created with status `executed` from source `director`.
-- 2026-08-20 — Status shipped → shipped (cron:measure-recommendations). Notes: Auto-captured 14-day measurement
+- 2026-08-21 — Status shipped → shipped (cron:measure-recommendations). Notes: Auto-captured 14-day measurement
 
 ---
 _Mirror file. Edited automatically by the triage queue when status changes. Source of truth is the database (id: `4fe8e34e-83cb-4ee7-9576-4a60386400dc`). Slug: `premier-86-of-group-dashboards-never-convert-diagnose-the-ac`._
