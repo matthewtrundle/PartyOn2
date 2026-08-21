@@ -20,6 +20,14 @@ export const AGE_GATE_EXEMPT_PATHS = [
   '/austin-bachelorette-party-delivery',
   '/austin-corporate-event-delivery',
   '/austin-wedding-weekend-delivery',
+  // Wedding drink calculator — paid-ad lander, same posture as the paid
+  // landers above (and same campaign as /austin-wedding-weekend-delivery,
+  // which is already exempt). Nothing is sold on-page: the calculator feeds
+  // a quote form + email capture, and the binding 21+ TABC confirmation
+  // still gates /order checkout. Exempted 2026-08-19 per operator decision
+  // after confirming ad visitors were hitting a full-screen DOB form before
+  // seeing the tool.
+  '/wedding-drink-calculator',
   '/austin-wedding-venue-boats',
   '/austin-4th-of-july-delivery',
   '/event-quiz',
