@@ -23,7 +23,8 @@ type ProductTypeKey =
   | 'Gin'
   | 'Rum'
   | 'Cocktail Kit'
-  | 'Mixer';
+  | 'Mixer'
+  | 'Sparkling Wine';
 
 type Bucket = {
   type: ProductTypeKey;
@@ -52,6 +53,19 @@ const STEP_TWO: Bucket[] = [
 const STEP_THREE: Bucket[] = [
   { type: 'Mixer', take: 10, idPrefix: 'm', emoji: '🥤', accent: 'bg-emerald-500' },
 ];
+
+// Bubbly/champagne — opt-in per occasion (e.g. bachelorette). Pulls the live
+// "Sparkling Wine" productType, which covers champagne, prosecco AND rosé,
+// so it fills the bachelorette Step One ("Bubbly, rosé & seltzers") tab.
+const BUBBLY: Bucket = {
+  type: 'Sparkling Wine',
+  take: 10,
+  idPrefix: 'sp',
+  emoji: '🥂',
+  accent: 'bg-amber-300',
+};
+
+export type CuratedCatalogOptions = { includeBubbly?: boolean };
 
 async function fetchBucket(
   bucket: Bucket,
@@ -97,11 +111,15 @@ async function fetchBucket(
   };
 }
 
-async function buildCatalogUncached() {
+async function buildCatalogUncached(opts: CuratedCatalogOptions = {}) {
+  // Bubbly/champagne rides in Step One (the bachelorette "Bubbly, rosé &
+  // seltzers" step) only when the occasion asks for it.
+  const stepOneBuckets: Bucket[] = opts.includeBubbly ? [...STEP_ONE, BUBBLY] : STEP_ONE;
+
   let stepOne, stepTwo, stepThree;
   try {
     [stepOne, stepTwo, stepThree] = await Promise.all([
-      Promise.all(STEP_ONE.map(fetchBucket)),
+      Promise.all(stepOneBuckets.map(fetchBucket)),
       Promise.all(STEP_TWO.map(fetchBucket)),
       Promise.all(STEP_THREE.map(fetchBucket)),
     ]);
@@ -110,14 +128,19 @@ async function buildCatalogUncached() {
     // empty catalog rather than 500ing the whole landing page.
     console.error('[getCuratedCatalog] DB fetch failed:', err);
     const empty = { top: [], extras: [] };
-    stepOne = STEP_ONE.map(() => empty);
+    stepOne = stepOneBuckets.map(() => empty);
     stepTwo = STEP_TWO.map(() => empty);
     stepThree = STEP_THREE.map(() => empty);
   }
 
-  const stepOneCategories: BuilderCategory[] = STEP_ONE.map((b, i) => ({
+  const stepOneCategories: BuilderCategory[] = stepOneBuckets.map((b, i) => ({
     key: b.type.toLowerCase().replace(/\s+/g, '-'),
-    label: b.type === 'Seltzer' ? 'Seltzers' : b.type,
+    label:
+      b.type === 'Seltzer'
+        ? 'Seltzers'
+        : b.type === 'Sparkling Wine'
+          ? 'Bubbly & Champagne'
+          : b.type,
     products: stepOne[i].top,
     extras: stepOne[i].extras,
   }));
