@@ -62,52 +62,40 @@ _(not captured)_
 
 ```json
 {
-  "orders": 55,
-  "revenue": 16145.26,
+  "orders": 50,
+  "revenue": 13811.55,
   "segments": [
     {
       "margin": null,
-      "orders": 47,
-      "revenue": 13670.66,
+      "orders": 43,
+      "revenue": 13085.52,
       "segment": "general",
       "averageMarginPct": null,
-      "averageOrderValue": 290.87,
+      "averageOrderValue": 304.31,
       "marginCoveragePct": 0
     },
     {
-      "margin": 209.62,
-      "orders": 8,
-      "revenue": 2474.6,
+      "margin": 77.38,
+      "orders": 7,
+      "revenue": 726.03,
       "segment": "unknown",
-      "averageMarginPct": 8.5,
-      "averageOrderValue": 309.32,
-      "marginCoveragePct": 27.8
+      "averageMarginPct": 10.7,
+      "averageOrderValue": 103.72,
+      "marginCoveragePct": 21.9
     }
   ],
-  "capturedAt": "2026-08-22T08:01:28.888Z",
+  "capturedAt": "2026-08-23T08:00:21.621Z",
   "affiliateRoi": [
-    {
-      "code": "POUR24",
-      "margin": 132.24,
-      "orders": 2,
-      "roiPct": -73,
-      "revenue": 5292.63,
-      "netMargin": -356.69,
-      "affiliateId": "7bf14a40-b04f-4622-ba09-0662be41e37f",
-      "businessName": "Pour Twenty Four",
-      "commissionPaid": 488.93,
-      "marginCoveragePct": 10
-    },
     {
       "code": "PREMIER",
       "margin": null,
-      "orders": 20,
+      "orders": 16,
       "roiPct": null,
-      "revenue": 2713.21,
+      "revenue": 2057.4,
       "netMargin": null,
       "affiliateId": "d21bac1a-3f99-489c-89fd-e1980c264a8d",
       "businessName": "Premier Party Cruises",
-      "commissionPaid": 190.6,
+      "commissionPaid": 147.13,
       "marginCoveragePct": 0
     },
     {
@@ -120,6 +108,18 @@ _(not captured)_
       "affiliateId": "3d00911f-3b75-40ad-bc3c-c87f20cdaeaf",
       "businessName": "Sip & Social On Wheels",
       "commissionPaid": 24.3,
+      "marginCoveragePct": 0
+    },
+    {
+      "code": "POUR24",
+      "margin": null,
+      "orders": 1,
+      "roiPct": null,
+      "revenue": 3544.06,
+      "netMargin": null,
+      "affiliateId": "7bf14a40-b04f-4622-ba09-0662be41e37f",
+      "businessName": "Pour Twenty Four",
+      "commissionPaid": 327.4,
       "marginCoveragePct": 0
     },
     {
@@ -139,11 +139,11 @@ _(not captured)_
       "margin": null,
       "orders": 9,
       "roiPct": null,
-      "revenue": 2739.45,
+      "revenue": 2810.12,
       "netMargin": null,
       "affiliateId": "e09b3a40-26cb-4c70-9b2a-6ea311c7a62e",
       "businessName": "Lake Travis Yacht Rentals",
-      "commissionPaid": 110.24,
+      "commissionPaid": 122.29,
       "marginCoveragePct": 0
     },
     {
@@ -159,15 +159,15 @@ _(not captured)_
       "marginCoveragePct": 0
     }
   ],
-  "snapshotDate": "2026-08-22",
-  "averageOrderValue": 293.5501818181818,
+  "snapshotDate": "2026-08-23",
+  "averageOrderValue": 276.231,
   "marginCoveragePct": null
 }
 ```
 ## Updates
 
 - 2026-05-05 — Created with status `executed` from source `director`.
-- 2026-08-22 — Status shipped → shipped (cron:measure-recommendations). Notes: Auto-captured 14-day measurement
+- 2026-08-23 — Status shipped → shipped (cron:measure-recommendations). Notes: Auto-captured 14-day measurement
 
 ---
 _Mirror file. Edited automatically by the triage queue when status changes. Source of truth is the database (id: `4fe8e34e-83cb-4ee7-9576-4a60386400dc`). Slug: `premier-86-of-group-dashboards-never-convert-diagnose-the-ac`._
