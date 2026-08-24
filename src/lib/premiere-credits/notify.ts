@@ -8,6 +8,8 @@
  * failed send, or a row error.
  */
 
+import { createHash } from 'crypto';
+import { prisma } from '@/lib/database/client';
 import { sendEmail } from '@/lib/email/resend-client';
 import { formatCurrency } from '@/lib/email/resend-client';
 
@@ -113,6 +115,61 @@ export interface AttentionItem {
 }
 
 /**
+ * How long an IDENTICAL operator alert stays suppressed. A tick runs every 15
+ * minutes, so an unattended failure used to send 96 identical emails a day —
+ * which trains the operator to ignore the alert entirely (this happened: the
+ * 2026-08-18 sheet-permission outage). Novel content always sends immediately;
+ * only an exact repeat inside the window is dropped.
+ */
+const ALERT_REPEAT_COOLDOWN_MS = 60 * 60 * 1000;
+
+/** Sentinel sheetRow used for failures that killed the whole tick, not one row. */
+const WHOLE_SHEET_ROW = 0;
+
+/**
+ * Content fingerprint for an alert. Two alerts match only when they describe
+ * the same set of problems — a new held grant or a different error message
+ * changes the hash and sends right away. Sorted so ordering can't matter.
+ */
+function alertFingerprint(
+  items: AttentionItem[],
+  rowErrors: Array<{ sheetRow: number; error: string }>,
+): string {
+  const parts = [
+    ...items.map((i) => `item|${i.clientName}|${i.amount}|${i.status}|${i.reason ?? ''}`),
+    ...rowErrors.map((e) => `err|${e.sheetRow}|${e.error}`),
+  ].sort();
+  return createHash('sha256').update(parts.join('\n')).digest('hex').slice(0, 32);
+}
+
+/**
+ * True when an identical alert already went out inside the cooldown window.
+ * Reads EmailLog rather than a new table — the send path already writes one
+ * row per alert with our metadata on it.
+ *
+ * Fails OPEN: if the lookup errors we send the alert. A missed alert is worse
+ * than a duplicate one.
+ */
+async function alreadyAlerted(fingerprint: string): Promise<boolean> {
+  try {
+    const since = new Date(Date.now() - ALERT_REPEAT_COOLDOWN_MS);
+    const recent = await prisma.emailLog.findMany({
+      where: { type: 'PREMIERE_CREDIT', createdAt: { gte: since } },
+      select: { metadata: true },
+      orderBy: { createdAt: 'desc' },
+      take: 25,
+    });
+    return recent.some((log) => {
+      const meta = log.metadata as { kind?: string; fingerprint?: string } | null;
+      return meta?.kind === 'ops-alert' && meta?.fingerprint === fingerprint;
+    });
+  } catch (err) {
+    console.error('[premiere-credits] alert dedupe lookup failed, sending anyway:', err);
+    return false;
+  }
+}
+
+/**
  * Alert the operator about grants that need a human (held, needs-contact,
  * send-failed) plus any row-level errors. No-ops when there is nothing to
  * report.
@@ -122,6 +179,25 @@ export async function sendOpsAttentionAlert(
   rowErrors: Array<{ sheetRow: number; error: string }>,
 ): Promise<void> {
   if (items.length === 0 && rowErrors.length === 0) return;
+
+  const fingerprint = alertFingerprint(items, rowErrors);
+  if (await alreadyAlerted(fingerprint)) {
+    console.log(`[premiere-credits] alert suppressed (identical within ${ALERT_REPEAT_COOLDOWN_MS / 60000}m): ${fingerprint}`);
+    return;
+  }
+
+  // A sheetRow-0 error means the sheet read itself failed, so nothing was
+  // processed at all. Say what to actually do instead of leaving the operator
+  // to decode a raw Google error.
+  const wholeSheetErrors = rowErrors.filter((e) => e.sheetRow === WHOLE_SHEET_ROW);
+  const remediation = wholeSheetErrors.length
+    ? `<div style="font-family:Arial,sans-serif;background:#fef2f2;border-left:4px solid #b91c1c;padding:12px 16px;margin:16px 0;">
+         <p style="margin:0 0 8px;font-weight:700;color:#b91c1c;">The whole sheet read failed — no credits were processed this run.</p>
+         <p style="margin:0 0 8px;">Most common cause: Premiere's Booking Masterlist is no longer shared with our service account.</p>
+         <p style="margin:0;">Fix: share the sheet as <strong>Viewer</strong> with<br>
+           <code>${escapeHtml(process.env.PREMIER_SHEET_SERVICE_ACCOUNT_EMAIL || 'the Premier sheet service account')}</code></p>
+       </div>`
+    : '';
 
   const itemRows = items
     .map(
@@ -143,9 +219,10 @@ export async function sendOpsAttentionAlert(
     to: OPS_ALERT_EMAIL,
     subject: `Premiere credits need attention (${items.length + rowErrors.length})`,
     type: 'PREMIERE_CREDIT',
-    metadata: { kind: 'ops-alert', items: items.length, errors: rowErrors.length },
+    metadata: { kind: 'ops-alert', fingerprint, items: items.length, errors: rowErrors.length },
     html: `
       <h2 style="font-family:Arial,sans-serif;">Premiere credits need a look</h2>
+      ${remediation}
       ${
         items.length
           ? `<table cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-family:Arial,sans-serif;font-size:14px;">
