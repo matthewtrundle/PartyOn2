@@ -37,6 +37,9 @@ export interface OrderWithItems {
   deliveryFee: Prisma.Decimal;
   discountCode: string | null;
   discountAmount: Prisma.Decimal;
+  /** Customer gratuity, part of `total`. Emails must render it or the
+   *  printed Subtotal + Fee + Tax won't reconcile to Total. */
+  tipAmount: Prisma.Decimal;
   total: Prisma.Decimal;
   deliveryDate: Date;
   deliveryTime: string;
