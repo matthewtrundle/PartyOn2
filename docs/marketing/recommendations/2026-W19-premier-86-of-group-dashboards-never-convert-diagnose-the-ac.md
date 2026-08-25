@@ -62,16 +62,16 @@ _(not captured)_
 
 ```json
 {
-  "orders": 50,
-  "revenue": 13811.55,
+  "orders": 48,
+  "revenue": 13563.16,
   "segments": [
     {
       "margin": null,
-      "orders": 43,
-      "revenue": 13085.52,
+      "orders": 41,
+      "revenue": 12837.13,
       "segment": "general",
       "averageMarginPct": null,
-      "averageOrderValue": 304.31,
+      "averageOrderValue": 313.1,
       "marginCoveragePct": 0
     },
     {
@@ -84,18 +84,18 @@ _(not captured)_
       "marginCoveragePct": 21.9
     }
   ],
-  "capturedAt": "2026-08-24T08:01:09.615Z",
+  "capturedAt": "2026-08-25T08:03:07.512Z",
   "affiliateRoi": [
     {
       "code": "PREMIER",
       "margin": null,
-      "orders": 16,
+      "orders": 15,
       "roiPct": null,
-      "revenue": 2057.4,
+      "revenue": 2093.92,
       "netMargin": null,
       "affiliateId": "d21bac1a-3f99-489c-89fd-e1980c264a8d",
       "businessName": "Premier Party Cruises",
-      "commissionPaid": 147.13,
+      "commissionPaid": 149.53,
       "marginCoveragePct": 0
     },
     {
@@ -137,13 +137,13 @@ _(not captured)_
     {
       "code": "LTYACHTRENTALS",
       "margin": null,
-      "orders": 9,
+      "orders": 8,
       "roiPct": null,
-      "revenue": 2810.12,
+      "revenue": 2525.21,
       "netMargin": null,
       "affiliateId": "e09b3a40-26cb-4c70-9b2a-6ea311c7a62e",
       "businessName": "Lake Travis Yacht Rentals",
-      "commissionPaid": 122.29,
+      "commissionPaid": 110.24,
       "marginCoveragePct": 0
     },
     {
@@ -159,15 +159,15 @@ _(not captured)_
       "marginCoveragePct": 0
     }
   ],
-  "snapshotDate": "2026-08-24",
-  "averageOrderValue": 276.231,
+  "snapshotDate": "2026-08-25",
+  "averageOrderValue": 282.5658333333333,
   "marginCoveragePct": null
 }
 ```
 ## Updates
 
 - 2026-05-05 — Created with status `executed` from source `director`.
-- 2026-08-24 — Status shipped → shipped (cron:measure-recommendations). Notes: Auto-captured 14-day measurement
+- 2026-08-25 — Status shipped → shipped (cron:measure-recommendations). Notes: Auto-captured 14-day measurement
 
 ---
 _Mirror file. Edited automatically by the triage queue when status changes. Source of truth is the database (id: `4fe8e34e-83cb-4ee7-9576-4a60386400dc`). Slug: `premier-86-of-group-dashboards-never-convert-diagnose-the-ac`._
