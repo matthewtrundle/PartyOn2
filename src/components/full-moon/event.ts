@@ -114,6 +114,15 @@ export interface FullMoonEvent {
   deadlineDays: number;
   shareUrl: string;
   ordersUrl: string;
+  /**
+   * True when the event is called off. Drives the site-wide postponed banner
+   * AND fails the ticket API closed (src/app/api/v1/full-moon/ticket/route.ts),
+   * so the banner can never be merely cosmetic while checkout still works.
+   * Set back to false — and clear `postponedNote` — when a new date is set.
+   */
+  postponed: boolean;
+  /** One-line explanation shown in the banner. */
+  postponedNote: string;
 }
 
 /** Neon accent theme (per-event re-theming hook). Default: cyan + magenta. */
@@ -137,6 +146,11 @@ export const EVENT: FullMoonEvent = {
   deadlineDays: 7,
   shareUrl: 'https://partyondelivery.com/full-moon-aug28',
   ordersUrl: '/full-moon-drinks',
+  // Postponed 2026-08-25: the 32-guest minimum wasn't met. The single paying
+  // order (#461) was refunded in full. Flip to false with a new date to relaunch.
+  postponed: true,
+  postponedNote:
+    'This cruise has been postponed — we didn\u2019t reach the guest minimum. Everyone who bought a ticket has been refunded in full. We\u2019ll announce a new full-moon date soon.',
 };
 
 /**

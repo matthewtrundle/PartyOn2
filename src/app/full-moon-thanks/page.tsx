@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import type { ReactElement } from 'react';
 import Link from 'next/link';
+import PostponedBanner from '@/components/full-moon/PostponedBanner';
 import { EVENT, LOCATION, TICKET_TOTAL_DISPLAY } from '@/components/full-moon/event';
 import ThanksShare from '@/components/full-moon/ThanksShare';
 
@@ -30,6 +31,8 @@ function Card({ label, children }: { label: string; children: ReactElement | str
  */
 export default function FullMoonThanksPage(): ReactElement {
   return (
+    <>
+      <PostponedBanner />
     <div className="min-h-screen bg-[#070a1c] px-6 py-16">
       <div className="max-w-2xl mx-auto">
         <p className="font-heading tracking-[0.25em] uppercase text-sm text-cyan-300 mb-2">Ticket confirmed</p>
@@ -112,5 +115,6 @@ export default function FullMoonThanksPage(): ReactElement {
         </div>
       </div>
     </div>
+    </>
   );
 }

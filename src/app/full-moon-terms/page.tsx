@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import type { ReactElement, ReactNode } from 'react';
 import Link from 'next/link';
+import PostponedBanner from '@/components/full-moon/PostponedBanner';
 import { EVENT, LOCATION, TICKET_TOTAL_DISPLAY } from '@/components/full-moon/event';
 
 export const metadata: Metadata = {
@@ -31,6 +32,8 @@ function Section({ title, children }: { title: string; children: ReactNode }): R
  */
 export default function FullMoonTermsPage(): ReactElement {
   return (
+    <>
+      <PostponedBanner />
     <div className="min-h-screen bg-[#070a1c] px-6 py-16">
       <div className="max-w-2xl mx-auto">
         <p className="font-heading tracking-[0.2em] uppercase text-sm text-cyan-300 mb-2">Lake Travis Full Moon Party</p>
@@ -147,5 +150,6 @@ export default function FullMoonTermsPage(): ReactElement {
         </div>
       </div>
     </div>
+    </>
   );
 }
