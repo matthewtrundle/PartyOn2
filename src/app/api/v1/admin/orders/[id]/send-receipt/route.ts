@@ -86,6 +86,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       deliveryFee: order.deliveryFee,
       discountAmount: order.discountAmount,
       discountCode: order.discountCode,
+      tipAmount: order.tipAmount,
       total: order.total,
       paymentDate,
       transactionId: order.stripePaymentIntentId,

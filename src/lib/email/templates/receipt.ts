@@ -26,6 +26,8 @@ export interface ReceiptEmailData {
   deliveryFee: number | string | { toString(): string };
   discountAmount?: number | string | { toString(): string };
   discountCode?: string | null;
+  /** Customer-added gratuity. Omitted/0 renders no row. */
+  tipAmount?: number | string | { toString(): string };
   total: number | string | { toString(): string };
   paymentDate: string;
   transactionId?: string | null;
@@ -54,6 +56,17 @@ export function generateReceiptEmail(data: ReceiptEmailData): string {
     .join('');
 
   const discountAmt = Number(data.discountAmount || 0);
+  const tipAmt = Number(data.tipAmount ?? 0);
+  // Gratuity is part of Total Paid — omitting it makes the receipt not add up.
+  const tipHtml =
+    tipAmt > 0
+      ? `
+                <tr>
+                  <td style="padding: 6px 0; color: #4b5563; font-size: 14px;">Tip</td>
+                  <td style="padding: 6px 0; text-align: right; color: #4b5563; font-size: 14px;">${formatCurrency(tipAmt)}</td>
+                </tr>`
+      : '';
+
   const discountHtml =
     discountAmt > 0
       ? `
@@ -181,6 +194,7 @@ export function generateReceiptEmail(data: ReceiptEmailData): string {
                   <td style="padding: 6px 0; color: #4b5563; font-size: 14px;">Delivery Fee</td>
                   <td style="padding: 6px 0; text-align: right; color: #4b5563; font-size: 14px;">${formatCurrency(Number(data.deliveryFee))}</td>
                 </tr>
+                ${tipHtml}
                 <tr>
                   <td style="padding: 14px 0 0; color: #1a1a1a; font-size: 18px; font-weight: 700; border-top: 2px solid #e5e7eb;">Total Paid</td>
                   <td style="padding: 14px 0 0; text-align: right; color: #1a1a1a; font-size: 18px; font-weight: 700; border-top: 2px solid #e5e7eb;">${formatCurrency(Number(data.total))}</td>

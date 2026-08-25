@@ -32,6 +32,8 @@ export interface OrderConfirmationData {
   taxAmount: number | string;
   discountAmount?: number | string;
   discountCode?: string;
+  /** Customer-added gratuity. Omitted/0 renders no row. */
+  tipAmount?: number | string;
   total: number | string;
   deliveryDate: Date | string;
   deliveryTime: string;
@@ -52,6 +54,7 @@ export function generateOrderConfirmationEmail(data: OrderConfirmationData): str
     taxAmount,
     discountAmount,
     discountCode,
+    tipAmount,
     total,
     deliveryDate,
     deliveryTime,
@@ -87,6 +90,19 @@ export function generateOrderConfirmationEmail(data: OrderConfirmationData): str
     .filter(Boolean)
     .map(escapeHtml)
     .join('<br>');
+
+  // Gratuity is part of what the card was charged, so it MUST appear or the
+  // printed numbers won't reconcile to Total (248 historical orders shipped
+  // an email whose Subtotal+Fee+Tax was short by exactly the tip).
+  const tipHtml =
+    tipAmount && parseFloat(String(tipAmount)) > 0
+      ? `
+      <tr>
+        <td colspan="2" style="padding: 8px 12px; text-align: right;">Tip:</td>
+        <td style="padding: 8px 12px; text-align: right;">${formatCurrency(tipAmount)}</td>
+      </tr>
+    `
+      : '';
 
   const discountHtml =
     discountAmount && parseFloat(String(discountAmount)) > 0
@@ -206,6 +222,7 @@ export function generateOrderConfirmationEmail(data: OrderConfirmationData): str
                     <td colspan="2" style="padding: 8px 12px; text-align: right;">Tax:</td>
                     <td style="padding: 8px 12px; text-align: right;">${formatCurrency(taxAmount)}</td>
                   </tr>
+                  ${tipHtml}
                   <tr style="background-color: #f9fafb;">
                     <td colspan="2" style="padding: 12px; text-align: right; font-weight: 600; font-size: 18px;">Total:</td>
                     <td style="padding: 12px; text-align: right; font-weight: 600; font-size: 18px;">${formatCurrency(total)}</td>
@@ -256,6 +273,9 @@ export function generateOrderConfirmationText(data: OrderConfirmationData): stri
     subtotal,
     deliveryFee,
     taxAmount,
+    discountAmount,
+    discountCode,
+    tipAmount,
     total,
     deliveryDate,
     deliveryTime,
@@ -264,6 +284,15 @@ export function generateOrderConfirmationText(data: OrderConfirmationData): stri
   } = data;
 
   const firstName = customerName.trim().split(/\s+/)[0];
+
+  const discountText =
+    discountAmount && parseFloat(String(discountAmount)) > 0
+      ? `\nDiscount${discountCode ? ` (${discountCode})` : ''}: -${formatCurrency(discountAmount)}`
+      : '';
+  const tipText =
+    tipAmount && parseFloat(String(tipAmount)) > 0
+      ? `\nTip: ${formatCurrency(tipAmount)}`
+      : '';
 
   const itemsList = items
     .map(
@@ -302,9 +331,9 @@ ${deliveryInstructions ? `Delivery Instructions:\n  ${deliveryInstructions}\n` :
 ORDER ITEMS
 ${itemsList}
 
-Subtotal: ${formatCurrency(subtotal)}
+Subtotal: ${formatCurrency(subtotal)}${discountText}
 Delivery Fee: ${formatCurrency(deliveryFee)}
-Tax: ${formatCurrency(taxAmount)}
+Tax: ${formatCurrency(taxAmount)}${tipText}
 TOTAL: ${formatCurrency(total)}
 
 WHAT'S NEXT?
