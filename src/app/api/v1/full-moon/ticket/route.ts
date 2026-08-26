@@ -51,6 +51,16 @@ function clientIp(request: NextRequest): string {
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
+  // Postponed events never sell, regardless of the deployment flag. Without
+  // this the site-wide banner would be cosmetic: a visitor deep-linking past
+  // it could still reach Stripe while FULL_MOON_TICKETS_LIVE stayed '1'.
+  if (EVENT.postponed) {
+    return NextResponse.json(
+      { success: false, error: 'This event has been postponed — ticket sales are closed.' },
+      { status: 403 },
+    );
+  }
+
   // Not on sale until an operator sets the flag on the deployment (fails closed).
   if (process.env.FULL_MOON_TICKETS_LIVE !== '1') {
     return NextResponse.json({ success: false, error: 'Tickets are not on sale yet.' }, { status: 403 });

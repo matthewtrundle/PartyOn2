@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import FullMoonParty from '@/components/full-moon/FullMoonParty';
+import PostponedBanner from '@/components/full-moon/PostponedBanner';
 import { EVENT, OG_IMAGE, SHARE } from '@/components/full-moon/event';
 
 export const metadata: Metadata = {
@@ -23,5 +24,10 @@ export const metadata: Metadata = {
 
 /** /full-moon-aug28 — Lake Travis Full Moon Party landing page (Aug 28 event). */
 export default function FullMoonPage(): React.ReactElement {
-  return <FullMoonParty />;
+  return (
+    <>
+      <PostponedBanner />
+      <FullMoonParty />
+    </>
+  );
 }

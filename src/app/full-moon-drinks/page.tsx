@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import type { ReactElement } from 'react';
 import Link from 'next/link';
+import PostponedBanner from '@/components/full-moon/PostponedBanner';
 import Image from 'next/image';
 import { EVENT, LOCATION } from '@/components/full-moon/event';
 import DrinksLanderCta from '@/components/full-moon/DrinksLanderCta';
@@ -42,6 +43,8 @@ const STEPS: Array<{ n: string; title: string; body: string }> = [
  */
 export default function FullMoonDrinksPage(): ReactElement {
   return (
+    <>
+      <PostponedBanner />
     <div className="min-h-screen bg-[#070a1c] px-6 py-16">
       <div className="max-w-3xl mx-auto">
         <p className="font-heading tracking-[0.25em] uppercase text-sm text-cyan-300 mb-2 text-center">
@@ -121,5 +124,6 @@ export default function FullMoonDrinksPage(): ReactElement {
         </div>
       </div>
     </div>
+    </>
   );
 }
