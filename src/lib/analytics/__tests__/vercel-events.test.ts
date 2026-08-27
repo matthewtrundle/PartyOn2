@@ -1,0 +1,112 @@
+/**
+ * Tests for the log-drain traffic definitions.
+ *
+ * `BOT_UA_REGEX` is written as a POSIX regex string for Postgres, but it is
+ * deliberately kept to plain literal alternation so the exact same string is
+ * also a valid JavaScript RegExp. That is what lets these tests exercise the
+ * real production classifier rather than a copy of it — if someone adds a `\b`
+ * or `\d` that Postgres and JS disagree about, the mirror here is the tripwire.
+ */
+
+import { describe, it, expect, vi } from 'vitest';
+
+// vercel-events imports the prisma singleton; stub it so no live client is built.
+vi.mock('@/lib/database/client', () => ({
+  prisma: {},
+  kv: {},
+  isKVConfigured: () => false,
+}));
+
+import {
+  BOT_UA_REGEX,
+  ASSET_PATH_SQL_REGEX,
+  VERCEL_DRAIN_PATH,
+  isNoisePath,
+} from '../vercel-events';
+
+const botRe = new RegExp(BOT_UA_REGEX, 'i');
+
+describe('isNoisePath', () => {
+  it('keeps real pages', () => {
+    expect(isNoisePath('/')).toBe(false);
+    expect(isNoisePath('/products')).toBe(false);
+    expect(isNoisePath('/blog/how-much-beer')).toBe(false);
+    expect(isNoisePath('/products?category=beer')).toBe(false);
+  });
+
+  it('keeps non-self API paths so scraper traffic stays inspectable', () => {
+    expect(isNoisePath('/api/v1/products')).toBe(false);
+  });
+
+  it('drops our own drain endpoint, which every delivery would otherwise log', () => {
+    expect(isNoisePath(VERCEL_DRAIN_PATH)).toBe(true);
+    expect(isNoisePath(`${VERCEL_DRAIN_PATH}?x=1`)).toBe(true);
+  });
+
+  it('drops Next.js internals and static assets', () => {
+    expect(isNoisePath('/_next/static/chunks/main.js')).toBe(true);
+    expect(isNoisePath('/__nextjs_original-stack-frame')).toBe(true);
+    expect(isNoisePath('/images/hero.webp')).toBe(true);
+    expect(isNoisePath('/fonts/inter.woff2')).toBe(true);
+    expect(isNoisePath('/styles.css?v=2')).toBe(true);
+  });
+
+  it('drops crawler furniture and empty paths', () => {
+    expect(isNoisePath('/favicon.ico')).toBe(true);
+    expect(isNoisePath('/robots.txt')).toBe(true);
+    expect(isNoisePath('/sitemap.xml')).toBe(true);
+    expect(isNoisePath('')).toBe(true);
+    expect(isNoisePath(null)).toBe(true);
+    expect(isNoisePath(undefined)).toBe(true);
+  });
+});
+
+describe('BOT_UA_REGEX', () => {
+  it('is a valid JavaScript regex too, so Postgres and JS agree', () => {
+    expect(() => new RegExp(BOT_UA_REGEX, 'i')).not.toThrow();
+    expect(BOT_UA_REGEX).not.toMatch(/\\[bdswBDSW]/);
+  });
+
+  it('matches search crawlers, AI crawlers, tools and monitors', () => {
+    const bots = [
+      'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+      'Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)',
+      'Mozilla/5.0 (compatible; GPTBot/1.0; +https://openai.com/gptbot)',
+      'Mozilla/5.0 (compatible; ClaudeBot/1.0; +claudebot@anthropic.com)',
+      'Mozilla/5.0 (compatible; AhrefsBot/7.0; +http://ahrefs.com/robot/)',
+      'Mozilla/5.0 (compatible; SemrushBot/7~bl)',
+      'curl/8.4.0',
+      'python-requests/2.31.0',
+      'axios/1.6.2',
+      'Mozilla/5.0 (X11; Linux x86_64) HeadlessChrome/120.0.0.0 Safari/537.36',
+      'Pingdom.com_bot_version_1.4',
+      'facebookexternalhit/1.1',
+    ];
+    for (const ua of bots) {
+      expect(botRe.test(ua), `expected bot: ${ua}`).toBe(true);
+    }
+  });
+
+  it('does not match real browsers — the false-positive case that would erase real customers', () => {
+    const humans = [
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Mobile/15E148 Safari/604.1',
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0',
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:121.0) Gecko/20100101 Firefox/121.0',
+      'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+    ];
+    for (const ua of humans) {
+      expect(botRe.test(ua), `expected human: ${ua}`).toBe(false);
+    }
+  });
+});
+
+describe('ASSET_PATH_SQL_REGEX', () => {
+  it('anchors on the extension at end-of-path or before a query string', () => {
+    const re = new RegExp(ASSET_PATH_SQL_REGEX, 'i');
+    expect(re.test('/app.js')).toBe(true);
+    expect(re.test('/app.css?v=3')).toBe(true);
+    expect(re.test('/products')).toBe(false);
+    expect(re.test('/blog/css-tricks')).toBe(false);
+  });
+});

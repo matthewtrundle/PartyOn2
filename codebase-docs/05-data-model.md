@@ -35,7 +35,7 @@ Source of truth: `prisma/schema.prisma`. Datasource is PostgreSQL (`POSTGRES_URL
 | 269 | GroupParticipant | 1651 | LoyaltyTier | 2783 | FinanceSnapshot |
 | 299 | OrderAnalytics | 1670 | CustomerLoyalty | 2799 | StrategyInitiative |
 | 349 | GroupOrderPayment | 1690 | PointsTransaction | 2826 | IntuitOAuthState |
-| 384 | Product | 1719 | VercelAnalyticsEvent | 2844 | PlaidItem |
+| 384 | Product | 1719 | VercelEvent | 2844 | PlaidItem |
 | 438 | ProductVariant | 1776 | DrinkCalculatorLead | 2864 | PlaidAccount |
 | 492 | ProductImage | 1799 | DraftOrder | 2887 | PlaidTransaction |
 | 513 | Category | 1949 | GroupOrderV2 | 2935 | PlaidSyncCursor |
@@ -298,7 +298,7 @@ erDiagram
 ## Domain: Content, analytics, leads
 
 - **AnalyticsSnapshot** (34) — daily GA4/GSC rollup.
-- **VercelAnalyticsEvent** (1446) — raw events ingested via `/api/analytics-ingest`.
+- **VercelEvent** (1719) — raw server-side request logs ingested via `/api/webhooks/vercel-drain`; page views and bot classification are derived from them in `src/lib/analytics/vercel-events.ts`.
 - **DrinkCalculatorLead** (1503) — lead capture from the drink calculator.
 - **EmailLog** (1165) — every Resend send keyed by `EmailType` + `EmailStatus`.
 - **EmailTemplateContent** (1878) — editable template bodies.

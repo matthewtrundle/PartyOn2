@@ -430,7 +430,7 @@ These are **parallel namespaces, not a migration** — neither supersedes the ot
 
 | Endpoint | File | Purpose |
 |---|---|---|
-| `/api/analytics-ingest` | `src/app/api/analytics-ingest/route.ts` | Vercel Drain receiver. |
+| `/api/webhooks/vercel-drain` | `src/app/api/webhooks/vercel-drain/route.ts` | Vercel Log Drain receiver (server-side traffic + bot detection). |
 | `/api/chat` | `src/app/api/chat/route.ts` | General chat (AI concierge). |
 | `/api/contact` | `src/app/api/contact/route.ts` | Contact form. |
 | `/api/newsletter` | `src/app/api/newsletter/route.ts` | Newsletter signup. |
@@ -1151,9 +1151,9 @@ find src/app -name 'route.ts' | sed 's|^src/app||; s|/route.ts$||'
 
 `/api/admin/verify`
 
-**/api/analytics-ingest** — 1
+**/api/webhooks/vercel-drain** — 1
 
-`/api/analytics-ingest`
+`/api/webhooks/vercel-drain`
 
 **/api/cart/share** — 2
 

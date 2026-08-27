@@ -1,0 +1,162 @@
+/**
+ * Server-side traffic analytics derived from Vercel Log Drain events.
+ *
+ * A Vercel *Log* Drain delivers one NDJSON line per HTTP request — pages,
+ * assets, API calls, humans and bots alike. It carries no "pageview" event type
+ * (that exists only in Vercel's separate Web Analytics drain), so page views are
+ * DERIVED here from method/status/path, and bots are separated from humans by
+ * user-agent. Rows are written by `src/app/api/webhooks/vercel-drain/route.ts`.
+ *
+ * This module is the single source of truth for both definitions so the ingest
+ * filter and the reporting queries can never drift apart.
+ */
+
+import { prisma } from '@/lib/database/client';
+
+/**
+ * Path of our own drain receiver. Every drain delivery is itself an HTTP request
+ * that Vercel logs, so without dropping this path the table would grow one junk
+ * row per delivery, forever.
+ */
+export const VERCEL_DRAIN_PATH = '/api/webhooks/vercel-drain';
+
+/**
+ * Bot / automated user-agents, as a POSIX regex body (case-insensitive at the
+ * call site). Deliberately broad: for ad-spend decisions, over-classifying a
+ * borderline agent as a bot is much cheaper than counting a crawler as a
+ * customer.
+ *
+ * Kept to plain literal alternation — no `\b`, `\d` or other escapes — so the
+ * exact same string is valid in both Postgres ARE and JavaScript `RegExp`,
+ * which is what lets the unit tests verify the production classifier.
+ */
+export const BOT_UA_REGEX =
+  '(bot|crawl|spider|slurp|mediapartners|bingpreview|facebookexternalhit|facebot|embedly|' +
+  'quora link preview|whatsapp|telegrambot|discordbot|slackbot|headless|phantomjs|puppeteer|' +
+  'playwright|selenium|python-requests|python-urllib|curl|wget|axios|node-fetch|go-http|java/|' +
+  'okhttp|libwww|httpclient|apache-httpclient|scrapy|ahrefs|semrush|mj12|dotbot|dataforseo|' +
+  'petalbot|bytespider|gptbot|oai-searchbot|claudebot|anthropic|ccbot|perplexitybot|amazonbot|' +
+  'applebot|yandex|baiduspider|sogou|exabot|duckduckbot|uptime|pingdom|monitor|statuscake|' +
+  'newrelic|datadog|vercel-screenshot)';
+
+/** File extensions treated as static assets rather than page views. */
+export const ASSET_EXTENSIONS = [
+  'js', 'mjs', 'css', 'map', 'ico', 'png', 'jpg', 'jpeg', 'gif', 'svg',
+  'webp', 'avif', 'woff', 'woff2', 'ttf', 'eot', 'txt', 'xml', 'json',
+  'wasm', 'mp4', 'webm',
+] as const;
+
+/** The same asset list as a POSIX regex, for filtering inside SQL. */
+export const ASSET_PATH_SQL_REGEX = `\\.(${ASSET_EXTENSIONS.join('|')})(\\?|$)`;
+
+/**
+ * Noise check applied at INGEST — these requests are dropped before storage.
+ *
+ * Static assets, Next.js internals and our own drain endpoint are pure volume
+ * with no analytical value. Other `/api/*` paths ARE stored (they can be useful
+ * for spotting scrapers) but are excluded from page-view counts by the queries
+ * below.
+ *
+ * @param path Request path, with or without a query string.
+ * @returns true when the request should not be stored.
+ */
+export function isNoisePath(path?: string | null): boolean {
+  if (!path) return true;
+  const p = path.split('?')[0];
+  if (p === VERCEL_DRAIN_PATH) return true;
+  if (p.startsWith('/_next/') || p.startsWith('/__nextjs')) return true;
+  if (['/favicon.ico', '/robots.txt', '/sitemap.xml'].includes(p)) return true;
+  if (p.includes('.')) {
+    const ext = p.split('.').pop()?.toLowerCase();
+    if (ext && (ASSET_EXTENSIONS as readonly string[]).includes(ext)) return true;
+  }
+  return false;
+}
+
+/** A single page and how many times humans viewed it. */
+export interface TopPage {
+  path: string;
+  views: number;
+}
+
+/** Headline server-side traffic figures for a trailing window. */
+export interface WebsiteInsights {
+  /** Days covered by the window. */
+  days: number;
+  /** Page views from non-bot user-agents. */
+  pageViews: number;
+  /** Page views attributed to bots, crawlers and automated agents. */
+  botViews: number;
+  /** Distinct client IPs behind the human page views. */
+  uniqueVisitors: number;
+  /** Busiest pages by human views, most popular first. */
+  topPages: TopPage[];
+}
+
+/**
+ * A page view is a successful GET of a real page: not an asset, not a Next.js
+ * internal, not an API call. 304s count — a returning visitor hitting cache is
+ * still a visit.
+ *
+ * Re-delivered drain lines are collapsed with COUNT(DISTINCT ...); COALESCE
+ * matters because SQL's DISTINCT ignores NULLs, so rows that arrived without a
+ * Vercel id would otherwise count as zero instead of one.
+ */
+const PAGE_VIEW_WHERE = `
+  timestamp >= $1
+  AND method = 'GET'
+  AND status_code IN (200, 304)
+  AND coalesce(path, '') <> ''
+  AND path NOT LIKE '/_next/%'
+  AND path NOT LIKE '/api/%'
+  AND path !~* $2
+`;
+
+const HUMAN_WHERE = `AND user_agent IS NOT NULL AND user_agent !~* $3`;
+const BOT_WHERE = `AND (user_agent IS NULL OR user_agent ~* $3)`;
+
+/**
+ * Headline traffic figures for the last N days, split human vs bot.
+ *
+ * All values are bound as query parameters (the regexes included), so the only
+ * interpolated text is the static SQL above.
+ *
+ * @param days Size of the trailing window in days.
+ * @returns Human page views, bot views, unique visitors and the top 10 pages.
+ */
+export async function getWebsiteInsights(days = 30): Promise<WebsiteInsights> {
+  const since = new Date(Date.now() - days * 86_400_000);
+  const params = [since, ASSET_PATH_SQL_REGEX, BOT_UA_REGEX];
+
+  const [humanRows, botRows, visitorRows, topPages] = await Promise.all([
+    prisma.$queryRawUnsafe<{ c: number }[]>(
+      `SELECT COUNT(DISTINCT COALESCE(vercel_id, id))::int AS c FROM vercel_events
+       WHERE ${PAGE_VIEW_WHERE} ${HUMAN_WHERE}`,
+      ...params
+    ),
+    prisma.$queryRawUnsafe<{ c: number }[]>(
+      `SELECT COUNT(DISTINCT COALESCE(vercel_id, id))::int AS c FROM vercel_events
+       WHERE ${PAGE_VIEW_WHERE} ${BOT_WHERE}`,
+      ...params
+    ),
+    prisma.$queryRawUnsafe<{ c: number }[]>(
+      `SELECT COUNT(DISTINCT client_ip)::int AS c FROM vercel_events
+       WHERE ${PAGE_VIEW_WHERE} ${HUMAN_WHERE}`,
+      ...params
+    ),
+    prisma.$queryRawUnsafe<TopPage[]>(
+      `SELECT path, COUNT(DISTINCT COALESCE(vercel_id, id))::int AS views FROM vercel_events
+       WHERE ${PAGE_VIEW_WHERE} ${HUMAN_WHERE}
+       GROUP BY path ORDER BY views DESC, path ASC LIMIT 10`,
+      ...params
+    ),
+  ]);
+
+  return {
+    days,
+    pageViews: humanRows[0]?.c ?? 0,
+    botViews: botRows[0]?.c ?? 0,
+    uniqueVisitors: visitorRows[0]?.c ?? 0,
+    topPages: topPages.map((p) => ({ path: p.path, views: Number(p.views) })),
+  };
+}

@@ -1713,60 +1713,46 @@ enum PointsType {
 }
 
 // ==========================================
-// VERCEL ANALYTICS DRAIN
+// VERCEL LOG DRAIN (server-side traffic)
 // ==========================================
 
-model VercelAnalyticsEvent {
-  id         String   @id @default(uuid())
-  receivedAt DateTime @default(now()) @map("received_at")
+/// One row per HTTP request to the site, delivered as NDJSON by a Vercel *Log*
+/// Drain and stored by src/app/api/webhooks/vercel-drain/route.ts. Because it is
+/// captured server-side it also sees requests that never run JS — which is what
+/// makes human-vs-bot classification possible, unlike the client-beacon
+/// AnalyticsEvent. Log drains carry no "pageview" event type: page views are
+/// DERIVED from method/status/path in src/lib/analytics/vercel-events.ts.
+/// Drains occasionally re-deliver a line, so vercelId is deliberately NOT
+/// unique — de-duplication happens at query time via
+/// COUNT(DISTINCT COALESCE(vercel_id, id)). See 2026-08-26-vercel-events-table.sql.
+model VercelEvent {
+  id              String   @id @default(uuid())
+  /// Vercel's own log-line id (falls back to requestId); query-time dedupe key.
+  vercelId        String?  @map("vercel_id")
+  /// Vercel project the request hit — guards against a mis-scoped team drain.
+  projectId       String?  @map("project_id")
+  /// edge | lambda | static | external (build lines are filtered at ingest).
+  source          String
+  /// Event time reported by Vercel, not receipt time.
+  timestamp       DateTime
+  path            String?
+  referrer        String?
+  statusCode      Int?     @map("status_code")
+  method          String?
+  userAgent       String?  @map("user_agent")
+  clientIp        String?  @map("client_ip")
+  cacheStatus     String?  @map("cache_status")
+  responseBytes   Int?     @map("response_bytes")
+  executionRegion String?  @map("execution_region")
+  environment     String?
+  deploymentId    String?  @map("deployment_id")
+  requestId       String?  @map("request_id")
+  createdAt       DateTime @default(now()) @map("created_at")
 
-  // Event identification
-  eventType String  @map("event_type") // "pageview" or "event"
-  eventName String? @map("event_name") // For custom events
-  eventData Json?   @map("event_data") // Custom event data
-  timestamp BigInt  // Unix ms from Vercel
-
-  // Session/Device
-  sessionId BigInt? @map("session_id")
-  deviceId  BigInt? @map("device_id")
-
-  // Page data
-  origin      String?
-  path        String?
-  route       String? // Dynamic route pattern
-  referrer    String?
-  queryParams String? @map("query_params") // UTM params etc.
-
-  // Geo data
-  country String?
-  region  String?
-  city    String?
-
-  // Device/Browser
-  deviceType    String? @map("device_type") // desktop, mobile, tablet
-  osName        String? @map("os_name")
-  osVersion     String? @map("os_version")
-  clientName    String? @map("client_name") // browser name
-  clientVersion String? @map("client_version")
-
-  // Vercel metadata
-  projectId  String? @map("project_id")
-  deployment String?
-  vercelEnv  String? @map("vercel_environment")
-
-  // Store complete payload for future flexibility
-  rawJson Json @map("raw_json")
-
-  // Dedup hash (sessionId + timestamp + path + eventType)
-  dedupHash String? @unique @map("dedup_hash")
-
-  @@index([receivedAt])
-  @@index([path])
-  @@index([referrer])
-  @@index([country])
-  @@index([eventType])
   @@index([timestamp])
-  @@map("vercel_analytics_events")
+  @@index([path])
+  @@index([clientIp])
+  @@map("vercel_events")
 }
 
 // ==========================================

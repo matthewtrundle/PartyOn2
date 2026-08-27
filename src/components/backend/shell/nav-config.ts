@@ -90,6 +90,7 @@ const SCREEN_TITLES: Array<[string, string]> = [
   ['/admin/dashboard', 'Dashboard'],
   ['/admin/strategy', 'Game Plan'],
   ['/admin/analytics', 'Analytics'],
+  ['/admin/analytics/traffic', 'Server Traffic'],
   ['/admin/customers', 'Customers'],
   ['/admin/leads', 'Leads'],
   ['/admin/emails', 'Email'],

@@ -47,19 +47,3 @@ export function verifyDrainSignature(
   }
 }
 
-/**
- * Generate a dedup hash for an analytics event
- * Uses sessionId + timestamp + path + eventType to create a unique identifier
- *
- * @param event - The analytics event object
- * @returns A 32-character hex hash
- */
-export function generateDedupHash(event: {
-  sessionId?: number | bigint | null;
-  timestamp?: number | bigint | null;
-  path?: string | null;
-  eventType?: string | null;
-}): string {
-  const key = `${event.sessionId || 'no-session'}-${event.timestamp || Date.now()}-${event.path || '/'}-${event.eventType || 'unknown'}`;
-  return crypto.createHash('sha256').update(key).digest('hex').slice(0, 32);
-}
