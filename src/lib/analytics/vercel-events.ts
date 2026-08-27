@@ -53,9 +53,17 @@ export const ASSET_PATH_SQL_REGEX = `\\.(${ASSET_EXTENSIONS.join('|')})(\\?|$)`;
  * Noise check applied at INGEST — these requests are dropped before storage.
  *
  * Static assets, Next.js internals and our own drain endpoint are pure volume
- * with no analytical value. Other `/api/*` paths ARE stored (they can be useful
- * for spotting scrapers) but are excluded from page-view counts by the queries
- * below.
+ * with no analytical value.
+ *
+ * `/api/*` is dropped too, and that is a deliberate security decision rather
+ * than a tidiness one. Our API routes carry the same credentials as the pages
+ * they serve — `/api/v1/invoice/<token>`, `/api/group-orders/<code>`,
+ * `/api/cart/share/<id>` — and a dashboard page load calls several of them, so
+ * storing API paths would re-introduce exactly the credential leak that
+ * `redactPath` exists to prevent, via a route list that grows every time
+ * someone adds an endpoint. Since every report below already excludes `/api/%`,
+ * these rows have no reader today; dropping them removes the whole class of
+ * leak instead of chasing it endpoint by endpoint.
  *
  * @param path Request path, with or without a query string.
  * @returns true when the request should not be stored.
@@ -64,6 +72,7 @@ export function isNoisePath(path?: string | null): boolean {
   if (!path) return true;
   const p = path.split('?')[0];
   if (p === VERCEL_DRAIN_PATH) return true;
+  if (p === '/api' || p.startsWith('/api/')) return true;
   if (p.startsWith('/_next/') || p.startsWith('/__nextjs')) return true;
   if (['/favicon.ico', '/robots.txt', '/sitemap.xml'].includes(p)) return true;
   if (p.includes('.')) {

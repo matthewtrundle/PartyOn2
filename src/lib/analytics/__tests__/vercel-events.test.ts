@@ -35,8 +35,18 @@ describe('isNoisePath', () => {
     expect(isNoisePath('/products?category=beer')).toBe(false);
   });
 
-  it('keeps non-self API paths so scraper traffic stays inspectable', () => {
-    expect(isNoisePath('/api/v1/products')).toBe(false);
+  it('drops every API path — they carry the same credentials as the pages', () => {
+    // /api/v1/invoice/<token> and /api/group-orders/<code> are possession-based,
+    // and a dashboard page load calls them; storing these would leak the codes
+    // that redactPath strips from the page path.
+    expect(isNoisePath('/api/v1/invoice/tok_live_9f3a2b')).toBe(true);
+    expect(isNoisePath('/api/group-orders/E97WPQ/items')).toBe(true);
+    expect(isNoisePath('/api/v2/group-orders/ABC123/join')).toBe(true);
+    expect(isNoisePath('/api/cart/share/9c1f')).toBe(true);
+    expect(isNoisePath('/api/v1/products')).toBe(true);
+    expect(isNoisePath('/api')).toBe(true);
+    // Not an API route despite the prefix.
+    expect(isNoisePath('/api-docs')).toBe(false);
   });
 
   it('drops our own drain endpoint, which every delivery would otherwise log', () => {
