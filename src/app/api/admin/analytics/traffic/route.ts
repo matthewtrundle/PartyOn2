@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireOpsAuth } from '@/lib/auth/ops-session';
+import { requireAdminRole } from '@/lib/auth/ops-session';
 import { getWebsiteInsights } from '@/lib/analytics/vercel-events';
 
 export const dynamic = 'force-dynamic';
@@ -13,7 +13,10 @@ export const dynamic = 'force-dynamic';
  * visitors who block JavaScript — and can separate bots from people.
  */
 export async function GET(request: NextRequest): Promise<NextResponse> {
-  const auth = await requireOpsAuth();
+  // Admin-only, not merely ops: /admin/analytics is an admin surface in
+  // nav-config, but that gate is a client-side redirect — an employee session
+  // could otherwise call this route directly.
+  const auth = await requireAdminRole();
   if (auth instanceof NextResponse) return auth;
 
   // Math.max/min propagate NaN, so a non-numeric ?days= would otherwise reach

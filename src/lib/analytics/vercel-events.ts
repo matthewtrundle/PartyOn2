@@ -73,6 +73,68 @@ export function isNoisePath(path?: string | null): boolean {
   return false;
 }
 
+/**
+ * Routes where a path SEGMENT is the access credential.
+ *
+ * Several customer-facing routes here grant access by possession of the URL —
+ * a dashboard code, an invoice token, a share link. Storing those verbatim
+ * would turn this table into a durable list of working links to customer data
+ * and live checkout flows, readable by anything with database access. So the
+ * secret segment is replaced with its route template before storage: we still
+ * learn that someone viewed a dashboard, without recording *which* one.
+ *
+ * Ingest already strips query strings for the same reason; this extends that to
+ * the place this app actually puts its tokens.
+ *
+ * Public content routes (/products/[handle], /blog/[slug], /venues/[slug] …)
+ * are deliberately NOT redacted — those are the marketing pages the whole
+ * report exists to rank. Admin and ops routes are also left alone: they sit
+ * behind ops auth, so their ids are not credentials.
+ */
+const SENSITIVE_PATH_RULES: { pattern: RegExp; replacement: string }[] = [
+  { pattern: /^\/dashboard\/[^/]+/i, replacement: '/dashboard/[code]' },
+  { pattern: /^\/group\/[^/]+/i, replacement: '/group/[code]' },
+  { pattern: /^\/invoice\/[^/]+/i, replacement: '/invoice/[token]' },
+  { pattern: /^\/cart\/shared\/[^/]+/i, replacement: '/cart/shared/[id]' },
+  { pattern: /^\/concierge-quote\/[^/]+/i, replacement: '/concierge-quote/[leadId]' },
+  { pattern: /^\/s\/[^/]+/i, replacement: '/s/[slug]' },
+  // /invoices/<...> and /<storeId>/invoices/<...> are catch-all invoice links.
+  { pattern: /^(\/[^/]+)?\/invoices\/.+$/i, replacement: '$1/invoices/[...]' },
+];
+
+/**
+ * Replace credential-bearing path segments with their route template.
+ *
+ * @param path A request path with the query string already removed.
+ * @returns The path safe to store, unchanged when nothing sensitive matched.
+ */
+export function redactPath(path: string): string {
+  for (const { pattern, replacement } of SENSITIVE_PATH_RULES) {
+    if (pattern.test(path)) return path.replace(pattern, replacement);
+  }
+  return path;
+}
+
+/**
+ * How long raw request logs are kept.
+ *
+ * These rows carry client IPs and user agents, so they are not kept
+ * indefinitely. 90 days matches the longest window the reports offer, so
+ * nothing the UI can ask for is ever missing.
+ */
+export const RETENTION_DAYS = 90;
+
+/**
+ * Delete request logs past the retention window.
+ *
+ * @returns How many rows were removed.
+ */
+export async function pruneVercelEvents(): Promise<number> {
+  const cutoff = new Date(Date.now() - RETENTION_DAYS * 86_400_000);
+  const { count } = await prisma.vercelEvent.deleteMany({ where: { timestamp: { lt: cutoff } } });
+  return count;
+}
+
 /** A single page and how many times humans viewed it. */
 export interface TopPage {
   path: string;

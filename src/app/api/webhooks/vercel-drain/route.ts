@@ -16,7 +16,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/database/client';
 import { verifyDrainSignature } from '@/lib/vercel/drain-verification';
-import { isNoisePath } from '@/lib/analytics/vercel-events';
+import { isNoisePath, redactPath } from '@/lib/analytics/vercel-events';
 
 /** Drain batches can be large; give the handler the same headroom as our other webhooks. */
 export const maxDuration = 60;
@@ -26,6 +26,16 @@ const CHUNK_SIZE = 500;
 
 /** Longest path/referrer we keep — `path` is indexed, and btree entries are size-capped. */
 const MAX_URL_LENGTH = 500;
+
+/** Cap for every other stored string, so a hostile header can't store unbounded text. */
+const MAX_TEXT_LENGTH = 1024;
+
+/** C0 control characters — Postgres rejects NUL in TEXT, so they never reach a row. */
+// eslint-disable-next-line no-control-regex
+const CONTROL_CHARS = /[\u0000-\u001F]/g;
+
+/** Largest batch we will read. Real drain batches are small NDJSON lines. */
+const MAX_BODY_BYTES = 4 * 1024 * 1024;
 
 type JsonRecord = Record<string, unknown>;
 
@@ -55,8 +65,18 @@ function asRecord(value: unknown): JsonRecord | null {
     : null;
 }
 
-function asString(value: unknown): string | null {
-  return typeof value === 'string' && value.length > 0 ? value : null;
+/**
+ * Coerce to a stored string.
+ *
+ * C0 control characters are stripped because Postgres rejects NUL bytes in TEXT
+ * outright: one request carrying a NUL byte in its user-agent would otherwise fail
+ * the entire 500-row insert chunk, return 500, and be retried by Vercel into the
+ * same failure — silently losing every legitimate row batched alongside it.
+ */
+function asString(value: unknown, maxLength = MAX_TEXT_LENGTH): string | null {
+  if (typeof value !== 'string') return null;
+  const cleaned = value.replace(CONTROL_CHARS, '').slice(0, maxLength);
+  return cleaned.length > 0 ? cleaned : null;
 }
 
 function asInt(value: unknown): number | null {
@@ -123,8 +143,10 @@ function parseDrainPayload(body: string): JsonRecord[] {
 function toEvent(log: JsonRecord): DrainEventRecord {
   const proxy = asRecord(log.proxy) ?? {};
 
-  const rawPath = asString(proxy.path) ?? asString(log.path);
-  const path = rawPath ? rawPath.split('?')[0].slice(0, MAX_URL_LENGTH) : null;
+  // Query string is dropped and credential-bearing segments are replaced with
+  // their route template before the path is ever stored.
+  const rawPath = asString(proxy.path, MAX_URL_LENGTH) ?? asString(log.path, MAX_URL_LENGTH);
+  const path = rawPath ? redactPath(rawPath.split('?')[0]).slice(0, MAX_URL_LENGTH) : null;
 
   const rawUserAgent = proxy.userAgent;
   const userAgent = Array.isArray(rawUserAgent)
@@ -132,7 +154,8 @@ function toEvent(log: JsonRecord): DrainEventRecord {
     : asString(rawUserAgent);
 
   // The wire field is "referer" (one r) — the misspelling is in the HTTP spec.
-  const referrer = asString(proxy.referer) ?? asString(proxy.referrer);
+  const referrer =
+    asString(proxy.referer, MAX_URL_LENGTH) ?? asString(proxy.referrer, MAX_URL_LENGTH);
 
   return {
     vercelId: asString(log.id) ?? asString(log.requestId),
@@ -140,7 +163,7 @@ function toEvent(log: JsonRecord): DrainEventRecord {
     source: asString(log.source) ?? 'unknown',
     timestamp: toTimestamp(log.timestamp ?? proxy.timestamp),
     path,
-    referrer: referrer ? referrer.slice(0, MAX_URL_LENGTH) : null,
+    referrer,
     statusCode: asInt(proxy.statusCode) ?? asInt(log.statusCode),
     method: asString(proxy.method),
     userAgent,
@@ -169,6 +192,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const startTime = Date.now();
 
   try {
+    // Reject an oversized batch before buffering it: this endpoint is reachable
+    // unauthenticated, and the body is read before the signature can be checked.
+    const declaredLength = Number(request.headers.get('content-length') ?? '0');
+    if (Number.isFinite(declaredLength) && declaredLength > MAX_BODY_BYTES) {
+      console.error(`[Vercel Drain] Rejected oversized batch (${declaredLength} bytes)`);
+      return NextResponse.json({ success: false, error: 'payload_too_large' }, { status: 413 });
+    }
+
     const rawBody = await request.text();
 
     // Endpoint-verification ping: must be answered before any auth check,

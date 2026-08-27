@@ -196,6 +196,66 @@ describe('POST /api/webhooks/vercel-drain', () => {
     expect(row.timestamp).toBeInstanceOf(Date);
   });
 
+  it('redacts credential-bearing paths before they are stored', async () => {
+    const line = JSON.stringify({
+      id: 'line-dash',
+      source: 'edge',
+      timestamp: TS,
+      proxy: { method: 'GET', path: '/dashboard/E97WPQ?tab=2', statusCode: 200, clientIp: '203.0.113.7' },
+    });
+    await POST(signedRequest(line));
+
+    const row = storedRows()[0];
+    expect(row.path).toBe('/dashboard/[code]');
+    expect(JSON.stringify(row)).not.toContain('E97WPQ');
+  });
+
+  it('strips control characters that would otherwise poison the whole insert chunk', async () => {
+    // A NUL byte in a header is trivial to send and Postgres rejects it in TEXT.
+    // Unstripped it would fail the batch, 500, and be retried into the same failure.
+    const line = JSON.stringify({
+      id: 'line-nul',
+      source: 'edge',
+      timestamp: TS,
+      proxy: {
+        method: 'GET',
+        path: '/pro\u0000ducts',
+        userAgent: ['Mozilla/5.0 \u0000 evil'],
+        statusCode: 200,
+        clientIp: '203.0.113.7',
+      },
+    });
+    const res = await POST(signedRequest(line));
+
+    expect(res.status).toBe(200);
+    const row = storedRows()[0];
+    expect(row.path).toBe('/products');
+    expect(row.userAgent).not.toContain('\u0000');
+  });
+
+  it('caps an oversized user-agent instead of storing unbounded text', async () => {
+    const line = JSON.stringify({
+      id: 'line-longua',
+      source: 'edge',
+      timestamp: TS,
+      proxy: { method: 'GET', path: '/', userAgent: ['x'.repeat(9000)], statusCode: 200, clientIp: '1.2.3.4' },
+    });
+    await POST(signedRequest(line));
+
+    expect((storedRows()[0].userAgent as string).length).toBeLessThanOrEqual(1024);
+  });
+
+  it('rejects an oversized batch before buffering it', async () => {
+    const req = makeRequest(pageLine, {
+      'x-vercel-signature': sign(pageLine),
+      'content-length': String(50 * 1024 * 1024),
+    });
+    const res = await POST(req);
+
+    expect(res.status).toBe(413);
+    expect(prismaMock.vercelEvent.createMany).not.toHaveBeenCalled();
+  });
+
   it('returns 500 on a database failure so Vercel retries instead of losing the batch', async () => {
     prismaMock.vercelEvent.createMany.mockRejectedValueOnce(new Error('connection refused'));
     const res = await POST(signedRequest(pageLine));

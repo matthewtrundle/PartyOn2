@@ -1,17 +1,19 @@
 /**
  * Tests for GET /api/admin/analytics/traffic.
  *
- * Two things matter here: the endpoint is ops-only (this repo's `/api/admin/**`
- * routes are NOT covered by middleware, so each handler carries its own gate),
- * and the `days` window must survive junk input — Math.max/Math.min propagate
- * NaN, which would otherwise reach the query as an Invalid Date.
+ * Two things matter here. The endpoint is admin-only — this repo's `/api/admin/**`
+ * routes are NOT covered by middleware, so each handler carries its own gate, and
+ * the nav-level admin restriction is a client-side redirect an employee session
+ * could simply skip by calling the route directly. And the `days` window must
+ * survive junk input: Math.max/Math.min propagate NaN, which would otherwise
+ * reach the query as an Invalid Date.
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { NextRequest, NextResponse } from 'next/server';
 
-const requireOpsAuthMock = vi.hoisted(() => vi.fn());
-vi.mock('@/lib/auth/ops-session', () => ({ requireOpsAuth: requireOpsAuthMock }));
+const requireAdminRoleMock = vi.hoisted(() => vi.fn());
+vi.mock('@/lib/auth/ops-session', () => ({ requireAdminRole: requireAdminRoleMock }));
 
 const getWebsiteInsightsMock = vi.hoisted(() => vi.fn());
 vi.mock('@/lib/analytics/vercel-events', () => ({ getWebsiteInsights: getWebsiteInsightsMock }));
@@ -25,7 +27,7 @@ function makeRequest(query = ''): NextRequest {
 describe('GET /api/admin/analytics/traffic', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    requireOpsAuthMock.mockResolvedValue({ role: 'admin' });
+    requireAdminRoleMock.mockResolvedValue({ role: 'admin' });
     getWebsiteInsightsMock.mockResolvedValue({
       days: 30,
       pageViews: 10,
@@ -35,9 +37,9 @@ describe('GET /api/admin/analytics/traffic', () => {
     });
   });
 
-  it('refuses an unauthenticated caller without querying', async () => {
+  it('refuses a non-admin caller without querying', async () => {
     const denied = NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    requireOpsAuthMock.mockResolvedValue(denied);
+    requireAdminRoleMock.mockResolvedValue(denied);
 
     const res = await GET(makeRequest());
 

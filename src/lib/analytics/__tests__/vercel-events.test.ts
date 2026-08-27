@@ -22,6 +22,7 @@ import {
   ASSET_PATH_SQL_REGEX,
   VERCEL_DRAIN_PATH,
   isNoisePath,
+  redactPath,
 } from '../vercel-events';
 
 const botRe = new RegExp(BOT_UA_REGEX, 'i');
@@ -97,6 +98,44 @@ describe('BOT_UA_REGEX', () => {
     ];
     for (const ua of humans) {
       expect(botRe.test(ua), `expected human: ${ua}`).toBe(false);
+    }
+  });
+});
+
+describe('redactPath', () => {
+  it('replaces credential-bearing segments with their route template', () => {
+    // These URLs grant access by possession — storing them verbatim would make
+    // the analytics table a list of working links into customer data.
+    expect(redactPath('/dashboard/E97WPQ')).toBe('/dashboard/[code]');
+    expect(redactPath('/dashboard/E97WPQ/success')).toBe('/dashboard/[code]/success');
+    expect(redactPath('/group/ABC123')).toBe('/group/[code]');
+    expect(redactPath('/group/ABC123/dashboard')).toBe('/group/[code]/dashboard');
+    expect(redactPath('/invoice/tok_live_9f3a2b')).toBe('/invoice/[token]');
+    expect(redactPath('/cart/shared/9c1f')).toBe('/cart/shared/[id]');
+    expect(redactPath('/concierge-quote/lead_88')).toBe('/concierge-quote/[leadId]');
+    expect(redactPath('/s/xY9k2')).toBe('/s/[slug]');
+    expect(redactPath('/invoices/2026/abc-token')).toBe('/invoices/[...]');
+    expect(redactPath('/store-7/invoices/abc-token')).toBe('/store-7/invoices/[...]');
+  });
+
+  it('leaves public marketing pages intact — they are the point of the report', () => {
+    const untouched = [
+      '/',
+      '/products',
+      '/products/tito-s-handmade-vodka',
+      '/blog/how-much-beer-for-a-party',
+      '/blog/category/weddings',
+      '/venues/the-oasis',
+      '/partners/lake-travis-yacht-rentals',
+      '/delivery/lake-travis',
+      '/weddings/packages/premium',
+      '/austin-corporate-event-delivery',
+      // Not the credential routes, despite similar prefixes.
+      '/dashboard',
+      '/invoice',
+    ];
+    for (const p of untouched) {
+      expect(redactPath(p), `expected untouched: ${p}`).toBe(p);
     }
   });
 });

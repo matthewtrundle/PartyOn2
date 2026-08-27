@@ -38,6 +38,7 @@ import { putFileToRepo, type PutFileResult } from '@/lib/github/put-file';
 import { buildSnapshotRecommendations } from '@/lib/analytics/snapshot-recommendations';
 import { persistRecommendations, listRecommendations } from '@/lib/analytics/recommendation-store';
 import { getPageEngagement } from '@/lib/analytics/variant-rollup';
+import { pruneVercelEvents } from '@/lib/analytics/vercel-events';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
@@ -122,6 +123,14 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       return null;
     }
   };
+
+  // Raw Vercel request logs carry client IPs, so they are aged out here rather
+  // than kept forever. Wrapped in `safe` so a prune failure never costs us the
+  // night's snapshot.
+  const prunedVercelEvents = await safe('prune-vercel-events', pruneVercelEvents);
+  if (prunedVercelEvents) {
+    console.log(`[analytics-snapshot] pruned ${prunedVercelEvents} vercel_events rows`);
+  }
 
   // Parallel pulls across sources. GA4/GSC traffic & SEO metrics natively support
   // a compare period; for other slices we issue a parallel "prior" call below.
