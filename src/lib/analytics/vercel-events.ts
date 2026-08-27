@@ -70,13 +70,15 @@ export const ASSET_PATH_SQL_REGEX = `\\.(${ASSET_EXTENSIONS.join('|')})(\\?|$)`;
  */
 export function isNoisePath(path?: string | null): boolean {
   if (!path) return true;
-  const p = path.split('?')[0];
+  // Compared case-insensitively so an oddly-cased `/API/...` can't slip a
+  // credential past the filter, even though such a request would 404.
+  const p = path.split('?')[0].toLowerCase();
   if (p === VERCEL_DRAIN_PATH) return true;
   if (p === '/api' || p.startsWith('/api/')) return true;
   if (p.startsWith('/_next/') || p.startsWith('/__nextjs')) return true;
   if (['/favicon.ico', '/robots.txt', '/sitemap.xml'].includes(p)) return true;
   if (p.includes('.')) {
-    const ext = p.split('.').pop()?.toLowerCase();
+    const ext = p.split('.').pop();
     if (ext && (ASSET_EXTENSIONS as readonly string[]).includes(ext)) return true;
   }
   return false;

@@ -46,6 +46,7 @@ describe('isNoisePath', () => {
     expect(isNoisePath('/api/cart/share/9c1f')).toBe(true);
     expect(isNoisePath('/api/v1/products')).toBe(true);
     expect(isNoisePath('/api')).toBe(true);
+    expect(isNoisePath('/API/v1/invoice/tok_live_9f3a2b')).toBe(true);
     // Not an API route despite the prefix.
     expect(isNoisePath('/api-docs')).toBe(false);
   });
