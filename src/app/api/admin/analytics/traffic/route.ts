@@ -16,7 +16,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   const auth = await requireOpsAuth();
   if (auth instanceof NextResponse) return auth;
 
-  const days = Math.max(1, Math.min(90, parseInt(request.nextUrl.searchParams.get('days') ?? '30', 10)));
+  // Math.max/min propagate NaN, so a non-numeric ?days= would otherwise reach
+  // getWebsiteInsights as NaN and build an Invalid Date, failing the query.
+  const requested = parseInt(request.nextUrl.searchParams.get('days') ?? '30', 10);
+  const days = Number.isFinite(requested) ? Math.max(1, Math.min(90, requested)) : 30;
 
   try {
     return NextResponse.json({ days, data: await getWebsiteInsights(days) });
