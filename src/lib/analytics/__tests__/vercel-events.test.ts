@@ -118,6 +118,13 @@ describe('redactPath', () => {
     expect(redactPath('/store-7/invoices/abc-token')).toBe('/store-7/invoices/[...]');
   });
 
+  it('is not fooled by casing or repeated slashes', () => {
+    expect(redactPath('/DASHBOARD/E97WPQ')).toBe('/dashboard/[code]');
+    // A doubled slash reaches the same page but would slip past a segment match.
+    expect(redactPath('/dashboard//E97WPQ')).toBe('/dashboard/[code]');
+    expect(redactPath('/invoice//tok_live_9f3a2b')).toBe('/invoice/[token]');
+  });
+
   it('leaves public marketing pages intact — they are the point of the report', () => {
     const untouched = [
       '/',

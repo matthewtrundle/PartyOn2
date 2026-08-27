@@ -109,10 +109,13 @@ const SENSITIVE_PATH_RULES: { pattern: RegExp; replacement: string }[] = [
  * @returns The path safe to store, unchanged when nothing sensitive matched.
  */
 export function redactPath(path: string): string {
+  // Collapse repeated slashes first: `/dashboard//CODE` reaches the same page
+  // but would slip past a `[^/]+` segment match and store the code verbatim.
+  const normalized = path.replace(/\/{2,}/g, '/');
   for (const { pattern, replacement } of SENSITIVE_PATH_RULES) {
-    if (pattern.test(path)) return path.replace(pattern, replacement);
+    if (pattern.test(normalized)) return normalized.replace(pattern, replacement);
   }
-  return path;
+  return normalized;
 }
 
 /**
