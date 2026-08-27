@@ -128,6 +128,27 @@ export function redactPath(path: string): string {
 }
 
 /**
+ * Apply the same redaction to a referrer URL.
+ *
+ * Navigating away from a dashboard sends its URL as the Referer of the next
+ * request, so without this the codes stripped from `path` would simply reappear
+ * in `referrer`. The query string is dropped outright — referrers arrive from
+ * anywhere, and a stray token in someone else's query string is not ours to keep.
+ *
+ * @param referrer Raw Referer header value.
+ * @returns Origin plus redacted path, or the original value when unparseable.
+ */
+export function redactReferrer(referrer: string): string {
+  try {
+    const url = new URL(referrer);
+    return `${url.origin}${redactPath(url.pathname)}`;
+  } catch {
+    // Not an absolute URL — treat it as a bare path.
+    return redactPath(referrer.split('?')[0]);
+  }
+}
+
+/**
  * How long raw request logs are kept.
  *
  * These rows carry client IPs and user agents, so they are not kept

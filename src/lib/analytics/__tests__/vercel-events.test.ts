@@ -23,6 +23,7 @@ import {
   VERCEL_DRAIN_PATH,
   isNoisePath,
   redactPath,
+  redactReferrer,
 } from '../vercel-events';
 
 const botRe = new RegExp(BOT_UA_REGEX, 'i');
@@ -154,6 +155,31 @@ describe('redactPath', () => {
     for (const p of untouched) {
       expect(redactPath(p), `expected untouched: ${p}`).toBe(p);
     }
+  });
+});
+
+describe('redactReferrer', () => {
+  it('redacts our own credential URLs arriving as a referrer', () => {
+    // Clicking away from a dashboard sends its URL as the next request's Referer.
+    expect(redactReferrer('https://partyondelivery.com/dashboard/E97WPQ')).toBe(
+      'https://partyondelivery.com/dashboard/[code]'
+    );
+    expect(redactReferrer('https://partyondelivery.com/invoice/tok_live_9f3a2b?pay=1')).toBe(
+      'https://partyondelivery.com/invoice/[token]'
+    );
+  });
+
+  it('keeps external referrers useful while dropping their query strings', () => {
+    expect(redactReferrer('https://www.google.com/search?q=beer+delivery')).toBe(
+      'https://www.google.com/search'
+    );
+    expect(redactReferrer('https://partyondelivery.com/products')).toBe(
+      'https://partyondelivery.com/products'
+    );
+  });
+
+  it('handles a bare path referrer', () => {
+    expect(redactReferrer('/dashboard/E97WPQ')).toBe('/dashboard/[code]');
   });
 });
 

@@ -210,6 +210,26 @@ describe('POST /api/webhooks/vercel-drain', () => {
     expect(JSON.stringify(row)).not.toContain('E97WPQ');
   });
 
+  it('redacts a dashboard URL arriving as the referrer of the next page', async () => {
+    const line = JSON.stringify({
+      id: 'line-ref',
+      source: 'edge',
+      timestamp: TS,
+      proxy: {
+        method: 'GET',
+        path: '/products',
+        referer: 'https://partyondelivery.com/dashboard/E97WPQ',
+        statusCode: 200,
+        clientIp: '203.0.113.7',
+      },
+    });
+    await POST(signedRequest(line));
+
+    const row = storedRows()[0];
+    expect(row.referrer).toBe('https://partyondelivery.com/dashboard/[code]');
+    expect(JSON.stringify(row)).not.toContain('E97WPQ');
+  });
+
   it('strips control characters that would otherwise poison the whole insert chunk', async () => {
     // A NUL byte in a header is trivial to send and Postgres rejects it in TEXT.
     // Unstripped it would fail the batch, 500, and be retried into the same failure.

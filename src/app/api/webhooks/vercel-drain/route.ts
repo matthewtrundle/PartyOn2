@@ -16,7 +16,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/database/client';
 import { verifyDrainSignature } from '@/lib/vercel/drain-verification';
-import { isNoisePath, redactPath } from '@/lib/analytics/vercel-events';
+import { isNoisePath, redactPath, redactReferrer } from '@/lib/analytics/vercel-events';
 
 /** Drain batches can be large; give the handler the same headroom as our other webhooks. */
 export const maxDuration = 60;
@@ -154,8 +154,11 @@ function toEvent(log: JsonRecord): DrainEventRecord {
     : asString(rawUserAgent);
 
   // The wire field is "referer" (one r) — the misspelling is in the HTTP spec.
-  const referrer =
+  // Redacted too: navigating away from a dashboard sends its URL as the Referer
+  // of the next request, which would otherwise store the code `path` just stripped.
+  const rawReferrer =
     asString(proxy.referer, MAX_URL_LENGTH) ?? asString(proxy.referrer, MAX_URL_LENGTH);
+  const referrer = rawReferrer ? redactReferrer(rawReferrer).slice(0, MAX_URL_LENGTH) : null;
 
   return {
     vercelId: asString(log.id) ?? asString(log.requestId),
