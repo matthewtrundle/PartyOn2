@@ -158,7 +158,9 @@ function toEvent(log: JsonRecord): DrainEventRecord {
   // of the next request, which would otherwise store the code `path` just stripped.
   const rawReferrer =
     asString(proxy.referer, MAX_URL_LENGTH) ?? asString(proxy.referrer, MAX_URL_LENGTH);
-  const referrer = rawReferrer ? redactReferrer(rawReferrer).slice(0, MAX_URL_LENGTH) : null;
+  const referrer = rawReferrer
+    ? (redactReferrer(rawReferrer)?.slice(0, MAX_URL_LENGTH) ?? null)
+    : null;
 
   return {
     vercelId: asString(log.id) ?? asString(log.requestId),

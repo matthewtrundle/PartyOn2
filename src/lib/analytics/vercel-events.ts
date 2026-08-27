@@ -135,16 +135,28 @@ export function redactPath(path: string): string {
  * in `referrer`. The query string is dropped outright — referrers arrive from
  * anywhere, and a stray token in someone else's query string is not ours to keep.
  *
+ * Anything that is not a well-formed http(s) URL or a plain same-origin path is
+ * dropped rather than stored: a malformed referrer carries no analytical value,
+ * and guessing at its shape is how a credential slips through. A
+ * protocol-relative value like `//host/dashboard/CODE` is exactly that case —
+ * it is not parseable without a base, and treating it as a path would leave the
+ * code intact.
+ *
  * @param referrer Raw Referer header value.
- * @returns Origin plus redacted path, or the original value when unparseable.
+ * @returns Origin plus redacted path, or null when it cannot be made safe.
  */
-export function redactReferrer(referrer: string): string {
+export function redactReferrer(referrer: string): string | null {
   try {
     const url = new URL(referrer);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
     return `${url.origin}${redactPath(url.pathname)}`;
   } catch {
-    // Not an absolute URL — treat it as a bare path.
-    return redactPath(referrer.split('?')[0]);
+    // Not absolute. A bare same-origin path is still meaningful; anything else
+    // is discarded.
+    if (referrer.startsWith('/') && !referrer.startsWith('//')) {
+      return redactPath(referrer.split('?')[0]);
+    }
+    return null;
   }
 }
 

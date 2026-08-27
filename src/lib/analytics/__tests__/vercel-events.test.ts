@@ -181,6 +181,24 @@ describe('redactReferrer', () => {
   it('handles a bare path referrer', () => {
     expect(redactReferrer('/dashboard/E97WPQ')).toBe('/dashboard/[code]');
   });
+
+  it('drops anything it cannot make safe rather than guessing', () => {
+    // Protocol-relative: unparseable without a base, and treating it as a path
+    // would leave the code intact.
+    expect(redactReferrer('//partyondelivery.com/dashboard/E97WPQ')).toBeNull();
+    expect(redactReferrer('not a url /dashboard/E97WPQ')).toBeNull();
+    expect(redactReferrer('javascript:alert(1)')).toBeNull();
+    expect(redactReferrer('')).toBeNull();
+  });
+
+  it('strips credentials and fragments from the URL itself', () => {
+    expect(redactReferrer('https://user:pw@partyondelivery.com/invoice/TOKEN')).toBe(
+      'https://partyondelivery.com/invoice/[token]'
+    );
+    expect(redactReferrer('https://partyondelivery.com/dashboard/E97WPQ#tok=SECRET')).toBe(
+      'https://partyondelivery.com/dashboard/[code]'
+    );
+  });
 });
 
 describe('ASSET_PATH_SQL_REGEX', () => {
