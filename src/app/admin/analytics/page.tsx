@@ -112,12 +112,20 @@ function AnalyticsHub(): ReactElement {
             Traffic, CTA clicks &amp; conversion for each landing page.
           </p>
         </div>
-        <Link
-          href="/admin/dashboard"
-          className="px-3 py-2 text-sm font-semibold rounded-md bg-white text-brand-blue border border-brand-blue hover:bg-blue-50 transition-colors"
-        >
-          Global Overview →
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/admin/analytics/traffic"
+            className="px-3 py-2 text-sm font-semibold rounded-md bg-white text-brand-blue border border-brand-blue hover:bg-blue-50 transition-colors"
+          >
+            Server Traffic →
+          </Link>
+          <Link
+            href="/admin/dashboard"
+            className="px-3 py-2 text-sm font-semibold rounded-md bg-white text-brand-blue border border-brand-blue hover:bg-blue-50 transition-colors"
+          >
+            Global Overview →
+          </Link>
+        </div>
       </header>
 
       <LandingPageTabs active={active} />

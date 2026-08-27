@@ -283,6 +283,7 @@ The bigger or riskier the change, the more of this is mandatory.
 - **Attribution**: first-touch landing page + UTMs captured client-side via `AttributionTracker` component → Stripe session metadata → `Order.landingPage/utmSource/...`.
 - **Margin**: `OrderItem.unitCost/totalCost` + `Order.marginAmount` populated at order creation from `ProductVariant.costPerUnit`. Backfill historical: `npx tsx scripts/backfill-order-margins.ts`.
 - **A/B significance**: `src/lib/analytics/experiment-significance.ts` — two-proportion z-test; use `computeSignificance()` to pick winners.
+- **Server-side traffic**: a Vercel **Log Drain** posts one NDJSON line per HTTP request to `/api/webhooks/vercel-drain` → `vercel_events`. Page views and the human/bot split are DERIVED from method/status/path + user-agent in `src/lib/analytics/vercel-events.ts` (`getWebsiteInsights()`); shown at `/admin/analytics/traffic`. Log drains emit no `pageview` event type — never filter for one. Request fields are nested under `log.proxy.*`.
 
 ---
 

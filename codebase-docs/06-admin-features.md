@@ -149,7 +149,7 @@ These are **parallel namespaces, not a migration** — neither supersedes the ot
 
 ### Reporting
 - `/admin/reports/{sales,customers,inventory}` backed by `/api/v1/admin/reports/*`.
-- Daily `AnalyticsSnapshot` rollup; raw event ingest at `/api/analytics-ingest` into `VercelAnalyticsEvent`.
+- Daily `AnalyticsSnapshot` rollup; raw server-side request logs at `/api/webhooks/vercel-drain` into `VercelEvent`, surfaced at `/admin/analytics/traffic`.
 - GA4 Data API queries via `@google-analytics/data` from `src/lib/analytics/`.
 
 ### Experiments
@@ -261,7 +261,7 @@ These are **parallel namespaces, not a migration** — neither supersedes the ot
 | Resend | out + webhooks in | Transactional email + template webhooks. |
 | GoHighLevel (GHL) | out webhook | SMS dispatch (`src/lib/webhooks/ghl.ts`). |
 | Zapier | out webhook | Partner inquiry + corporate leads. |
-| Vercel Analytics Drain | in | `/api/analytics-ingest`, signature verified with `VERCEL_DRAIN_SECRET`. |
+| Vercel Log Drain | in | `/api/webhooks/vercel-drain`, signature verified with `VERCEL_DRAIN_SECRET`. |
 | Google (GA4 + GSC) | pull | GA4 Data API via `@google-analytics/data`; GSC via `googleapis`. |
 | Anthropic Claude | out | Agent, blog generation, inventory AI. |
 | Google Gemini | out | Blog image generation. |

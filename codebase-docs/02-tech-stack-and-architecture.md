@@ -28,7 +28,7 @@ tags: [partyondelivery, codebase, architecture, stack, env]
 | SMS / webhook relay | GoHighLevel via `src/lib/webhooks/ghl.ts`; Zapier inbound | n/a (webhook URL only) |
 | Analytics | `@vercel/analytics`, `@vercel/speed-insights`, `@google-analytics/data` (GA4 Data API), Meta Pixel, Microsoft Clarity (`@microsoft/clarity`) | 1.5.0 / 1.2.0 / 5.2.1 / 1.0.2 |
 | Finance integrations | `plaid`, `react-plaid-link` (bank accounts), `intuit-oauth` (QuickBooks Online) | 42.2.0 / 4.1.1 / 4.2.3 |
-| Error / observability | Vercel Analytics Drain (see `api/analytics-ingest`) | n/a |
+| Server traffic / bot detection | Vercel Log Drain (see `api/webhooks/vercel-drain`) | n/a |
 | Shopify integration | `@shopify/buy-button-js`, `graphql`, `graphql-request` (Admin API only) | 3.0.5 / 16.11.0 / 7.2.0 |
 | AI | `@anthropic-ai/sdk`, `@google/generative-ai`, OpenRouter (via fetch) | 0.66.0 / 0.24.1 |
 | MCP | `@modelcontextprotocol/sdk` | 1.29.0 |
@@ -327,10 +327,10 @@ Added 2026-05 alongside the Finance Director pipeline (Phase 0+).
 | `PREMIER_SHEET_ID` | Google Sheet ID. |
 | `BOAT_SCHEDULE_SYNC_KEY` | Guards `/api/ops/boat-schedule/sync`. |
 
-### Vercel Analytics Drain
+### Vercel Log Drain
 | Variable | Purpose |
 |---|---|
-| `VERCEL_DRAIN_SECRET` | Signature verification for `/api/analytics-ingest`. |
+| `VERCEL_DRAIN_SECRET` | Signature verification for `/api/webhooks/vercel-drain`. |
 
 ## Build / deploy scripts (from `package.json`)
 
