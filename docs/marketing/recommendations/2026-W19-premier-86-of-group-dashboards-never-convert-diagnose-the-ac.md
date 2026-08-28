@@ -62,40 +62,40 @@ _(not captured)_
 
 ```json
 {
-  "orders": 53,
-  "revenue": 16261.9,
+  "orders": 45,
+  "revenue": 15470.43,
   "segments": [
     {
       "margin": null,
-      "orders": 46,
-      "revenue": 15535.87,
+      "orders": 43,
+      "revenue": 14981.4,
       "segment": "general",
       "averageMarginPct": null,
-      "averageOrderValue": 337.74,
+      "averageOrderValue": 348.4,
       "marginCoveragePct": 0
     },
     {
       "margin": 77.38,
-      "orders": 7,
-      "revenue": 726.03,
+      "orders": 2,
+      "revenue": 489.03,
       "segment": "unknown",
-      "averageMarginPct": 10.7,
-      "averageOrderValue": 103.72,
-      "marginCoveragePct": 21.9
+      "averageMarginPct": 15.8,
+      "averageOrderValue": 244.51,
+      "marginCoveragePct": 32.4
     }
   ],
-  "capturedAt": "2026-08-27T08:01:13.540Z",
+  "capturedAt": "2026-08-28T08:00:57.820Z",
   "affiliateRoi": [
     {
       "code": "PREMIER",
       "margin": null,
-      "orders": 16,
+      "orders": 14,
       "roiPct": null,
-      "revenue": 2497.52,
+      "revenue": 2212.61,
       "netMargin": null,
       "affiliateId": "d21bac1a-3f99-489c-89fd-e1980c264a8d",
       "businessName": "Premier Party Cruises",
-      "commissionPaid": 176.4,
+      "commissionPaid": 156.07,
       "marginCoveragePct": 0
     },
     {
@@ -159,15 +159,15 @@ _(not captured)_
       "marginCoveragePct": 0
     }
   ],
-  "snapshotDate": "2026-08-27",
-  "averageOrderValue": 306.8283018867925,
+  "snapshotDate": "2026-08-28",
+  "averageOrderValue": 343.7873333333333,
   "marginCoveragePct": null
 }
 ```
 ## Updates
 
 - 2026-05-05 — Created with status `executed` from source `director`.
-- 2026-08-27 — Status shipped → shipped (cron:measure-recommendations). Notes: Auto-captured 14-day measurement
+- 2026-08-28 — Status shipped → shipped (cron:measure-recommendations). Notes: Auto-captured 14-day measurement
 
 ---
 _Mirror file. Edited automatically by the triage queue when status changes. Source of truth is the database (id: `4fe8e34e-83cb-4ee7-9576-4a60386400dc`). Slug: `premier-86-of-group-dashboards-never-convert-diagnose-the-ac`._
