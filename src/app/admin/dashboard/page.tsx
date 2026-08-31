@@ -7,6 +7,7 @@ import SalesChart from './components/SalesChart';
 import TopProductsTable from './components/TopProductsTable';
 import IntegrationStatus from './components/IntegrationStatus';
 import TrafficOverview from './components/TrafficOverview';
+import ServerTrafficStrip from './components/ServerTrafficStrip';
 import SEOMetrics from './components/SEOMetrics';
 import ActiveTestsSummary from './components/ActiveTestsSummary';
 import CustomerBehaviorPanel from './components/CustomerBehaviorPanel';
@@ -186,6 +187,11 @@ export default function DashboardPage(): ReactElement {
           <div>
             <TopProductsTable products={data?.topProducts || []} loading={loading} />
           </div>
+        </div>
+
+        {/* Server Traffic (Vercel log drain — self-contained, fetches its own data) */}
+        <div className="mb-8">
+          <ServerTrafficStrip period={period} />
         </div>
 
         {/* Traffic & SEO Section (when Google APIs are configured) */}

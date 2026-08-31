@@ -16,7 +16,11 @@ const requireAdminRoleMock = vi.hoisted(() => vi.fn());
 vi.mock('@/lib/auth/ops-session', () => ({ requireAdminRole: requireAdminRoleMock }));
 
 const getWebsiteInsightsMock = vi.hoisted(() => vi.fn());
-vi.mock('@/lib/analytics/vercel-events', () => ({ getWebsiteInsights: getWebsiteInsightsMock }));
+const getDailyTrafficMock = vi.hoisted(() => vi.fn());
+vi.mock('@/lib/analytics/vercel-events', () => ({
+  getWebsiteInsights: getWebsiteInsightsMock,
+  getDailyTraffic: getDailyTrafficMock,
+}));
 
 import { GET } from '../route';
 
@@ -72,5 +76,27 @@ describe('GET /api/admin/analytics/traffic', () => {
     getWebsiteInsightsMock.mockRejectedValue(new Error('relation does not exist'));
     const res = await GET(makeRequest());
     expect(res.status).toBe(500);
+  });
+
+  it('omits the daily series unless asked — headline callers should not pay for it', async () => {
+    const res = await GET(makeRequest('?days=7'));
+    const body = await res.json();
+
+    expect(getDailyTrafficMock).not.toHaveBeenCalled();
+    expect(body).not.toHaveProperty('daily');
+  });
+
+  it('includes the zero-filled daily series with include=daily', async () => {
+    getDailyTrafficMock.mockResolvedValue([
+      { day: '2026-08-29', human: 0, bot: 0 },
+      { day: '2026-08-30', human: 25, bot: 22 },
+    ]);
+
+    const res = await GET(makeRequest('?days=7&include=daily'));
+    const body = await res.json();
+
+    expect(getDailyTrafficMock).toHaveBeenCalledWith(7);
+    expect(body.daily).toHaveLength(2);
+    expect(body.daily[1]).toEqual({ day: '2026-08-30', human: 25, bot: 22 });
   });
 });
