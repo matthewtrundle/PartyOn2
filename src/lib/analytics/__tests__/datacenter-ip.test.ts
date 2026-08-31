@@ -29,6 +29,15 @@ describe('isDatacenterIp', () => {
     expect(isDatacenterIp('::ffff:203.0.113.7')).toBe(false);
   });
 
+  it('never flags transition/special IPv6 space feeds have been caught shipping', () => {
+    // 6to4 embeds an arbitrary (often residential) IPv4 — Vultr's feed
+    // published 2002::/16 and the generator must have dropped it.
+    expect(isDatacenterIp('2002:4a7d:2b94::1')).toBe(false);
+    expect(isDatacenterIp('2001::1')).toBe(false); // Teredo
+    expect(isDatacenterIp('2001:2::1')).toBe(false); // benchmarking
+    expect(isDatacenterIp('2001:10::1')).toBe(false); // ORCHID
+  });
+
   it('treats missing or malformed input as NOT datacenter — uncertainty stays human', () => {
     expect(isDatacenterIp(null)).toBe(false);
     expect(isDatacenterIp(undefined)).toBe(false);

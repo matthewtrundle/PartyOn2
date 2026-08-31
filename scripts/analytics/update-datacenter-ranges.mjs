@@ -171,7 +171,14 @@ const RESERVED = [
   '172.16.0.0/12', '192.0.0.0/24', '192.0.2.0/24', '192.88.99.0/24',
   '192.168.0.0/16', '198.18.0.0/15', '198.51.100.0/24', '203.0.113.0/24',
   '224.0.0.0/4', '240.0.0.0/4',
-  '::/127', '::ffff:0:0/96', '64:ff9b::/96', '100::/64', '2001:db8::/32',
+  '::/127', '::ffff:0:0/96', '64:ff9b::/96', '100::/64',
+  // 2001::/23 covers the IETF special block in one entry: Teredo (2001::/32),
+  // benchmarking (2001:2::/48), AMT, AS112, ORCHID — Vultr's feed shipped the
+  // benchmarking and ORCHID chunks. 2002::/16 is 6to4 relay space, the worst
+  // offender: it embeds an arbitrary IPv4 inside the address, so accepting it
+  // would flag residential 6to4 tunnelers as datacenter (security review
+  // 2026-08-31).
+  '2001::/23', '2002::/16', '2001:db8::/32',
   '3fff::/20', 'fc00::/7', 'fe80::/10', 'ff00::/8',
 ].map((c) => cidrToRange(c));
 
@@ -183,6 +190,8 @@ const counts = {};
 const v4 = [];
 const v6 = [];
 let bad = 0;
+/** Largest accepted prefix per source — an anomalously huge one is the tell for feed poisoning. */
+const largest = {};
 
 for (const [name, fetcher] of Object.entries(SOURCES)) {
   try {
@@ -200,8 +209,13 @@ for (const [name, fetcher] of Object.entries(SOURCES)) {
       }
       if (r.v === 4) v4.push([r.start, r.end]);
       else v6.push([r.start, r.end]);
+      const size = r.v === 4 ? BigInt(r.end - r.start + 1) : r.end - r.start + 1n;
+      if (!largest[name] || size > largest[name].size) largest[name] = { cidr: c, size };
     }
-    console.log(`${name}: ${cidrs.length} prefixes`);
+    console.log(
+      `${name}: ${cidrs.length} prefixes` +
+        (largest[name] ? ` (largest accepted: ${largest[name].cidr})` : '')
+    );
   } catch (err) {
     counts[name] = 0;
     console.warn(`${name}: FAILED — ${err.message}`);
