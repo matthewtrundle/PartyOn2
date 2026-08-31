@@ -4,68 +4,72 @@
  *
  * WHY THIS IS A LIVE PROXY AND NOT A COMMITTED SNAPSHOT
  * ----------------------------------------------------
- * The boat tab used to be a frozen copy of Premier's `/quote` page committed
- * to `public/partners-embed/premier-quote.html`. Premier's site is a Vite SPA
- * whose entry bundle is content-hashed (`/assets/index-<hash>.js`), and their
- * Netlify host answers unknown `/assets/*` paths with a 200 + `index.html`
- * SPA fallback rather than a 404. So every time Brian redeployed Premier:
+ * The boat tab renders Premier's live quote page inside an iframe on
+ * `/partners/<slug>`. It has always been a live proxy rather than a committed
+ * snapshot, because a snapshot goes stale the moment Premier redeploys and then
+ * silently blanks the tab.
  *
- *   1. the hash in our committed snapshot went stale,
- *   2. the browser fetched HTML where a `type="module"` script was expected,
- *   3. strict MIME checking refused to execute it, React never mounted, and
- *   4. the tab rendered a silent, completely blank white panel.
+ * HISTORY — the old Vite SPA and its blank-panel bug
+ * --------------------------------------------------
+ * Premier's quote page used to be a Vite single-page app served from
+ * `/quote`, whose entry bundle was content-hashed (`/assets/index-<hash>.js`).
+ * Their Netlify host answers unknown `/assets/*` paths with a 200 + `index.html`
+ * SPA fallback rather than a 404, so a stale bundle URL came back as HTML where
+ * a `type="module"` script was expected, strict MIME checking refused to run it,
+ * React never mounted, and the tab rendered a silent blank white panel. That is
+ * why the proxy fetched the shell live (bundle hashes always current) and why an
+ * injected client-side watchdog + server-side entry-bundle check existed.
  *
- * That happened twice (PR #310 re-snapshotted; it broke again by 2026-07-27,
- * blanking the boat tab on every co-branded partner page while cold-outreach
- * emails were pitching it). Re-snapshotting only resets the clock, so we now
- * fetch Premier's `/quote` at request time and inject our additions into the
- * live HTML. Bundle hashes are always current by construction.
+ * NOW — a server-rendered page (migrated 2026-08)
+ * -----------------------------------------------
+ * Premier replaced the SPA: `/quote` now 301-redirects to `/get-a-quote`, a
+ * plain server-rendered HTML page. Its content is in the HTML itself (a quote
+ * `<form id="qform">` plus Xola booking iframes); live pricing and availability
+ * come from Supabase and Xola over absolute, CORS-enabled URLs, so they do not
+ * care which origin serves the page. There is no content-hashed bundle to go
+ * stale — the entire blank-panel bug class is gone, and with it the need for the
+ * client watchdog and the entry-bundle MIME check (both retired in this change).
  *
- * Same-origin is still required: Premier's build references `/assets/*` and
- * `/attached_assets/*` root-relative and their CDN sends no CORS headers, so
- * the module scripts cannot be `<base>`-loaded cross-origin. `next.config.ts`
- * proxies those two prefixes through to Premier.
+ * Same-origin is still required for the one root-relative asset the page uses:
+ * a hero video under `/attached_assets/*`. `next.config.ts` proxies `/assets/*`
+ * and `/attached_assets/*` through to Premier, which covers it.
  *
- * EVERY CHECK BELOW FAILS OPEN, DELIBERATELY. A guard that rejects a working
- * Premier shell blanks the boat tab on every partner page at once — the exact
- * outage it exists to prevent. Prefer serving a shell we are unsure about.
+ * FAIL OPEN, DELIBERATELY. A guard that rejects a working Premier page blanks
+ * the boat tab on every partner page at once — the exact outage this exists to
+ * prevent. When the upstream is clearly not the quote page we serve a working
+ * link-out card (never a blank panel); otherwise we serve what Premier sent.
  */
 
-import { buildEmbedScript } from '@/lib/partners/premier-embed-script';
-
-/** Premier's live quote page. Netlify serves the SPA shell for this route. */
-export const PREMIER_QUOTE_UPSTREAM = 'https://premierpartycruises.com/quote';
+/**
+ * Premier's live quote page. `/quote` 301-redirects here; we target the final
+ * URL directly to skip the redirect hop.
+ */
+export const PREMIER_QUOTE_UPSTREAM = 'https://premierpartycruises.com/get-a-quote';
 
 /** Public path the partner-page boat tab iframes. */
 export const PREMIER_QUOTE_EMBED_PATH = '/partners-embed/premier-quote';
 
-/** How long a fetched copy of Premier's shell stays fresh, in seconds. */
+/** How long a fetched copy of Premier's page stays fresh, in seconds. */
 export const PREMIER_EMBED_REVALIDATE_SECONDS = 300;
 
 /**
- * Root-relative prefixes `next.config.ts` proxies through to Premier. A shell
- * referencing anything outside this set cannot boot on our origin — the health
- * check reports that as "about to go blank" before it actually does.
+ * Root-relative prefixes `next.config.ts` proxies through to Premier. A page
+ * referencing a root-relative bundle outside this set cannot load it on our
+ * origin — the health check reports that as "about to go blank" before it does.
  */
 export const PROXIED_ASSET_PREFIXES = ['/assets/', '/attached_assets/'] as const;
 
 /** Marker so a double-injection is detectable (and a no-op). */
 const INJECTION_MARKER = 'pod-partner-embed-injection';
 
-/** Premier's own route, so the SPA router mounts the quote view. */
-function premierQuotePath(): string {
-  try {
-    return new URL(PREMIER_QUOTE_UPSTREAM).pathname;
-  } catch {
-    return '/quote';
-  }
-}
-
 /**
- * Every root-relative asset URL the shell references, deduped.
+ * Every root-relative asset URL the page references, deduped.
  *
  * Matches `src="..."` / `href="..."` on any prefix rather than hardcoding
- * `/assets/` — the point is to notice when Premier's build output moves.
+ * `/assets/` — the point is to notice when Premier's build output moves. The
+ * current page has none (fonts are absolute, CSS is inline), but this stays so
+ * the health check catches a regression if Premier ships root-relative bundles
+ * again.
  */
 export function extractAssetPaths(html: string): string[] {
   const found = new Set<string>();
@@ -78,24 +82,7 @@ export function extractAssetPaths(html: string): string[] {
   return [...found];
 }
 
-/**
- * The SPA's entry bundle — the one whose disappearance blanks the page.
- *
- * Attribute-order independent: Vite currently emits
- * `<script type="module" crossorigin src="...">`, but that ordering is a
- * build-tool detail, not a contract.
- */
-export function extractEntryScriptUrl(html: string): string | null {
-  const scripts = html.match(/<script\b[^>]*>/gi) ?? [];
-  for (const tag of scripts) {
-    if (!/\btype\s*=\s*["']?module["']?/i.test(tag)) continue;
-    const src = tag.match(/\bsrc\s*=\s*"([^"]+)"/i);
-    if (src && src[1].startsWith('/')) return src[1];
-  }
-  return null;
-}
-
-/** Distinct `/<prefix>/` segments the shell loads assets from. */
+/** Distinct `/<prefix>/` segments the page loads assets from. */
 export function extractAssetPrefixes(html: string): string[] {
   const prefixes = new Set<string>();
   for (const path of extractAssetPaths(html)) {
@@ -105,7 +92,7 @@ export function extractAssetPrefixes(html: string): string[] {
   return [...prefixes];
 }
 
-/** Asset prefixes the shell uses that our rewrites do NOT proxy. */
+/** Asset prefixes the page uses that our rewrites do NOT proxy. */
 export function unproxiedAssetPrefixes(html: string): string[] {
   const proxied = PROXIED_ASSET_PREFIXES as readonly string[];
   return extractAssetPrefixes(html).filter((p) => !proxied.includes(p));
@@ -114,8 +101,9 @@ export function unproxiedAssetPrefixes(html: string): string[] {
 /**
  * Does a content-type header describe executable JavaScript?
  *
- * The decisive test for the blank-panel bug: a vanished bundle comes back as
- * `text/html` (Netlify's SPA fallback), and the browser refuses to run it.
+ * Kept from the SPA era for the health check's per-asset test: if Premier ever
+ * ships a root-relative bundle again, a vanished one comes back as `text/html`
+ * (Netlify's SPA fallback) and the browser refuses to run it.
  */
 export function isJavaScriptContentType(contentType: string | null): boolean {
   if (!contentType) return false;
@@ -123,36 +111,42 @@ export function isJavaScriptContentType(contentType: string | null): boolean {
 }
 
 /**
- * Does this look like Premier's SPA shell, with a bootable entry bundle?
+ * Does this look like Premier's real quote page?
  *
- * Structural only — no filename, prefix, or attribute-order assumptions. It
- * catches an upstream that is HTTP 200 but not a shell at all (a Netlify error
- * page, a holding page), which is the case that would otherwise render blank.
+ * Structural and deliberately forgiving — no filename or attribute-order
+ * assumptions. It needs a `<head>` plus a positive booking signal: their quote
+ * form (`id="qform"`) or the Xola checkout embed. Either alone is enough, so a
+ * form-id rename or a booking-provider swap does not blank the tab; both would
+ * have to change at once (and the health check would then alert). It rejects the
+ * cases that render blank or dead: a bare Netlify redirect stub (no `<head>`)
+ * and a generic 200 error/holding page (no booking surface).
  */
-export function isBootablePremierShell(html: string): boolean {
+export function isPremierQuotePage(html: string): boolean {
   if (!/<head[^>]*>/i.test(html)) return false;
-  if (!/<div\b[^>]*\bid\s*=\s*["']?root["']?/i.test(html)) return false;
-  return extractEntryScriptUrl(html) !== null;
+  const hasQuoteForm = /<form\b[^>]*\bid\s*=\s*["']?qform\b/i.test(html);
+  const hasXolaBooking = /checkout\.xola\.app/i.test(html);
+  return hasQuoteForm || hasXolaBooking;
 }
 
 /**
- * Inject POD's additions into Premier's shell.
+ * Inject POD's additions into Premier's quote page.
  *
- * Returns `null` when the upstream HTML is not a shell we can boot — callers
- * should serve {@link premierEmbedFallbackHtml} instead. Injecting twice is a
- * no-op, so this is safe to call on already-processed HTML.
+ * The page is server-rendered and self-sufficient, so the injection is minimal:
+ * a `noindex` robots meta (we must not let the proxied copy get indexed) and a
+ * marker comment. No client script — the SPA watchdog and hero overlay it
+ * carried are obsolete now that the page ships its content and its own hero.
+ *
+ * Returns `null` when the upstream HTML is not the quote page — callers should
+ * serve {@link premierEmbedFallbackHtml} instead. Injecting twice is a no-op,
+ * so this is safe to call on already-processed HTML.
  */
 export function buildPremierEmbedHtml(upstreamHtml: string): string | null {
-  if (!isBootablePremierShell(upstreamHtml)) return null;
+  if (!isPremierQuotePage(upstreamHtml)) return null;
   if (upstreamHtml.includes(INJECTION_MARKER)) return upstreamHtml;
 
   const injection = [
     `<meta name="robots" content="noindex,nofollow">`,
     `<!-- ${INJECTION_MARKER}: see src/lib/partners/premier-embed.ts -->`,
-    buildEmbedScript({
-      embedPath: PREMIER_QUOTE_EMBED_PATH,
-      quotePath: premierQuotePath(),
-    }),
   ].join('\n');
 
   return upstreamHtml.replace(/<head[^>]*>/i, (head) => `${head}\n${injection}`);
