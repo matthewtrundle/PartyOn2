@@ -63,51 +63,39 @@ _(not captured)_
 ```json
 {
   "orders": 38,
-  "revenue": 13891.69,
+  "revenue": 15034.32,
   "segments": [
     {
       "margin": null,
-      "orders": 37,
-      "revenue": 13661.25,
+      "orders": 36,
+      "revenue": 14645.88,
       "segment": "general",
       "averageMarginPct": null,
-      "averageOrderValue": 369.22,
+      "averageOrderValue": 406.83,
       "marginCoveragePct": 0
     },
     {
       "margin": 56.88,
-      "orders": 1,
-      "revenue": 230.44,
+      "orders": 2,
+      "revenue": 388.44,
       "segment": "unknown",
-      "averageMarginPct": 24.7,
-      "averageOrderValue": 230.44,
-      "marginCoveragePct": 45
+      "averageMarginPct": 14.6,
+      "averageOrderValue": 194.22,
+      "marginCoveragePct": 26.7
     }
   ],
-  "capturedAt": "2026-08-30T08:00:13.763Z",
+  "capturedAt": "2026-08-31T08:02:54.944Z",
   "affiliateRoi": [
     {
       "code": "PREMIER",
       "margin": null,
-      "orders": 11,
+      "orders": 10,
       "roiPct": null,
-      "revenue": 1890.01,
+      "revenue": 1739.85,
       "netMargin": null,
       "affiliateId": "d21bac1a-3f99-489c-89fd-e1980c264a8d",
       "businessName": "Premier Party Cruises",
-      "commissionPaid": 134.66,
-      "marginCoveragePct": 0
-    },
-    {
-      "code": "SIPNSOCIAL",
-      "margin": null,
-      "orders": 3,
-      "roiPct": null,
-      "revenue": 844.65,
-      "netMargin": null,
-      "affiliateId": "3d00911f-3b75-40ad-bc3c-c87f20cdaeaf",
-      "businessName": "Sip & Social On Wheels",
-      "commissionPaid": 37.84,
+      "commissionPaid": 124.5,
       "marginCoveragePct": 0
     },
     {
@@ -137,37 +125,61 @@ _(not captured)_
     {
       "code": "LTYACHTRENTALS",
       "margin": null,
-      "orders": 6,
+      "orders": 5,
       "roiPct": null,
-      "revenue": 1710.25,
+      "revenue": 1475.46,
       "netMargin": null,
       "affiliateId": "e09b3a40-26cb-4c70-9b2a-6ea311c7a62e",
       "businessName": "Lake Travis Yacht Rentals",
-      "commissionPaid": 75.26,
+      "commissionPaid": 64.42,
       "marginCoveragePct": 0
     },
     {
-      "code": "BACHBABES",
+      "code": "SIPNSOCIAL",
+      "margin": null,
+      "orders": 3,
+      "roiPct": null,
+      "revenue": 844.65,
+      "netMargin": null,
+      "affiliateId": "3d00911f-3b75-40ad-bc3c-c87f20cdaeaf",
+      "businessName": "Sip & Social On Wheels",
+      "commissionPaid": 37.84,
+      "marginCoveragePct": 0
+    },
+    {
+      "code": "MISCHIEF",
       "margin": null,
       "orders": 1,
       "roiPct": null,
-      "revenue": 168.7,
+      "revenue": 151.32,
       "netMargin": null,
-      "affiliateId": "bd7084cd-db70-4759-ade1-128bab62f8b2",
-      "businessName": "Bach Babes",
-      "commissionPaid": 7.45,
+      "affiliateId": "06ae94b1-5ad7-49f4-9c0f-bff252a6716c",
+      "businessName": "Inn Cahoots",
+      "commissionPaid": 0,
+      "marginCoveragePct": 0
+    },
+    {
+      "code": "DTRbartending",
+      "margin": null,
+      "orders": 1,
+      "roiPct": null,
+      "revenue": 1386.96,
+      "netMargin": null,
+      "affiliateId": "f029d561-1c6f-45ba-9cac-7135eac17ce2",
+      "businessName": "DTR Bartending",
+      "commissionPaid": 102.5,
       "marginCoveragePct": 0
     }
   ],
-  "snapshotDate": "2026-08-30",
-  "averageOrderValue": 365.5707894736843,
+  "snapshotDate": "2026-08-31",
+  "averageOrderValue": 395.64,
   "marginCoveragePct": null
 }
 ```
 ## Updates
 
 - 2026-05-05 — Created with status `executed` from source `director`.
-- 2026-08-30 — Status shipped → shipped (cron:measure-recommendations). Notes: Auto-captured 14-day measurement
+- 2026-08-31 — Status shipped → shipped (cron:measure-recommendations). Notes: Auto-captured 14-day measurement
 
 ---
 _Mirror file. Edited automatically by the triage queue when status changes. Source of truth is the database (id: `4fe8e34e-83cb-4ee7-9576-4a60386400dc`). Slug: `premier-86-of-group-dashboards-never-convert-diagnose-the-ac`._
