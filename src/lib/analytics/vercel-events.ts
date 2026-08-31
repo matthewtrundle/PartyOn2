@@ -269,3 +269,75 @@ export async function getWebsiteInsights(days = 30): Promise<WebsiteInsights> {
     topPages: topPages.map((p) => ({ path: p.path, views: Number(p.views) })),
   };
 }
+
+/** One day of the traffic trend, bucketed in America/Chicago. */
+export interface DailyTraffic {
+  /** Calendar day as YYYY-MM-DD (Central time — "US days", not UTC ones). */
+  day: string;
+  /** Human page views that day. */
+  human: number;
+  /** Bot page views that day. */
+  bot: number;
+}
+
+/** Timezone the daily buckets use — a spike should land on the day Austin saw it. */
+export const REPORTING_TIME_ZONE = 'America/Chicago';
+
+const dayFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: REPORTING_TIME_ZONE });
+
+/**
+ * Zero-fill a sparse day series so the chart never invents continuity.
+ *
+ * SQL GROUP BY skips days with no rows, and a line chart drawn over the gaps
+ * would connect points across them as if traffic had smoothly dipped. This puts
+ * an explicit zero on every missing day of the window, oldest first.
+ *
+ * Pure so it can be unit-tested; `now` is injectable for the same reason.
+ *
+ * @param rows Sparse rows from the daily query.
+ * @param days Size of the trailing window in days (the last entry is today).
+ * @param now Reference time, defaults to the current moment.
+ */
+export function fillDailySeries(rows: DailyTraffic[], days: number, now = new Date()): DailyTraffic[] {
+  const byDay = new Map(rows.map((r) => [r.day, r]));
+
+  // Resolve "today" in Central time once (en-CA formats as YYYY-MM-DD, matching
+  // the SQL's to_char output), then walk backwards by CALENDAR days in UTC
+  // space. Subtracting 24h of epoch time instead would skip or duplicate one
+  // Central day a year at the DST changeovers.
+  const [y, m, d] = dayFormatter.format(now).split('-').map(Number);
+  const series: DailyTraffic[] = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const day = new Date(Date.UTC(y, m - 1, d - i)).toISOString().slice(0, 10);
+    const row = byDay.get(day);
+    series.push({ day, human: Number(row?.human ?? 0), bot: Number(row?.bot ?? 0) });
+  }
+  return series;
+}
+
+/**
+ * Human and bot page views per Central-time calendar day, zero-filled.
+ *
+ * One query: FILTER splits the human/bot counts inside the same page-view
+ * definition the headline figures use, so the trend can never disagree with
+ * the totals about what a page view is.
+ *
+ * @param days Size of the trailing window in days.
+ */
+export async function getDailyTraffic(days = 30): Promise<DailyTraffic[]> {
+  const since = new Date(Date.now() - days * 86_400_000);
+
+  const rows = await prisma.$queryRawUnsafe<{ day: string; human: number; bot: number }[]>(
+    `SELECT to_char(timestamp AT TIME ZONE '${REPORTING_TIME_ZONE}', 'YYYY-MM-DD') AS day,
+            COUNT(DISTINCT COALESCE(vercel_id, id)) FILTER (WHERE user_agent IS NOT NULL AND user_agent !~* $3)::int AS human,
+            COUNT(DISTINCT COALESCE(vercel_id, id)) FILTER (WHERE user_agent IS NULL OR user_agent ~* $3)::int AS bot
+     FROM vercel_events
+     WHERE ${PAGE_VIEW_WHERE}
+     GROUP BY day`,
+    since,
+    ASSET_PATH_SQL_REGEX,
+    BOT_UA_REGEX
+  );
+
+  return fillDailySeries(rows, days);
+}

@@ -24,6 +24,7 @@ import {
   isNoisePath,
   redactPath,
   redactReferrer,
+  fillDailySeries,
 } from '../vercel-events';
 
 const botRe = new RegExp(BOT_UA_REGEX, 'i');
@@ -199,6 +200,46 @@ describe('redactReferrer', () => {
     expect(redactReferrer('https://partyondelivery.com/dashboard/E97WPQ#tok=SECRET')).toBe(
       'https://partyondelivery.com/dashboard/[code]'
     );
+  });
+});
+
+describe('fillDailySeries', () => {
+  // Noon UTC = 6/7am Central — safely the same calendar day in both zones,
+  // so the expectations don't depend on the test runner's clock or zone.
+  const now = new Date('2026-08-30T12:00:00Z');
+
+  it('zero-fills days the query returned no rows for, oldest first', () => {
+    const series = fillDailySeries([{ day: '2026-08-29', human: 5, bot: 2 }], 3, now);
+
+    expect(series).toEqual([
+      { day: '2026-08-28', human: 0, bot: 0 },
+      { day: '2026-08-29', human: 5, bot: 2 },
+      { day: '2026-08-30', human: 0, bot: 0 },
+    ]);
+  });
+
+  it('always ends on today (Central time)', () => {
+    const series = fillDailySeries([], 7, now);
+    expect(series).toHaveLength(7);
+    expect(series[6].day).toBe('2026-08-30');
+    expect(series[0].day).toBe('2026-08-24');
+  });
+
+  it('drops rows outside the window rather than growing past it', () => {
+    const series = fillDailySeries([{ day: '2020-01-01', human: 99, bot: 0 }], 2, now);
+    expect(series).toEqual([
+      { day: '2026-08-29', human: 0, bot: 0 },
+      { day: '2026-08-30', human: 0, bot: 0 },
+    ]);
+  });
+
+  it('coerces bigint-ish values to numbers so JSON serialization cannot throw', () => {
+    const series = fillDailySeries(
+      [{ day: '2026-08-30', human: BigInt(3) as unknown as number, bot: BigInt(1) as unknown as number }],
+      1,
+      now
+    );
+    expect(series[0]).toEqual({ day: '2026-08-30', human: 3, bot: 1 });
   });
 });
 
