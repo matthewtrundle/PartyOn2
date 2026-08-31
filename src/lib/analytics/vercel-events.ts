@@ -221,8 +221,20 @@ const PAGE_VIEW_WHERE = `
   AND path !~* $2
 `;
 
-const HUMAN_WHERE = `AND user_agent IS NOT NULL AND user_agent !~* $3`;
-const BOT_WHERE = `AND (user_agent IS NULL OR user_agent ~* $3)`;
+/**
+ * Human/bot split, shared verbatim by the headline queries and the daily trend
+ * so the two can never disagree. A bot is: a bot-declaring user-agent, a
+ * missing user-agent, or a datacenter client IP (`is_datacenter`, stamped at
+ * ingest — stealth scrapers wear browser UAs but run on cloud IPs). NULL
+ * `is_datacenter` (rows from before the flag existed) counts as human, so
+ * uncertainty never invents bots. The two conditions are exact complements:
+ * every page view lands in exactly one bucket.
+ */
+const HUMAN_COND = `(user_agent IS NOT NULL AND user_agent !~* $3 AND is_datacenter IS NOT TRUE)`;
+const BOT_COND = `(user_agent IS NULL OR user_agent ~* $3 OR is_datacenter IS TRUE)`;
+
+const HUMAN_WHERE = `AND ${HUMAN_COND}`;
+const BOT_WHERE = `AND ${BOT_COND}`;
 
 /**
  * Headline traffic figures for the last N days, split human vs bot.
@@ -329,8 +341,8 @@ export async function getDailyTraffic(days = 30): Promise<DailyTraffic[]> {
 
   const rows = await prisma.$queryRawUnsafe<{ day: string; human: number; bot: number }[]>(
     `SELECT to_char(timestamp AT TIME ZONE '${REPORTING_TIME_ZONE}', 'YYYY-MM-DD') AS day,
-            COUNT(DISTINCT COALESCE(vercel_id, id)) FILTER (WHERE user_agent IS NOT NULL AND user_agent !~* $3)::int AS human,
-            COUNT(DISTINCT COALESCE(vercel_id, id)) FILTER (WHERE user_agent IS NULL OR user_agent ~* $3)::int AS bot
+            COUNT(DISTINCT COALESCE(vercel_id, id)) FILTER (WHERE ${HUMAN_COND})::int AS human,
+            COUNT(DISTINCT COALESCE(vercel_id, id)) FILTER (WHERE ${BOT_COND})::int AS bot
      FROM vercel_events
      WHERE ${PAGE_VIEW_WHERE}
      GROUP BY day`,
