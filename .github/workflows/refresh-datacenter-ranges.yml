@@ -17,10 +17,20 @@ on:
     # 1st of Jan/Apr/Jul/Oct, 14:00 UTC (8/9am Central)
     - cron: '0 14 1 1,4,7,10 *'
   workflow_dispatch: # manual runs from the GitHub UI
+    inputs:
+      force:
+        description: 'Run the delivery path (push branch + open issue) even if the ranges are unchanged'
+        type: boolean
+        default: false
 
+# Only what's actually used: push the branch (contents) and open the reminder
+# issue (issues). We deliberately do NOT create the PR from the workflow — this
+# repo has "Allow GitHub Actions to create and approve pull requests" disabled,
+# and even with it on a bot-created PR skips the required Test & Lint check.
+# A human opening the PR from the pushed branch runs CI normally.
 permissions:
   contents: write
-  pull-requests: write
+  issues: write
 
 jobs:
   refresh:
@@ -45,8 +55,13 @@ jobs:
         id: diff
         run: |
           if git diff --quiet -- src/lib/analytics/datacenter-ranges.json; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "Ranges unchanged since last refresh — nothing to do."
+            if [ "${{ inputs.force }}" = "true" ]; then
+              echo "changed=true" >> "$GITHUB_OUTPUT"
+              echo "Ranges unchanged, but this is a forced run — exercising the delivery path."
+            else
+              echo "changed=false" >> "$GITHUB_OUTPUT"
+              echo "Ranges unchanged since last refresh — nothing to do."
+            fi
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
             git diff --stat -- src/lib/analytics/datacenter-ranges.json
@@ -64,35 +79,41 @@ jobs:
         if: steps.diff.outputs.changed == 'true'
         run: npx vitest run src/lib/analytics/__tests__/datacenter-ip.test.ts src/app/api/webhooks/vercel-drain/__tests__/route.test.ts
 
-      - name: Build PR body
+      - name: Push the refreshed ranges to a branch
         if: steps.diff.outputs.changed == 'true'
         run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          # Fresh branch off the current main checkout; force so a stale branch
+          # from a prior unmerged quarter is replaced rather than conflicting.
+          git switch -c auto-datacenter-ranges
+          git add src/lib/analytics/datacenter-ranges.json
+          # A forced test run with no real change has nothing staged; keep the
+          # branch push meaningful with an empty commit rather than failing.
+          git commit -m "chore(analytics): quarterly datacenter IP range refresh" \
+            || git commit --allow-empty -m "chore(analytics): datacenter range refresh (forced run, no data change)"
+          git push --force origin auto-datacenter-ranges
+
+      - name: Open a reminder issue with a one-click PR link
+        if: steps.diff.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
           {
-            echo 'Quarterly automated refresh of the vendored cloud IP ranges (bot classification).'
+            echo 'The quarterly datacenter IP range refresh ran and the data changed.'
             echo
-            echo '**Validated in this run**: matcher + drain-route unit tests passed against the regenerated data (reserved-space regressions would have failed the run).'
+            echo 'Branch `auto-datacenter-ranges` is pushed with the new data, **already validated in this run** against the matcher + drain-route unit tests (a reserved-space regression would have failed the run before this issue was opened).'
             echo
-            echo '**Review cue**: scan the per-source `largest accepted` lines below — an anomalously huge prefix is the feed-poisoning tell.'
+            echo '👉 **Open the PR:** ${{ github.server_url }}/${{ github.repository }}/compare/main...auto-datacenter-ranges?expand=1'
+            echo
+            echo 'Opening it yourself (rather than the bot) means the required Test & Lint check runs normally. Review cue: scan the per-source `largest accepted` lines below — an anomalously huge prefix is the feed-poisoning tell.'
             echo
             echo '```'
             cat generator.log
             echo '```'
             echo
-            echo 'After merging, optionally re-score history: `npx tsx scripts/analytics/backfill-datacenter-flag.ts` (see its header — old rows keep their stamp unless you NULL the column first).'
-            echo
-            echo 'If the required Test & Lint check did not trigger (bot-created PRs sometimes skip it), close and reopen this PR.'
-          } > pr-body.md
-
-      - name: Open PR with the refreshed ranges
-        if: steps.diff.outputs.changed == 'true'
-        uses: peter-evans/create-pull-request@v5
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: auto-datacenter-ranges
-          delete-branch: true
-          base: main
-          add-paths: src/lib/analytics/datacenter-ranges.json
-          commit-message: 'chore(analytics): quarterly datacenter IP range refresh'
-          title: '🤖 Quarterly datacenter IP range refresh'
-          body-path: pr-body.md
-          labels: automated, analytics
+            echo 'After merging, optionally re-score history: `npx tsx scripts/analytics/backfill-datacenter-flag.ts` (dry-run default; see its header).'
+          } > issue-body.md
+          gh issue create \
+            --title "🤖 Quarterly datacenter IP range refresh ready to merge" \
+            --body-file issue-body.md
