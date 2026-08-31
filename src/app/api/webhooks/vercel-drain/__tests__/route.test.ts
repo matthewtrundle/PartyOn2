@@ -210,6 +210,42 @@ describe('POST /api/webhooks/vercel-drain', () => {
     expect(JSON.stringify(row)).not.toContain('E97WPQ');
   });
 
+  it('stamps is_datacenter from the client IP at ingest', async () => {
+    const lines = [
+      // Azure space (4.192.0.0/10) wearing a real-browser UA — a stealth scraper.
+      JSON.stringify({
+        id: 'dc-1',
+        source: 'edge',
+        timestamp: TS,
+        proxy: {
+          method: 'GET',
+          path: '/kegs',
+          statusCode: 200,
+          clientIp: '4.200.10.20',
+          userAgent: ['Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/126.0 Safari/537.36'],
+        },
+      }),
+      // Documentation space — a plain visitor as far as the flag is concerned.
+      JSON.stringify({
+        id: 'dc-2',
+        source: 'edge',
+        timestamp: TS,
+        proxy: {
+          method: 'GET',
+          path: '/products',
+          statusCode: 200,
+          clientIp: '203.0.113.7',
+          userAgent: ['Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)'],
+        },
+      }),
+    ].join('\n');
+    await POST(signedRequest(lines));
+
+    const rows = storedRows();
+    expect(rows.find((r) => r.vercelId === 'dc-1')?.isDatacenter).toBe(true);
+    expect(rows.find((r) => r.vercelId === 'dc-2')?.isDatacenter).toBe(false);
+  });
+
   it('redacts a dashboard URL arriving as the referrer of the next page', async () => {
     const line = JSON.stringify({
       id: 'line-ref',

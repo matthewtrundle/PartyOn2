@@ -1747,6 +1747,11 @@ model VercelEvent {
   environment     String?
   deploymentId    String?  @map("deployment_id")
   requestId       String?  @map("request_id")
+  /// Client IP sits in a published cloud range (AWS/GCP/Azure/…) — counted as
+  /// bot by the traffic queries. NULL = ingested before the flag existed (or
+  /// backfill pending); treated as not-datacenter. See
+  /// 2026-08-31-vercel-events-datacenter-flag.sql.
+  isDatacenter    Boolean? @map("is_datacenter")
   createdAt       DateTime @default(now()) @map("created_at")
 
   @@index([timestamp])

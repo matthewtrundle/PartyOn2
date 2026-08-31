@@ -17,6 +17,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/database/client';
 import { verifyDrainSignature } from '@/lib/vercel/drain-verification';
 import { isNoisePath, redactPath, redactReferrer } from '@/lib/analytics/vercel-events';
+import { isDatacenterIp } from '@/lib/analytics/datacenter-ip';
 
 /** Drain batches can be large; give the handler the same headroom as our other webhooks. */
 export const maxDuration = 60;
@@ -51,6 +52,7 @@ interface DrainEventRecord {
   method: string | null;
   userAgent: string | null;
   clientIp: string | null;
+  isDatacenter: boolean;
   cacheStatus: string | null;
   responseBytes: number | null;
   executionRegion: string | null;
@@ -162,6 +164,8 @@ function toEvent(log: JsonRecord): DrainEventRecord {
     ? (redactReferrer(rawReferrer)?.slice(0, MAX_URL_LENGTH) ?? null)
     : null;
 
+  const clientIp = asString(proxy.clientIp);
+
   return {
     vercelId: asString(log.id) ?? asString(log.requestId),
     projectId: asString(log.projectId),
@@ -172,7 +176,9 @@ function toEvent(log: JsonRecord): DrainEventRecord {
     statusCode: asInt(proxy.statusCode) ?? asInt(log.statusCode),
     method: asString(proxy.method),
     userAgent,
-    clientIp: asString(proxy.clientIp),
+    clientIp,
+    // Stamped at ingest so the reports never pay a per-row range lookup.
+    isDatacenter: isDatacenterIp(clientIp),
     cacheStatus: asString(proxy.vercelCache),
     responseBytes: asInt(proxy.responseByteSize),
     executionRegion: asString(log.executionRegion) ?? asString(proxy.region),
