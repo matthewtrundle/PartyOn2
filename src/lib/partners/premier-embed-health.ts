@@ -1,14 +1,16 @@
 /**
  * Daily health check for the Premier boat-tab embed.
  *
- * The blank-panel bug is silent and customer-facing: it fires on Brian's
- * deploy schedule, not ours, and both occurrences were caught only because
- * Allan happened to look at a partner page. This runs the decisive test —
- * does every asset Premier's shell references still come back as the thing it
- * claims to be — and emails when it does not.
+ * The degraded-tab bug is silent and customer-facing: it fires on Premier's
+ * deploy schedule, not ours, and past occurrences were caught only because
+ * Allan happened to look at a partner page. This runs the decisive test — is
+ * Premier's `/get-a-quote` still the real quote page, and does every asset it
+ * references still come back as the thing it claims to be — and emails when it
+ * does not.
  *
- * A vanished bundle returns HTTP 200 with `text/html` (Netlify's SPA
- * fallback), so status codes alone prove nothing. Content type is the signal.
+ * A vanished asset or a moved page returns HTTP 200 with `text/html` (Netlify's
+ * SPA fallback / redirect stub), so status codes alone prove nothing. Page
+ * structure and content type are the signal.
  */
 
 import { EmailType, Prisma } from '@prisma/client';
@@ -17,8 +19,7 @@ import { sendEmail } from '@/lib/email/resend-client';
 import {
   PREMIER_QUOTE_UPSTREAM,
   extractAssetPaths,
-  extractEntryScriptUrl,
-  isBootablePremierShell,
+  isPremierQuotePage,
   isJavaScriptContentType,
   unproxiedAssetPrefixes,
 } from '@/lib/partners/premier-embed';
@@ -29,18 +30,11 @@ const ALERT_WINDOW_MS = 12 * 60 * 60 * 1000;
 const SEND_TIMEOUT_MS = 8000;
 const FETCH_TIMEOUT_MS = 10000;
 
-/** Beacon names emitted by the injected embed script. */
-const HERO_MOUNTED_EVENT = 'partner_embed_hero_mounted';
-const HERO_MISSING_EVENT = 'partner_embed_hero_missing';
-
 export interface PremierEmbedHealth {
   healthy: boolean;
   /** Human-readable reasons the embed is degraded; empty when healthy. */
   problems: string[];
   checkedAssets: number;
-  entryScript: string | null;
-  heroMounted: number;
-  heroMissing: number;
   alertSent: boolean;
 }
 
@@ -74,20 +68,6 @@ async function checkAsset(path: string): Promise<string | null> {
     return `${path} — served as "${contentType ?? 'no content-type'}" (the bundle has vanished; this blanks the boat tab)`;
   }
   return null;
-}
-
-/** Count hero beacons over the last day, to spot a silently missing slideshow. */
-async function heroBeaconCounts(): Promise<{ mounted: number; missing: number }> {
-  const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
-  try {
-    const [mounted, missing] = await Promise.all([
-      prisma.analyticsEvent.count({ where: { name: HERO_MOUNTED_EVENT, occurredAt: { gte: since } } }),
-      prisma.analyticsEvent.count({ where: { name: HERO_MISSING_EVENT, occurredAt: { gte: since } } }),
-    ]);
-    return { mounted, missing };
-  } catch {
-    return { mounted: 0, missing: 0 };
-  }
 }
 
 /**
@@ -134,13 +114,14 @@ async function sendAlert(problems: string[]): Promise<boolean> {
           <h2>Premier boat-tab embed is degraded</h2>
           <p>The daily check of <code>/partners-embed/premier-quote</code> failed at
           ${now.toISOString()}. Guests on co-branded partner pages may be seeing the
-          link-out fallback card, or a broken boat tab.</p>
+          link-out fallback card instead of the live booking form.</p>
           <ul>${items}</ul>
-          <p>Most likely cause: Premier Party Cruises redeployed and their bundle
-          filenames changed. The proxy fetches their page live, so this usually
-          clears itself within minutes — if it does not, check whether their site
-          is up and whether their asset paths moved (see
-          <code>src/lib/partners/premier-embed.ts</code>).</p>
+          <p>Most likely cause: Premier changed or moved their quote page (it now
+          lives at <code>/get-a-quote</code>). The proxy fetches it live, so a
+          transient deploy usually clears within minutes — if it does not, check
+          that <code>premierpartycruises.com/get-a-quote</code> is up and still
+          contains the booking form / Xola embed, and whether their asset paths
+          moved (see <code>src/lib/partners/premier-embed.ts</code>).</p>
           <p>Further alerts are suppressed for 12 hours.</p>
         `,
         metadata: { kind: 'premier-embed-health', problems: problems.length },
@@ -161,7 +142,6 @@ async function sendAlert(problems: string[]): Promise<boolean> {
 export async function runPremierEmbedHealthCheck(): Promise<PremierEmbedHealth> {
   const problems: string[] = [];
   let html = '';
-  let entryScript: string | null = null;
   let checkedAssets = 0;
 
   try {
@@ -170,17 +150,18 @@ export async function runPremierEmbedHealthCheck(): Promise<PremierEmbedHealth> 
       headers: { Accept: 'text/html' },
       cache: 'no-store',
     });
-    if (!res.ok) problems.push(`Premier /quote returned HTTP ${res.status}`);
+    if (!res.ok) problems.push(`Premier quote page returned HTTP ${res.status}`);
     else html = await res.text();
   } catch (err) {
-    problems.push(`Could not reach Premier /quote: ${err instanceof Error ? err.message : 'unknown'}`);
+    problems.push(`Could not reach Premier quote page: ${err instanceof Error ? err.message : 'unknown'}`);
   }
 
   if (html) {
-    if (!isBootablePremierShell(html)) {
-      problems.push('Premier /quote is HTTP 200 but is not a bootable SPA shell');
+    if (!isPremierQuotePage(html)) {
+      problems.push(
+        'Premier /get-a-quote is HTTP 200 but is not the quote page (no booking form or Xola embed found)'
+      );
     }
-    entryScript = extractEntryScriptUrl(html);
 
     for (const prefix of unproxiedAssetPrefixes(html)) {
       problems.push(
@@ -194,13 +175,6 @@ export async function runPremierEmbedHealthCheck(): Promise<PremierEmbedHealth> 
     for (const problem of results) if (problem) problems.push(problem);
   }
 
-  const { mounted, missing } = await heroBeaconCounts();
-  if (missing > 0 && mounted === 0) {
-    problems.push(
-      `Hero slideshow did not mount on any of ${missing} boat-tab opens in the last 24h — Premier's hero markup likely changed`
-    );
-  }
-
   const healthy = problems.length === 0;
   const alertSent = healthy ? false : await sendAlert(problems);
 
@@ -208,9 +182,6 @@ export async function runPremierEmbedHealthCheck(): Promise<PremierEmbedHealth> 
     healthy,
     problems,
     checkedAssets,
-    entryScript,
-    heroMounted: mounted,
-    heroMissing: missing,
     alertSent,
   };
 }
