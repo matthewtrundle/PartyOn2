@@ -217,13 +217,13 @@ src/
 MDX-based blog stored in `content/blog/posts/` (123 `.mdx` posts). NOT database-backed.
 
 - **Generation**: `npm run generate-blog` — Claude 3 Haiku via OpenRouter API
-- **Cron route**: `GET /api/cron/generate-blog` — Claude 3.5 Sonnet via OpenRouter (requires `CRON_SECRET`)
-- **Topics**: `scripts/topics.json` — all 107 topics currently published
+- **Cron route**: `GET /api/cron/generate-blog` — exists but its schedule was removed from `vercel.json` (2026-08-31). It only `fs.writeFileSync`s, which is a no-op on Vercel's read-only runtime FS, so it never persisted a post regardless.
+- **Topics**: `scripts/topics.json` — **all 107 topics published, so the generators produce nothing new** (each picks the first unpublished topic). Add unpublished topics here to resume automated posting.
 - **Legacy posts**: Shopify-migrated posts in `src/data/blog-posts/posts.json` (merged at serve time)
 - **Rendering**: `MDXContentRSC` component, gray-matter for frontmatter parsing
 - **Images**: Optional AI generation via local `image-generator-tool` (saved as WebP to `/public/images/blog/`)
 - **SEO**: Schema.org JSON-LD (Article + FAQPage + LocalBusiness), topical clustering via `pillarSlug`
-- **Automation**: GitHub Actions daily at 9 AM EST, commits to `dev`, creates PR to `main`
+- **Automation**: **DORMANT.** The `generate-daily-blog.yml` GitHub Action's daily schedule is disabled (last auto-post 2026-01-19; topic backlog exhausted) — manual-dispatch only. It committed to `dev`; its "Create PR to main" step never worked (repo blocks Actions from creating PRs) and was removed. New blog content now lands via **manual SEO PRs to `main`**; promote `dev`→`main` with a manual PR when needed.
 
 ---
 

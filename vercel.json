@@ -5,10 +5,6 @@
       "schedule": "*/15 * * * *"
     },
     {
-      "path": "/api/cron/generate-blog",
-      "schedule": "0 14 * * *"
-    },
-    {
       "path": "/api/cron/reconcile-orders",
       "schedule": "*/15 * * * *"
     },

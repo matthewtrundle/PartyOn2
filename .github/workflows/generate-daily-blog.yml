@@ -1,14 +1,21 @@
 name: Generate Daily Blog Post
 
+# DORMANT: the daily schedule is intentionally disabled. All 107 topics in
+# scripts/topics.json are published, so this generated nothing new after
+# 2026-01-19 — it just ran green daily and committed nothing (the commit step
+# is guarded on a diff). New blog content now lands via manual SEO PRs to main.
+# To resume automated posting: add unpublished topics to scripts/topics.json,
+# then re-enable the `schedule:` trigger below. Manual runs still work via the
+# Actions tab (workflow_dispatch). NOTE: this only ever committed to `dev` — the
+# old "Create Pull Request to Main" step never worked (repo blocks Actions from
+# creating PRs) and has been removed; promote dev→main with a manual PR.
 on:
-  schedule:
-    # Runs every day at 9 AM EST (2 PM UTC)
-    - cron: '0 14 * * *'
+  # schedule:
+  #   - cron: '0 14 * * *'   # disabled — topic backlog exhausted (see note above)
   workflow_dispatch: # Allows manual triggering from GitHub UI
 
 permissions:
   contents: write
-  pull-requests: write
 
 jobs:
   generate-blog:
@@ -50,22 +57,5 @@ jobs:
           git pull --rebase origin dev
           git push origin dev
 
-      - name: Create Pull Request to Main
-        uses: peter-evans/create-pull-request@v5
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: auto-blog-${{ github.run_number }}
-          base: main
-          title: "🤖 Daily Blog Post - $(date +'%Y-%m-%d')"
-          body: |
-            Automated daily blog post generation
-
-            - Generated new blog post
-            - Updated topics.json
-            - Added AI-generated images
-
-            **Review the content before merging to production!**
-          labels: automated, blog
-
-      - name: Trigger Vercel deployment
-        run: echo "Blog post committed and PR created. Vercel will auto-deploy when merged."
+      - name: Note next step
+        run: echo "If a post was generated it is committed to 'dev'. Promote to main with a manual PR when ready (this repo blocks Actions from opening PRs)."
