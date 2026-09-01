@@ -62,16 +62,16 @@ _(not captured)_
 
 ```json
 {
-  "orders": 38,
-  "revenue": 15034.32,
+  "orders": 39,
+  "revenue": 16251.23,
   "segments": [
     {
       "margin": null,
-      "orders": 36,
-      "revenue": 14645.88,
+      "orders": 37,
+      "revenue": 15862.79,
       "segment": "general",
       "averageMarginPct": null,
-      "averageOrderValue": 406.83,
+      "averageOrderValue": 428.72,
       "marginCoveragePct": 0
     },
     {
@@ -84,7 +84,7 @@ _(not captured)_
       "marginCoveragePct": 26.7
     }
   ],
-  "capturedAt": "2026-08-31T08:02:54.944Z",
+  "capturedAt": "2026-09-01T08:00:58.672Z",
   "affiliateRoi": [
     {
       "code": "PREMIER",
@@ -169,17 +169,29 @@ _(not captured)_
       "businessName": "DTR Bartending",
       "commissionPaid": 102.5,
       "marginCoveragePct": 0
+    },
+    {
+      "code": "BACHBABES",
+      "margin": null,
+      "orders": 1,
+      "roiPct": null,
+      "revenue": 890.15,
+      "netMargin": null,
+      "affiliateId": "bd7084cd-db70-4759-ade1-128bab62f8b2",
+      "businessName": "Bach Babes",
+      "commissionPaid": 37.64,
+      "marginCoveragePct": 0
     }
   ],
-  "snapshotDate": "2026-08-31",
-  "averageOrderValue": 395.64,
+  "snapshotDate": "2026-09-01",
+  "averageOrderValue": 416.6982051282051,
   "marginCoveragePct": null
 }
 ```
 ## Updates
 
 - 2026-05-05 — Created with status `executed` from source `director`.
-- 2026-08-31 — Status shipped → shipped (cron:measure-recommendations). Notes: Auto-captured 14-day measurement
+- 2026-09-01 — Status shipped → shipped (cron:measure-recommendations). Notes: Auto-captured 14-day measurement
 
 ---
 _Mirror file. Edited automatically by the triage queue when status changes. Source of truth is the database (id: `4fe8e34e-83cb-4ee7-9576-4a60386400dc`). Slug: `premier-86-of-group-dashboards-never-convert-diagnose-the-ac`._
