@@ -62,16 +62,16 @@ _(not captured)_
 
 ```json
 {
-  "orders": 39,
-  "revenue": 16251.23,
+  "orders": 40,
+  "revenue": 18051.58,
   "segments": [
     {
       "margin": null,
-      "orders": 37,
-      "revenue": 15862.79,
+      "orders": 38,
+      "revenue": 17663.14,
       "segment": "general",
       "averageMarginPct": null,
-      "averageOrderValue": 428.72,
+      "averageOrderValue": 464.82,
       "marginCoveragePct": 0
     },
     {
@@ -84,7 +84,7 @@ _(not captured)_
       "marginCoveragePct": 26.7
     }
   ],
-  "capturedAt": "2026-09-01T08:00:58.672Z",
+  "capturedAt": "2026-09-02T08:01:46.448Z",
   "affiliateRoi": [
     {
       "code": "PREMIER",
@@ -101,13 +101,13 @@ _(not captured)_
     {
       "code": "POUR24",
       "margin": null,
-      "orders": 3,
+      "orders": 4,
       "roiPct": null,
-      "revenue": 5537.11,
+      "revenue": 7337.46,
       "netMargin": null,
       "affiliateId": "7bf14a40-b04f-4622-ba09-0662be41e37f",
       "businessName": "Pour Twenty Four",
-      "commissionPaid": 474.56,
+      "commissionPaid": 626.81,
       "marginCoveragePct": 0
     },
     {
@@ -183,15 +183,15 @@ _(not captured)_
       "marginCoveragePct": 0
     }
   ],
-  "snapshotDate": "2026-09-01",
-  "averageOrderValue": 416.6982051282051,
+  "snapshotDate": "2026-09-02",
+  "averageOrderValue": 451.2895,
   "marginCoveragePct": null
 }
 ```
 ## Updates
 
 - 2026-05-05 — Created with status `executed` from source `director`.
-- 2026-09-01 — Status shipped → shipped (cron:measure-recommendations). Notes: Auto-captured 14-day measurement
+- 2026-09-02 — Status shipped → shipped (cron:measure-recommendations). Notes: Auto-captured 14-day measurement
 
 ---
 _Mirror file. Edited automatically by the triage queue when status changes. Source of truth is the database (id: `4fe8e34e-83cb-4ee7-9576-4a60386400dc`). Slug: `premier-86-of-group-dashboards-never-convert-diagnose-the-ac`._
