@@ -63,15 +63,15 @@ _(not captured)_
 ```json
 {
   "orders": 41,
-  "revenue": 18603.77,
+  "revenue": 18627.58,
   "segments": [
     {
       "margin": null,
       "orders": 39,
-      "revenue": 18215.33,
+      "revenue": 18239.14,
       "segment": "general",
       "averageMarginPct": null,
-      "averageOrderValue": 467.06,
+      "averageOrderValue": 467.67,
       "marginCoveragePct": 0
     },
     {
@@ -84,18 +84,18 @@ _(not captured)_
       "marginCoveragePct": 26.7
     }
   ],
-  "capturedAt": "2026-09-03T08:01:47.292Z",
+  "capturedAt": "2026-09-04T08:01:40.220Z",
   "affiliateRoi": [
     {
       "code": "PREMIER",
       "margin": null,
       "orders": 10,
       "roiPct": null,
-      "revenue": 2033.06,
+      "revenue": 2056.87,
       "netMargin": null,
       "affiliateId": "d21bac1a-3f99-489c-89fd-e1980c264a8d",
       "businessName": "Premier Party Cruises",
-      "commissionPaid": 146.18,
+      "commissionPaid": 120.59,
       "marginCoveragePct": 0
     },
     {
@@ -183,15 +183,15 @@ _(not captured)_
       "marginCoveragePct": 0
     }
   ],
-  "snapshotDate": "2026-09-03",
-  "averageOrderValue": 453.750487804878,
+  "snapshotDate": "2026-09-04",
+  "averageOrderValue": 454.3312195121952,
   "marginCoveragePct": null
 }
 ```
 ## Updates
 
 - 2026-05-05 — Created with status `executed` from source `director`.
-- 2026-09-03 — Status shipped → shipped (cron:measure-recommendations). Notes: Auto-captured 14-day measurement
+- 2026-09-04 — Status shipped → shipped (cron:measure-recommendations). Notes: Auto-captured 14-day measurement
 
 ---
 _Mirror file. Edited automatically by the triage queue when status changes. Source of truth is the database (id: `4fe8e34e-83cb-4ee7-9576-4a60386400dc`). Slug: `premier-86-of-group-dashboards-never-convert-diagnose-the-ac`._
