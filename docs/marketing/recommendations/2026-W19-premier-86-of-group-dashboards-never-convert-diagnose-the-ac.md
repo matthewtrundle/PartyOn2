@@ -84,7 +84,7 @@ _(not captured)_
       "marginCoveragePct": 26.7
     }
   ],
-  "capturedAt": "2026-09-04T08:01:40.220Z",
+  "capturedAt": "2026-09-05T08:00:49.311Z",
   "affiliateRoi": [
     {
       "code": "PREMIER",
@@ -181,9 +181,21 @@ _(not captured)_
       "businessName": "Bach Babes",
       "commissionPaid": 37.64,
       "marginCoveragePct": 0
+    },
+    {
+      "code": "MIMISPARTY",
+      "margin": null,
+      "orders": 1,
+      "roiPct": null,
+      "revenue": 508.72,
+      "netMargin": null,
+      "affiliateId": "89a385b8-e4c1-450b-976d-15255bc6517a",
+      "businessName": "Mimi's Party Palace",
+      "commissionPaid": 20.69,
+      "marginCoveragePct": 0
     }
   ],
-  "snapshotDate": "2026-09-04",
+  "snapshotDate": "2026-09-05",
   "averageOrderValue": 454.3312195121952,
   "marginCoveragePct": null
 }
@@ -191,7 +203,7 @@ _(not captured)_
 ## Updates
 
 - 2026-05-05 — Created with status `executed` from source `director`.
-- 2026-09-04 — Status shipped → shipped (cron:measure-recommendations). Notes: Auto-captured 14-day measurement
+- 2026-09-05 — Status shipped → shipped (cron:measure-recommendations). Notes: Auto-captured 14-day measurement
 
 ---
 _Mirror file. Edited automatically by the triage queue when status changes. Source of truth is the database (id: `4fe8e34e-83cb-4ee7-9576-4a60386400dc`). Slug: `premier-86-of-group-dashboards-never-convert-diagnose-the-ac`._
