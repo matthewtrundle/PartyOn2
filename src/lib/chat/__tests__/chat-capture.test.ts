@@ -104,10 +104,12 @@ describe('parseContact', () => {
     expect(c.lastName).toBe('Nicaj');
   });
 
-  it('accepts accented names in the paste', () => {
+  it('accepts accented names in the paste, but only Latin script', () => {
     const c = parseContact('5125551234--José García--jose@example.com');
     expect(c.firstName).toBe('José');
     expect(c.lastName).toBe('García');
+    // Cyrillic "А" (U+0410) renders exactly like Latin "A" on the board.
+    expect(parseContact('5125551234--Аnthony Nicaj--a@example.com').firstName).toBeUndefined();
   });
 
   it('does NOT mint a name from prose "--" next to a phone number', () => {
@@ -119,7 +121,7 @@ describe('parseContact', () => {
     expect(parseContact('5125551234 -- we are flexible').firstName).toBeUndefined();
   });
 
-  it('only mines a name from the line that carries the phone/email', () => {
+  it('only mines a name from a line that carries BOTH the phone and the email', () => {
     // capture.ts joins every user message with "\n"; a "--" in an earlier
     // message plus a number given later must not combine into a name, and two
     // one-word replies on adjacent lines must not read as First Last.
@@ -127,6 +129,9 @@ describe('parseContact', () => {
     expect(c.phone).toBe('5125551234');
     expect(c.firstName).toBeUndefined();
     expect(parseContact('Yes\nAnthony--5126224061--hello@x.com').firstName).toBeUndefined();
+    // A "--" aside beside a bare number on the SAME line is prose, not a paste.
+    expect(parseContact('5125551234 -- big one').firstName).toBeUndefined();
+    expect(parseContact('movie night--5125551234--see you then').firstName).toBeUndefined();
   });
 
   it('returns nothing identifiable for a plain message', () => {

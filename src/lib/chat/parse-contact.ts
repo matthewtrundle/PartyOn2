@@ -51,20 +51,23 @@ const FIELD_DELIM_RE = /--+/;
 // A name segment in that paste is exactly two words (letters, optional internal
 // hyphen) and nothing else, so the phone (digits) and email (@) segments can
 // never match it. Two words on purpose: a real dump is "First Last", and every
-// one-word false positive ("ok", "austin", "saturday") dies here.
+// one-word false positive ("ok", "austin", "saturday") dies here. Latin script
+// only (accents fine): `\p{L}` would also admit Cyrillic homoglyphs that render
+// identically to ASCII on the board (security review 2026-09-06).
 const DELIM_NAME_SEGMENT_RE =
-  /^(\p{L}{2,20}(?:-\p{L}{2,20})?)[ \t]+(\p{L}{2,20}(?:-\p{L}{2,20})?)$/u;
+  /^(\p{Script=Latin}{2,20}(?:-\p{Script=Latin}{2,20})?)[ \t]+(\p{Script=Latin}{2,20}(?:-\p{Script=Latin}{2,20})?)$/u;
 
 const capitalize = (w: string): string => w.charAt(0).toUpperCase() + w.slice(1);
 
 /**
  * First/last name from one "--"-delimited line, or null. Only a line that itself
- * carries a phone or email is mined, so a prose "--" in some other message can
- * never mint a name once the visitor gives their number later.
+ * carries BOTH a phone and an email is mined — that is the paste shape — so a
+ * prose "--" beside a bare number ("5125551234 -- big one"), or in some other
+ * message before the visitor gives their number, can never mint a name.
  */
 function nameFromDelimitedLine(line: string): [string, string] | null {
   if (!FIELD_DELIM_RE.test(line)) return null;
-  if (!EMAIL_RE.test(line) && !PHONE_RE.test(line)) return null;
+  if (!EMAIL_RE.test(line) || !PHONE_RE.test(line)) return null;
   for (const segment of line.split(FIELD_DELIM_RE)) {
     const m = DELIM_NAME_SEGMENT_RE.exec(segment.trim());
     if (!m) continue;

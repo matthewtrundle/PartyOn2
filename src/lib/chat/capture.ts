@@ -12,7 +12,7 @@
  */
 import { LeadEventType } from '@prisma/client';
 import { prisma } from '@/lib/database/client';
-import { upsertLead, recordEvent } from '@/lib/leads/leadCapture';
+import { upsertLead, findLead, recordEvent } from '@/lib/leads/leadCapture';
 import { enrollLeadIfEligible } from '@/lib/leads/pipeline';
 import { mirrorLeadToCrm, leadBoardUrl } from '@/lib/leads/crm-mirror';
 import type { AttributionInput } from '@/lib/leads/attribution-schema';
@@ -71,12 +71,18 @@ export async function persistChatTurn(input: ChatTurnInput): Promise<void> {
     // 2. Capture a Lead when contact is present and not already linked.
     let leadId: string | null = convo.leadId;
     if (hasContact(contact) && !leadId) {
+      // A chat-parsed name may only populate a lead THIS conversation creates.
+      // upsertLead fills blank fields on a matched row, so anyone who knows a
+      // customer's phone or email could otherwise plant a name on that customer's
+      // record from unauthenticated chat text ("5125550001--Evil Hacker--…") and
+      // it would reach the CRM's "Hi {firstName}" SMS (security review
+      // 2026-09-06). Linking by email/phone is unchanged.
+      const existing = await findLead({ email: contact.email, phone: contact.phone });
       const lead = await upsertLead(
         {
           email: contact.email,
           phone: contact.phone,
-          firstName: contact.firstName,
-          lastName: contact.lastName,
+          ...(existing ? {} : { firstName: contact.firstName, lastName: contact.lastName }),
         },
         {
           sourcePage: input.firstPage ?? '/chat',
