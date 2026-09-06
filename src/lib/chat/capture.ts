@@ -72,7 +72,12 @@ export async function persistChatTurn(input: ChatTurnInput): Promise<void> {
     let leadId: string | null = convo.leadId;
     if (hasContact(contact) && !leadId) {
       const lead = await upsertLead(
-        { email: contact.email, phone: contact.phone, firstName: contact.firstName },
+        {
+          email: contact.email,
+          phone: contact.phone,
+          firstName: contact.firstName,
+          lastName: contact.lastName,
+        },
         {
           sourcePage: input.firstPage ?? '/chat',
           sourceWidget: 'WAYNE_CHAT',

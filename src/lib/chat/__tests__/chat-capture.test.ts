@@ -71,6 +71,64 @@ describe('parseContact', () => {
     expect(c.phone).toBe('5125551000');
   });
 
+  it('parses a "phone--name--email" paste without mangling the email or dropping the name', () => {
+    // Regression: real WAYNE_CHAT lead (leads.id 7802a299…, 2026-08-28) typed
+    // phone + name + email jammed together with "--". The old email regex let
+    // "nicaj--" become part of the local-part (stored `nicaj--hello@…`) and the
+    // name was left NULL. Email must be clean and the name must split First/Last.
+    const c = parseContact(
+      "5126224061--anthony nicaj--hello@happycookingatx.com We're looking for more information on coolers and ice...",
+    );
+    expect(c.email).toBe('hello@happycookingatx.com');
+    expect(c.phone).toBe('5126224061');
+    expect(c.firstName).toBe('Anthony');
+    expect(c.lastName).toBe('Nicaj');
+    expect(hasContact(c)).toBe(true);
+  });
+
+  it('keeps genuine hyphens/dots/plus inside an email local-part', () => {
+    // The "--" fix must not over-restrict: a single hyphen (or dot/plus) is a
+    // valid local-part separator and stays part of the address.
+    expect(parseContact('reach me at mary-jane.smith+parties@example.co.uk').email).toBe(
+      'mary-jane.smith+parties@example.co.uk',
+    );
+  });
+
+  it('handles the paste in email-first order too (the "--" after the domain)', () => {
+    // "-" is legal in a domain as well, so the boundary has to hold on both
+    // sides of the "@", not just the local-part.
+    const c = parseContact('hello@happycookingatx.com--anthony nicaj--5126224061');
+    expect(c.email).toBe('hello@happycookingatx.com');
+    expect(c.phone).toBe('5126224061');
+    expect(c.firstName).toBe('Anthony');
+    expect(c.lastName).toBe('Nicaj');
+  });
+
+  it('accepts accented names in the paste', () => {
+    const c = parseContact('5125551234--José García--jose@example.com');
+    expect(c.firstName).toBe('José');
+    expect(c.lastName).toBe('García');
+  });
+
+  it('does NOT mint a name from prose "--" next to a phone number', () => {
+    // A typed em-dash is not a contact dump. One-word segments, sign-offs, and
+    // pronoun phrases must all stay unnamed — a wrong name reaches the CRM.
+    expect(parseContact('call me at 5125551234 -- no rush').firstName).toBeUndefined();
+    expect(parseContact('5125551234 -- Best regards').firstName).toBeUndefined();
+    expect(parseContact('5126224061--austin--hello@x.com').firstName).toBeUndefined();
+    expect(parseContact('5125551234 -- we are flexible').firstName).toBeUndefined();
+  });
+
+  it('only mines a name from the line that carries the phone/email', () => {
+    // capture.ts joins every user message with "\n"; a "--" in an earlier
+    // message plus a number given later must not combine into a name, and two
+    // one-word replies on adjacent lines must not read as First Last.
+    const c = parseContact("we're doing a party -- big one -- Saturday\nmy number is 5125551234");
+    expect(c.phone).toBe('5125551234');
+    expect(c.firstName).toBeUndefined();
+    expect(parseContact('Yes\nAnthony--5126224061--hello@x.com').firstName).toBeUndefined();
+  });
+
   it('returns nothing identifiable for a plain message', () => {
     const c = parseContact('do you deliver to 78704?');
     expect(c.email).toBeUndefined();

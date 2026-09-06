@@ -51,7 +51,13 @@ export async function sendChatEscalationEmail(input: ChatEscalationInput): Promi
       .join('');
 
     const contactLine =
-      [contact.firstName, contact.email, contact.phone].filter(Boolean).join(' · ') ||
+      [
+        [contact.firstName, contact.lastName].filter(Boolean).join(' '),
+        contact.email,
+        contact.phone,
+      ]
+        .filter(Boolean)
+        .join(' · ') ||
       '(not captured — no contact given yet)';
 
     const html = `
