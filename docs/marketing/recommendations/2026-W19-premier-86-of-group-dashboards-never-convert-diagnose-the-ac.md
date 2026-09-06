@@ -62,30 +62,54 @@ _(not captured)_
 
 ```json
 {
-  "orders": 41,
-  "revenue": 18627.58,
+  "orders": 40,
+  "revenue": 21580.81,
   "segments": [
     {
       "margin": null,
       "orders": 39,
-      "revenue": 18239.14,
+      "revenue": 21350.37,
       "segment": "general",
       "averageMarginPct": null,
-      "averageOrderValue": 467.67,
+      "averageOrderValue": 547.45,
       "marginCoveragePct": 0
     },
     {
       "margin": 56.88,
-      "orders": 2,
-      "revenue": 388.44,
+      "orders": 1,
+      "revenue": 230.44,
       "segment": "unknown",
-      "averageMarginPct": 14.6,
-      "averageOrderValue": 194.22,
-      "marginCoveragePct": 26.7
+      "averageMarginPct": 24.7,
+      "averageOrderValue": 230.44,
+      "marginCoveragePct": 45
     }
   ],
-  "capturedAt": "2026-09-05T08:00:49.311Z",
+  "capturedAt": "2026-09-06T08:00:49.386Z",
   "affiliateRoi": [
+    {
+      "code": "POUR24",
+      "margin": null,
+      "orders": 5,
+      "roiPct": null,
+      "revenue": 9294.83,
+      "netMargin": null,
+      "affiliateId": "7bf14a40-b04f-4622-ba09-0662be41e37f",
+      "businessName": "Pour Twenty Four",
+      "commissionPaid": 807.63,
+      "marginCoveragePct": 0
+    },
+    {
+      "code": "DTRbartending",
+      "margin": null,
+      "orders": 2,
+      "roiPct": null,
+      "revenue": 2797.94,
+      "netMargin": null,
+      "affiliateId": "f029d561-1c6f-45ba-9cac-7135eac17ce2",
+      "businessName": "DTR Bartending",
+      "commissionPaid": 206.78,
+      "marginCoveragePct": 0
+    },
     {
       "code": "PREMIER",
       "margin": null,
@@ -96,18 +120,6 @@ _(not captured)_
       "affiliateId": "d21bac1a-3f99-489c-89fd-e1980c264a8d",
       "businessName": "Premier Party Cruises",
       "commissionPaid": 120.59,
-      "marginCoveragePct": 0
-    },
-    {
-      "code": "POUR24",
-      "margin": null,
-      "orders": 4,
-      "roiPct": null,
-      "revenue": 7337.46,
-      "netMargin": null,
-      "affiliateId": "7bf14a40-b04f-4622-ba09-0662be41e37f",
-      "businessName": "Pour Twenty Four",
-      "commissionPaid": 626.81,
       "marginCoveragePct": 0
     },
     {
@@ -125,13 +137,13 @@ _(not captured)_
     {
       "code": "LTYACHTRENTALS",
       "margin": null,
-      "orders": 6,
+      "orders": 5,
       "roiPct": null,
-      "revenue": 1734.44,
+      "revenue": 1620.96,
       "netMargin": null,
       "affiliateId": "e09b3a40-26cb-4c70-9b2a-6ea311c7a62e",
       "businessName": "Lake Travis Yacht Rentals",
-      "commissionPaid": 74.52,
+      "commissionPaid": 69.72,
       "marginCoveragePct": 0
     },
     {
@@ -159,18 +171,6 @@ _(not captured)_
       "marginCoveragePct": 0
     },
     {
-      "code": "DTRbartending",
-      "margin": null,
-      "orders": 1,
-      "roiPct": null,
-      "revenue": 1386.96,
-      "netMargin": null,
-      "affiliateId": "f029d561-1c6f-45ba-9cac-7135eac17ce2",
-      "businessName": "DTR Bartending",
-      "commissionPaid": 102.5,
-      "marginCoveragePct": 0
-    },
-    {
       "code": "BACHBABES",
       "margin": null,
       "orders": 1,
@@ -195,15 +195,15 @@ _(not captured)_
       "marginCoveragePct": 0
     }
   ],
-  "snapshotDate": "2026-09-05",
-  "averageOrderValue": 454.3312195121952,
+  "snapshotDate": "2026-09-06",
+  "averageOrderValue": 539.52025,
   "marginCoveragePct": null
 }
 ```
 ## Updates
 
 - 2026-05-05 — Created with status `executed` from source `director`.
-- 2026-09-05 — Status shipped → shipped (cron:measure-recommendations). Notes: Auto-captured 14-day measurement
+- 2026-09-06 — Status shipped → shipped (cron:measure-recommendations). Notes: Auto-captured 14-day measurement
 
 ---
 _Mirror file. Edited automatically by the triage queue when status changes. Source of truth is the database (id: `4fe8e34e-83cb-4ee7-9576-4a60386400dc`). Slug: `premier-86-of-group-dashboards-never-convert-diagnose-the-ac`._
